@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "hard_donts": [
+    "no prose",
+    "no invented distances/policies/prices/hours",
+    "no reviews/social as primary sources",
+    "JSON only output"
+  ],
+  "normalization_defaults": {
+    "state": "USPS",
+    "airports": "IATA",
+    "phone_format": "E.164_US",
+    "coords": "WGS84_decimal_5dp",
+    "distance_units": "miles_0.1",
+    "drive_time_rounding_min": 5,
+    "price_allowed": ["$", "$$", "$$$"],
+    "adjectives_allowed": false
+  },
+  "quality_gates_defaults": {
+    "output_is_json_only": true,
+    "no_adjectives": true,
+    "term_literal_disallowed": true
+  },
+  "compose_show": {
+    "name": [
+      "show.display_name",
+      "display_name",
+      "meta.official_name",
+      "meta.meta.official_name",
+      "title"
+    ],
+    "show_uid_from": "slugified_user_input"
+  },
+  "diagnostics": {
+    "include_in_notes": [
+      "slug_resolved",
+      "urls_tried",
+      "dataset_url_used"
+    ]
+  }
+}

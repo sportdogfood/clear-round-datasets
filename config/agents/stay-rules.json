@@ -2,11 +2,24 @@
   "version": "1.0",
   "section": "stay",
   "paths": {
-    "meta": "/shows/{show_uid}/events/meta.json",
+    "dataset_url": "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/events/meta.json",
+    "dataset_candidates": [
+      "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/events/current.json",
+      "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/show.json",
+      "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/meta.json",
+      "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/events/{yyyymm}.json"
+    ],
+    "schema": "https://sportdogfood.github.io/clear-round-datasets/config/schemas/section_output.v2.schema.json",
     "research_save": "/shows/{show_uid}/research/section-stay-{yyyymm}.json",
-    "draft_save": "/drafts/section-stay-{slug}_{yyyymm}.json",
-    "schema": "/config/schemas/section_output.schema.json"
+    "draft_save": "/drafts/section-stay-{show_uid}_{yyyymm}.json"
   },
+  "section_semantics": "STAY = lodging near the venue (hotels/inns/motels/suites/rentals). Not an organizer document section.",
+  "term_is_internal": true,
+  "banned_queries": [
+    "\"stay\" section",
+    "\"stay\" prize list",
+    "\"stay\" site:ushja.org"
+  ],
   "scope": {
     "radius_minutes": 20,
     "items_required": { "min": 6, "max": 8 },
@@ -44,7 +57,8 @@
     "coords": "WGS84_decimal_5dp",
     "distance_units": "miles_0.1",
     "drive_time_rounding_min": 5,
-    "price_allowed": ["$", "$$", "$$$"]
+    "price_allowed": ["$", "$$", "$$$"],
+    "adjectives_allowed": false
   },
   "distance_time_rules": {
     "origin": "venue_coords_from_meta",
@@ -63,7 +77,10 @@
     "radius_enforced": true,
     "every_item_has_source_url": true,
     "no_empty_strings": true,
-    "updated_on_tz": "America/New_York"
+    "updated_on_tz": "America/New_York",
+    "term_literal_disallowed": true,
+    "output_is_json_only": true,
+    "no_adjectives": true
   },
   "output_defaults": {
     "section": "stay",
@@ -71,8 +88,7 @@
     "paragraphs": [],
     "facts": null,
     "bullets": [],
-    "callouts": [],
-    "seo": { "meta_title": null, "meta_description": null, "keywords": [], "internal_links": [] }
+    "callouts": []
   },
   "delivery": {
     "mode": "inline_and_file",
