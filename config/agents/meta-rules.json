@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "section": "meta",
+  "paths": {
+    "meta": "/shows/{show_uid}/events/meta.json",
+    "research_save": "/shows/{show_uid}/research/section-meta-{yyyymm}.json",
+    "draft_save": "/drafts/section-meta-{slug}_{yyyymm}.json",
+    "schema": "/config/schemas/section_output.schema.json"
+  },
+  "scope": {
+    "paragraphs_min": 1,
+    "paragraphs_max": 3
+  },
+  "source_order": [
+    "organizer_event",
+    "venue_authority"
+  ],
+  "facts_required": [
+    "official_name",
+    "official_dates",
+    "venue_name",
+    "venue_address",
+    "time_zone",
+    "ticket_basics"
+  ],
+  "normalization": {
+    "state": "USPS",
+    "timezone": "IANA"
+  },
+  "quality_gates": {
+    "facts_complete": true,
+    "date_name_conflicts_noted": true,
+    "updated_on_tz": "America/New_York"
+  },
+  "output_defaults": {
+    "section": "meta",
+    "heading": "Show Basics",
+    "paragraphs": [],
+    "items": [],
+    "bullets": [],
+    "callouts": [],
+    "seo": { "meta_title": null, "meta_description": null, "keywords": [], "internal_links": [] }
+  },
+  "notes_policy": {
+    "conflicts": "Prefer organizer; record unresolved diffs.",
+    "missing_required": "Set null and add concise note."
+  }
+}

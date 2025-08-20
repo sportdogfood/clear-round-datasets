@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "section": "airports",
+  "paths": {
+    "meta": "/shows/{show_uid}/events/meta.json",
+    "research_save": "/shows/{show_uid}/research/section-airports-{yyyymm}.json",
+    "draft_save": "/drafts/section-airports-{slug}_{yyyymm}.json",
+    "schema": "/config/schemas/section_output.schema.json"
+  },
+  "scope": {
+    "primary_required": true,
+    "secondary_required": true
+  },
+  "source_order": [
+    "airport_authority_official",
+    "venue_authority",
+    "state_dot_or_transit",
+    "operator_official"
+  ],
+  "facts_required": [
+    "primary_airport_iata",
+    "primary_drive_time_min",
+    "secondary_airport_iata",
+    "secondary_drive_time_min",
+    "rideshare_notes",
+    "parking_notes"
+  ],
+  "normalization": {
+    "airports": "IATA",
+    "drive_time_rounding_min": 5,
+    "origin": "venue_coords_from_meta"
+  },
+  "quality_gates": {
+    "primary_and_secondary_present": true,
+    "drive_times_venue_gate_realistic": true,
+    "notes_include_pickup_areas_if_known": true,
+    "updated_on_tz": "America/New_York"
+  },
+  "output_defaults": {
+    "section": "airports",
+    "heading": "Airports & Drive Times",
+    "paragraphs": [],
+    "items": [],
+    "bullets": [],
+    "callouts": [],
+    "seo": { "meta_title": null, "meta_description": null, "keywords": [], "internal_links": [] }
+  },
+  "notes_policy": {
+    "conflicts": "Prefer airport authority; record unresolved diffs.",
+    "missing_required": "Set null and add concise note."
+  }
+}

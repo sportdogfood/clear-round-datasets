@@ -1,16 +1,18 @@
 {
   "version": "1.0",
-  "section": "stay",
+  "section": "dine",
   "paths": {
     "meta": "/shows/{show_uid}/events/meta.json",
-    "research_save": "/shows/{show_uid}/research/section-stay-{yyyymm}.json",
-    "draft_save": "/drafts/section-stay-{slug}_{yyyymm}.json",
+    "research_save": "/shows/{show_uid}/research/section-dine-{yyyymm}.json",
+    "draft_save": "/drafts/section-dine-{slug}_{yyyymm}.json",
     "schema": "/config/schemas/section_output.schema.json"
   },
   "scope": {
     "radius_minutes": 20,
-    "items_required": { "min": 6, "max": 8 },
-    "mix": { "hotels_min": 3, "rentals_min": 2, "budget_min": 1 }
+    "items_required": { "min": 12, "max": 15 },
+    "categories": ["breakfast", "coffee", "lunch", "dinner"],
+    "fast_early_min": 3,
+    "earliest_open_time": "06:30"
   },
   "source_order": [
     "organizer_event",
@@ -19,10 +21,10 @@
     "listing_corroboration_only"
   ],
   "required_item_fields": [
-    "name","type","distance_miles","drive_time_min","address","link","source_url"
+    "name","type","distance_miles","drive_time_min","address","hours","price_range","link","source_url"
   ],
   "optional_item_fields": [
-    "phone","parking","cancellation_policy","loyalty_program","price_range","notes","category","hours"
+    "phone","notes","category"
   ],
   "normalization": {
     "state": "USPS",
@@ -38,23 +40,20 @@
     "if_no_coords": "set_null_and_note_or_use_operator_directions_if_precise"
   },
   "classification": {
-    "type_values": ["hotel","rental","inn","motel","suite","other"],
-    "budget_heuristics": {
-      "by_price_range": ["$"],
-      "by_keywords": ["inn","motel","express","select"],
-      "note": "Use operator facts; do not infer nightly rates."
-    }
+    "type_values": ["cafe","coffee","bakery","deli","fast_casual","restaurant","food_truck","market","other"],
+    "category_enforce": true
   },
   "quality_gates": {
-    "mix_enforced": true,
     "radius_enforced": true,
+    "category_coverage_enforced": true,
+    "fast_early_enforced": true,
     "every_item_has_source_url": true,
     "no_empty_strings": true,
     "updated_on_tz": "America/New_York"
   },
   "output_defaults": {
-    "section": "stay",
-    "heading": "Stay: Sleep Close, Sleep Right",
+    "section": "dine",
+    "heading": "Dine: Reliable Eats, No Guesswork",
     "paragraphs": [],
     "facts": null,
     "bullets": [],
@@ -63,7 +62,6 @@
   },
   "notes_policy": {
     "conflicts": "Prefer most authoritative; record unresolved diffs.",
-    "missing_required": "Set null and add concise note.",
-    "coords_method": "If estimated or from operator map, note method."
+    "missing_required": "Set null and add concise note."
   }
 }

@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "section": "temps",
+  "paths": {
+    "meta": "/shows/{show_uid}/events/meta.json",
+    "research_save": "/shows/{show_uid}/research/section-temps-{yyyymm}.json",
+    "draft_save": "/drafts/section-temps-{slug}_{yyyymm}.json",
+    "schema": "/config/schemas/section_output.schema.json"
+  },
+  "scope": {
+    "paragraphs_min": 2,
+    "paragraphs_max": 3,
+    "packing_bullets_min": 4
+  },
+  "source_order": [
+    "national_climate_authority", 
+    "venue_authority",
+    "airport_climate_source"
+  ],
+  "facts_required": [
+    "historical_high_low",
+    "rain_chance",
+    "humidity_note",
+    "wind_note"
+  ],
+  "normalization": {
+    "temperature_units": "F",
+    "probability_units": "percent",
+    "wind_units": "mph",
+    "data_window": "1991–2020 normals preferred"
+  },
+  "quality_gates": {
+    "facts_complete": true,
+    "include_data_window_note": true,
+    "updated_on_tz": "America/New_York"
+  },
+  "output_defaults": {
+    "section": "temps",
+    "heading": "Temps & Weather",
+    "paragraphs": [],
+    "items": [],
+    "bullets": [],
+    "callouts": [],
+    "seo": { "meta_title": null, "meta_description": null, "keywords": [], "internal_links": [] }
+  },
+  "notes_policy": {
+    "conflicts": "Prefer official climate normals; record unresolved diffs.",
+    "missing_required": "Set null and add concise note."
+  }
+}
