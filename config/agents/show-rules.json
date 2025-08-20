@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "section": "show",
+  "paths": {
+    "show": "/shows/{show_uid}/show.json"
+  },
+  "slug_rules": {
+    "lowercase": true,
+    "replace": [
+      { "pattern": "[\\s/]+", "with": "-" }
+    ],
+    "strip": "[^a-z0-9-]",
+    "collapse_dashes": true,
+    "trim_dashes": true
+  },
+  "compose_show": {
+    "name": [
+      "show.display_name",
+      "display_name",
+      "meta.official_name",
+      "meta.meta.official_name",
+      "title"
+    ],
+    "rid_from": "show_uid"
+  },
+  "derive": {
+    "start_date": [
+      "events.current.official_start_date",
+      "meta.official_start_date",
+      "meta.meta.official_start_date"
+    ],
+    "end_date": [
+      "events.current.official_end_date",
+      "meta.official_end_date",
+      "meta.meta.official_end_date",
+      "->start_date"
+    ],
+    "venue": [
+      "meta.venue_name",
+      "meta.meta.venue_name"
+    ],
+    "venue_city": [
+      "meta.venue_city",
+      "meta.meta.venue_city"
+    ],
+    "venue_state": [
+      "meta.venue_state",
+      "meta.meta.venue_state"
+    ],
+    "timezone": [
+      "timezone",
+      "meta.timezone",
+      "meta.meta.timezone"
+    ],
+    "yyyymm": "->from_start_yyyy_mm",
+    "city_state": {
+      "format": "{city}, {USPS(state)}",
+      "city": ["derive.venue_city"],
+      "state": ["derive.venue_state"]
+    }
+  },
+  "normalization": {
+    "state": "USPS",
+    "phone_format": "E.164_US",
+    "coords": "WGS84_decimal_5dp"
+  },
+  "quality_gates": {
+    "show_block_minimal": true,
+    "require": ["compose_show.name", "compose_show.rid_from"],
+    "no_empty_strings": true
+  },
+  "debug": {
+    "notes_include": [
+      "slug_resolved",
+      "show_url_used",
+      "keys_resolved:name,start_date,end_date,venue,city,state,timezone"
+    ]
+  }
+}

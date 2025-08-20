@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CRT Section Research Output v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["section", "show", "updated_on", "sources", "content", "research_status"],
+  "properties": {
+    "section": {
+      "type": "string",
+      "enum": ["meta", "stay", "dine", "extras", "temps", "airports"]
+    },
+    "show": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "rid"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "rid": { "type": "string", "minLength": 1 }
+      }
+    },
+    "updated_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url"],
+        "properties": {
+          "label": { "type": "string" },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "paragraphs"],
+      "properties": {
+        "heading": { "type": "string" },
+        "paragraphs": { "type": "array", "items": { "type": "string" } },
+        "facts": { "type": ["object", "null"] },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "bullets": { "type": "array", "items": { "type": "string" } },
+        "callouts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "research_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ready", "counts", "notes"],
+      "properties": {
+        "ready": { "type": "boolean" },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["items", "sources"],
+          "properties": {
+            "items": { "type": "integer", "minimum": 0 },
+            "sources": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
