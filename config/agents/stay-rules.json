@@ -19,10 +19,23 @@
     "listing_corroboration_only"
   ],
   "required_item_fields": [
-    "name","type","distance_miles","drive_time_min","address","link","source_url"
+    "name",
+    "type",
+    "distance_miles",
+    "drive_time_min",
+    "address",
+    "link",
+    "source_url"
   ],
   "optional_item_fields": [
-    "phone","parking","cancellation_policy","loyalty_program","price_range","notes","category","hours"
+    "phone",
+    "parking",
+    "cancellation_policy",
+    "loyalty_program",
+    "price_range",
+    "notes",
+    "category",
+    "hours"
   ],
   "normalization": {
     "state": "USPS",
@@ -31,17 +44,17 @@
     "coords": "WGS84_decimal_5dp",
     "distance_units": "miles_0.1",
     "drive_time_rounding_min": 5,
-    "price_allowed": ["$","$$","$$$"]
+    "price_allowed": ["$", "$$", "$$$"]
   },
   "distance_time_rules": {
     "origin": "venue_coords_from_meta",
     "if_no_coords": "set_null_and_note_or_use_operator_directions_if_precise"
   },
   "classification": {
-    "type_values": ["hotel","rental","inn","motel","suite","other"],
+    "type_values": ["hotel", "rental", "inn", "motel", "suite", "other"],
     "budget_heuristics": {
       "by_price_range": ["$"],
-      "by_keywords": ["inn","motel","express","select"],
+      "by_keywords": ["inn", "motel", "express", "select"],
       "note": "Use operator facts; do not infer nightly rates."
     }
   },
@@ -60,6 +73,18 @@
     "bullets": [],
     "callouts": [],
     "seo": { "meta_title": null, "meta_description": null, "keywords": [], "internal_links": [] }
+  },
+  "delivery": {
+    "mode": "inline_and_file",
+    "file": {
+      "path_template": "/shows/{show_uid}/research/section-{section}-{yyyymm}.json",
+      "download_name_template": "section-{section}-{show_uid}_{yyyymm}.json",
+      "mime_type": "application/json",
+      "attach_in_response": true,
+      "attachment_key": "attachment",
+      "include_data_url": true,
+      "data_url_key": "download_url"
+    }
   },
   "notes_policy": {
     "conflicts": "Prefer most authoritative; record unresolved diffs.",
