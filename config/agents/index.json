@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "stay": "https://sportdogfood.github.io/clear-round-datasets/config/agents/stay-rule.json",
+    "dine": "https://sportdogfood.github.io/clear-round-datasets/config/agents/dine-rule.json",
+    "extras": "https://sportdogfood.github.io/clear-round-datasets/config/agents/extras-rule.json",
+    "temps": "https://sportdogfood.github.io/clear-round-datasets/config/agents/temps-rule.json",
+    "airports": "https://sportdogfood.github.io/clear-round-datasets/config/agents/airports-rule.json",
+    "meta": "https://sportdogfood.github.io/clear-round-datasets/config/agents/meta-rule.json"
+  },
+  "schemas": {
+    "section_output_v2": "https://sportdogfood.github.io/clear-round-datasets/config/schemas/section_output.v2.schema.json"
+  },
+  "scaffolds": {
+    "stay": "https://sportdogfood.github.io/clear-round-datasets/config/scaffolds/section-stay.template.json"
+  },
+  "shows_index": "https://sportdogfood.github.io/clear-round-datasets/shows/index.json"
+}
