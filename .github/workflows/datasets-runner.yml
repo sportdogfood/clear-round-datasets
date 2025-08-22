@@ -23,6 +23,7 @@ jobs:
           script: |
             const labels = (context.payload.issue.labels || []).map(l => l.name);
             const has = (t) => labels.includes(t);
+            if (has('task:meta-auto')) return core.setOutput('task','meta-auto');         // NEW
             if (has('task:meta-upsert')) return core.setOutput('task','meta-upsert');
             if (has('task:refresh-section')) return core.setOutput('task','refresh-section');
             core.setOutput('task','none');
@@ -37,6 +38,13 @@ jobs:
         with:
           node-version: '20'
 
+      # Only meta-auto needs cheerio
+      - name: Install parser (cheerio)
+        if: steps.decide.outputs.task == 'meta-auto'
+        run: |
+          npm init -y --silent
+          npm install cheerio@1 --silent
+
       - name: Parse Issue Form fields
         if: steps.decide.outputs.task != 'none'
         id: parse
@@ -46,8 +54,22 @@ jobs:
             const body = context.payload.issue.body || '';
             const lines = body.split('\n');
 
-            // Map your form's visible labels -> internal keys
+            // Map visible form labels -> keys
             const map = {
+              // ---- meta-auto labels (ONE-FIELD+ extras) ----
+              'Official website URL (required)': 'official_url',
+              'Official start date (required, YYYY-MM-DD)': 'official_start_date',
+              'Official end date (optional, YYYY-MM-DD)': 'official_end_date',
+              'Is this part of a series?': 'is_series',
+              'Series week number (optional if series)': 'series_week',
+              'Is this a championship?': 'is_championship',
+              'Championship type (optional, e.g., pony, junior, equitation)': 'championship_type',
+              'Title override (optional)': 'title_hint',
+              'Slug override (optional)': 'slug_override',
+              'Crawl depth': 'crawl_depth',
+              'Notes (optional)': 'notes',
+
+              // ---- existing meta-upsert labels ----
               'Slug (leave blank to auto-slugify from title)': 'slug',
               'Official show title': 'title_official',
               'Year': 'year',
@@ -65,14 +87,14 @@ jobs:
               'Primary airports (IATA, comma-separated)': 'airports_primary',
               'Source URLs (one per line; official → venue → federation)': 'sources',
               'Notes (conflicts, aliases, co-located shows)': 'notes',
+
+              // ---- refresh-section labels ----
               'Show slug': 'slug',
-              'Section': 'section',
-              'Notes (optional)': 'notes'
+              'Section': 'section'
             };
 
             const fields = {};
             let currentKey = null;
-
             const getLabel = l => l.replace(/^###\s+/,'').trim();
 
             for (let i=0; i<lines.length; i++) {
@@ -85,10 +107,8 @@ jobs:
               }
 
               if (currentKey) {
-                if (line.startsWith('### ') || line.trim() === '') {
-                  currentKey = null;
-                  continue;
-                }
+                if (line.startsWith('### ')) { currentKey = null; continue; }
+                if (line.trim() === '') { continue; }
                 const prev = fields[currentKey] || '';
                 fields[currentKey] = prev ? (prev + '\n' + line) : line;
               }
@@ -96,6 +116,207 @@ jobs:
 
             core.setOutput('fields', JSON.stringify(fields));
 
+      # ---------- NEW: meta-auto (official URL + start date + flags) ----------
+      - name: Meta auto (scaffold events/meta.json from URL + start date)
+        if: steps.decide.outputs.task == 'meta-auto'
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'), path=require('path');
+          const cheerio=require('cheerio');
+
+          const fields = JSON.parse(process.env.FIELDS || '{}');
+          const officialUrl = (fields.official_url||'').trim();
+          const startIn = (fields.official_start_date||'').trim();
+          const endIn   = (fields.official_end_date||'').trim();
+          if(!officialUrl || !startIn){ console.error('Missing official_url or official_start_date'); process.exit(1); }
+
+          const today = new Date().toISOString().slice(0,10);
+          const toSlug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+          const seasonForMonth = m => (m<=0||m>12)?null: (m<=2||m===12)?'winter': (m<=5)?'spring': (m<=8)?'summer':'fall';
+          const monthName = (dtStr) => dtStr ? new Date(dtStr).toLocaleString('en-US',{month:'long'}) : null;
+          const num = v => v==null||v===''?null:Number(v);
+          const yes = v => (v||'').toLowerCase().startsWith('y');
+
+          async function fetchText(url){
+            const res = await fetch(url, { headers:{'user-agent':'clear-round-runner/1.0 (+github-actions)'}});
+            if(!res.ok) throw new Error('HTTP '+res.status+' '+url);
+            return await res.text();
+          }
+          function pickTitle($){
+            return $('meta[property="og:title"]').attr('content')
+              || $('meta[name="twitter:title"]').attr('content')
+              || $('h1').first().text()
+              || $('title').first().text()
+              || null;
+          }
+          function pickCanonical($, base){
+            const c = $('link[rel="canonical"]').attr('href');
+            try { return new URL(c||'', base).href; } catch { return base; }
+          }
+          async function maybeFollow($, base, depth){
+            if (!String(depth||'1').startsWith('2')) return [];
+            const kw=/(schedule|dates|event|info|venue|directions|visit|plan|about)/i;
+            const hrefs = [];
+            $('a[href]').each((_,a)=>{
+              const href = $(a).attr('href')||'';
+              const text = ($(a).text()||'').trim();
+              if(kw.test(href)||kw.test(text)){
+                try{ hrefs.push(new URL(href, base).href);}catch{}
+              }
+            });
+            return Array.from(new Set(hrefs)).slice(0,3);
+          }
+
+          (async ()=>{
+            const html = await fetchText(officialUrl);
+            let $ = cheerio.load(html);
+            const canonical = pickCanonical($, officialUrl);
+            let official_name = (fields.title_hint||'').trim() || (pickTitle($)||'').trim();
+            if(!official_name){
+              official_name = new URL(officialUrl).hostname.replace(/^www\./,'');
+            }
+
+            for (const u of await maybeFollow($, officialUrl, fields.crawl_depth)){
+              if (official_name) break;
+              try { const h = await fetchText(u); const $$=cheerio.load(h); official_name = (pickTitle($$)||official_name).trim(); } catch {}
+            }
+
+            // Derivations from start date
+            const y = Number(startIn.slice(0,4));
+            const yyyymm = `${startIn.slice(0,7)}`;
+            const month_name = monthName(startIn);
+            const season = seasonForMonth(Number(startIn.slice(5,7)));
+
+            // IDs & slug
+            const slug = (fields.slug_override && fields.slug_override.trim()) || toSlug(official_name);
+            const show_uid = slug;
+            const event_uid = `${slug}_${yyyymm}`;
+
+            // Flags
+            const isSeries = yes(fields.is_series);
+            const seriesWeek = num(fields.series_week);
+            const isChamp = yes(fields.is_championship);
+            const champType = (fields.championship_type||'').trim() || null;
+
+            const metaDoc = {
+              show_uid,
+              display_name: official_name,
+              event_uid,
+              slug,
+              timezone: "America/New_York",
+              created_date: today,
+              last_updated: today,
+              meta: {
+                official_link: canonical || officialUrl,
+                official_name: official_name,
+                official_start_date: startIn,
+                official_end_date: endIn || null,
+                venue_name: null,
+                venue_address: null,
+                venue_city: null,
+                venue_state: null,
+                venue_zip: null,
+                venue_coords: {
+                  lat: null, lon: null,
+                  coordinate_source: null,
+                  google_place_id: null,
+                  maps_url: null
+                },
+                notes: (fields.notes||"").trim() || "AUTO: scaffolded; fill venue and verify dates if needed.",
+                sources: [canonical, officialUrl].filter(Boolean)
+              },
+              derived: {
+                yyyymm,
+                month_name,
+                season,
+                status_window: (endIn && new Date(endIn) < new Date(today)) ? "past" :
+                               (startIn && new Date(startIn) > new Date(today)) ? "upcoming" :
+                               (startIn && endIn) ? "current" : "unknown"
+              },
+              search: {
+                auto_keys: Array.from(new Set([
+                  ...official_name.toLowerCase().split(/[^a-z0-9]+/).filter(s=>s.length>2),
+                  String(y||'')
+                ])),
+                curated_keys: [],
+                facets: {
+                  discipline: null,
+                  rating: isChamp ? "championship" : null,
+                  championship_type: champType,
+                  state: null,
+                  region: null,
+                  airports_primary: [],
+                  season,
+                  is_series: isSeries,
+                  series_week: seriesWeek
+                }
+              },
+              aliases: { curated: [] },
+              ops: {
+                needs_meta_refresh: false,
+                needs_research: true,
+                needs_blog: false,
+                last_ops_check: today,
+                stale_reason: null
+              },
+              quick_notes: [
+                "Scaffolded from official link + start date.",
+                isSeries ? `Series week ${seriesWeek ?? "unspecified"}.` : "Not marked as series.",
+                isChamp ? `Championship type: ${champType || "unspecified"}.` : "Not marked as championship."
+              ],
+              suggested_save: {
+                file_path: `/shows/${slug}/events/meta.json`,
+                download_name: `meta-${slug}.json`
+              },
+              admin_preview: {
+                root: `/shows/${slug}/`,
+                paths: [
+                  `/shows/${slug}/show.json`,
+                  `/shows/${slug}/aliases.json`,
+                  `/shows/${slug}/evergreen/stay.json`,
+                  `/shows/${slug}/evergreen/dine.json`,
+                  `/shows/${slug}/evergreen/extras.json`,
+                  `/shows/${slug}/evergreen/temps-deltas-now.json`,
+                  `/shows/${slug}/events/meta.json`,
+                  `/shows/${slug}/events/reviewed/introcloser.json`,
+                  `/shows/${slug}/events/reviewed/overrides.json`,
+                  `/shows/${slug}/events/assembled/blog.json`
+                ]
+              }
+            };
+
+            // write to /shows/<slug>/events/meta.json
+            const dir = path.join('shows', slug, 'events');
+            fs.mkdirSync(dir,{recursive:true});
+            fs.writeFileSync(path.join(dir,'meta.json'), JSON.stringify(metaDoc,null,2));
+
+            // update index.json (point to events/meta.json)
+            const idxPath='index.json';
+            let index={version:1,generated_at:today,shows:[]};
+            if(fs.existsSync(idxPath)) index=JSON.parse(fs.readFileSync(idxPath,'utf8'));
+            const entry = {
+              slug,
+              display_name: metaDoc.display_name,
+              yyyymm: metaDoc.derived.yyyymm,
+              title_official: metaDoc.meta.official_name,
+              location_city: metaDoc.meta.venue_city,
+              location_state: metaDoc.meta.venue_state,
+              venue_name: metaDoc.meta.venue_name,
+              meta_path: `shows/${slug}/events/meta.json`,
+              has_sections: [],
+              flags: { is_series: isSeries, is_championship: isChamp }
+            };
+            const i=index.shows.findIndex(s=>s.slug===slug);
+            if(i>=0) index.shows[i] = {...index.shows[i], ...entry};
+            else index.shows.push(entry);
+            index.generated_at=today;
+            fs.writeFileSync(idxPath, JSON.stringify(index,null,2));
+          })().catch(e=>{ console.error(e); process.exit(1); });
+          NODE
+        env:
+          FIELDS: ${{ steps.parse.outputs.fields }}
+
+      # ---------- existing meta-upsert ----------
       - name: Meta upsert (create/update meta.json + index.json)
         if: steps.decide.outputs.task == 'meta-upsert'
         run: |
@@ -169,6 +390,7 @@ jobs:
         env:
           FIELDS: ${{ steps.parse.outputs.fields }}
 
+      # ---------- existing refresh-section, plus index has_sections update ----------
       - name: Refresh section (scaffold research file if needed)
         if: steps.decide.outputs.task == 'refresh-section'
         run: |
@@ -202,6 +424,28 @@ jobs:
           }
 
           fs.writeFileSync(file, JSON.stringify(obj,null,2));
+
+          // Update index.json has_sections
+          const idxPath = 'index.json';
+          let index = { version: 1, generated_at: today, shows: [] };
+          if (fs.existsSync(idxPath)) index = JSON.parse(fs.readFileSync(idxPath,'utf8'));
+          const j = index.shows.findIndex(s => s.slug === slug);
+          if (j >= 0) {
+            const set = new Set([...(index.shows[j].has_sections || []), section]);
+            index.shows[j].has_sections = Array.from(set);
+          } else {
+            index.shows.push({
+              slug,
+              title_official: null,
+              location_city: null,
+              location_state: null,
+              venue_name: null,
+              meta_path: `shows/${slug}/meta.json`,
+              has_sections: [section]
+            });
+          }
+          index.generated_at = today;
+          fs.writeFileSync(idxPath, JSON.stringify(index,null,2));
           NODE
         env:
           FIELDS: ${{ steps.parse.outputs.fields }}
