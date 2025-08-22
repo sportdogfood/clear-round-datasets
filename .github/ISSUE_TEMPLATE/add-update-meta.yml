@@ -1,0 +1,131 @@
+name: "Add/Update Meta"
+description: "Create or update a show's meta.json and index.json."
+title: "meta: <auto-slug-or-provide> (<year>)"
+labels: ["task:meta-upsert"]
+body:
+  - type: input
+    id: slug
+    attributes:
+      label: Slug (leave blank to auto-slugify from title)
+      placeholder: "platinum-performance-ushja-international-hunter-derby-championship"
+    validations:
+      required: false
+  - type: input
+    id: title_official
+    attributes:
+      label: Official show title
+      placeholder: "Platinum Performance USHJA International Hunter Derby Championship"
+    validations:
+      required: true
+  - type: input
+    id: year
+    attributes:
+      label: Year
+      placeholder: "2025"
+    validations:
+      required: true
+  - type: input
+    id: start
+    attributes:
+      label: Start date (YYYY-MM-DD)
+      placeholder: "2025-08-13"
+    validations:
+      required: true
+  - type: input
+    id: end
+    attributes:
+      label: End date (YYYY-MM-DD)
+      placeholder: "2025-08-16"
+    validations:
+      required: true
+  - type: input
+    id: timezone
+    attributes:
+      label: Timezone (IANA)
+      placeholder: "America/New_York"
+      value: "America/New_York"
+    validations:
+      required: true
+  - type: input
+    id: venue_name
+    attributes:
+      label: Venue name
+      placeholder: "Kentucky Horse Park"
+    validations:
+      required: true
+  - type: input
+    id: addr_street
+    attributes:
+      label: Venue street
+      placeholder: "4089 Iron Works Pkwy"
+    validations:
+      required: true
+  - type: input
+    id: addr_city
+    attributes:
+      label: Venue city
+      placeholder: "Lexington"
+    validations:
+      required: true
+  - type: input
+    id: addr_state
+    attributes:
+      label: Venue state (2-letter)
+      placeholder: "KY"
+    validations:
+      required: true
+  - type: input
+    id: addr_postal
+    attributes:
+      label: Venue postal
+      placeholder: "40511"
+    validations:
+      required: true
+  - type: input
+    id: addr_country
+    attributes:
+      label: Venue country
+      placeholder: "USA"
+      value: "USA"
+    validations:
+      required: true
+  - type: input
+    id: geo_lat
+    attributes:
+      label: Venue latitude
+    validations:
+      required: true
+  - type: input
+    id: geo_lon
+    attributes:
+      label: Venue longitude
+    validations:
+      required: true
+  - type: input
+    id: airports_primary
+    attributes:
+      label: Primary airports (IATA, comma-separated)
+      placeholder: "LEX, SDF, CVG"
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Source URLs (one per line; official → venue → federation)
+      placeholder: |
+        https://www.usef.org/...
+        https://www.ushja.org/...
+        https://www.kyhorsepark.com/...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (conflicts, aliases, co-located shows)
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirm
+      options:
+        - label: I understand this will open a PR that updates meta/index after validation.
+          required: true
