@@ -1,0 +1,204 @@
+name: Meta Auto (Dispatch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      official_url:
+        description: "Official website URL"
+        required: true
+        type: string
+      official_start_date:
+        description: "Start date (YYYY-MM-DD, optional)"
+        required: false
+        type: string
+      is_series:
+        description: "Part of a series?"
+        required: false
+        default: "No"
+        type: choice
+        options: ["No","Yes"]
+      series_week:
+        description: "Series week number (optional)"
+        required: false
+        type: string
+      is_championship:
+        description: "Championship?"
+        required: false
+        default: "No"
+        type: choice
+        options: ["No","Yes"]
+      championship_type:
+        description: "Championship type (e.g., pony/junior/equitation)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  meta_auto_dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build meta (events/meta.json) and update index.json
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'), path=require('path');
+
+          const url = (process.env.OFFICIAL_URL||'').trim();
+          const start = (process.env.OFFICIAL_START_DATE||'').trim();
+          if(!url){ console.error('Missing official_url'); process.exit(1); }
+
+          const today = new Date().toISOString().slice(0,10);
+          const toSlug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+          const seasonForMonth = m => (m<=0||m>12)?null: (m<=2||m===12)?'winter': (m<=5)?'spring': (m<=8)?'summer':'fall';
+          const monthName = (dtStr) => dtStr ? new Date(dtStr).toLocaleString('en-US',{month:'long'}) : null;
+          const yes = v => (v||'').toLowerCase().startsWith('y');
+          const num = v => v==null||v===''?null:Number(v);
+
+          // Minimal, no-scrape title: hostname (we can enrich later)
+          const host = new URL(url).hostname.replace(/^www\./,'');
+          const official_name = host;
+
+          const hasStart = !!start;
+          const yyyymm = hasStart ? start.slice(0,7) : null;
+          const month_name = hasStart ? monthName(start) : null;
+          const season = hasStart ? seasonForMonth(Number(start.slice(5,7))) : null;
+
+          const slug = toSlug(official_name);
+          const show_uid = slug;
+          const event_uid = hasStart ? `${slug}_${yyyymm}` : null;
+
+          const isSeries = yes(process.env.IS_SERIES);
+          const seriesWeek = num(process.env.SERIES_WEEK);
+          const isChamp = yes(process.env.IS_CHAMPIONSHIP);
+          const champType = (process.env.CHAMPIONSHIP_TYPE||'').trim() || null;
+
+          const metaDoc = {
+            show_uid,
+            display_name: official_name,
+            event_uid,
+            slug,
+            timezone: "America/New_York",
+            created_date: today,
+            last_updated: today,
+            meta: {
+              official_link: url,
+              official_name,
+              official_start_date: hasStart ? start : null,
+              official_end_date: null,
+              venue_name: null,
+              venue_address: null,
+              venue_city: null,
+              venue_state: null,
+              venue_zip: null,
+              venue_coords: {
+                lat: null, lon: null,
+                coordinate_source: null,
+                google_place_id: null,
+                maps_url: null
+              },
+              notes: hasStart ? "AUTO: scaffolded; verify venue and end date if needed."
+                              : "AUTO: scaffolded; add start/end dates and venue when confirmed.",
+              sources: [url]
+            },
+            derived: {
+              yyyymm,
+              month_name,
+              season,
+              status_window: hasStart ? (
+                new Date(start) > new Date(today) ? "upcoming" : "unknown"
+              ) : "unknown"
+            },
+            search: {
+              auto_keys: Array.from(new Set([
+                ...official_name.toLowerCase().split(/[^a-z0-9]+/).filter(s=>s.length>2),
+                ...(hasStart ? [start.slice(0,4)] : [])
+              ])),
+              curated_keys: [],
+              facets: {
+                discipline: null,
+                rating: isChamp ? "championship" : null,
+                championship_type: champType,
+                state: null,
+                region: null,
+                airports_primary: [],
+                season,
+                is_series: isSeries,
+                series_week: seriesWeek
+              }
+            },
+            aliases: { curated: [] },
+            ops: {
+              needs_meta_refresh: !hasStart,
+              needs_research: true,
+              needs_blog: false,
+              last_ops_check: today,
+              stale_reason: hasStart ? null : "missing_start_date"
+            },
+            quick_notes: [
+              "Scaffolded from official link.",
+              hasStart ? "Start date provided." : "Start date missing; fill when available.",
+              isSeries ? `Series week ${seriesWeek ?? "unspecified"}.` : "Not marked as series.",
+              isChamp ? `Championship type: ${champType || "unspecified"}.` : "Not marked as championship."
+            ],
+            suggested_save: {
+              file_path: `/shows/${slug}/events/meta.json`,
+              download_name: `meta-${slug}.json`
+            },
+            admin_preview: {
+              root: `/shows/${slug}/`,
+              paths: [ `/shows/${slug}/events/meta.json` ]
+            }
+          };
+
+          const dir = path.join('shows', slug, 'events');
+          fs.mkdirSync(dir,{recursive:true});
+          fs.writeFileSync(path.join(dir,'meta.json'), JSON.stringify(metaDoc,null,2));
+
+          const idxPath='index.json';
+          let index={version:1,generated_at:today,shows:[]};
+          if(fs.existsSync(idxPath)) index=JSON.parse(fs.readFileSync(idxPath,'utf8'));
+          const entry = {
+            slug,
+            display_name: metaDoc.display_name,
+            yyyymm: metaDoc.derived.yyyymm,
+            title_official: metaDoc.meta.official_name,
+            location_city: metaDoc.meta.venue_city,
+            location_state: metaDoc.meta.venue_state,
+            venue_name: metaDoc.meta.venue_name,
+            meta_path: `shows/${slug}/events/meta.json`,
+            has_sections: [],
+            flags: { is_series: isSeries, is_championship: isChamp }
+          };
+          const i=index.shows.findIndex(s=>s.slug===slug);
+          if(i>=0) index.shows[i] = {...index.shows[i], ...entry};
+          else index.shows.push(entry);
+          index.generated_at=today;
+          fs.writeFileSync(idxPath, JSON.stringify(index,null,2));
+
+          console.log('WROTE:', `shows/${slug}/events/meta.json`);
+          console.log('UPDATED:', 'index.json');
+          NODE
+        env:
+          OFFICIAL_URL: ${{ inputs.official_url }}
+          OFFICIAL_START_DATE: ${{ inputs.official_start_date }}
+          IS_SERIES: ${{ inputs.is_series }}
+          SERIES_WEEK: ${{ inputs.series_week }}
+          IS_CHAMPIONSHIP: ${{ inputs.is_championship }}
+          CHAMPIONSHIP_TYPE: ${{ inputs.championship_type }}
+
+      - name: Open PR
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: meta-auto (dispatch)"
+          title: "Automated: meta-auto for ${{ inputs.official_url }}"
+          body: "Generated from workflow_dispatch."
+          branch: "bot/meta-auto-dispatch-${{ github.run_id }}"
+          labels: "auto-pr"
