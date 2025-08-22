@@ -1,6 +1,6 @@
 name: "Add Show (Auto)"
-description: "Give the official site + start date. We scaffold the rest and PR meta.json."
-title: "auto-meta: <hostname>"
+description: "Paste the official site. Optionally add start date + series/championship flags."
+title: "auto-meta"
 labels: ["task:meta-auto"]
 body:
   - type: input
@@ -10,58 +10,37 @@ body:
       placeholder: "https://www.ushja.org/programs/ihdc/championship"
     validations:
       required: true
+
   - type: input
     id: official_start_date
     attributes:
-      label: Official start date (required, YYYY-MM-DD)
+      label: Official start date (YYYY-MM-DD)
       placeholder: "2025-08-15"
     validations:
-      required: true
-  - type: input
-    id: official_end_date
-    attributes:
-      label: Official end date (optional, YYYY-MM-DD)
-      placeholder: "2025-08-16"
+      required: false   # set to true if you decide to require it later
+
   - type: dropdown
     id: is_series
     attributes:
       label: Is this part of a series?
       options: ["No","Yes"]
       default: 0
+
   - type: input
     id: series_week
     attributes:
       label: Series week number (optional if series)
       placeholder: "4"
+
   - type: dropdown
     id: is_championship
     attributes:
       label: Is this a championship?
       options: ["No","Yes"]
       default: 0
+
   - type: input
     id: championship_type
     attributes:
       label: Championship type (optional, e.g., pony, junior, equitation)
       placeholder: "pony"
-  - type: input
-    id: title_hint
-    attributes:
-      label: Title override (optional)
-      placeholder: "Platinum Performance/USHJA International Hunter Derby Championship"
-  - type: input
-    id: slug_override
-    attributes:
-      label: Slug override (optional)
-      placeholder: "platinum-performance-ushja-international-hunter-derby-championship"
-  - type: dropdown
-    id: crawl_depth
-    attributes:
-      label: Crawl depth
-      options: ["1 (homepage only)","2 (follow likely links)"]
-      default: 0
-  - type: textarea
-    id: notes
-    attributes:
-      label: Notes (optional)
-      placeholder: "Anything special to look for (e.g., venue=Kentucky Horse Park)."

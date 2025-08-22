@@ -54,22 +54,17 @@ jobs:
             const body = context.payload.issue.body || '';
             const lines = body.split('\n');
 
-            // Map visible form labels -> keys
+            // Map visible form labels -> internal keys
             const map = {
-              // ---- meta-auto labels (ONE-FIELD+ extras) ----
+              // ---- minimal meta-auto (6 fields) ----
               'Official website URL (required)': 'official_url',
-              'Official start date (required, YYYY-MM-DD)': 'official_start_date',
-              'Official end date (optional, YYYY-MM-DD)': 'official_end_date',
+              'Official start date (YYYY-MM-DD)': 'official_start_date',
               'Is this part of a series?': 'is_series',
               'Series week number (optional if series)': 'series_week',
               'Is this a championship?': 'is_championship',
               'Championship type (optional, e.g., pony, junior, equitation)': 'championship_type',
-              'Title override (optional)': 'title_hint',
-              'Slug override (optional)': 'slug_override',
-              'Crawl depth': 'crawl_depth',
-              'Notes (optional)': 'notes',
 
-              // ---- existing meta-upsert labels ----
+              // ---- existing meta-upsert labels (keep for manual path) ----
               'Slug (leave blank to auto-slugify from title)': 'slug',
               'Official show title': 'title_official',
               'Year': 'year',
@@ -90,7 +85,8 @@ jobs:
 
               // ---- refresh-section labels ----
               'Show slug': 'slug',
-              'Section': 'section'
+              'Section': 'section',
+              'Notes (optional)': 'notes'
             };
 
             const fields = {};
@@ -116,8 +112,24 @@ jobs:
 
             core.setOutput('fields', JSON.stringify(fields));
 
-      # ---------- NEW: meta-auto (official URL + start date + flags) ----------
-      - name: Meta auto (scaffold events/meta.json from URL + start date)
+      # ---------- Optional: auto-rename the Issue using the URL hostname ----------
+      - name: Rename issue title (meta-auto)
+        if: steps.decide.outputs.task == 'meta-auto'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fields = JSON.parse('${{ steps.parse.outputs.fields }}' || '{}');
+            const url = (fields.official_url || '').trim();
+            const host = url ? new URL(url).hostname.replace(/^www\./,'') : 'unknown';
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              title: `auto-meta: ${host}`
+            });
+
+      # ---------- NEW: meta-auto (URL required; start date optional; flags) ----------
+      - name: Meta auto (scaffold events/meta.json from URL)
         if: steps.decide.outputs.task == 'meta-auto'
         run: |
           node - <<'NODE'
@@ -126,9 +138,9 @@ jobs:
 
           const fields = JSON.parse(process.env.FIELDS || '{}');
           const officialUrl = (fields.official_url||'').trim();
-          const startIn = (fields.official_start_date||'').trim();
-          const endIn   = (fields.official_end_date||'').trim();
-          if(!officialUrl || !startIn){ console.error('Missing official_url or official_start_date'); process.exit(1); }
+          const startIn = (fields.official_start_date||'').trim();   // may be empty
+          const endIn   = (fields.official_end_date||'').trim();     // not in minimal form; safe if empty
+          if(!officialUrl){ console.error('Missing official_url'); process.exit(1); }
 
           const today = new Date().toISOString().slice(0,10);
           const toSlug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
@@ -153,46 +165,25 @@ jobs:
             const c = $('link[rel="canonical"]').attr('href');
             try { return new URL(c||'', base).href; } catch { return base; }
           }
-          async function maybeFollow($, base, depth){
-            if (!String(depth||'1').startsWith('2')) return [];
-            const kw=/(schedule|dates|event|info|venue|directions|visit|plan|about)/i;
-            const hrefs = [];
-            $('a[href]').each((_,a)=>{
-              const href = $(a).attr('href')||'';
-              const text = ($(a).text()||'').trim();
-              if(kw.test(href)||kw.test(text)){
-                try{ hrefs.push(new URL(href, base).href);}catch{}
-              }
-            });
-            return Array.from(new Set(hrefs)).slice(0,3);
-          }
 
           (async ()=>{
             const html = await fetchText(officialUrl);
-            let $ = cheerio.load(html);
+            const $ = cheerio.load(html);
             const canonical = pickCanonical($, officialUrl);
-            let official_name = (fields.title_hint||'').trim() || (pickTitle($)||'').trim();
-            if(!official_name){
-              official_name = new URL(officialUrl).hostname.replace(/^www\./,'');
-            }
+            let official_name = (pickTitle($)||'').trim() || new URL(officialUrl).hostname.replace(/^www\./,'');
 
-            for (const u of await maybeFollow($, officialUrl, fields.crawl_depth)){
-              if (official_name) break;
-              try { const h = await fetchText(u); const $$=cheerio.load(h); official_name = (pickTitle($$)||official_name).trim(); } catch {}
-            }
+            // Derivations (guard if start date missing)
+            const hasStart = !!startIn;
+            const yyyymm = hasStart ? startIn.slice(0,7) : null;
+            const month_name = hasStart ? monthName(startIn) : null;
+            const season = hasStart ? seasonForMonth(Number(startIn.slice(5,7))) : null;
 
-            // Derivations from start date
-            const y = Number(startIn.slice(0,4));
-            const yyyymm = `${startIn.slice(0,7)}`;
-            const month_name = monthName(startIn);
-            const season = seasonForMonth(Number(startIn.slice(5,7)));
-
-            // IDs & slug
-            const slug = (fields.slug_override && fields.slug_override.trim()) || toSlug(official_name);
+            // Slug & IDs
+            const slug = toSlug(official_name);
             const show_uid = slug;
-            const event_uid = `${slug}_${yyyymm}`;
+            const event_uid = hasStart ? `${slug}_${yyyymm}` : null;
 
-            // Flags
+            // Flags from form
             const isSeries = yes(fields.is_series);
             const seriesWeek = num(fields.series_week);
             const isChamp = yes(fields.is_championship);
@@ -209,8 +200,8 @@ jobs:
               meta: {
                 official_link: canonical || officialUrl,
                 official_name: official_name,
-                official_start_date: startIn,
-                official_end_date: endIn || null,
+                official_start_date: hasStart ? startIn : null,
+                official_end_date: hasStart ? (endIn || null) : null,
                 venue_name: null,
                 venue_address: null,
                 venue_city: null,
@@ -222,21 +213,24 @@ jobs:
                   google_place_id: null,
                   maps_url: null
                 },
-                notes: (fields.notes||"").trim() || "AUTO: scaffolded; fill venue and verify dates if needed.",
+                notes: hasStart ? "AUTO: scaffolded; verify venue and end date if needed."
+                                : "AUTO: scaffolded; add start/end dates and venue when confirmed.",
                 sources: [canonical, officialUrl].filter(Boolean)
               },
               derived: {
                 yyyymm,
                 month_name,
                 season,
-                status_window: (endIn && new Date(endIn) < new Date(today)) ? "past" :
-                               (startIn && new Date(startIn) > new Date(today)) ? "upcoming" :
-                               (startIn && endIn) ? "current" : "unknown"
+                status_window: hasStart ? (
+                  (endIn && new Date(endIn) < new Date(today)) ? "past" :
+                  (new Date(startIn) > new Date(today)) ? "upcoming" :
+                  (endIn ? "current" : "unknown")
+                ) : "unknown"
               },
               search: {
                 auto_keys: Array.from(new Set([
                   ...official_name.toLowerCase().split(/[^a-z0-9]+/).filter(s=>s.length>2),
-                  String(y||'')
+                  ...(hasStart ? [startIn.slice(0,4)] : [])
                 ])),
                 curated_keys: [],
                 facets: {
@@ -253,14 +247,15 @@ jobs:
               },
               aliases: { curated: [] },
               ops: {
-                needs_meta_refresh: false,
+                needs_meta_refresh: !hasStart,         // follow-up needed if no date
                 needs_research: true,
                 needs_blog: false,
                 last_ops_check: today,
-                stale_reason: null
+                stale_reason: hasStart ? null : "missing_start_date"
               },
               quick_notes: [
-                "Scaffolded from official link + start date.",
+                "Scaffolded from official link.",
+                hasStart ? "Start date provided." : "Start date missing; fill when available.",
                 isSeries ? `Series week ${seriesWeek ?? "unspecified"}.` : "Not marked as series.",
                 isChamp ? `Championship type: ${champType || "unspecified"}.` : "Not marked as championship."
               ],
@@ -271,16 +266,7 @@ jobs:
               admin_preview: {
                 root: `/shows/${slug}/`,
                 paths: [
-                  `/shows/${slug}/show.json`,
-                  `/shows/${slug}/aliases.json`,
-                  `/shows/${slug}/evergreen/stay.json`,
-                  `/shows/${slug}/evergreen/dine.json`,
-                  `/shows/${slug}/evergreen/extras.json`,
-                  `/shows/${slug}/evergreen/temps-deltas-now.json`,
-                  `/shows/${slug}/events/meta.json`,
-                  `/shows/${slug}/events/reviewed/introcloser.json`,
-                  `/shows/${slug}/events/reviewed/overrides.json`,
-                  `/shows/${slug}/events/assembled/blog.json`
+                  `/shows/${slug}/events/meta.json`
                 ]
               }
             };
@@ -290,7 +276,7 @@ jobs:
             fs.mkdirSync(dir,{recursive:true});
             fs.writeFileSync(path.join(dir,'meta.json'), JSON.stringify(metaDoc,null,2));
 
-            // update index.json (point to events/meta.json)
+            // update index.json
             const idxPath='index.json';
             let index={version:1,generated_at:today,shows:[]};
             if(fs.existsSync(idxPath)) index=JSON.parse(fs.readFileSync(idxPath,'utf8'));
@@ -316,7 +302,7 @@ jobs:
         env:
           FIELDS: ${{ steps.parse.outputs.fields }}
 
-      # ---------- existing meta-upsert ----------
+      # ---------- existing meta-upsert (manual form path) ----------
       - name: Meta upsert (create/update meta.json + index.json)
         if: steps.decide.outputs.task == 'meta-upsert'
         run: |
@@ -390,7 +376,7 @@ jobs:
         env:
           FIELDS: ${{ steps.parse.outputs.fields }}
 
-      # ---------- existing refresh-section, plus index has_sections update ----------
+      # ---------- existing refresh-section (with index has_sections update) ----------
       - name: Refresh section (scaffold research file if needed)
         if: steps.decide.outputs.task == 'refresh-section'
         run: |
