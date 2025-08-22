@@ -1,0 +1,83 @@
+{
+  "show_uid": "hampton-classic",
+  "display_name": "HAMPTON CLASSIC",
+  "event_uid": "hampton-classic_2025-08",
+  "slug": "hampton-classic",
+  "timezone": "America/New_York",
+  "created_date": "2025-08-22",
+  "last_updated": "2025-08-22",
+  "meta": {
+    "official_link": "https://www.hamptonclassic.com/",
+    "official_name": "HAMPTON CLASSIC",
+    "official_start_date": "2025-08-31",
+    "official_end_date": null,
+    "venue_name": null,
+    "venue_address": null,
+    "venue_city": null,
+    "venue_state": null,
+    "venue_zip": null,
+    "venue_coords": {
+      "lat": null,
+      "lon": null,
+      "coordinate_source": null,
+      "google_place_id": null,
+      "maps_url": null
+    },
+    "notes": "AUTO: scaffolded; verify venue and end date if needed.",
+    "sources": [
+      "https://www.hamptonclassic.com/",
+      "https://www.hamptonclassic.com/"
+    ]
+  },
+  "derived": {
+    "yyyymm": "2025-08",
+    "month_name": "August",
+    "season": "summer",
+    "status_window": "upcoming"
+  },
+  "search": {
+    "auto_keys": [
+      "hampton",
+      "classic",
+      "2025"
+    ],
+    "curated_keys": [],
+    "facets": {
+      "discipline": null,
+      "rating": null,
+      "championship_type": "_No response_",
+      "state": null,
+      "region": null,
+      "airports_primary": [],
+      "season": "summer",
+      "is_series": false,
+      "series_week": null
+    }
+  },
+  "aliases": {
+    "curated": []
+  },
+  "ops": {
+    "needs_meta_refresh": false,
+    "needs_research": true,
+    "needs_blog": false,
+    "last_ops_check": "2025-08-22",
+    "stale_reason": null
+  },
+  "quick_notes": [
+    "Scaffolded from official link.",
+    "Start date provided.",
+    "Not marked as series.",
+    "Not marked as championship."
+  ],
+  "suggested_save": {
+    "file_path": "/shows/hampton-classic/events/meta.json",
+    "download_name": "meta-hampton-classic.json"
+  },
+  "admin_preview": {
+    "root": "/shows/hampton-classic/",
+    "paths": [
+      "/shows/hampton-classic/events/meta.json"
+    ]
+  }
+}
