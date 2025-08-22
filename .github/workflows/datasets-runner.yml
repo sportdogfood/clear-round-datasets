@@ -1,0 +1,233 @@
+name: Datasets Task Runner
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide task by label
+        id: decide
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = (context.payload.issue.labels || []).map(l => l.name);
+            const has = (t) => labels.includes(t);
+            if (has('task:meta-upsert')) return core.setOutput('task','meta-upsert');
+            if (has('task:refresh-section')) return core.setOutput('task','refresh-section');
+            core.setOutput('task','none');
+
+      - name: Exit if not a dataset task
+        if: steps.decide.outputs.task == 'none'
+        run: echo "No matching task label; skipping."
+
+      - name: Setup Node
+        if: steps.decide.outputs.task != 'none'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Parse Issue Form fields
+        if: steps.decide.outputs.task != 'none'
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+            const lines = body.split('\n');
+
+            // Map your form's visible labels -> internal keys
+            const map = {
+              'Slug (leave blank to auto-slugify from title)': 'slug',
+              'Official show title': 'title_official',
+              'Year': 'year',
+              'Start date (YYYY-MM-DD)': 'start',
+              'End date (YYYY-MM-DD)': 'end',
+              'Timezone (IANA)': 'timezone',
+              'Venue name': 'venue_name',
+              'Venue street': 'addr_street',
+              'Venue city': 'addr_city',
+              'Venue state (2-letter)': 'addr_state',
+              'Venue postal': 'addr_postal',
+              'Venue country': 'addr_country',
+              'Venue latitude': 'geo_lat',
+              'Venue longitude': 'geo_lon',
+              'Primary airports (IATA, comma-separated)': 'airports_primary',
+              'Source URLs (one per line; official → venue → federation)': 'sources',
+              'Notes (conflicts, aliases, co-located shows)': 'notes',
+              'Show slug': 'slug',
+              'Section': 'section',
+              'Notes (optional)': 'notes'
+            };
+
+            const fields = {};
+            let currentKey = null;
+
+            const getLabel = l => l.replace(/^###\s+/,'').trim();
+
+            for (let i=0; i<lines.length; i++) {
+              const line = lines[i];
+
+              if (line.startsWith('### ')) {
+                const label = getLabel(line);
+                currentKey = map[label] || null;
+                continue;
+              }
+
+              if (currentKey) {
+                if (line.startsWith('### ') || line.trim() === '') {
+                  currentKey = null;
+                  continue;
+                }
+                const prev = fields[currentKey] || '';
+                fields[currentKey] = prev ? (prev + '\n' + line) : line;
+              }
+            }
+
+            core.setOutput('fields', JSON.stringify(fields));
+
+      - name: Meta upsert (create/update meta.json + index.json)
+        if: steps.decide.outputs.task == 'meta-upsert'
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'), path=require('path');
+          const fields=JSON.parse(process.env.FIELDS);
+
+          const toSlug = (s)=> s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+          const slug = (fields.slug && fields.slug.trim()) || toSlug(fields.title_official || '');
+          if(!slug) { console.error('Missing slug/title_official'); process.exit(1); }
+
+          const dir = path.join('shows', slug);
+          fs.mkdirSync(dir, {recursive:true});
+
+          const metaPath = path.join(dir, 'meta.json');
+
+          const meta = {
+            slug,
+            title_official: fields.title_official || null,
+            organizer: null,
+            rating: { fei: null, national: null },
+            dates: {
+              year: Number(fields.year),
+              start: fields.start,
+              end: fields.end,
+              timezone: fields.timezone || 'America/New_York'
+            },
+            venue: {
+              name: fields.venue_name || null,
+              address: {
+                street: fields.addr_street || null,
+                city: fields.addr_city || null,
+                state: fields.addr_state || null,
+                postal: fields.addr_postal || null,
+                country: fields.addr_country || 'USA'
+              },
+              geo: {
+                lat: Number(fields.geo_lat),
+                lon: Number(fields.geo_lon)
+              }
+            },
+            airports_primary: (fields.airports_primary||'').split(',').map(s=>s.trim()).filter(Boolean),
+            co_located: [],
+            sources: (fields.sources||'').split('\n').map(s=>s.trim()).filter(Boolean),
+            notes: fields.notes || null
+          };
+
+          fs.writeFileSync(metaPath, JSON.stringify(meta,null,2));
+
+          // Update index.json
+          const idxPath = 'index.json';
+          let index = { version: 1, generated_at: new Date().toISOString().slice(0,10), shows: [] };
+          if (fs.existsSync(idxPath)) index = JSON.parse(fs.readFileSync(idxPath,'utf8'));
+
+          const entry = {
+            slug,
+            title_official: meta.title_official,
+            location_city: meta.venue.address.city,
+            location_state: meta.venue.address.state,
+            venue_name: meta.venue.name,
+            meta_path: `shows/${slug}/meta.json`,
+            has_sections: []
+          };
+
+          const i = index.shows.findIndex(s => s.slug === slug);
+          if (i >= 0) index.shows[i] = {...index.shows[i], ...entry};
+          else index.shows.push(entry);
+
+          fs.writeFileSync(idxPath, JSON.stringify(index,null,2));
+          NODE
+        env:
+          FIELDS: ${{ steps.parse.outputs.fields }}
+
+      - name: Refresh section (scaffold research file if needed)
+        if: steps.decide.outputs.task == 'refresh-section'
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'), path=require('path');
+          const fields=JSON.parse(process.env.FIELDS);
+
+          const slug = fields.slug;
+          const section = fields.section;
+          if(!slug || !section) { console.error('Missing slug/section'); process.exit(1); }
+
+          const dir = path.join('shows', slug, 'research');
+          fs.mkdirSync(dir, {recursive:true});
+
+          const file = path.join(dir, `${section}.json`);
+          const today = new Date().toISOString().slice(0,10);
+          let obj = {
+            status: 'draft',
+            last_verified_at: today,
+            expires_after_days: section === 'temps' ? 1 : 180,
+            items: [],
+            notes: fields.notes || null,
+            source_urls: []
+          };
+
+          if (fs.existsSync(file)) {
+            try {
+              const cur = JSON.parse(fs.readFileSync(file,'utf8'));
+              obj = { ...cur, last_verified_at: today };
+            } catch {}
+          }
+
+          fs.writeFileSync(file, JSON.stringify(obj,null,2));
+          NODE
+        env:
+          FIELDS: ${{ steps.parse.outputs.fields }}
+
+      - name: Open PR
+        if: steps.decide.outputs.task != 'none'
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: ${{ steps.decide.outputs.task }} via issue #${{ github.event.issue.number }}"
+          title: "Automated: ${{ steps.decide.outputs.task }} for #${{ github.event.issue.number }}"
+          body: "This PR was generated from issue #${{ github.event.issue.number }}.\n\nPlease review changes and merge if correct."
+          branch: "bot/${{ steps.decide.outputs.task }}-${{ github.event.issue.number }}"
+          labels: "auto-pr"
+
+      - name: Comment with PR link
+        if: steps.decide.outputs.task != 'none'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNum = '${{ steps.cpr.outputs.pull-request-number }}';
+            const prUrl = prNum ? `${context.payload.repository.html_url}/pull/${prNum}` : null;
+            const msg = prUrl ? `Opened PR: ${prUrl}` : 'No changes to commit.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: msg
+            });
