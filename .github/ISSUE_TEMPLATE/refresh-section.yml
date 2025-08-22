@@ -1,0 +1,31 @@
+name: "Refresh Section (Research)"
+description: "Update facts-only research JSON for a section with citations."
+title: "refresh: {slug} [{section}]"
+labels: ["task:refresh-section"]
+body:
+  - type: input
+    id: slug
+    attributes:
+      label: Show slug
+      placeholder: "hampton-classic-horse-show"
+    validations:
+      required: true
+  - type: dropdown
+    id: section
+    attributes:
+      label: Section
+      options: ["stay","dine","extras","temps"]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (optional)
+      placeholder: "Focus hotels within 15 min; confirm rig parking where explicit."
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirm
+      options:
+        - label: I will review citations and distances before merging.
+          required: true
