@@ -1,27 +1,110 @@
 {
+  "version": "1",
+  "id": "add-show.v1",
   "paths": {
     "dataset_url": "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/events/meta.json",
     "schema": "https://sportdogfood.github.io/clear-round-datasets/shows/config/schemas/meta.v1.schema.json",
     "scaffold": null
   },
-  "section_semantics": { "kind": "add-show", "hints": ["dates","venue","address"] },
-  "source_order": ["organizer","venue/authority","operator","listings"],
-  "normalization": {
-    "address": "USPS",
-    "coords": "WGS84",
-    "season": "month->season",
-    "time_zone_default": "America/New_York"
+
+  "inputs_contract": {
+    "required": ["official_site"],
+    "optional": ["show_keys", "start_date", "is_series", "series_name", "series_week", "is_championship", "championship_type", "slug", "notes"],
+    "booleans": { "true": ["yes","y","true","1"], "false": ["no","n","false","0"] },
+    "date_formats": ["YYYY-MM-DD", "M/D/YYYY", "MMM D YYYY", "MMMM D YYYY"],
+    "keys_delimiters": [";", ","]
   },
+
+  "browse": {
+    "max_follow_links": 1,
+    "allowed_hints": ["schedule", "dates", "directions", "venue", "about"]
+  },
+
+  "extraction": {
+    "prefer_order": ["jsonld:event", "jsonld:place", "opengraph:title", "h1", "title"],
+    "fields": {
+      "official_name": ["og:title", "twitter:title", "h1", "title"],
+      "canonical_url": ["link[rel=canonical]"],
+      "start_date": ["jsonld:event.startDate"],
+      "end_date": ["jsonld:event.endDate"],
+      "venue_name": ["jsonld:place.name"],
+      "address.street": ["jsonld:place.address.streetAddress"],
+      "address.city": ["jsonld:place.address.addressLocality"],
+      "address.state": ["jsonld:place.address.addressRegion"],
+      "address.postal": ["jsonld:place.address.postalCode"],
+      "address.country": ["jsonld:place.address.addressCountry"],
+      "geo.lat": ["jsonld:place.geo.latitude"],
+      "geo.lon": ["jsonld:place.geo.longitude"]
+    }
+  },
+
+  "normalization": {
+    "timezone_default": "America/New_York",
+    "address_standard": "USPS",
+    "coords_system": "WGS84",
+    "slug_strategy": "slugify_official_name_when_missing",
+    "unknown_values": ["", "unknown", null]
+  },
+
+  "derivations": {
+    "event_uid": "if(meta.official_start_date) -> `${slug}_${YYYY-MM(meta.official_start_date)}` else null",
+    "derived.yyyymm": "YYYY-MM(meta.official_start_date) or null",
+    "derived.month_name": "MonthName(meta.official_start_date) or null",
+    "derived.season": "winter|spring|summer|fall from start month",
+    "derived.status_window": "past if end<today; upcoming if start>today; current if start<=today<=end; else unknown",
+    "rating": "search.facets.rating = 'series' if is_series; 'championship' if is_championship; else null",
+    "region_from_state": {
+      "northeast": ["CT","MA","ME","NH","NJ","NY","PA","RI","VT"],
+      "southeast": ["AL","FL","GA","KY","MS","NC","SC","TN","VA","WV"],
+      "midwest": ["IL","IN","IA","KS","MI","MN","MO","NE","ND","OH","SD","WI"],
+      "west": ["AZ","CA","CO","ID","MT","NM","NV","OR","UT","WA","WY","AK","HI"],
+      "southwest": ["OK","TX","AR","LA"]
+    }
+  },
+
+  "search_enrichment": {
+    "auto_keys_min_len": 3,
+    "auto_keys_from": ["display_name", "meta.venue_city", "meta.venue_state", "year(meta.official_start_date)"],
+    "merge_curated_keys": true
+  },
+
   "quality_gates": {
     "require_official_link": true,
-    "allow_nulls_if_not_public": true
+    "min_sources": 1,
+    "coords_numeric_only": true,
+    "coords_all_or_none": true,
+    "allow_nulls": [
+      "meta.official_start_date",
+      "meta.official_end_date",
+      "meta.venue_name",
+      "meta.venue_address",
+      "meta.venue_city",
+      "meta.venue_state",
+      "meta.venue_zip",
+      "meta.venue_coords.lat",
+      "meta.venue_coords.lon"
+    ],
+    "truncate_notes_chars": 320
   },
-  "notes_policy": "Include short provenance notes only.",
-  "quick_notes": [
-    "Scaffolded from official site; verify end date if schedule releases late.",
-    "Use property/grounds address for drive-time estimates."
-  ],
+
+  "mapping": {
+    "inputs_to_facets": {
+      "is_series": "search.facets.is_series",
+      "series_name": "search.facets.series_name",
+      "series_week": "search.facets.series_week",
+      "is_championship": "search.facets.is_championship",
+      "championship_type": "search.facets.championship_type"
+    },
+    "keys_to_search": {
+      "show_keys_to_curated": true,
+      "merge_into_auto_keys": true
+    }
+  },
+
+  "notes_policy": "Short provenance notes only (e.g., 'Dates from homepage hero', 'Address from Directions page').",
+
   "delivery": {
-    "include_suggested_save": true
+    "include_suggested_save": true,
+    "suggested_path_template": "/shows/{show_uid}/events/meta.json"
   }
 }
