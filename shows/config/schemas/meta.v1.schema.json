@@ -1,1 +1,59 @@
-
+{
+  "$id": "https://sportdogfood.github.io/clear-round-datasets/shows/config/schemas/meta.v1.schema.json",
+  "type": "object",
+  "required": ["show_uid","display_name","slug","timezone","created_date","last_updated","meta","derived","search","aliases","ops","suggested_save","admin_preview"],
+  "properties": {
+    "show_uid": { "type": "string" },
+    "display_name": { "type": "string" },
+    "event_uid": { "type": ["string","null"] },
+    "slug": { "type": "string" },
+    "timezone": { "type": "string" },
+    "created_date": { "type": "string" },
+    "last_updated": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "required": ["official_link","official_name","sources","venue_coords"],
+      "properties": {
+        "official_link": { "type": "string" },
+        "official_name": { "type": "string" },
+        "official_start_date": { "type": ["string","null"] },
+        "official_end_date": { "type": ["string","null"] },
+        "venue_name": { "type": ["string","null"] },
+        "venue_address": { "type": ["string","null"] },
+        "venue_city": { "type": ["string","null"] },
+        "venue_state": { "type": ["string","null"] },
+        "venue_zip": { "type": ["string","null"] },
+        "venue_coords": {
+          "type": "object",
+          "required": ["lat","lon","coordinate_source","google_place_id","maps_url"],
+          "properties": {
+            "lat": { "type": ["number","null"] },
+            "lon": { "type": ["number","null"] },
+            "coordinate_source": { "type": ["string","null"] },
+            "google_place_id": { "type": ["string","null"] },
+            "maps_url": { "type": ["string","null"] }
+          }
+        },
+        "notes": { "type": ["string","null"] },
+        "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "derived": {
+      "type": "object",
+      "required": ["yyyymm","month_name","season","status_window"],
+      "properties": {
+        "yyyymm": { "type": ["string","null"] },
+        "month_name": { "type": ["string","null"] },
+        "season": { "enum": ["winter","spring","summer","fall",null] },
+        "status_window": { "enum": ["upcoming","current","past","unknown"] }
+      }
+    },
+    "search": { "type":"object" },
+    "aliases": { "type": "object" },
+    "ops": { "type": "object" },
+    "quick_notes": { "type": "array" },
+    "suggested_save": { "type": "object" },
+    "admin_preview": { "type": "object" }
+  },
+  "additionalProperties": false
+}
