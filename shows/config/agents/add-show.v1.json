@@ -1,0 +1,27 @@
+{
+  "paths": {
+    "dataset_url": "https://sportdogfood.github.io/clear-round-datasets/shows/{show_uid}/events/meta.json",
+    "schema": "https://sportdogfood.github.io/clear-round-datasets/shows/config/schemas/meta.v1.schema.json",
+    "scaffold": null
+  },
+  "section_semantics": { "kind": "add-show", "hints": ["dates","venue","address"] },
+  "source_order": ["organizer","venue/authority","operator","listings"],
+  "normalization": {
+    "address": "USPS",
+    "coords": "WGS84",
+    "season": "month->season",
+    "time_zone_default": "America/New_York"
+  },
+  "quality_gates": {
+    "require_official_link": true,
+    "allow_nulls_if_not_public": true
+  },
+  "notes_policy": "Include short provenance notes only.",
+  "quick_notes": [
+    "Scaffolded from official site; verify end date if schedule releases late.",
+    "Use property/grounds address for drive-time estimates."
+  ],
+  "delivery": {
+    "include_suggested_save": true
+  }
+}
