@@ -1,0 +1,126 @@
+{
+  "agent_name": "Show-Agent",
+  "version": "1.0",
+  "scope": "Add or refresh a single show record based on user-pasted input JSON.",
+  "triggers": [
+    "Add Show",
+    "Refresh Show"
+  ],
+  "inputs": {
+    "source": "user_paste_json",
+    "schema_min": {
+      "official_link": "string",
+      "official_name": "string|null",
+      "show_name": "string|null",
+      "official_start_date": "string|null",
+      "official_end_date": "string|null",
+      "show_start_date": "string|null",
+      "is_championship": "string|boolean",
+      "championship_type": "string|null",
+      "is_annual": "string|boolean",
+      "is_series": "string|boolean",
+      "series_label": "string|null",
+      "series_week": "number|null"
+    }
+  },
+  "normalization_rules": {
+    "show_uid": "slugify(official_name) // lowercase, hyphens, remove punctuation, no year, no sponsor",
+    "display_name": "TitleCase(official_name)",
+    "flags": {
+      "is_championship": "coerce y/n -> boolean",
+      "is_annual": "coerce y/n -> boolean",
+      "is_series": "coerce y/n -> boolean"
+    },
+    "ratings": {
+      "usef_hunter_rating.code": "uppercase or null",
+      "fei.stars": "integer or null"
+    },
+    "sources": {
+      "source_name": "domain from URL, '.' -> '-', lowercase",
+      "source_link": "full url"
+    },
+    "dates": {
+      "meta.official_start_date": "prefer official_start_date; else show_start_date; else null",
+      "meta.official_end_date": "from input or null",
+      "derived.start_date": "copy meta.official_start_date if present else show_start_date",
+      "derived.yyyymm": "YYYYMM from derived.start_date",
+      "derived.month_name": "Full month name from derived.start_date",
+      "derived.season": "winter|spring|summer|fall (NA season logic)",
+      "derived.status_window": "upcoming|past|current based on today"
+    }
+  },
+  "save_path_logic": [
+    {
+      "if": "meta.flags.is_championship === true",
+      "suggested_save_path": "/shows/championships/{show_uid}.json"
+    },
+    {
+      "if": "meta.flags.is_series === true",
+      "require": ["meta.flags.series_label", "meta.flags.series_week"],
+      "series_uid": "slugify(meta.flags.series_label)",
+      "suggested_save_path": "/shows/series/{series_uid}_{series_week}.json"
+    },
+    {
+      "else": true,
+      "suggested_save_path": "/shows/annual/{show_uid}.json"
+    }
+  ],
+  "output_schema_min": {
+    "show_uid": "string",
+    "created_date": "YYYY-MM-DD",
+    "last_updated": "YYYY-MM-DD",
+    "meta": {
+      "official_link": "string",
+      "official_name": "string",
+      "display_name": "string",
+      "official_start_date": "YYYY-MM-DD|null",
+      "official_end_date": "YYYY-MM-DD|null",
+      "venue_name": "string|null",
+      "venue_city": "string|null",
+      "flags": {
+        "is_championship": "boolean",
+        "championship_type": "string|null",
+        "is_annual": "boolean",
+        "is_series": "boolean",
+        "series_label": "string|null",
+        "series_week": "number|null"
+      },
+      "ratings": {
+        "usef_hunter_rating": {
+          "code": "AA|A|B|C|null",
+          "label": "string|null"
+        },
+        "fei": {
+          "code": "string|null",
+          "discipline": "string|null",
+          "stars": "number|null",
+          "category": "string|null"
+        }
+      },
+      "notes": "string|null",
+      "sources": [
+        {
+          "source_name": "string",
+          "source_link": "string"
+        }
+      ]
+    },
+    "derived": {
+      "start_date": "YYYY-MM-DD|null",
+      "yyyymm": "YYYYMM|null",
+      "month_name": "string|null",
+      "season": "string|null",
+      "status_window": "upcoming|current|past|null"
+    },
+    "suggested_save_path": "string"
+  },
+  "constraints": [
+    "Do not create or modify venues, locations, airports, or sources datasets.",
+    "Do not add a separate 'slug' field; 'show_uid' is the canonical key."
+  ],
+  "errors": [
+    { "code": "MISSING_OFFICIAL_NAME", "when": "official_name is null" },
+    { "code": "SERIES_FIELDS_REQUIRED", "when": "is_series true but series_label/series_week missing" },
+    { "code": "NO_DATES", "when": "neither official_start_date nor show_start_date present" }
+  ]
+}
