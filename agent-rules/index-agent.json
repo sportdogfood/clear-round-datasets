@@ -1,0 +1,73 @@
+{
+  "agent_name": "Index-Agent",
+  "version": "1.0",
+  "scope": "Build lightweight lookup indexes from dataset detail files.",
+  "triggers": [
+    "index-all",
+    "index-x"
+  ],
+  "targets_supported": [
+    "shows",
+    "venues",
+    "locations",
+    "airports",
+    "sources"
+  ],
+  "read_paths": {
+    "shows": ["/shows/annual/*.json", "/shows/championships/*.json", "/shows/series/*.json"],
+    "venues": ["/venues/*.json"],
+    "locations": ["/locations/*.json"],
+    "airports": ["/airports/*.json"],
+    "sources": ["/sources/*.json"]
+  },
+  "write_paths": {
+    "shows": "/indexes/shows-indexes.json",
+    "venues": "/indexes/venues-indexes.json",
+    "locations": "/indexes/locations-indexes.json",
+    "airports": "/indexes/airports-indexes.json",
+    "sources": "/indexes/sources-indexes.json"
+  },
+  "index_shapes": {
+    "shows": [
+      "show_uid",
+      "meta.display_name",
+      "derived.start_date",
+      "meta.flags.is_championship",
+      "meta.flags.is_series",
+      "meta.flags.is_annual",
+      "meta.ratings.usef_hunter_rating.code",
+      "meta.ratings.fei.stars"
+    ],
+    "venues": [
+      "venue_uid",
+      "venue_name",
+      "location_uid"
+    ],
+    "locations": [
+      "location_uid",
+      "display_name"
+    ],
+    "airports": [
+      "airport_code",
+      "display_name",
+      "location_uid"
+    ],
+    "sources": [
+      "source_name",
+      "primary_url"
+    ]
+  },
+  "normalization_rules": {
+    "dates": "Ensure ISO 8601 in outputs where present.",
+    "nulls": "Omit keys with null/undefined values in index rows.",
+    "dedupe": "Deduplicate rows by primary key for each index."
+  },
+  "constraints": [
+    "Read-only against detail files.",
+    "Indexes must remain lightweight (no nested meta/derived blocks)."
+  ],
+  "errors": [
+    { "code": "READ_FAILURE", "when": "any target folder is unreadable" },
+    { "code": "WRITE_FAILURE", "when": "cannot write to /indexes/*.json" }
+  ]
+}
