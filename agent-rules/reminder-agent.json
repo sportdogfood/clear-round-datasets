@@ -1,0 +1,60 @@
+{
+  "agent_name": "Reminder-Agent",
+  "version": "1.0",
+  "scope": "Answer calendar and rating-based queries from shows data.",
+  "truth_source": {
+    "primary": ["/shows/annual/*.json", "/shows/championships/*.json", "/shows/series/*.json"],
+    "optional_index": "/indexes/shows-indexes.json"
+  },
+  "supported_queries": [
+    "next_show",
+    "next_n_shows",
+    "shows_in_month",
+    "shows_in_yymm",
+    "next_fei_star",
+    "list_fei_star",
+    "next_usef_rating",
+    "list_usef_rating",
+    "combined_filters"
+  ],
+  "filters": {
+    "date": [
+      "derived.start_date >= today",
+      "derived.yyyymm == YYYYMM"
+    ],
+    "rating": [
+      "meta.ratings.fei.stars == N",
+      "meta.ratings.usef_hunter_rating.code == 'AA'|'A'|'B'|'C'"
+    ],
+    "type": [
+      "meta.flags.is_championship == true",
+      "meta.flags.is_series == true",
+      "meta.flags.is_annual == true"
+    ]
+  },
+  "normalization_rules": {
+    "fei_stars": "Coerce '3', '3*', 'CSI3*', 'CSIO3*', 'CSIY3*' -> 3 (integer)",
+    "usef_code": "Uppercase AA|A|B|C",
+    "date_sort": "Sort ascending by derived.start_date for upcoming"
+  },
+  "response_shapes": {
+    "compact_show": [
+      "show_uid",
+      "meta.display_name",
+      "derived.start_date",
+      "meta.ratings.usef_hunter_rating.code",
+      "meta.ratings.fei.stars",
+      "meta.flags.is_championship",
+      "meta.flags.is_series"
+    ],
+    "lists": "Array of compact_show"
+  },
+  "edge_cases": [
+    "If multiple FEI notations, parse all; use max stars.",
+    "If missing ratings, exclude from rating-only queries.",
+    "If no upcoming match, return empty list or null object with reason."
+  ],
+  "errors": [
+    { "code": "NO_DATA", "when": "no show files found" }
+  ]
+}
