@@ -17,13 +17,20 @@ Inputs (required with fallbacks)
 - official_name (optional)
 - show_name (required if official_name is null)  // non-official/display name
 - official_start_date (optional, YYYY-MM-DD)
-- show_start_date (required if official_start_date is null, YYYY-MM-DD)  // non-official start
+- show_start_date (required if official_start_date is null, YYYY-MM-DD)
 - official_end_date (optional, YYYY-MM-DD)
 - is_championship (required: "y"|"n")
 - championship_type (required if is_championship="y")
 - is_annual (required: "y"|"n")
 - is_series (required: "y"|"n")
 - series_label (required if is_series="y")
+(OPTIONAL overrides for ratings — use ONLY if official sources are missing)
+- usef_hunter_rating_code: AA|A|B|C
+- usef_hunter_rating_label: Premier|National|Regional I|Regional II
+- fei_code: e.g., CSI3*, CSIO4*, CDI5*, CEI2*
+- fei_discipline: jumping|dressage|eventing|endurance|driving|vaulting
+- fei_stars: 1–5 (number)
+- fei_category: e.g., CSIO|W|U25|Y/J (or null)
 
 Resolve
 - name_preferred = first non-null of official_name, show_name.
@@ -34,7 +41,7 @@ Resolve
 
 Sources (priority)
 1) Organizer event/site pages
-2) Venue/authority pages (horse park/fairgrounds)
+2) Venue/authority pages (horse park/fairgrounds) and governing bodies (USEF/FEI)
 3) Operator official pages (maps/place IDs)
 Listings only to corroborate. Cite public URLs. Do not invent data.
 
@@ -42,11 +49,15 @@ Normalize
 - State = USPS (e.g., KY); Time zone = IANA (e.g., America/New_York)
 - Coords = WGS84 decimal (5 dp)
 - Booleans from inputs: "y"→true, "n"→false
+- USEF Hunter rating codes: AA|A|B|C; labels map to Premier|National|Regional I|Regional II
+- FEI: `code` like CSI3*/CDI5*; `stars` numeric 1–5; `discipline` from allowed set; `category` optional
 - No adjectives/hype. If a fact isn’t published, set null and add a short note.
 
 Validation (reject or note if violated)
 - If is_championship=true → championship_type must be non-empty.
 - If is_series=true → series_label must be non-empty.
+- If usef_hunter_rating_code provided, ensure label matches known mapping (or set null with note).
+- If fei_code provided, ensure stars/discipline are consistent (or set nulls with note).
 
 Output (ONE JSON only)
 {
@@ -71,6 +82,10 @@ Output (ONE JSON only)
       "coordinate_source": "<string|null>",
       "google_place_id": "<string|null>",
       "maps_url": "<url|null>"
+    },
+    "ratings": {
+      "usef_hunter_rating": { "code": "<AA|A|B|C|null>", "label": "<Premier|National|Regional I|Regional II|null>" },
+      "fei": <null|{ "code": "<e.g., CSI3*>", "discipline": "<jumping|dressage|eventing|endurance|driving|vaulting|null>", "stars": <number|null>, "category": "<string|null>" }>
     },
     "flags": {
       "is_championship": <true|false>,
@@ -100,7 +115,8 @@ Also include (for easy saving)
 }
 
 Hard rules
-- Organizer/venue/authority first; cite URLs.
+- Organizer/venue/authority/USEF/FEI first; cite URLs.
 - Prefer official_* values when present; otherwise use show_* fallbacks (and record which were used in meta.notes).
-- If a fact isn’t published, set null + add a brief note.
+- Only set ratings when explicitly published or provided as overrides; otherwise set to null with a brief note.
 - JSON only. No commentary.
+
