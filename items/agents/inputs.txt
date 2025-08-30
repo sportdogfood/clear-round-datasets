@@ -1,0 +1,8 @@
+Starter Payload — v1 (staging hints only)
+{
+  "user_input_event_link": "<https URL>",
+  "user_input_event_name": "<string>",
+  "user_input_event_start_date": "YYYY-MM-DD",
+  "is_series": "y|n"
+}
+Do not write until confirmations pass (see ingestion-rules.txt).
