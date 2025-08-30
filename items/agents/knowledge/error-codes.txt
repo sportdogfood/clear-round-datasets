@@ -1,0 +1,10 @@
+Error Codes — v1
+needs_rules         = required rules missing/unreadable
+needs_review        = official link/name/date ambiguous/unconfirmed
+needs_source        = required source missing
+needs_normalizer    = referenced UID/normalizer missing
+venue_uid_suffix    = venue_uid not ending "-venue"
+invalid_geo         = latitude/longitude malformed or out of range
+missing_geo         = neither lat/long nor google_pin provided when required
+invalid_timezone    = timezone not valid IANA
+no_ad_hoc_values    = attempted invention; unknowns must remain empty
