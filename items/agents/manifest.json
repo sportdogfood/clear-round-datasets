@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "proxy_base": "https://crt-b1434e13de34.herokuapp.com/items",
+  "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
+  "paths": {
+    "event_rules_path": "agents/event-rules.json",
+    "venue_rules_path": "agents/venue-rules.json",
+    "ingestion_rules_path": "agents/ingestion-rules.txt"
+  },
+  "dirs": {
+    "events_dir": "events",
+    "event_series_dir": "event_series",
+    "venues_dir": "venues",
+    "organizers_dir": "organizers",
+    "sources_dir": "sources",
+    "sources_fav_dir": "sources_fav"
+  },
+  "items": {
+    "days_dir": "days",
+    "months_dir": "months",
+    "seasons_dir": "seasons",
+    "years_dir": "years",
+    "countries_dir": "countries",
+    "states_dir": "states",
+    "cities_dir": "cities",
+    "weather_dir": "weather",
+    "airports_dir": "airports",
+    "labels_dir": "labels"
+  },
+  "policy": {
+    "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "venue_uid_suffix": "-venue",
+    "date_format": "YYYY-MM-DD",
+    "facts_only": true
+  }
+}
