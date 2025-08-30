@@ -1,20 +1,27 @@
 {
-  "version": "v1",
+  "version": "v2.2",
   "proxy_base": "https://crt-b1434e13de34.herokuapp.com/items",
   "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
+
+  "fetch": {
+    "order": ["proxy", "git"]
+  },
+
   "paths": {
     "event_rules_path": "agents/event-rules.json",
     "venue_rules_path": "agents/venue-rules.json",
     "ingestion_rules_path": "agents/ingestion-rules.txt"
   },
+
   "dirs": {
+    "agents_dir": "agents",
     "events_dir": "events",
     "event_series_dir": "event_series",
     "venues_dir": "venues",
     "organizers_dir": "organizers",
-    "sources_dir": "sources",
-    "sources_fav_dir": "sources_fav"
+    "sources_dir": "sources"
   },
+
   "items": {
     "days_dir": "days",
     "months_dir": "months",
@@ -27,10 +34,29 @@
     "airports_dir": "airports",
     "labels_dir": "labels"
   },
+
+  "aliases": {
+    "event-series": "event_series",
+    "series-events": "event_series"
+  },
+
   "policy": {
     "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "filename_equals_uid": true,
+    "uid_immutable": true,
     "venue_uid_suffix": "-venue",
     "date_format": "YYYY-MM-DD",
-    "facts_only": true
+    "timezone_format": "IANA",
+    "facts_only": true,
+    "bool_encoding": "yn",
+    "ignore_prefixes": ["dnu_", "ignore_"],
+    "official_link_must_be_https": true,
+    "source_uid_policy": "domain_slug + '-src'",
+    "source_type_policy": "first_path_token_or_key",
+
+    "geo_input_modes": ["lat_long", "google_pin"],
+    "lat_field": "venue_geo_lat",
+    "long_field": "venue_geo_long",
+    "pin_field": "venue_google_pin"
   }
 }
