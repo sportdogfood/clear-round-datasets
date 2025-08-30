@@ -1,0 +1,13 @@
+Sources Policy — v1
+Purpose: provenance only (facts). Minimal record per domain; reuse per event.
+Construction:
+- domain_slug = primary domain, lowercase, dots→hyphens (usef.org→usef-org)
+- source_uid  = domain_slug + "-src"
+- source_link = full URL (HTTPS preferred)
+- source_type = first path token or key ("/", "events", "search", "ShowGUID")
+Optional flags (strings): is_official="y|n", is_favorite="y|n"
+Examples:
+- https://www.hamptonclassic.com/ → hamptonclassic-com-src, "/"
+- https://www.usef.org/search/…  → usef-org-src, "search"
+- https://www.fei.org/events/…   → fei-org-src, "events"
+- https://www.horseshowsonline.com/ShowDetails?ShowGUID=… → horseshowsonline-com-src, "ShowGUID"
