@@ -1,0 +1,160 @@
+INGESTION RULES — v2
+
+Authority & Scope
+
+Source of truth: Git. Airtable is staging/cleanup only.
+
+Entities in scope: events, event_series, venues, organizers, sources (input), sources_fav (reference), plus normalizers under items/*.
+
+Facts only. No assumptions. Every value must be source-confirmed (source_uids). Unknowns remain empty and flagged (needs_review / needs_source).
+
+Load Rules
+
+Read items/agents/agent-rules.json for events and series-events.
+
+Read items/agents/venue-rules.json for venues.
+
+Fetch via proxy first; if 404/timeout, fall back to Git base.
+
+If either rules file is missing or unreadable → error: needs_rules (stop).
+
+Intake (non-authoritative)
+
+user_input_event_link
+
+user_input_event_name
+
+user_input_event_start_date
+
+is_series
+These are staging hints only; do not write any entity until confirmed.
+
+Confirmation Gate (must pass before write)
+
+Link → event_official_link: confirmed official show homepage (HTTPS, non-social). Create a sources entry with source_name: official.
+
+Name → event_official_name + event_display_name: take canonical title from the official site after applying Official Event Name policy in agent-rules.
+
+Date → event_official_start_date (and end if present): confirm from official schedule. If ambiguous/conflicting → error: needs_review (stop).
+
+Naming & UID Policy (strict)
+
+Field keys: snake_case.
+
+UID charset: a–z0–9- only; single hyphen; collapse repeats; no leading/trailing hyphen.
+
+Filenames equal their UID; UIDs are immutable after publish.
+
+Official Event Name sanitize: strip sponsors/connectors, ratings/codes (CSI*, CSIO*, USEF, AA, WCHR), punctuation (commas, slashes, quotes, $), collapse spaces; Title Case; if a week in a family/series, normalize to “<Family> Series Week N”.
+
+event_uid: slug of sanitized official name (lowercase, hyphens). If is_series = "y": parent ends “-series”; children end “-series-<n>”.
+
+venue_uid must end “-venue”.
+
+State/Country UIDs: lowercase codes (e.g., fl, us).
+
+Paths
+
+Normalizers (reference): items/{days|months|seasons|years|countries|states|cities|weather|airports}/{label}.json
+
+Entities (input):
+
+events/{event_uid}.json
+
+event_series/{series_uid}.json
+
+venues/{venue_uid}.json
+
+organizers/{organizer_uid}.json
+
+Sources:
+
+sources/{source_uid}.json (input)
+
+sources_fav/{fav_uid}.json (reference)
+
+Relations (resolution required)
+
+*_uid = single relation; *_uids = multiple.
+
+All relations must resolve to existing files (or known normalizers). If missing → error: needs_normalizer (stop).
+
+Location precedence: venue → city → state → country.
+
+Events (apply agent-rules)
+
+Required base: event_uid, event_official_name, event_display_name, event_official_link, event_official_start_date, created_date, last_updated.
+
+Required relations: venue_uid (must end “-venue”), organizer_uid. Optional: city_uid, state_uid, country_uid.
+
+Sources: source_uids (multi). Use source_uid = <record_uid>-<slug(source_name)> (hyphen only); include source_name, source_url, source_accessed_date (ISO).
+
+Tags (predefined only): rating_tag_uid (single), discipline_tag_uid (single), event_tag_uids (multi), series_tag_uid (single when is_series="y"), name_tag_uids (multi). Maintain label_uids as the union.
+
+Normalizers: derive days, months, seasons, years from confirmed dates; derive location labels via venue → city/state/country.
+
+Derived allowed (never overwrite inputs): yyyymm, event_duration, event_current_status, event_estimated_next_start_date (if annual).
+
+Series-Events (apply agent-rules)
+
+Exists only if is_series = "y".
+
+Required: series_uid, parent_event_uid, series_sequence (1..N), event_official_start_date, event_official_end_date, created_date, last_updated.
+
+UID scheme: <family>-series-<n>; parent is <family>-series.
+
+Inherit from parent: event_official_name, event_display_name, venue_uid, organizer_uid, tags (may add more), label_uids, source_uids (child may add its own).
+
+Normalizers resolved from the child’s dates.
+
+Venues (apply venue-rules)
+
+Required base: venue_uid (must end “-venue”), venue_name, venue_display_name, venue_link, created_date, last_updated.
+
+Required relations: city_uid, state_uid, country_uid. Optional: airport_uids (multi), weather_uid.
+
+Geo/timezone: venue_coords or lat/long; valid ranges; timezone must be IANA (e.g., America/New_York). Ephemeral image links disallowed.
+
+Sources: source_uids (min 1).
+
+Time & Location Precedence
+
+Macro (event window) drives: season, month, weather averages.
+
+Micro (series child window) drives: locale selection, daily weather, time-sensitive details.
+
+If no series: the event window drives both macro and micro.
+
+Validation & Failure Modes
+
+needs_rules: required rules file missing/unreadable.
+
+needs_review: official link/name/date not confirmed or conflicting.
+
+needs_normalizer: referenced UID or normalizer missing.
+
+venue_uid_suffix: venue_uid does not end “-venue”.
+
+invalid_geo: lat/long/coords out of range or malformed.
+
+invalid_timezone: timezone not valid IANA.
+
+no_ad_hoc_values: do not invent values; leave empty and note.
+
+Commit Order (happy path)
+
+Ensure/confirm all required normalizers (time + location) exist.
+
+Ensure venue and organizer records exist and pass their rules (else needs_normalizer).
+
+Write/patch event (parent).
+
+If is_series = "y": write each child in event_series/ with parent_event_uid, series_sequence, and confirmed child start/end dates.
+
+Write sources records for official (and others as applicable).
+
+Apply tags from predefined label sets only.
+
+Notes
+
+This layer is facts-only. Content, POV, and tone are out of scope here.
