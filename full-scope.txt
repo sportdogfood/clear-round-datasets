@@ -1,0 +1,81 @@
+1. Single Agent with Multiple Responsibilities
+
+Instead of separate agents, a single agent can dynamically execute different tasks by referencing its rules and manifest. The agent will:
+
+Fetch event data (e.g., "Tell me what events are next").
+
+Filter by time (e.g., "How many events in January").
+
+Access normalizers, like dates or locations, to give context or enrich data.
+
+Follow rules in event-rules.json, venue-rules.json, and the manifest.
+
+2. Workflow of the Agent
+
+The single agent can be programmed to take multiple types of requests by dynamically determining which action to perform based on input. Here's how it would flow:
+
+Event Queries (e.g., "Tell me what events are next")
+
+Input Parsing: Agent first reads the query and determines it's an event query (e.g., "next events").
+
+Manifest Lookup: The agent consults the manifest.json to figure out where to fetch event data from.
+
+Time Filtering: It checks the rules and filters events based on date, pulling data from events table (e.g., events happening next based on the current date).
+
+Return Data: The agent can then return the upcoming events by sorting them (either by date or relevance).
+
+Time-Based Queries (e.g., "How many events in January?")
+
+Input Parsing: The agent identifies it's a time query asking for events within a specific month (January).
+
+Manifest Lookup: It fetches data based on the events_dir path and time rules from the event rules.
+
+Date Matching: The agent checks the event start dates for all events in the month of January.
+
+Return Data: The agent counts how many events fit within the month and returns the number.
+
+Event Data Access (e.g., event details, venue data)
+
+For other queries like detailed event information, the agent can look up specific events by event UID, using the event_rules.json to format and validate the event details.
+
+The venue data can also be pulled from the venue rules and enriched dynamically.
+
+3. Proxy Role
+
+The proxy acts as a centralized data service, enabling the agent to fetch any data required from external sources, allowing secure, standardized access to your GitHub data. For instance:
+
+Event Data: If the agent asks for event details, it uses the proxy to pull the data directly from your GitHub repository (items/events/{event_uid}.json).
+
+Source Data: It can also fetch external sources for enrichment or verification using the sources rules.
+
+4. Example Scenario: "Tell me what events are next"
+
+User asks: "What events are next?"
+
+Agent Identifies the Request: It knows it needs to fetch upcoming events from the events data.
+
+Proxy Fetches the Data: It calls the GET /items/events endpoint via the proxy.
+
+Filters Events: It filters by event start date and matches any events that are scheduled after today.
+
+Response: It sends back a list of upcoming events in a concise format.
+
+5. How to Structure This Agent
+
+Input Handler: Identifies the type of query (event-based, time-based, etc.).
+
+Data Fetcher: Retrieves data using the proxy and manifest configuration.
+
+Rules Processor: Applies the appropriate rules from event-rules.json, venue-rules.json, and any other relevant source to ensure the data meets the required standards.
+
+Response Handler: Formats the response dynamically, either pulling from truth data or enriched data.
+
+Time and Location Filters: These are handled dynamically using normalizers for dates, locations, and time (e.g., filtering events by January).
+
+Final Considerations
+
+Dynamic Flexibility: By building a single, smart agent, you're allowing flexibility to scale the platform as you integrate more content queries, event filters, data sources, and time/location rules.
+
+No Overlap: The agent will seamlessly integrate rules, proxy, and data fetching while ensuring you only use valid, cleaned data for your queries.
+
+Would you like to continue finalizing this multi-purpose agent structure and proceed with its implementation or testing?
