@@ -1,0 +1,172 @@
+Proposed Solution: Task-based Triggers with Strict Task Focus
+
+We will design trigger-based rules to execute only specific actions, ensuring that each trigger keeps the agent focused on a single task at a time.
+
+1. Task-Based Triggers:
+
+We will define specific triggers that, when called, will activate specific rule sets (like add-event or research-this) and ignore unrelated triggers while the current task is active.
+
+Trigger Phrases and Associated Rules:
+
+add-event: Will trigger the event creation process, focusing on the add-event rules.
+
+how many ...: Will trigger the query-rules, asking for counts or data retrieval.
+
+research-this: Will trigger the research-rules, focused on gathering external data for enrichment.
+
+create content: Will trigger the content-rules, used for generating content (blog posts, recommendations, etc.).
+
+2. Enforcing Task Focus:
+
+If the agent is currently processing one trigger, and the user tries to issue a conflicting trigger, the agent will prompt the user with the following behavior:
+
+When adding an event (triggered by add-event):
+
+The agent focuses on adding an event.
+
+If the user issues a conflicting trigger (like how many events or research-this), the agent will respond with:
+
+"I cannot execute that request while we are adding an event. You can cancel the current task or ask for a new request once this is complete."
+
+Cancelling or Continuing the Request:
+
+The agent can prompt the user to either cancel the current task or continue with the active request.
+
+Example:
+
+"We are currently adding an event. Would you like to cancel the current process and proceed with your new request?"
+
+
+Handling Subsequent Triggers:
+
+Once the active task is completed (e.g., event added), the agent will be ready to accept new requests.
+
+3. Workflow Example:
+
+Here’s a clear workflow for how the trigger system will work:
+
+Step 1: Trigger "add-event":
+
+User Input:
+
+"add-event"
+
+"event_name": "Hampton Classic Horse Show"
+
+"event_start_date": "2024-04-24"
+
+"is_series": "n"
+
+Agent Response: Starts processing the event creation, following the add-event rules.
+
+Step 2: User tries to trigger a new action ("how many events" during event creation):
+
+User Input:
+
+"how many events are there in January?"
+
+Agent Response:
+
+"I cannot execute that request while we are adding an event. Would you like to cancel the current process or continue with adding the event?"
+
+Step 3: User decides to proceed with current task:
+
+User Input:
+
+"Continue adding the event"
+
+Agent Response:
+
+Continues executing the add-event logic.
+
+Step 4: After the event is added, the user can now trigger other actions:
+
+User Input:
+
+"how many events are there in January?"
+
+Agent Response: The agent will now run the query-rules to get the required data.
+
+4. Structure of Task-Specific Rules:
+Example: add-event rule:
+{
+  "trigger": "add-event",
+  "rules": [
+    {
+      "field": "event_name",
+      "validation": "required",
+      "action": "normalize_event_name"
+    },
+    {
+      "field": "event_start_date",
+      "validation": "required",
+      "action": "validate_event_date"
+    },
+    {
+      "field": "event_end_date",
+      "action": "calculate_event_duration"
+    },
+    {
+      "field": "venue_uid",
+      "action": "link_event_to_venue"
+    },
+    {
+      "field": "sources_uids",
+      "action": "validate_and_link_sources"
+    }
+  ]
+}
+
+Example: query-rule for "how many events in January":
+{
+  "trigger": "how many events in January",
+  "rules": [
+    {
+      "field": "event_start_date",
+      "validation": "month = January",
+      "action": "count_events"
+    }
+  ]
+}
+
+Example: research-rule:
+{
+  "trigger": "research-this",
+  "rules": [
+    {
+      "field": "search_query",
+      "action": "search_external_sources"
+    }
+  ]
+}
+
+Example: content-rule for "create content":
+{
+  "trigger": "create content",
+  "rules": [
+    {
+      "field": "event_uid",
+      "action": "create_blog_content"
+    },
+    {
+      "field": "venue_uid",
+      "action": "create_related_content"
+    }
+  ]
+}
+
+5. Implementing Task Locking:
+
+To ensure the agent remains focused on one task, we'll implement a task lock mechanism that prevents new triggers while the agent is busy processing an existing task. Here's an outline of how this can be structured:
+
+Task Lock: Once a trigger is activated (e.g., add-event), the agent locks and ignores any conflicting triggers (like how many events).
+
+Task Unlock: After the current task is completed, the agent unlocks and is ready to handle new triggers.
+
+Next Steps:
+
+Define the Trigger Actions: Ensure each trigger (like add-event, research-this) has a specific set of actions that are processed sequentially.
+
+Implement Task Locking Logic: Build the task lock mechanism to ensure only one task runs at a time.
+
+Test with Multiple Triggers: Test the system by simulating different user inputs and ensure the agent correctly handles the lock/unlock process.
