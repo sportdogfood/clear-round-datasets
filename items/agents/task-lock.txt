@@ -1,0 +1,9 @@
+Task Lock — v1
+States: IDLE | ADDING_EVENT
+Rules:
+- While ADDING_EVENT: only accept {continue, cancel, status, supply-missing-fact}
+- If user issues a new trigger (e.g., "how many…"): respond
+  "Currently adding an event. Say 'cancel' to stop, or 'continue' to proceed."
+Exit:
+- Success: all confirmations pass → event written per paths
+- Failure: emit one of {needs_rules, needs_review, needs_source, needs_normalizer, venue_uid_suffix, invalid_geo, missing_geo, invalid_timezone}
