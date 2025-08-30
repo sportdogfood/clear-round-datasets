@@ -1,45 +1,39 @@
 {
-  "version": "v2.2",
+  "version": "v2.3",
   "proxy_base": "https://crt-b1434e13de34.herokuapp.com/items",
   "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
-
-  "fetch": {
-    "order": ["proxy", "git"]
-  },
-
+  "fetch": { "order": ["proxy", "git"] },
   "paths": {
     "event_rules_path": "agents/event-rules.json",
     "venue_rules_path": "agents/venue-rules.json",
     "ingestion_rules_path": "agents/ingestion-rules.txt"
   },
-
   "dirs": {
     "agents_dir": "agents",
     "events_dir": "events",
-    "event_series_dir": "event_series",
+    "event_series_dir": "event-series",
     "venues_dir": "venues",
     "organizers_dir": "organizers",
     "sources_dir": "sources"
   },
-
   "items": {
     "days_dir": "days",
     "months_dir": "months",
     "seasons_dir": "seasons",
     "years_dir": "years",
+    "weeks_dir": "weeks",
     "countries_dir": "countries",
     "states_dir": "states",
     "cities_dir": "cities",
     "weather_dir": "weather",
     "airports_dir": "airports",
-    "labels_dir": "labels"
+    "labels_dir": "labels",
+    "forms_dir": "forms"
   },
-
   "aliases": {
-    "event-series": "event_series",
-    "series-events": "event_series"
+    "event_series": "event-series",
+    "series-events": "event-series"
   },
-
   "policy": {
     "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
     "filename_equals_uid": true,
@@ -53,7 +47,6 @@
     "official_link_must_be_https": true,
     "source_uid_policy": "domain_slug + '-src'",
     "source_type_policy": "first_path_token_or_key",
-
     "geo_input_modes": ["lat_long", "google_pin"],
     "lat_field": "venue_geo_lat",
     "long_field": "venue_geo_long",
