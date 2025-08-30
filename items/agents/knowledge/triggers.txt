@@ -1,0 +1,7 @@
+Triggers — v1
+Primary:
+- add-event        -> use event-rules.json + ingestion-rules.txt
+Control:
+- cancel           -> end current task and return to idle
+- status           -> report current task + missing confirmations
+Out-of-scope while task-locked (reject): "how many", "research-", "create content"
