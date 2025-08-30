@@ -1,7 +1,4 @@
-Here’s a clean, ready-to-commit update for **items/agents/ingestion-rules.txt**.
-
-```
-INGESTION RULES — v3
+INGESTION RULES — v3.1
 
 Purpose & Scope
 - Facts-only ingestion layer for events, event_series, and venues (plus organizers and sources), using items/* normalizers.
@@ -13,6 +10,7 @@ Bootstrap & Loading
   - proxy_base, git_base
   - paths.event_rules_path, paths.venue_rules_path, paths.ingestion_rules_path
   - dirs.* and items.* directory names
+  - policy.* (uid_regex, venue_uid_suffix, date_format, timezone_format, facts_only, bool_encoding, ignore_prefixes, source_uid_policy, source_type_policy, geo_input modes/fields)
 - Fetch rules via proxy_base; if 404/timeout, fall back to git_base.
 - Required rules: items/agents/event-rules.json and items/agents/venue-rules.json.
   - If either missing/unreadable → error: needs_rules (stop).
@@ -35,7 +33,7 @@ Field Conventions
 
 Confirmation Gate (must pass before any write)
 1) Link → event_official_link: confirm it is the official show/organizer homepage (HTTPS, non-social). Record a source entry.
-2) Name → event_official_name + event_display_name: take canonical title from official site, then apply Official Event Name sanitize policy (see Naming/UID).
+2) Name → event_official_name + event_display_name: take canonical title from official site, then apply Official Event Name sanitize policy (see Naming & UID).
 3) Date → event_official_start_date (and end if present): confirm from official schedule; do not infer. If ambiguous/conflicting → needs_review (stop).
 
 Naming & UID Policy
@@ -51,8 +49,8 @@ Naming & UID Policy
 - State/Country UIDs: lowercase codes (e.g., fl, us).
 
 Directories (from manifest)
-- Entities (input): events/, event_series/, venues/, organizers/, sources/ (sources_fav/ optional reference).
-- Normalizers (reference): items/{days|months|seasons|years|countries|states|cities|weather|airports|labels}.
+- Entities (input): events/, event_series/, venues/, organizers/, sources/
+- Normalizers (reference): items/{days|months|seasons|years|countries|states|cities|weather|airports|labels}
 
 Relations (resolution required)
 - *_uid = single relation; *_uids = array.
@@ -64,21 +62,19 @@ Sources (minimal, domain-first policy)
 - Required per source record:
   - source_uid
   - source_link (full URL, HTTPS preferred)
-  - (optional) source_name (if known), source_type, source_accessed_date (YYYY-MM-DD)
+- Optional per source record:
+  - source_name, source_type, source_accessed_date (YYYY-MM-DD), is_favorite ("y"|"n"), is_official ("y"|"n")
 - Construction:
-  - domain_slug = primary domain lowercased with dots→hyphens (e.g., usef.org → usef-org, fei.org → fei-org, hamptonclassic.com → hamptonclassic-com)
-  - source_uid = domain_slug + "-src"
-  - source_type = first path segment or identifying token (e.g., "/", "events", "search", "ShowGUID")
-  - Example mappings:
-    - https://www.hamptonclassic.com/ → source_uid: hamptonclassic-com-src, source_type: "/"
-    - https://www.usef.org/search/competitions?... → usef-org-src, source_type: "search"
-    - https://www.fei.org/events/... → fei-org-src, source_type: "events"
-    - https://www.horseshowsonline.com/ShowDetails?ShowGUID=... → horseshowsonline-com-src, source_type: "ShowGUID"
+  - domain_slug = primary domain lowercased with dots→hyphens (e.g., usef.org → usef-org; fei.org → fei-org; hamptonclassic.com → hamptonclassic-com)
+  - source_uid = domain_slug + "-src"   (per manifest.policy.source_uid_policy)
+  - source_type = first path segment or identifying token (e.g., "/", "events", "search", "ShowGUID") (per manifest.policy.source_type_policy)
+- Examples:
+  - https://www.hamptonclassic.com/ → source_uid: hamptonclassic-com-src, source_type: "/"
+  - https://www.usef.org/search/competitions?... → usef-org-src, source_type: "search"
+  - https://www.fei.org/events/... → fei-org-src, source_type: "events"
+  - https://www.horseshowsonline.com/ShowDetails?ShowGUID=... → horseshowsonline-com-src, source_type: "ShowGUID"
 - De-duplication: one source record per domain_slug; attach multiple links by repeating in event.source_uids if needed.
-- Favorites/official:
-  - Optional flags stored as "y"/"n": is_favorite, is_official.
-  - Official event homepage should set is_official="y".
-- sources_fav (if present in repo) is treated as a reference catalog; not required.
+- Official event homepage should set is_official="y". Favorites may set is_favorite="y".
 
 Events (apply event-rules.json)
 Required base fields before write:
@@ -104,11 +100,14 @@ Venues (apply venue-rules.json)
 Required base:
 - venue_uid (must end “-venue”), venue_name, venue_display_name, venue_link, created_date, last_updated.
 Required relations:
-- city_uid, state_uid, country_uid.
+- city_uid, state_uid, country_uid, source_uids (min 1).
 Optional relations:
-- airport_uids (multi), weather_uid, events_uids, organizer_uids, source_uids (min 1 recommended), label_uids.
+- airport_uids (multi), weather_uid, events_uids, organizer_uids, label_uids.
 Geo/timezone:
-- Either venue_coords ("lon,lat") or venue_geo_long/venue_geo_lat within valid ranges; timezone must be valid IANA.
+- Provide numeric latitude/longitude using manifest.policy.lat_field & long_field (defaults: venue_geo_lat, venue_geo_long).
+- Valid ranges: lat -90..90, long -180..180.
+- venue_google_pin (manifest.policy.pin_field) is optional helper; do not parse or reverse-geocode it at ingest.
+- Timezone must be valid IANA (manifest.policy.timezone_format).
 - Ephemeral image links disallowed; external CDN ok.
 
 Time & Location Precedence
@@ -122,7 +121,8 @@ Validation & Failure Modes
 - needs_source: required source missing.
 - needs_normalizer: referenced UID or normalizer missing.
 - venue_uid_suffix: venue_uid missing required suffix (e.g., “-venue”).
-- invalid_geo: lat/long/coords out of range or malformed.
+- invalid_geo: latitude/longitude out of range or malformed.
+- missing_geo: neither lat/long nor google_pin provided when venue-rules require location; treat as needs_review.
 - invalid_timezone: timezone not valid IANA.
 - no_ad_hoc_values: do not invent values; leave empty and note.
 - facts_only: enforced per manifest.policy.facts_only.
@@ -138,6 +138,3 @@ Commit Order (happy path)
 Notes
 - This layer is facts-only (no commentary, POV, or tone).
 - Agent must remain task-locked during add-event flow; cross-task requests are rejected until completion or explicit cancel.
-```
-
-If this v3 looks good, I’ll proceed to the next item you choose.
