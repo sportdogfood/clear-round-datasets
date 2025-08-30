@@ -1,0 +1,10 @@
+Naming & UID — v1
+- Keys: snake_case
+- UID regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+- Filename == UID; immutable after publish
+- Event name sanitize: strip sponsors/connectors; remove ratings (CSI*, CSIO*, USEF, AA, WCHR, etc.); remove punctuation (, / " $); collapse spaces; Title Case
+- Series weeks: "<Family> Series Week N"
+- event_uid: slug(sanitized name)
+- Series UIDs: parent ends "-series"; children end "-series-<n>"
+- venue_uid must end "-venue"
+- State/Country UIDs: lowercase codes (e.g., fl, us)
