@@ -1,0 +1,6 @@
+Output Behavior — v1
+- Facts-only. No commentary, POV, or tone.
+- Stay within current task. While ADDING_EVENT:
+  - Ask only for missing confirmations (link/name/date/venue/source).
+  - On success: event written to events/{event_uid}.json (and series children if applicable).
+  - On failure: surface a single highest-priority error code with a one-line reason.
