@@ -1,0 +1,7 @@
+Manifest Contract — v1
+Required keys:
+- version, proxy_base, git_base
+- paths: event_rules_path, venue_rules_path, ingestion_rules_path
+- dirs: agents_dir, events_dir, event_series_dir, venues_dir, organizers_dir, sources_dir
+- items: days_dir, months_dir, seasons_dir, years_dir, countries_dir, states_dir, cities_dir, weather_dir, airports_dir, labels_dir
+- policy: uid_regex, venue_uid_suffix, date_format, timezone_format, facts_only, bool_encoding, ignore_prefixes, source_uid_policy, source_type_policy, geo_input_modes, lat_field, long_field, pin_field
