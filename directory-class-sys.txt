@@ -1,0 +1,113 @@
+Absolutely! Here's a summary of modifications required for Truth, Normalizer, Enrichment, Reference, and Content—based on our current structure.
+
+1. Truth (Official Data)
+
+Goal: Ensure that the core, verified data is structured and stored as the official source of truth.
+
+Key Tables:
+
+Events (event_uid, event_official_name, event_official_start_date, venue_uid)
+
+Venues (venue_uid, venue_name, venue_address)
+
+Hotels/Stays (hotel_uid, hotel_name, hotel_address, etc.)
+
+Dining (dining_uid, restaurant_name, address, etc.)
+
+What to Modify:
+
+Make sure the event_uid follows the slug-based structure.
+
+Ensure venue records contain location details and are linked to events properly.
+
+Enforce canonical names and remove extra sponsors/ratings in names for all official data.
+
+2. Normalizer (Standardized Data)
+
+Goal: Ensure that all data is in standardized formats for easy querying and uniformity across the system.
+
+Key Tables:
+
+Normalizer_Time: Standardize date formats (ISO 8601), normalize event duration.
+
+Normalizer_Location: Normalize location data (city, state, country) and geo-coordinates.
+
+Normalizer_Weather: Ensure all weather-related data (temperature, forecasts) is in a unified format.
+
+What to Modify:
+
+Create/modify normalizers to ensure that data like dates, locations, and weather data are consistently formatted.
+
+Ensure that location data is standardized across events, venues, and stays.
+
+Time data should be normalized into a unified start/end date format (e.g., YYYY-MM-DD).
+
+3. Enrichment (Derived Data)
+
+Goal: Add contextual or derived data to enhance existing records.
+
+Key Tables:
+
+Enrichment_Events: Derived fields like event duration, category (e.g., CSI5*), number of participants, seasonality.
+
+Enrichment_Venues: Derived info like rating, distance to airport, nearby attractions (restaurants, hotels).
+
+Enrichment_Stays/Dining: Derived insights like popularity, average review score, price range.
+
+What to Modify:
+
+Add enrichment fields that provide additional context to events and venues (e.g., average reviews, pricing, popularity).
+
+Derive seasonality for events (i.e., determining the best time to attend based on historical attendance or season).
+
+Add dynamic recommendations for hotels, dining, and local activities based on user preferences and event types.
+
+4. Reference (Verified Data)
+
+Goal: Store external, verified data to be used as supporting content for enriching the event and venue records.
+
+Key Tables:
+
+Reference_Events: External links to verified event schedules, official sources.
+
+Reference_Venues: External links to verified venue details (e.g., booking pages, review platforms).
+
+Reference_Hotels/Restaurants: Data sourced from external platforms like Booking.com, Yelp, or Google Reviews.
+
+What to Modify:
+
+Ensure all external sources are properly added under source_uids to each event and venue.
+
+Link external sources to your event and venue records for content enrichment and validation.
+
+Maintain a clean, curated set of external references (e.g., official websites, third-party reviews) for each event and venue.
+
+5. Content Generation
+
+Goal: Generate dynamic blog posts, web pages, and other content based on truth and enriched data.
+
+Key Tables:
+
+Content: Generate content using event details, venue data, enriched data (reviews, popularity), and SEO rules (title, description).
+
+SEO Tags: Ensure every content block (e.g., blog posts) has the right SEO data (meta descriptions, titles, OG tags).
+
+What to Modify:
+
+Create dynamic templates for generating SEO-optimized content (title, description, URL).
+
+Ensure that Tone and POV rules are applied dynamically for each piece of content.
+
+Linking: Ensure all external links (e.g., event ticketing, hotels, dining) are referenced correctly.
+
+Summary of Modifications:
+
+Truth: Ensure official data (event names, venue info, hotel stays) is correct, standardized, and linked.
+
+Normalizer: Normalize dates and locations to consistent formats for seamless querying and data integration.
+
+Enrichment: Add contextual and derived fields to make events and venues more dynamic (e.g., event duration, hotel popularity).
+
+Reference: Integrate verified external sources to support the main data records and provide validation.
+
+Content Generation: Create dynamic content blocks, applying POV, Tone, and SEO rules for a fully functional website/blog pipeline.
