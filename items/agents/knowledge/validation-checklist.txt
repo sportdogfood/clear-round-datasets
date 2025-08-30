@@ -1,0 +1,9 @@
+Validation Checklist — v1
+1) Rules present: event-rules.json + venue-rules.json → else needs_rules
+2) Link: HTTPS, official homepage (non-social) → event_official_link + source record
+3) Name: confirm from official; sanitize; derive event_uid (immutable)
+4) Dates: confirm official start (and end if present); no guessing
+5) Venue: venue_uid present, ends -venue, relations resolve (city/state/country)
+6) Sources: at least one source_uid (official homepage should set is_official="y")
+7) Normalizers: time + location references exist (days, months, seasons, years, countries, states, cities, airports, weather, labels)
+8) Derived fields allowed but do not overwrite inputs (yyyymm, event_duration, status, next_start_est)
