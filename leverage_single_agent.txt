@@ -1,0 +1,182 @@
+Got it! You want to **leverage a single agent** and **use the proxy** with the **event-add-rules.json** to ensure that the process is **unified and scalable**. Rather than creating multiple specialized agents for each task, we will build one **general-purpose agent** that can handle the entire event creation process by referencing **rules** from the configuration file.
+
+Here’s how we can structure it:
+
+### **1. One Unified Agent with Proxy and Rules**:
+
+The **single agent** will follow **dynamic rules** pulled from **event-add-rules.json**. This agent will be able to:
+
+* Accept event data.
+* Validate and process the data according to the rules.
+* Use the proxy to **fetch data** if required.
+* **Output the event data** in the correct format and path, without needing multiple agents.
+
+### **2. Event-Add-Rules.json**:
+
+The **event-add-rules.json** file will define **all the rules** for:
+
+* **Validating** and **normalizing** event data.
+* **Linking** the event to its venue, sources, and other entities.
+* **Generating the final JSON output** (including saving paths).
+* **Handling event series**, including proper **UID generation** and **series-specific logic**.
+
+### **Example of Event-Add-Rules.json**:
+
+```json
+{
+  "rules": {
+    "event_uid": {
+      "description": "Generate unique event UID",
+      "method": "slugify",
+      "params": ["event_official_name"],
+      "output": "event_uid"
+    },
+    "event_display_name": {
+      "description": "Display name for the event",
+      "method": "capitalize",
+      "params": ["event_official_name"],
+      "output": "event_display_name"
+    },
+    "event_dates": {
+      "description": "Validate event start and end dates",
+      "method": "validate_dates",
+      "params": ["event_official_start_date", "event_official_end_date"],
+      "output": "event_dates"
+    },
+    "event_series_logic": {
+      "description": "Handle event series logic if is_series is true",
+      "method": "series_check",
+      "params": ["is_series", "series_label", "series_week"],
+      "output": "event_series_uids"
+    },
+    "source_validation": {
+      "description": "Validate and add sources",
+      "method": "source_validation",
+      "params": ["event_official_link"],
+      "output": "source_uids"
+    },
+    "event_duration": {
+      "description": "Calculate event duration from dates",
+      "method": "calculate_duration",
+      "params": ["event_official_start_date", "event_official_end_date"],
+      "output": "event_duration"
+    },
+    "save_path": {
+      "description": "Determine the save path based on event type",
+      "method": "determine_save_path",
+      "params": ["is_series", "event_uid"],
+      "output": "suggested_save_path"
+    }
+  }
+}
+```
+
+### **3. Proxy Integration**:
+
+* The **proxy** will fetch necessary data when required, using predefined rules like **fetching the event’s official details**, verifying sources, or pulling data from **trusted external resources** (like the official event website).
+
+* This means that instead of manually checking and sourcing information, the agent will handle fetching data automatically based on **rules** from **event-add-rules.json**.
+
+### **4. Agent Workflow**:
+
+Here’s how the unified **event-agent** will process the request:
+
+1. **Receive User Input**:
+
+   * The agent receives the **input JSON** from the user (e.g., event details, links, dates).
+   * **Input example**:
+
+     ```json
+     {
+       "user_input_event_link": "https://www.hamptonclassic.com/",
+       "user_input_event_name": "Hampton Classic Horse Show",
+       "user_input_event_start_date": "2024-04-24",
+       "is_series": "n"
+     }
+     ```
+
+2. **Process Using Rules**:
+
+   * The agent applies the **rules** from `event-add-rules.json` to **validate** and **normalize** the data.
+   * **Example rule applications**:
+
+     * **Generate `event_uid`**: The agent will **slugify** the official event name (`"hampton-classic-horse-show"`).
+     * **Validate Dates**: The agent will check if both **start** and **end dates** are valid.
+
+3. **Check for Series**:
+
+   * If the event is part of a series (`is_series = "y"`), the agent will **link the event** to the series and generate the correct **series UID**.
+
+4. **Validate Sources**:
+
+   * The agent will fetch sources if necessary (like the official event site) and **validate the source** (e.g., `"official"`, `"usef-org"`).
+
+5. **Dynamic Enrichment**:
+
+   * If needed, the agent can **fetch real-time enrichment** (e.g., event popularity, nearby hotels, etc.), but this would be outside the immediate flow for event creation.
+
+6. **Output the Event JSON**:
+
+   * The agent generates the **final JSON** and outputs the **path** where the event data will be saved (e.g., `/shows/annual/hampton-classic-horse-show.json`).
+
+### **5. Example Event Agent JSON Output**:
+
+After processing the user input, the agent will return the structured **JSON**:
+
+```json
+{
+  "show_uid": "hampton-classic-horse-show",
+  "created_date": "2025-08-26",
+  "last_updated": "2025-08-26",
+  "meta": {
+    "official_link": "https://www.hamptonclassic.com/",
+    "official_name": "Hampton Classic Horse Show",
+    "display_name": "Hampton Classic Horse Show",
+    "official_start_date": "2024-04-24",
+    "official_end_date": "2024-04-27",
+    "venue_name": "Wellington International",
+    "venue_city": "Wellington",
+    "flags": {
+      "is_championship": false,
+      "championship_type": null,
+      "is_annual": true,
+      "is_series": false,
+      "series_label": null,
+      "series_week": null
+    },
+    "ratings": {
+      "usef_hunter_rating": { "code": "AA", "label": "Premier" },
+      "fei": { "code": null, "stars": null }
+    },
+    "notes": "Official event. Dates confirmed via official federation page.",
+    "sources": [
+      { "source_name": "hamptonclassic-com", "source_link": "https://www.hamptonclassic.com/" }
+    ]
+  },
+  "derived": {
+    "start_date": "2024-04-24",
+    "yyyymm": "202404",
+    "month_name": "April",
+    "season": "spring",
+    "status_window": "upcoming"
+  },
+  "suggested_save_path": "/shows/annual/hampton-classic-horse-show.json"
+}
+```
+
+### **6. Advantages of This Approach**:
+
+* **Unified Agent**: You won’t need to build multiple agents. This **single agent** will handle various tasks like **validating**, **normalizing**, and **enriching** event data based on the rules.
+* **Scalable**: As your system grows, you can **extend the rules** in `event-add-rules.json` to handle more complex logic without changing the core agent.
+* **Maintainable**: Having all the rules in one file makes it easy to modify the behavior of the agent (e.g., updating how event names are formatted or how sources are validated).
+* **Efficient**: By using a **single agent with centralized rules**, you reduce redundancy and complexity.
+
+---
+
+### **Conclusion**:
+
+* **Event Creation** will be streamlined using the **single agent** that **validates** and **enriches** event data based on `event-add-rules.json`.
+* **Series events** and **event-related data** (e.g., sources, ratings, venue) will be dynamically handled and linked to the appropriate entities.
+* This approach ensures **flexibility** for future enhancements without overcomplicating the agent’s logic or adding unnecessary specialization.
+
+Let me know if this approach looks good, or if you'd like to tweak anything!
