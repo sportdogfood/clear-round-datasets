@@ -1,0 +1,115 @@
+Absolutely, let's extend the Content rules to include Point of View (POV) and Tone.
+
+Content (Full Structure) with POV & Tone
+
+We'll align this with the goal of your platform—delivering targeted, dynamic, user-facing content with a clear brand voice and specific tone for each piece.
+
+1. Content Rules with POV & Tone
+
+POV (Point of View): Define the perspective that the content should take. For example, is it first-person, third-person, brand-authoritative, consumer-focused, etc.?
+
+Examples:
+
+First-Person (Brand POV): "We recommend these hotels because we know you’ll love them."
+
+Third-Person (External POV): "Guests rated the Hampton Classic venue as one of the best."
+
+Expert POV: "Experts agree this is one of the premier equestrian events."
+
+Tone: Adjust the style and personality of the language to fit your brand, audience, and content purpose. Keep this tone consistent for all content creation to reinforce brand identity.
+
+Examples:
+
+Bold & Confident (Gritty): "Get ready for a week of excitement—only the strongest come out on top."
+
+Playful & Fun: "Your dog will be wagging its tail with joy—fetch a meal from our top-rated spots!"
+
+Professional & Informative: "The event takes place over 6 days, with top-tier competitors in action."
+
+2. POV & Tone Logic Based on Content Type
+
+The POV and Tone can change based on the content type and audience:
+
+Event Content:
+
+POV: Expert, Consumer, or Brand
+
+Tone: Bold, Playful, Confident, Informative
+
+Hotel Stays:
+
+POV: Brand or Consumer (based on hotel recommendation)
+
+Tone: Warm, Friendly, Assuring (for consumer), Authoritative (for brand)
+
+Dining Recommendations:
+
+POV: Brand (if recommending spots), Consumer (if user reviews are involved)
+
+Tone: Fun, Playful (for restaurants), Refined (for high-end dining)
+
+General Info (Weather, Location):
+
+POV: Neutral, Informative (third-person)
+
+Tone: Neutral, Clear, Helpful
+
+3. Content Example with POV & Tone (Dynamic)
+
+Here’s an expanded version of the blog post structure with POV and Tone elements integrated.
+
+<h1>Best Places to Stay Near the Hampton Classic Horse Show</h1>
+<p><strong>POV: Brand</strong> — Looking for a place to stay during the 2025 **Hampton Classic Horse Show** in **Wellington, FL**? Check out these top hotels and Airbnbs, hand-picked to give you comfort and convenience.</p>
+
+<h2>Top Hotels Near Wellington</h2>
+<ul>
+  <li><strong>Hotel A</strong> – Rated 4.5/5 stars for comfort and proximity to the venue. <strong>POV: Consumer</strong> "I loved the ease of walking to the event, and the rooms were just perfect!"</li>
+  <li><strong>Hotel B</strong> – Cozy and Affordable, with everything you need for a perfect stay. <strong>POV: Brand</strong> "Our guests love this option for its value and comfort."</li>
+  <li><strong>Airbnb C</strong> – Perfect for Families. Stay close to the venue with all the home-like amenities. <strong>POV: Brand</strong> "Ideal for large groups or families wanting more space during the show."</li>
+</ul>
+
+<h3>Dining Options During the Event</h3>
+<ul>
+  <li><strong>Restaurant 1</strong> – Best Seafood in Town. <strong>POV: Brand</strong> "A local favorite for fresh, locally-sourced seafood."</li>
+  <li><strong>Restaurant 2</strong> – A Cozy Italian Spot for After-Event Dinners. <strong>POV: Consumer</strong> "Great atmosphere and the best pasta I've had in years!"</li>
+  <li><strong>Restaurant 3</strong> – Fine Dining, Perfect for Special Occasions. <strong>POV: Brand</strong> "Ideal for a celebratory dinner after a thrilling event day."</li>
+</ul>
+
+<h2>Event Overview</h2>
+<p><strong>POV: Expert</strong> — The **Hampton Classic Horse Show** is set to take place from **August 24th-31st, 2025** at **Wellington International**. Expect high-level equestrian competitions and family-friendly entertainment throughout the week.</p>
+
+<h3>Weather Forecast</h3>
+<p><strong>POV: Informative</strong> — The weather for **Wellington** in August looks promising, with an expected average temperature of **85°F (29°C)**. Bring sunscreen and stay hydrated while you enjoy the event!</p>
+
+<h4>Book Tickets and Stay</h4>
+<p><strong>POV: Brand</strong> — Don’t miss out on one of the premier equestrian events of the year! Book your tickets and find the best accommodations near the venue.</p>
+
+<!-- SEO Tags -->
+<meta name="description" content="Best places to stay near the Hampton Classic Horse Show in Wellington, FL. Discover hotels and dining options with 4.5/5 stars.">
+<meta property="og:image" content="event-image.jpg">
+
+4. Automation for POV and Tone Application
+
+Rule System:
+
+POV: Based on content type (hotel, event, dining, weather).
+
+Example: Event Content = Expert POV; Hotel Stays = Brand POV or Consumer POV.
+
+Tone: Based on audience and purpose (e.g., Consumer = Playful, Brand = Authoritative, Event = Bold).
+
+Use parameters:
+
+Content type (event, stay, dining).
+
+Event data (time, location).
+
+Agent should select the right POV and tone per each content block.
+
+5. Final Content Guidelines
+
+Ensure Tone and POV are consistent with your brand identity (Bold, Confident, Gritty).
+
+Content should be dynamic, with SEO optimization baked in.
+
+Always enrich content using available data, blending in external sources when relevant.
