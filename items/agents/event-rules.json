@@ -1,181 +1,174 @@
 {
   "name": "event-rules",
-  "version": "v1",
-  "tables": [
-    {
-      "table": "events",
-      "prefix": "event_",
-      "uid_immutable": true,
-      "naming": {
-        "field_case": "snake_case",
-        "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-        "filename_equals_uid": true
-      },
-      "base_vars": [
-        "event_uid",
-        "event_image",
-        "event_official_name",
-        "event_display_name",
-        "event_recordId"
-      ],
-      "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
-      "uid_requires": [
-        "event_official_name"
-      ],
-      "sanitize_official_name_policy": {
-        "strip_sponsors_and_connectors": true,
-        "remove_rating_tokens": ["CSI", "CSIO", "CSI*", "CSI**", "CSI***", "CSI****", "CSI*****", "WCHR", "USEF", "Premier", "AA", "A"],
-        "remove_punctuation": [",", "/", "\"", "$"],
-        "collapse_spaces": true,
-        "title_case": true,
-        "series_week_normalization": "If the show is a week within a family/series, normalize to '<Family> Series Week N'."
-      },
-      "required_fields": [
-        "event_official_link",
-        "event_official_start_date",
-        "created_date",
-        "last_updated"
-      ],
-      "optional_fields": [
-        "event_official_end_date",
-        "notes",
-        "form_uid",
-        "git_status"
-      ],
-      "relations": {
-        "venue_uid": { "type": "single", "required": true, "must_end_with": "-venue" },
-        "organizer_uid": { "type": "single", "required": true },
-        "city_uid": { "type": "single", "required": false },
-        "state_uid": { "type": "single", "required": false },
-        "country_uid": { "type": "single", "required": false },
-        "source_uids": { "type": "multi", "required": false },
-        "label_uids": { "type": "multi", "required": false },
-        "rating_tag_uid": { "type": "single", "required": false },
-        "discipline_tag_uid": { "type": "single", "required": false },
-        "event_tag_uids": { "type": "multi", "required": false },
-        "series_tag_uid": { "type": "single", "required": false },
-        "name_tag_uids": { "type": "multi", "required": false }
-      },
-      "normalizers_required": [
-        "items/days",
-        "items/months",
-        "items/seasons",
-        "items/years",
-        "items/countries",
-        "items/states",
-        "items/cities",
-        "items/weather",
-        "items/airports"
-      ],
-      "date_policies": {
-        "format": "YYYY-MM-DD",
-        "macro_time_from": "event (parent) unless series children exist",
-        "macro_outputs": ["season", "month", "weather_averages"]
-      },
-      "source_uid_policy": "source_uid = <record_uid> + '-' + slugify(source_name)",
-      "tags_policy": {
-        "predefined_only": true,
-        "inheritance": "children inherit parent tags; children may add",
-        "series_tag_when": "set series_tag_uid only if is_series = 'y'"
-      },
-      "derived": {
-        "yyyymm": "YYYYMM from event_official_start_date",
-        "event_duration": "days_between(event_official_start_date, event_official_end_date) when both present",
-        "event_current_status": "computed from today's date and start/end",
-        "event_estimated_next_start_date": "if annual, roll forward by ~1 year from start"
-      },
-      "validation": {
-        "official_link_must_be_https": true,
-        "official_link_must_be_official_site": true,
-        "require_confirmed_name_date_link_before_write": true,
-        "relations_must_resolve": true,
-        "halt_on_missing_normalizer": true,
-        "on_failure": ["needs_review", "needs_normalizer"],
-        "no_ad_hoc_values": true
-      },
-      "paths": {
-        "save_path_template": "events/{event_uid}.json",
-        "sources_input_dir": "sources/",
-        "sources_fav_dir": "sources_fav/"
-      },
-      "series": {
-        "is_series_field": "is_series",
-        "parent_uid_suffix_when_series": "-series",
-        "time_resolution_rule": {
-          "parent_window": ["season", "month", "weather_averages"],
-          "child_window": ["locale_selection", "daily_weather", "time_sensitive_details"],
-          "fallback": "if no children, parent drives all time-based triggers"
-        }
-      }
+  "version": "v2",
+  "table": "events",
+  "prefix": "event_",
+  "uid_immutable": true,
+
+  "naming": {
+    "field_case": "snake_case",
+    "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "filename_equals_uid": true
+  },
+
+  "base_vars": [
+    "event_uid",
+    "event_image",
+    "event_official_name",
+    "event_display_name",
+    "event_recordId"
+  ],
+
+  "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
+  "uid_requires": ["event_official_name"],
+
+  "sanitize_official_name_policy": {
+    "strip_sponsors_and_connectors": true,
+    "remove_rating_tokens": [
+      "CSI",
+      "CSIO",
+      "CSI*",
+      "CSI**",
+      "CSI***",
+      "CSI****",
+      "CSI*****",
+      "WCHR",
+      "USEF",
+      "Premier",
+      "AA",
+      "A"
+    ],
+    "remove_punctuation": [",", "/", "\"", "$"],
+    "collapse_spaces": true,
+    "title_case": true,
+    "series_week_normalization": "If the show is a week within a family/series, normalize to '<Family> Series Week N'."
+  },
+
+  "required_fields": [
+    "event_official_link",
+    "event_official_name",
+    "event_display_name",
+    "event_official_start_date",
+    "created_date",
+    "last_updated"
+  ],
+
+  "optional_fields": [
+    "event_official_end_date",
+    "notes",
+    "form_uid",
+    "git_status",
+    "is_annual",
+    "is_series"
+  ],
+
+  "relations": {
+    "venue_uid": { "type": "single", "required": true, "must_end_with": "-venue" },
+    "organizer_uid": { "type": "single", "required": true },
+    "city_uid": { "type": "single", "required": false },
+    "state_uid": { "type": "single", "required": false },
+    "country_uid": { "type": "single", "required": false },
+    "source_uids": { "type": "multi", "required": true, "min_items": 1 },
+    "label_uids": { "type": "multi", "required": false },
+    "rating_tag_uid": { "type": "single", "required": false },
+    "discipline_tag_uid": { "type": "single", "required": false },
+    "event_tag_uids": { "type": "multi", "required": false },
+    "series_tag_uid": { "type": "single", "required": false },
+    "name_tag_uids": { "type": "multi", "required": false }
+  },
+
+  "normalizers_required": [
+    "items/days",
+    "items/months",
+    "items/seasons",
+    "items/years",
+    "items/countries",
+    "items/states",
+    "items/cities",
+    "items/weather",
+    "items/airports",
+    "items/labels"
+  ],
+
+  "date_policies": {
+    "format": "YYYY-MM-DD",
+    "macro_time_from": "event (parent) unless series children exist",
+    "macro_outputs": ["season", "month", "weather_averages"]
+  },
+
+  "source_uid_policy": {
+    "construction": "domain_slug + '-src'",
+    "domain_slug_rule": "lowercase primary domain, dots→hyphens (e.g., usef.org → usef-org)",
+    "source_type_hint": "first path token or identifying key (e.g., '/', 'events', 'search', 'ShowGUID')",
+    "flags": { "is_official": "y|n", "is_favorite": "y|n" }
+  },
+
+  "tags_policy": {
+    "predefined_only": true,
+    "inheritance": "children inherit parent tags; children may add",
+    "series_tag_when": "set series_tag_uid only if is_series = 'y'"
+  },
+
+  "derived": {
+    "allow": true,
+    "fields": {
+      "yyyymm": "YYYYMM from event_official_start_date",
+      "event_duration": "days_between(event_official_start_date, event_official_end_date) when both present",
+      "event_current_status": "computed vs today (America/New_York) using start/end",
+      "event_estimated_next_start_date": "if is_annual='y', roll forward ~1 year from start"
     },
-    {
-      "table": "event_series",
-      "prefix": "series_",
-      "uid_immutable": true,
-      "naming": {
-        "field_case": "snake_case",
-        "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-        "filename_equals_uid": true
-      },
-      "base_vars": [
-        "series_uid",
-        "series_image",
-        "series_display_name",
-        "series_recordId"
-      ],
-      "uid_rule": "series_uid = parent_event_uid + '-' + series_sequence",
-      "uid_requires": [
-        "parent_event_uid",
-        "series_sequence"
-      ],
-      "required_fields": [
-        "parent_event_uid",
-        "series_sequence",
-        "event_official_start_date",
-        "event_official_end_date",
-        "created_date",
-        "last_updated"
-      ],
-      "inherit_from_parent_event": [
-        "event_official_name",
-        "event_display_name",
-        "venue_uid",
-        "organizer_uid",
-        "rating_tag_uid",
-        "discipline_tag_uid",
-        "event_tag_uids",
-        "name_tag_uids",
-        "label_uids",
-        "source_uids"
-      ],
-      "relations": {
-        "parent_event_uid": { "type": "single", "required": true },
-        "source_uids": { "type": "multi", "required": false }
-      },
-      "normalizers_required": [
-        "items/days",
-        "items/months",
-        "items/seasons",
-        "items/years",
-        "items/countries",
-        "items/states",
-        "items/cities",
-        "items/weather",
-        "items/airports"
-      ],
-      "date_policies": {
-        "format": "YYYY-MM-DD",
-        "micro_time_from": "child (series) window"
-      },
-      "paths": {
-        "save_path_template": "event_series/{series_uid}.json"
-      },
-      "validation": {
-        "relations_must_resolve": true,
-        "parent_must_exist": true,
-        "on_failure": ["needs_review", "needs_normalizer"],
-        "no_ad_hoc_values": true
-      }
+    "never_overwrite_inputs": true
+  },
+
+  "validation": {
+    "official_link_must_be_https": true,
+    "official_link_must_be_official_site": true,
+    "require_confirmed_name_date_link_before_write": true,
+    "relations_must_resolve": true,
+    "halt_on_missing_normalizer": true,
+    "no_ad_hoc_values": true,
+    "bool_encoding": "yn",
+    "ignore_prefixes": ["dnu_", "ignore_"],
+    "on_failure": ["needs_review", "needs_normalizer", "needs_source"]
+  },
+
+  "paths": {
+    "save_path_template": "events/{event_uid}.json",
+    "sources_input_dir": "sources/"
+  },
+
+  "series": {
+    "is_series_field": "is_series",
+    "parent_uid_suffix_when_series": "-series",
+    "child_table": "event_series",
+    "child_uid_rule": "series_uid = parent_event_uid + '-' + series_sequence",
+    "child_required_fields": [
+      "parent_event_uid",
+      "series_sequence",
+      "event_official_start_date",
+      "event_official_end_date",
+      "created_date",
+      "last_updated"
+    ],
+    "child_inherit_from_parent": [
+      "event_official_name",
+      "event_display_name",
+      "venue_uid",
+      "organizer_uid",
+      "rating_tag_uid",
+      "discipline_tag_uid",
+      "event_tag_uids",
+      "name_tag_uids",
+      "label_uids",
+      "source_uids"
+    ],
+    "time_resolution_rule": {
+      "parent_window": ["season", "month", "weather_averages"],
+      "child_window": ["locale_selection", "daily_weather", "time_sensitive_details"],
+      "fallback": "if no children, parent drives all time-based triggers"
+    },
+    "child_paths": {
+      "save_path_template": "event_series/{series_uid}.json"
     }
-  ]
+  }
 }
