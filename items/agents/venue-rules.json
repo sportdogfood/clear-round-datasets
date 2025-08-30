@@ -1,0 +1,115 @@
+{
+  "name": "venue-rules",
+  "version": "v1",
+  "table": "venues",
+  "prefix": "venue_",
+  "uid_immutable": true,
+  "naming": {
+    "field_case": "snake_case",
+    "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "filename_equals_uid": true,
+    "uid_must_end_with": "-venue"
+  },
+  "base_vars": [
+    "venue_uid",
+    "venue_image",
+    "venue_name",
+    "venue_display_name",
+    "venue_recordId"
+  ],
+  "uid_rule": "venue_uid = ensure_suffix(slugify(venue_name), '-venue')",
+  "uid_requires": [
+    "venue_name"
+  ],
+  "required_fields": [
+    "venue_link",
+    "created_date",
+    "last_updated",
+    "city_uid",
+    "state_uid",
+    "country_uid"
+  ],
+  "optional_fields": [
+    "venue_address_line1",
+    "venue_address_line2",
+    "venue_zip",
+    "venue_county",
+    "venue_timezone",
+    "venue_elevation_m",
+    "venue_google_pin",
+    "venue_openstreetmap_id",
+    "venue_coords",
+    "venue_geo_lat",
+    "venue_geo_long",
+    "boundary_geojson",
+    "map_tile_source",
+    "notes",
+    "form_uid",
+    "git_status"
+  ],
+  "relations": {
+    "city_uid": { "type": "single", "required": true, "resolves_in": "items/cities" },
+    "state_uid": { "type": "single", "required": true, "resolves_in": "items/states" },
+    "country_uid": { "type": "single", "required": true, "resolves_in": "items/countries" },
+    "airport_uids": { "type": "multi", "required": false, "resolves_in": "items/airports" },
+    "weather_uid": { "type": "single", "required": false, "resolves_in": "items/weather" },
+    "events_uids": { "type": "multi", "required": false, "resolves_in": "events" },
+    "organizer_uids": { "type": "multi", "required": false, "resolves_in": "organizers" },
+    "source_uids": { "type": "multi", "required": true, "min_items": 1, "resolves_in": "sources" },
+    "label_uids": { "type": "multi", "required": false, "resolves_in": "labels" }
+  },
+  "location_normalizers_required": [
+    "items/countries",
+    "items/states",
+    "items/cities",
+    "items/airports",
+    "items/weather"
+  ],
+  "date_policies": {
+    "format": "YYYY-MM-DD"
+  },
+  "geo_policies": {
+    "lat_range": [-90, 90],
+    "long_range": [-180, 180],
+    "coords_format": "lon,lat",
+    "geo_precision_meters_allowed": [1, 5, 10, 50, 100, 250, 500, 1000],
+    "geo_accuracy_meters_field": "geo_accuracy_meters",
+    "geo_source_field": "geo_source", 
+    "timezone_format": "IANA (e.g., America/New_York)"
+  },
+  "image_policy": {
+    "allow_external_cdn": true,
+    "disallow_ephemeral_links": true
+  },
+  "source_uid_policy": "source_uid = <record_uid> + '-' + slugify(source_name)",
+  "validation": {
+    "venue_uid_must_end_with_suffix": true,
+    "official_link_must_be_https": true,
+    "relations_must_resolve": true,
+    "halt_on_missing_normalizer": true,
+    "lat_long_required_if_no_coords": false,
+    "coords_required_if_no_lat_long": false,
+    "timezone_must_be_valid_iana": true,
+    "no_ad_hoc_values": true,
+    "fact_only_fields": true,
+    "on_failure": ["needs_review", "needs_normalizer", "invalid_geo", "invalid_timezone"]
+  },
+  "paths": {
+    "save_path_template": "venues/{venue_uid}.json",
+    "sources_input_dir": "sources/",
+    "sources_fav_dir": "sources_fav/"
+  },
+  "enrichment": {
+    "priority": [
+      "country_uid",
+      "state_uid",
+      "city_uid",
+      "airport_uids",
+      "weather_uid",
+      "venue_coords|venue_geo_lat/venue_geo_long",
+      "venue_timezone",
+      "venue_address_line1|venue_zip"
+    ],
+    "inheritance_notes": "Events reference venue for authoritative location; downstream content (stay, dine, locale, weather) keys off venue or an explicit this_stay."
+  }
+}
