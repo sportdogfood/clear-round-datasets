@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "entities": {
+    "events": "events",
+    "event_series": "event-series",
+    "venues": "venues",
+    "organizers": "organizers",
+    "sources": "sources"
+  },
+  "normalizers": {
+    "days": "days",
+    "months": "months",
+    "seasons": "seasons",
+    "years": "years",
+    "weeks": "weeks",
+    "countries": "countries",
+    "states": "states",
+    "cities": "cities",
+    "weather": "weather",
+    "airports": "airports",
+    "labels": "labels",
+    "forms": "forms"
+  }
+}
