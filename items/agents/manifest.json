@@ -1,12 +1,13 @@
 {
-  "version": "v2.3",
+  "version": "v2.4",
   "proxy_base": "https://crt-b1434e13de34.herokuapp.com/items",
   "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
   "fetch": { "order": ["proxy", "git"] },
   "paths": {
     "event_rules_path": "agents/event-rules.json",
     "venue_rules_path": "agents/venue-rules.json",
-    "ingestion_rules_path": "agents/ingestion-rules.txt"
+    "ingestion_rules_path": "agents/ingestion-rules.txt",
+    "dir_map_path": "agents/dir-map.json"
   },
   "dirs": {
     "agents_dir": "agents",
