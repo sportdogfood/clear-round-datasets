@@ -1,19 +1,23 @@
-INGESTION RULES — v3.1
+INGESTION RULES — v3.2
 
 Purpose & Scope
 - Facts-only ingestion layer for events, event_series, and venues (plus organizers and sources), using items/* normalizers.
-- Source of truth: Git. Airtable is staging/cleanup only.
+- Source of truth: Git (served via proxy). Airtable is staging/cleanup only.
 - Every written value must be source-confirmed (via source_uids). Unknowns remain empty and trigger needs_review / needs_source.
 
 Bootstrap & Loading
-- Read manifest.json first. Use:
+- Read the agents manifest first:
+  manifest_url = https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- From that manifest, use:
   - proxy_base, git_base
   - paths.event_rules_path, paths.venue_rules_path, paths.ingestion_rules_path
-  - dirs.* and items.* directory names
+  - (optional) paths.dir_map_path — if present, load it and override directory names before any fetches
+  - dirs.* and items.* directory names (AFTER any dir-map overrides)
+  - aliases (optional): map incoming keys to canonical folder names (e.g., "series-events" → "event-series")
   - policy.* (uid_regex, venue_uid_suffix, date_format, timezone_format, facts_only, bool_encoding, ignore_prefixes, source_uid_policy, source_type_policy, geo_input modes/fields)
 - Fetch rules via proxy_base; if 404/timeout, fall back to git_base.
 - Required rules: items/agents/event-rules.json and items/agents/venue-rules.json.
-  - If either missing/unreadable → error: needs_rules (stop).
+  If either missing/unreadable → error: needs_rules (stop).
 
 Intake (starter payload; non-authoritative)
 - user_input_event_link
@@ -29,7 +33,7 @@ Field Conventions
 - Filename equals UID; UIDs are immutable after publish.
 - Boolean-like flags in staging: store as "y"/"n" (strings). Coerce true→"y", false→"n".
 - Ignore any field whose name starts with dnu_ or ignore_.
-- Dates: ISO YYYY-MM-DD only (manifest.policy.date_format).
+- Dates: ISO YYYY-MM-DD only (manifest.policy.date_format). No inferred dates.
 
 Confirmation Gate (must pass before any write)
 1) Link → event_official_link: confirm it is the official show/organizer homepage (HTTPS, non-social). Record a source entry.
@@ -48,17 +52,21 @@ Naming & UID Policy
 - venue_uid must end with manifest.policy.venue_uid_suffix (e.g., “-venue”).
 - State/Country UIDs: lowercase codes (e.g., fl, us).
 
-Directories (from manifest)
-- Entities (input): events/, event_series/, venues/, organizers/, sources/
-- Normalizers (reference): items/{days|months|seasons|years|countries|states|cities|weather|airports|labels}
+Directories (resolve from manifest; do not hardcode)
+- Entities (input) — read from manifest.dirs.* (after dir-map overrides):
+  - events_dir, event_series_dir, venues_dir, organizers_dir, sources_dir
+- Normalizers (reference) — read from manifest.items.*:
+  - days_dir, months_dir, seasons_dir, years_dir, weeks_dir, countries_dir, states_dir, cities_dir, weather_dir, airports_dir, labels_dir, forms_dir
+- Aliases (optional): if manifest.aliases exists, normalize lookups using it (e.g., "series-events" → "event-series").
+- Construct fetch URLs by prefixing proxy_base (fallback to git_base only on 404/timeout).
 
 Relations (resolution required)
 - *_uid = single relation; *_uids = array.
-- All relations must resolve to existing files (or a known normalizer). If missing → needs_normalizer (stop).
+- All relations must resolve to existing files (or to a known normalizer item). If missing → needs_normalizer (stop).
 - Location precedence for derived labels: venue → city → state → country.
 
 Sources (minimal, domain-first policy)
-- Purpose: provenance only; agent may return just URLs. Records are lightweight.
+- Purpose: provenance only; the agent may also return raw URLs. Records are lightweight.
 - Required per source record:
   - source_uid
   - source_link (full URL, HTTPS preferred)
@@ -131,10 +139,11 @@ Commit Order (happy path)
 1) Ensure required normalizers (time + location) exist.
 2) Ensure venue and organizer records exist and pass their rules (else needs_normalizer).
 3) Write/patch event (parent) to events/{event_uid}.json.
-4) If is_series="y": write each child in event_series/{series_uid}.json with parent_event_uid, series_sequence, confirmed child start/end dates.
+4) If is_series="y": write each child in {event_series_dir}/{series_uid}.json with parent_event_uid, series_sequence, confirmed child start/end dates.
 5) Write/update sources/{source_uid}.json for official and any additional confirmed sources.
 6) Apply predefined tags/labels only; update label_uids as union.
 
 Notes
 - This layer is facts-only (no commentary, POV, or tone).
-- Agent must remain task-locked during add-event flow; cross-task requests are rejected until completion or explicit cancel.
+- The agent must remain task-locked during add-event; cross-task requests are rejected until completion or explicit cancel.
+
