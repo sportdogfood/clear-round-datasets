@@ -43,6 +43,7 @@ Rails for GREEN:
   examples: add missing required keys with nulls, normalize https, reorder fields
 - Small data updates to event/venue files limited to “safe fields”:
   display_name, official_link, labels (≤50 lines diff, ≤10 files)
+- Add hub (events) / Add leg(s) (events): Yellow (PR-by-default)
 
 Rails for YELLOW:
 - Always PR (no direct commit)
@@ -55,6 +56,7 @@ Rails for YELLOW:
 - Deletes/renames/path moves
 - Bulk edits >200 lines or >10 files
 - Schema changes in shared includes (e.g., event-rules.json / venue-rules.json)
+- Change dates on a live leg (events): Red (explicit approval)
 
 Rails for RED:
 - PR with explicit checklist & rationale
