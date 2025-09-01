@@ -6,7 +6,7 @@
   "venue_zip": "",
   "venue_geo_lat": "",
   "venue_geo_long": "",
-  "record_last_modified": "8/31/2025 12:34pm",
+  "record_last_modified": "8/31/2025 8:17pm",
   "record_created": "8/27/2025 10:38pm",
   "venue_google_pin": "",
   "events_uids": [],
@@ -21,8 +21,12 @@
   "mapping": "",
   "table": "truth_location",
   "venue_description": "",
-  "country_uid": "",
+  "country_uid": "united-states",
   "venue_long": "World Equestrian Center Ohio",
   "venue_short": "WEC Ohio",
-  "organizers": "wec"
+  "organizer_uids": [
+    "wec"
+  ],
+  "dirs": "venues",
+  "dir_table_type": "truth_location"
 }
