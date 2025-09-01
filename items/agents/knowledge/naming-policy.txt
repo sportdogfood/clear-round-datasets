@@ -1,164 +1,145 @@
 # naming-policy.txt
-
-# Clear Round Travel — Kernel & Agents
-
+# Clear Round Travel - Kernel & Agents
 # Version: v1
-
 # Last updated: 2025-09-01
 
-## Purpose
-
+Purpose
+-------
 Authoritative rules for names, UIDs, slugs, and file paths across the datasets.
 Keeps humans, the Agent, and Codex consistent as we add tasks and content.
 
-## Scope
+Scope
+-----
+- Field/key naming conventions
+- UID and slug construction (events, venues, organizers, sources, normalizers)
+- File path patterns (where JSON lives)
+- Link normalization
+- Booleans and relation keys
 
-* Field/key naming conventions
-* UID and slug construction (events, venues, organizers, sources, normalizers)
-* File path patterns (where JSON lives)
-* Link normalization
-* Booleans and relation keys
+Key conventions (fields)
+------------------------
+- Keys use lower_snake_case (e.g., display_name, official_link).
+- Relation keys:
+  - *_uid  -> single string (e.g., venue_uid)
+  - *_uids -> array of strings (e.g., labels_uids)
+- Booleans use "y"/"n" only.
+  - Inputs may accept yes/no/true/false/1/0, but must normalize to "y" or "n".
+- Dates: calendar dates as YYYY-MM-DD; timestamps as UTC ISO 8601 (e.g., 2025-09-01T12:00:00Z).
+- URLs must be https.
 
-## Key conventions (fields)
+Slugify (for all UIDs)
+----------------------
+1) Trim; lowercase.
+2) Replace spaces and underscores with hyphens.
+3) Remove characters outside [a-z0-9-]; collapse multiple hyphens.
+4) Trim leading/trailing hyphens.
 
-* Keys use **lower\_snake\_case** (e.g., `display_name`, `official_link`).
-* Relation keys:
+General UID rules
+-----------------
+- UIDs are stable once created (renames are red-lane; see permissions-policy).
+- Prefer human-readable UIDs derived from official names with a small disambiguator.
+- Avoid opaque hashes.
+- If two entities would collide, add a short, predictable token (see below).
 
-  * `*_uid`  → single string (e.g., `venue_uid`)
-  * `*_uids` → array of strings (e.g., `labels_uids`)
-* Booleans use **"y"/"n"** only.
+Entity-specific UID patterns
+----------------------------
+Events (event_uid)
+- Base: slug(official event name)
+- Disambiguator:
+  - If event occurs annually: append -yyyy (e.g., hampton-classic-horse-show-2025).
+  - If multiple editions in a year but not in the same month: append -yyyy-mm (e.g., ...-2025-08).
+  - If multiple events occur in the same month (for example weekly legs): append -yyyy-mm-dd (start date).
+- Do not encode "week" in the UID; treat week/leg as metadata (labels), not part of the identifier.
+- Example:
+  - Winter Equestrian Festival (starts 2026-01-05) -> winter-equestrian-festival-2026-01-05
 
-  * Inputs may accept yes/no/true/false/1/0, but must normalize to `"y"` or `"n"`.
-* Dates: calendar dates as **YYYY-MM-DD**; timestamps as **UTC ISO 8601** (e.g., `2025-09-01T12:00:00Z`).
-* URLs must be **https**.
+Venues (venue_uid)
+- Base: slug(official venue name) (e.g., wellington-international)
+- Only add a suffix if a collision occurs (e.g., -fl, -ky). No forced -venue suffix.
 
-## Slugify (for all UIDs)
+Organizers (organizer_uid)
+- Base: slug(legal or public organizer name) (e.g., hampton-classic-inc)
 
-1. Trim; lowercase.
-2. Replace spaces and underscores with hyphens.
-3. Remove characters outside `[a-z0-9-]`; collapse multiple `-`.
-4. Trim leading/trailing `-`.
-
-## General UID rules
-
-* UIDs are **stable** once created (renames are red-lane; see permissions-policy).
-* Prefer human-readable UIDs derived from official names with a small disambiguator.
-* Avoid opaque hashes.
-* If two entities would collide, add a short, predictable token (see below).
-
-## Entity-specific UID patterns
-
-Events (`event_uid`)
-
-* Base: `slug(official event name)`
-* Disambiguator:
-
-  * If event occurs annually: append `-yyyy` (e.g., `hampton-classic-horse-show-2025`).
-  * If multiple editions in a year but **not** in the same month: append `-yyyy-mm` (e.g., `…-2025-08`).
-  * **If multiple events occur in the same month (e.g., weekly legs): append `-yyyy-mm-dd` (start date).**
-* Do **not** encode “week” in the UID; treat week/leg as metadata (labels), not part of the identifier.
-* Example:
-
-  * `Winter Equestrian Festival` (starts 2026-01-05) → `winter-equestrian-festival-2026-01-05`
-
-Venues (`venue_uid`)
-
-* Base: `slug(official venue name)` (e.g., `wellington-international`)
-* Only add a suffix if a collision occurs (e.g., `-fl`, `-ky`). No forced `-venue` suffix.
-
-Organizers (`organizer_uid`)
-
-* Base: `slug(legal or public organizer name)` (e.g., `hampton-classic-inc`)
-
-Sources (`source_uid`)
-
-* Prefer domain-first:
-
-  * From `https://www.hamptonclassic.com/` → `hamptonclassic-com`
-  * Rule: take hostname without `www`, replace `.` with `-`.
-* If no domain, slug the source name (e.g., `usef`).
+Sources (source_uid)
+- Prefer domain-first:
+  - From https://www.hamptonclassic.com/ -> hamptonclassic-com
+  - Rule: take hostname without www, replace . with -.
+- If no domain, slug the source name (e.g., usef).
 
 Normalizers (countries/states/cities/airports, etc.)
+- Countries: ISO 3166-1 alpha-2 lowercase (e.g., us, ca) when used as codes; for UIDs based on names, use slugs (united-states).
+- States (US): USPS 2-letter lowercase for codes (fl, ny); slug names otherwise.
+- Cities: slug(city-name[-state-or-country-if-needed]) to avoid collisions (e.g., lexington-ky, wellington-fl).
+- Airports: IATA code lowercase when available (pbi, isp); if absent, slug name.
 
-* Countries: use ISO 3166-1 alpha-2 lowercase (e.g., `us`, `ca`) when used as codes;
-  for UIDs based on names, use slugs (`united-states`).
-* States (US): USPS 2-letter lowercase for codes (`fl`, `ny`); slug names otherwise.
-* Cities: `slug(city-name[-state-or-country-if-needed])` to avoid collisions
-  (e.g., `lexington-ky`, `wellington-fl`).
-* Airports: IATA code lowercase when available (`pbi`, `isp`); if absent, slug name.
+Display vs official names
+-------------------------
+- display_name: short, human-facing label (may include casing and accents).
+- official_name: authoritative name as published by the organizer or venue.
+- UIDs derive from official_name; display can vary without changing UID.
 
-## Display vs official names
+File path patterns
+------------------
+Paths are governed by the registry at items/agents/dir-map.json (v2). Typical patterns:
 
-* `display_name` — short, human-facing label (may include casing & accents).
-* `official_name` — authoritative name as published by the organizer/venue.
-* UIDs derive from **official\_name**; display can vary without changing UID.
-
-## File path patterns
-
-Paths are governed by the registry at `items/agents/dir-map.json` (v2). Typical patterns:
-
-* Events (hub **and** legs live here): `index/events/<event_uid>.json`
-* Venues:        `index/venues/<venue_uid>.json`
-* Organizers:    `index/organizers/<organizer_uid>.json`
-* Sources:       `index/sources/<source_uid>.json`
+- Events (hub and legs live here): index/events/<event_uid>.json
+- Venues:        index/venues/<venue_uid>.json
+- Organizers:    index/organizers/<organizer_uid>.json
+- Sources:       index/sources/<source_uid>.json
 
 Content collections (examples; actual roots come from dir-map.json):
+- Stay:          items/stay/<uid>.json
+- Dine:          items/dine/<uid>.json
+- Locale:        items/locale/<uid>.json
 
-* Stay:          `items/stay/<uid>.json`
-* Dine:          `items/dine/<uid>.json`
-* Locale:        `items/locale/<uid>.json`
+Collision policy
+----------------
+- If a proposed UID already exists, append the smallest disambiguator:
+  - For events: prefer time token (-yyyy, then -yyyy-mm, then -yyyy-mm-dd).
+  - For venues/cities: prefer geo token (-fl, -ky, or -us as needed).
+- Do not change existing UIDs to resolve new collisions; adjust the new one.
 
-## Collision policy
+Renames and deprecations
+------------------------
+- Avoid UID renames. If unavoidable (red-lane), include:
+  - previous_uids: array of strings (optional) to document history.
+  - A one-line rationale in the PR description.
+- Paths should not move without explicit approval (red-lane).
 
-* If a proposed UID already exists, append the smallest disambiguator:
+Link normalization
+------------------
+- official_link and other URLs must be https://
+- Strip tracking parameters when non-essential (for example utm_*)
+- Keep canonical hostnames (avoid unnecessary redirects).
 
-  * For events: prefer time token (`-yyyy`, then `-yyyy-mm`, then **`-yyyy-mm-dd`**).
-  * For venues/cities: prefer geo token (`-fl`, `-ky`, or `-us` as needed).
-* Do **not** change existing UIDs to resolve new collisions; adjust the new one.
+Booleans and enums
+------------------
+- Booleans: "y" or "n" only (lowercase strings).
+- Enums: lowercase slugs (for example fei, national, hunter, jumper).
 
-## Renames & deprecations
+Examples (quick)
+----------------
+- Event: "Hampton Classic Horse Show" starting 2025-08-24 ->
+  event_uid: hampton-classic-horse-show-2025-08-24
+  Path: index/events/hampton-classic-horse-show-2025-08-24.json
 
-* Avoid UID renames. If unavoidable (red-lane), include:
+- Venue: "Wellington International" (Florida) ->
+  venue_uid: wellington-international
+  Path: index/venues/wellington-international.json
 
-  * `previous_uids`: array of strings (optional) to document history.
-  * A one-line rationale in the PR description.
-* Paths should not move without explicit approval (red-lane).
+- Source: https://www.hamptonclassic.com/ ->
+  source_uid: hamptonclassic-com
+  Path: index/sources/hamptonclassic-com.json
 
-## Link normalization
+Validation hooks (alignment with other docs)
+--------------------------------------------
+- Validation relies on this policy plus:
+  - validation-checklist.txt (add/update checks)
+  - operating-rules.txt (preview -> commit, conflict handling)
+  - permissions-policy.txt (lanes/rails)
+- Tasks should reject inputs that would violate these naming rules.
 
-* `official_link` and other URLs must be `https://`.
-* Strip tracking parameters when non-essential (e.g., `utm_*`).
-* Keep canonical hostnames (avoid unnecessary redirects).
-
-## Booleans & enums
-
-* Booleans: `"y"` or `"n"` only (lowercase strings).
-* Enums: lowercase slugs (e.g., `fei`, `national`, `hunter`, `jumper`).
-
-## Examples (quick)
-
-* Event: “Hampton Classic Horse Show” starting **2025-08-24** →
-  `event_uid`: `hampton-classic-horse-show-2025-08-24`
-  Path: `index/events/hampton-classic-horse-show-2025-08-24.json`
-
-* Venue: “Wellington International” (Florida) →
-  `venue_uid`: `wellington-international`
-  Path: `index/venues/wellington-international.json`
-
-* Source: `https://www.hamptonclassic.com/` →
-  `source_uid`: `hamptonclassic-com`
-  Path: `index/sources/hamptonclassic-com.json`
-
-## Validation hooks (alignment with other docs)
-
-* Validation relies on this policy plus:
-
-  * `validation-checklist.txt` (add/update checks)
-  * `operating-rules.txt` (PREVIEW → COMMIT, conflict handling)
-  * `permissions-policy.txt` (lanes/rails)
-* Tasks should **reject** inputs that would violate these naming rules.
-
-## Change control
-
-* Updates to this policy are Yellow (PR required).
-* Any change that would force UID/path renames must call out impacts in the PR.
+Change control
+--------------
+- Updates to this policy are Yellow (PR required).
+- Any change that would force UID or path renames must call out impacts in the PR.
