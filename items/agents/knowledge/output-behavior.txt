@@ -1,156 +1,151 @@
 # output-behavior.txt
-# Clear Round Travel — Kernel & Agents
+# Clear Round Travel - Kernel & Agents
 # Version: v1
 # Last updated: 2025-09-01
 
 Purpose
 -------
-Defines what each task domain must OUTPUT. Stable contracts keep humans, the Agent,
-and Codex interoperable. This file is docs-only; it does not change runtime behavior.
+Defines exactly what each domain returns and how writes are performed.
+This keeps Humans, the Agent, and Codex aligned on PREVIEW -> COMMIT.
 
-Domains (summary)
------------------
-- add/        → DATA-WRITE with PREVIEW → COMMIT. Emits a PREVIEW object; writes only after COMMIT.
-- research/   → Facts-only JSON. No write.
-- create/     → Content JSON or Markdown. No write.
-- query/      → Facts-only JSON (counts/lists/refs). No write.
-- reminders/  → Schedule JSON (RRULE-style). No write.
+Domains and contracts
+---------------------
+ADD (data-write)
+- Emits a PREVIEW first. No write until Human issues COMMIT.
+- PREVIEW shows the full planned writes as complete file payloads (not patches).
+- Lane is YELLOW by default; see permissions-policy for overrides.
 
-Common rules
-------------
-- No silent writes. Only add/ tasks may write, and only after explicit COMMIT.
-- Keys use lower_snake_case. URLs must be https.
-- Timestamps are UTC ISO 8601 when needed.
-- On conflict (target changed since preview), the Agent fails safe and re-PREVIEWS.
+UPDATE (data-write)
+- Emits a PREVIEW first. No write until Human issues COMMIT.
+- PREVIEW includes before/after summary and diff counts.
+- Lane depends on changed fields; see permissions-policy.
 
-ADD domain (DATA-WRITE)
------------------------
-Behavior:
-1) Validate input against task input_schema.
-2) Derive stable fields (UIDs, date normalization, link normalization).
-3) Validate domain rules (https_only, relation resolution or explicit deferral).
-4) Emit PREVIEW object (no write). Wait for COMMIT / EDIT / CANCEL.
+RESEARCH (no write)
+- Returns facts-only JSON. No commit path. Include minimal source hints.
 
-PREVIEW object (add/ create NEW file):
-{
-  "type": "PREVIEW",
-  "path": "index/events/<event_uid>.json",
-  "payload": { ... full file contents ... },
-  "notes": [ "any unresolved relations or assumptions" ]
-}
+QUERY (no write)
+- Returns lists, counts, simple objects. No commit path.
 
-PREVIEW object (add/ UPDATE existing file):
-{
-  "type": "PREVIEW",
-  "path": "index/events/<event_uid>.json",
-  "before_after": {
-    "changed_fields": ["description","official_link"],
-    "before": { "description": "old...", "official_link": "http://..." },
-    "after":  { "description": "new...", "official_link": "https://..." }
-  },
-  "diff_summary": { "lines_added": 3, "lines_removed": 1 },
-  "payload": { ... full updated file contents ... }
-}
+CREATE (no write)
+- Returns content as JSON or Markdown per task schema. No commit path.
 
-COMMIT (human action):
-- Agent posts { path, json: payload, message } to the proxy.
-- Default is PR-by-default. Human may instruct “ship directly” for green-lane items.
+REMINDERS (no write)
+- Returns schedule JSON (RRULE or explicit times). No commit path.
 
-RESEARCH domain (facts-only)
-----------------------------
-Behavior:
-- Gather verified facts; include source hints when applicable; no write.
-
-Output (example):
-{
-  "task": "research-hotels",
-  "scope": { "venue_uid": "wellington-international", "radius_km": 10 },
-  "facts": [
-    { "name": "XYZ Hotel", "distance_km": 2.1, "link": "https://...", "notes": "no resort fee reported" }
-  ],
-  "sources": [
-    { "domain": "officialhotel.com", "retrieved_at": "2025-09-01T12:00:00Z" }
-  ]
-}
-
-CREATE domain (content)
------------------------
-Behavior:
-- Produce content (JSON blocks or Markdown) per task schema; no write.
-
-Output (JSON blocks example):
-{
-  "format": "json",
-  "content": {
-    "heading": "Hampton Classic: Getting There",
-    "bullets": [
-      "Fly into ISP for a closer secondary airport.",
-      "Plan 20–30 minutes for on-site parking during peak."
-    ]
-  }
-}
-
-Output (Markdown example):
-{
-  "format": "markdown",
-  "content": "## Hampton Classic: Getting There\n- Fly into ISP...\n- Plan 20–30 minutes..."
-}
-
-QUERY domain (facts-only)
--------------------------
-Behavior:
-- Compute/aggregate answers from repository; no write.
-
-Output (example):
-{
-  "task": "events-upcoming",
-  "params": { "from": "2025-09-01", "to": "2025-12-31" },
-  "results": [
-    { "event_uid": "hampton-classic-horse-show", "start_date": "2025-08-24", "venue_uid": "bridgehampton" }
-  ],
-  "counts": { "total": 1 }
-}
-
-REMINDERS domain (schedule)
----------------------------
-Behavior:
-- Propose schedules; no write.
-
-Output (example):
-{
-  "task": "daily-due",
-  "schedule": {
-    "type": "rrule",
-    "value": "FREQ=DAILY;BYHOUR=9;BYMINUTE=0;BYSECOND=0"
-  },
-  "starts_at": "2025-09-02T09:00:00Z",
-  "notes": "Daily content review prompt"
-}
-
-Field expectations (all domains)
---------------------------------
-- UIDs & slugs: follow naming-policy.txt (lowercase, hyphen, stable).
-- Links: must be https. If an official link is http, note in PREVIEW and propose https if resolvable.
-- Dates: ISO date (YYYY-MM-DD) for calendar dates; ISO datetime UTC for timestamps.
-- Relations: resolve to *_uid; if not resolvable, mark as deferred with a note (no silent guessing).
-
-Safe vs. sensitive fields (for add/update)
+PREVIEW envelope (all write-capable tasks)
 ------------------------------------------
-- Safe (generally yellow-lane): display_name, official_link, labels, simple description edits.
-- Sensitive (red-lane → human approval): dates, ratings, divisions, airports, organizer/venue relations, path moves/renames.
+type: PREVIEW
+lane: green | yellow | red
+writes: [
+  {
+    op: add | update,
+    path: <repo path>,
+    base_sha: <optional sha if file exists>,
+    payload: { ...full file content... },
+    notes: [ "assumptions or deferrals" ]
+  }
+]
+summary: { adds: N, updates: M, total: N+M, risks: [ ... ] }
 
-Error signaling (non-exhaustive)
---------------------------------
-- not_enabled          → starter not found
-- bad_input            → input_schema validation failed
-- validation_failed    → domain/field rule failed
-- allowlist_denied     → path not permitted by ALLOW_DIRS/write_allowlist
-- conflict             → target changed since preview; re-preview required
-(See error-codes.txt for remediation.)
+COMMIT envelope (proxy request)
+-------------------------------
+POST {proxy_base}/items/commit
+body: { path: <path>, json: { ...full file content... }, message: "<commit message>" }
+success: { "commit": { "sha": "..." } }
+error:   { "error": "<code>", "message": "...", "detail": { ... } }
 
-Notes for implementers
-----------------------
-- PREVIEW payload must be the full post-change file content to ensure reproducibility.
-- For updates, include a concise diff_summary and list changed_fields.
-- Never write on PREVIEW; only on explicit COMMIT.
-- When in doubt, return facts/content without writing and surface assumptions in notes.
+Conflict behavior (Agent/Codex)
+-------------------------------
+- If file changed since PREVIEW (sha or content), do not write. Return conflict and re-run PREVIEW.
+
+Examples (illustrative, not prescriptive)
+-----------------------------------------
+
+ADD: add-event (non-series)
+- Input: "Add Event hampton-classic-f34k"
+- PREVIEW:
+  type: PREVIEW
+  lane: yellow
+  writes:
+    - op: add
+      path: index/events/hampton-classic-horse-show-2025-08-24.json
+      payload: { ...complete event JSON... }
+  summary: { adds: 1, updates: 0, total: 1 }
+
+ADD: add-event (season hub + legs, same directory)
+- Input: "Add Event desert-desert-circuit-series-tzsx"
+- PREVIEW:
+  type: PREVIEW
+  lane: yellow
+  writes:
+    - op: add
+      path: index/events/desert-desert-circuit-2025-01-21.json      # hub (full span)
+      payload: { ...hub JSON... }
+    - op: add
+      path: index/events/desert-desert-circuit-2025-01-21.json      # leg 1 (yyyy-mm-dd)
+      payload: { ...leg JSON (leg_flag: y, label: Week 1)... }
+    - op: add
+      path: index/events/desert-desert-circuit-2025-01-28.json      # leg 2
+      payload: { ... }
+    - ...
+  summary: { adds: 11, updates: 0, total: 11, risks: [] }
+- Note: no separate event-series entity; both hub and legs live under index/events/.
+
+UPDATE: update-event (safe copy tweak)
+- Input: "Update Event hampton-classic-horse-show-2025-08-24 set description"
+- PREVIEW:
+  type: PREVIEW
+  lane: yellow
+  writes:
+    - op: update
+      path: index/events/hampton-classic-horse-show-2025-08-24.json
+      base_sha: <sha>
+      payload: { ...complete JSON with updated description... }
+      notes: []
+  summary: { adds: 0, updates: 1, total: 1 }
+
+RESEARCH: research-hotels (no write)
+- Output (facts-only):
+  {
+    "type": "facts",
+    "query": "hotels near Wellington International",
+    "items": [
+      { "name": "Hotel A", "distance_km": 7.2, "link": "https://...", "notes": "free parking" }
+    ],
+    "retrieved_at": "2025-09-01T12:00:00Z",
+    "sources": [ "example-site.com", "example-hotel.com" ]
+  }
+
+QUERY: events-upcoming (no write)
+- Output:
+  {
+    "items": [
+      { "event_uid": "hampton-classic-horse-show-2025-08-24", "start_date": "2025-08-24" },
+      { "event_uid": "winter-equestrian-festival-2026-01-05", "start_date": "2026-01-05" }
+    ],
+    "count": 2
+  }
+
+CREATE: create-section-content (no write)
+- Output (example Markdown):
+  {
+    "format": "markdown",
+    "title": "Getting There",
+    "body": "Fly into PBI (nonstop from major hubs). Drive time to Wellington is 25-35 minutes in normal traffic. Rideshare pickup is at the designated zone near baggage claim..."
+  }
+
+REMINDERS: daily-due (no write)
+- Output:
+  {
+    "schedule": {
+      "rrule": "FREQ=DAILY;BYHOUR=9;BYMINUTE=0;BYSECOND=0",
+      "timezone": "America/New_York"
+    },
+    "message": "Daily checklist: confirm ring schedules and weather snapshot."
+  }
+
+Notes
+-----
+- All example paths must be within ALLOW_DIRS. The Agent should refuse to COMMIT outside the allowlist.
+- For multi-file writes, prefer one PR containing all files for that task unless lane elevation requires splitting.
+- Do not emit patches; always emit complete final files in PREVIEW and COMMIT.
