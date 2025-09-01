@@ -1,0 +1,164 @@
+# agent-git-access.txt
+# Clear Round Travel - Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Minimal, stable contract for how the Agent (and Codex, when used) reads and writes
+repository files through our proxy. Keeps PREVIEW -> COMMIT on rails, with PR-by-default.
+
+Manifest anchors (read by Agent)
+--------------------------------
+The Agent reads these keys from manifest (or an equivalent config):
+- proxy_base : HTTPS base for writes (our Heroku proxy)
+- git_base   : read-only base for fetching current files (raw or API)
+
+Example (conceptual):
+  proxy_base = https://crt-b1434e13de34.herokuapp.com
+  git_base   = https://raw.githubusercontent.com/<org>/<repo>/main
+
+Allowlist and directories
+-------------------------
+- All write paths MUST begin with a prefix listed in ALLOW_DIRS (Heroku config).
+- Agent must refuse to COMMIT outside ALLOW_DIRS -> allowlist_denied.
+- Paths should be derived from dir-map.json (v2) and naming-policy.txt (no ad-hoc trees).
+
+Read contract (safety checks)
+-----------------------------
+For each planned write:
+1) Compute the target path from dir-map + naming-policy.
+2) READ current file via git_base:
+   - If 200 OK -> treat as update; capture base_sha (if available) OR compute a content hash.
+   - If 404    -> treat as add; base_sha is empty.
+3) Validate JSON (if file exists). Reject on parse error (json_invalid).
+
+Preview contract (what Agent shows before any write)
+----------------------------------------------------
+type: PREVIEW
+lane: green | yellow | red
+writes: [
+  {
+    op: add | update,
+    path: <repo path>,
+    base_sha: <optional sha/hash when file exists>,
+    payload: { ...complete final JSON... },
+    notes: [ "assumptions or deferrals (e.g., unresolved venue_uid)" ]
+  }
+]
+summary: { adds: N, updates: M, total: N+M, risks: [ ... ] }
+
+Rules:
+- Always emit full files (not patches).
+- If any relation cannot be resolved, list it in notes and keep lane >= yellow.
+- If proposed write falls outside ALLOW_DIRS -> do not preview; return allowlist_denied.
+
+Commit contract (today)
+-----------------------
+Endpoint:
+  POST {proxy_base}/items/commit
+Body:
+  { "path": "<path>", "json": { ...full file content... }, "message": "<commit message>" }
+Success:
+  { "commit": { "sha": "<sha>" } }
+Error:
+  { "error": "<code>", "message": "...", "detail": { ... } }
+
+Agent behavior at COMMIT time:
+- Re-read target via git_base and compare to base_sha/content hash captured at PREVIEW.
+- If changed -> do not call /items/commit; return conflict and re-run PREVIEW.
+- If unchanged -> call /items/commit with the previewed payload.
+
+Commit messages
+---------------
+- Format: "feat|fix|chore|docs(scope): what — why (actor: human|agent|codex)"
+- Example: "feat(events): add hub + 10 legs for Desert Circuit (actor: agent)"
+
+Conflict policy
+---------------
+- HEAD drift since PREVIEW => conflict (no write). Agent must re-read, re-derive, re-preview.
+- Do not force-merge in Agent flow.
+
+Lane policy (summary; see permissions-policy.txt for details)
+------------------------------------------------------------
+- GREEN  : auto-commit allowed (human only). Agent/Codex prefer PR unless told otherwise.
+- YELLOW : PR-by-default (Agent/Codex). Requires PREVIEW -> COMMIT.
+- RED    : explicit human approval in PR. Agent must mark lane=red in PREVIEW.
+
+Error codes (expected from proxy or Agent)
+------------------------------------------
+- not_enabled        : starter/folder missing
+- bad_input          : invalid task inputs or schema mismatch
+- validation_failed  : https-only, date windows, hub/leg sanity, enum rules
+- allowlist_denied   : path not under ALLOW_DIRS
+- already_exists     : add requested but file exists
+- missing_file       : update requested but file missing
+- conflict           : file changed since PREVIEW
+- json_invalid       : target file not valid JSON
+- server_error       : proxy error
+- upstream_error     : git provider or network error
+
+Size and scope limits
+---------------------
+- Prefer one task -> one PR.
+- Large diffs (>50 lines data or >200 lines hygiene) -> escalate lane.
+- Multi-file (>10) -> split PRs or escalate lane.
+
+Examples (illustrative)
+-----------------------
+Single add (non-series event)
+- PREVIEW:
+  type: PREVIEW
+  lane: yellow
+  writes:
+    - op: add
+      path: index/events/hampton-classic-horse-show-2025-08-24.json
+      payload: { ...complete JSON... }
+  summary: { adds: 1, updates: 0, total: 1 }
+- COMMIT:
+  POST /items/commit
+  { "path": "index/events/hampton-classic-horse-show-2025-08-24.json",
+    "json": { ... },
+    "message": "feat(events): add hampton classic 2025-08-24 (actor: agent)" }
+
+Single update (safe copy tweak)
+- PREVIEW:
+  type: PREVIEW
+  lane: yellow
+  writes:
+    - op: update
+      path: index/events/hampton-classic-horse-show-2025-08-24.json
+      base_sha: <sha or content hash>
+      payload: { ...updated JSON... }
+  summary: { adds: 0, updates: 1, total: 1 }
+- COMMIT:
+  Re-check HEAD; if unchanged -> POST /items/commit with same body and message "fix(events): update description (actor: agent)"
+
+Optional future extension (documented, not required now)
+--------------------------------------------------------
+Batch/PR endpoint (when you enable it in the proxy):
+  POST {proxy_base}/items/commit-batch
+  {
+    "mode": "pr",                      // or "direct"
+    "branch": "agent/<task>/<uid>",
+    "pr_title": "feat(events): add hub + legs for Desert Circuit",
+    "pr_body": "plan, checklist, rollback note",
+    "message": "fallback commit message if mode=direct",
+    "writes": [
+      { "op": "add", "path": "...", "base_sha": "", "json": { ... } },
+      { "op": "add", "path": "...", "base_sha": "", "json": { ... } }
+    ]
+  }
+Success:
+  { "pr": { "number": 123, "url": "..." }, "writes": [ { "path": "...", "status": "queued" } ] }
+
+Attribution and logging
+-----------------------
+- Include actor in commit message (human/agent/codex).
+- Keep PREVIEW payloads and notes available in PR body or task logs for audit.
+- Include simple rollback note in PR body ("Revert this PR to restore prior state").
+
+Change control
+--------------
+- Updates to this contract are YELLOW (PR required).
+- Any change that relaxes conflict checks or allowlist rules must be called out in the PR.
