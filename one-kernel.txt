@@ -1,0 +1,66 @@
+One kernel, auto-loaded tasks (no global edits)
+
+5 responsibility domains: add/, research/, create/, query/, reminders/.
+
+Conversation starter = loader key. On the very first user line, the kernel loads task files by convention—no manifest/ingestion/OpenAPI changes.
+
+Folder convention (per task)
+
+Use either two-level or three-level, your call:
+
+Two-level (simple): items/agents/<starter>/
+
+rules.json (facts/validation/fields/paths)
+
+prompt.md (task-specific micro-instructions)
+
+schema.json (optional IO schema)
+
+Three-level (domain → starter):
+items/agents/<domain>/<starter>/ where <domain> ∈ {add, research, create, query, reminders}
+
+Examples:
+
+items/agents/add/add-event/…
+
+items/agents/add/add-event-series/…
+
+items/agents/add/add-venue/…
+
+items/agents/research/research-hotels/…
+
+items/agents/query/events-upcoming/…
+
+items/agents/create/create-section-content/…
+
+Kernel behavior: try agents/<starter>/rules.json; if not found, try agents/<domain>/<starter>/rules.json. If still missing → { "error": "not_enabled", "detail": "<starter>" }.
+
+What stays centralized (no per-task churn)
+
+Kernel defaults: facts-only, task-lock, preview-then-commit, UID/date/HTTPS policies, sources domain-first, relations must resolve.
+
+Proxy/OpenAPI/manifest: unchanged. The kernel always fetches via manifest.proxy_base, fallback git_base.
+
+Output contracts (stable across tasks)
+
+DATA-WRITE (add…): preview JSON → wait for COMMIT/EDIT/CANCEL → commit via proxy.
+
+RESEARCH/QUERY: facts-only JSON (no commit).
+
+CREATE: emits content JSON or markdown per task schema (no commit).
+
+REMINDERS: emits schedule JSON (no commit).
+
+Scaling new starters
+
+Adding a starter = add a folder with rules.json (and optional prompt.md, schema.json). No edits to router text, manifest, or ingestion rules.
+
+Next moves (quick)
+
+Create folders for add-event and add-event-series under items/agents/add/… with their rules.json + (optional) prompt.md.
+
+Keep your existing event-rules.json/venue-rules.json as shared includes those task rules can reference.
+
+Flip the kernel to: “on first message, load agents/<starter>/rules.json by convention; else error not_enabled.”
+
+This gives you one agent, five domains, unlimited starters—zero global file churn.
