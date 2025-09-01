@@ -38,6 +38,10 @@ ADD — creating a new file (PREVIEW gate)
 [ ] Required fields present (event/venue/source-specific as applicable)
 [ ] Relations resolved to *_uid; if not resolvable, mark explicit deferrals in PREVIEW notes
 [ ] Link & date sanity (https_only, plausible date ranges)
+[ ] Hub vs leg sanity:
+    - Legs sit fully inside the hub’s date window.
+    - No overlapping leg date ranges.
+    - Week/leg labels are consistent (“Week 1…N”).
 [ ] PREVIEW includes:
     - path
     - payload (full)
@@ -54,6 +58,11 @@ UPDATE — editing an existing file (PREVIEW gate)
 [ ] Sensitive fields changed? (dates, ratings, divisions, airports, relations, path) → mark as RED lane
 [ ] Safe fields only? (display_name, official_link, labels, minor description) → likely YELLOW lane
 [ ] Payload is complete post-change file content
+[ ] Link & date sanity (https_only, plausible date ranges)
+[ ] Hub vs leg sanity:
+    - Legs sit fully inside the hub’s date window.
+    - No overlapping leg date ranges.
+    - Week/leg labels are consistent (“Week 1…N”).
 [ ] Include BEFORE/AFTER summary:
     - changed_fields (list)
     - before_after sample of key fields
