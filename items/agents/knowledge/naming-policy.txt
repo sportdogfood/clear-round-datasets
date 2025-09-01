@@ -11,7 +11,7 @@ Keeps humans, the Agent, and Codex consistent as we add tasks and content.
 Scope
 -----
 - Field/key naming conventions
-- UID and slug construction (events, series, venues, organizers, sources, normalizers)
+- UID and slug construction (events, venues, organizers, sources, normalizers)
 - File path patterns (where JSON lives)
 - Link normalization
 - Booleans and relation keys
@@ -51,10 +51,6 @@ Events (`event_uid`)
 - Example:
   - `Winter Equestrian Festival` (Jan 2026) → `winter-equestrian-festival-2026-01`
 
-Event Series (`event_series_uid`)
-- Base: `slug(series label)` (e.g., `wellington-esp-series`)
-- Optional seasonal/annual token if needed: `-2025` or `-winter-2025`.
-
 Venues (`venue_uid`)
 - Base: `slug(official venue name)` (e.g., `wellington-international`)
 - Only add a suffix if a collision occurs (e.g., `-fl`, `-ky`). No forced `-venue` suffix.
@@ -87,7 +83,6 @@ File path patterns
 Paths are governed by the registry at `items/agents/dir-map.json` (v2). Typical patterns:
 
 - Events:        `index/events/<event_uid>.json`
-- Event Series:  `index/event-series/<event_series_uid>.json`
 - Venues:        `index/venues/<venue_uid>.json`
 - Organizers:    `index/organizers/<organizer_uid>.json`
 - Sources:       `index/sources/<source_uid>.json`
@@ -131,10 +126,6 @@ Examples (quick)
 - Venue: “Wellington International” (Florida) →  
   `venue_uid`: `wellington-international`  
   Path: `index/venues/wellington-international.json`
-
-- Series: “ESP Fall Series” (2025) →  
-  `event_series_uid`: `esp-fall-series-2025`  
-  Path: `index/event-series/esp-fall-series-2025.json`
 
 - Source: `https://www.hamptonclassic.com/` →  
   `source_uid`: `hamptonclassic-com`  
