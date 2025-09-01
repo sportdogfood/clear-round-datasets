@@ -1,0 +1,126 @@
+# brief.txt
+# Agent: add-event
+# Clear Round Travel - Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+What this task does
+-------------------
+Creates a new event "hub" and, if applicable, its weekly "legs" in the same directory.
+No separate event-series entity is used. Both hub and legs live under:
+  index/events/<event_uid>.json
+
+How to invoke
+-------------
+- One-liner (recommended):  Add Event <lookup-key>
+  Example: Add Event hampton-classic-f34k
+- The agent will resolve <lookup-key> from staging (e.g., forms or events_backlog),
+  load the row, and present a confirmation checklist before writing.
+
+Inputs the agent expects (from staging)
+---------------------------------------
+Minimal fields (exact names may vary by staging table, but must map to these concepts):
+- official_link (https URL)
+- official_name (event name)
+- start_date (YYYY-MM-DD)
+- end_date   (YYYY-MM-DD)
+- is_series  ("y"/"n")  [y = hub + legs; n = single event]
+- series_label (e.g., "Circuit Week")              [series only]
+- series_count (e.g., "10")                        [series only]
+- venue_uid (or venue fields to resolve a venue_uid)
+- organizer_uid (or organizer fields to resolve)
+- labels_uids (optional array)
+- description (optional)
+
+Confirmation checklist (shown before PREVIEW)
+---------------------------------------------
+Identity
+[ ] official_name is correct (display_name can differ later)
+[ ] official_link is https and canonical (no unnecessary tracking params)
+
+Dates
+[ ] start_date and end_date are valid YYYY-MM-DD and start_date <= end_date
+[ ] is_series = "y" only when multiple weekly legs are intended
+
+Hub vs legs (if is_series = "y")
+[ ] Hub span equals the full window (start_date..end_date)
+[ ] series_label looks right (e.g., "Circuit Week")
+[ ] series_count is a positive integer
+[ ] Proposed legs: weekly, non-overlapping, each sits fully inside the hub window
+
+Relations
+[ ] venue_uid resolved (or explicit deferral noted)
+[ ] organizer_uid resolved (or explicit deferral noted)
+[ ] labels_uids (optional) are valid slugs if provided
+
+Paths and collisions
+[ ] Each planned path is within ALLOW_DIRS and derived from naming-policy + dir-map (v2)
+[ ] No target file already exists (hub or any leg); if exists, stop and report
+
+UID rules (applied by the agent)
+--------------------------------
+- Base UID = slug(official_name)
+- Disambiguator:
+  - Single event: append -yyyy-mm-dd (event start date)
+  - Hub (series): append hub start date -> <base>-yyyy-mm-dd
+  - Legs: append each leg start date -> <base>-yyyy-mm-dd
+- Do NOT encode the word "week" in UIDs; weeks are metadata only.
+
+What PREVIEW will show
+----------------------
+type: PREVIEW
+lane: yellow (by default)
+writes:
+  - For single event (is_series="n"): 1 ADD to index/events/<base>-yyyy-mm-dd.json
+  - For hub + legs (is_series="y"):
+      1 ADD for the hub (full span)
+      N ADDs for the legs (weekly date anchors)
+Each write includes:
+  path: index/events/<event_uid>.json
+  payload: complete final JSON for that file (not a patch)
+  notes: any assumptions/deferrals (e.g., unresolved venue pending UID)
+
+Lane policy (summary)
+---------------------
+- Default: YELLOW (PR-by-default)
+- Escalate to RED if:
+  - Dates look inconsistent with published schedules
+  - Proposed path conflicts with an existing file
+  - Relations imply identity changes or overwrite risk
+
+COMMIT behavior
+---------------
+- No write happens until Human issues COMMIT.
+- On COMMIT, the agent re-checks HEAD for each target; if changed, returns conflict and re-runs PREVIEW.
+
+Typical errors the agent may return
+-----------------------------------
+- bad_input           (missing required fields or invalid formats)
+- validation_failed   (https-only, date window, hub/leg sanity)
+- allowlist_denied    (path not under ALLOW_DIRS)
+- already_exists      (target file present when ADD requested)
+- conflict            (file changed since PREVIEW)
+- not_enabled         (starter missing)
+- server_error / upstream_error
+
+Notes and examples
+------------------
+- Example PREVIEW (single event):
+  writes:
+    - op: add
+      path: index/events/hampton-classic-horse-show-2025-08-24.json
+      payload: { ...complete event JSON... }
+
+- Example PREVIEW (hub + 10 legs):
+  writes:
+    - op: add
+      path: index/events/desert-desert-circuit-2025-01-21.json   # hub (full span)
+      payload: { ...hub JSON... }
+    - op: add
+      path: index/events/desert-desert-circuit-2025-01-21.json   # leg 1 (start date)
+      payload: { ...leg JSON (leg_flag: "y", leg_label: "Week 1") ... }
+    - op: add
+      path: index/events/desert-desert-circuit-2025-01-28.json   # leg 2
+      payload: { ... }
+    - ...
+- These examples are illustrative; the agent must compute actual dates from the hub window and series_count.
