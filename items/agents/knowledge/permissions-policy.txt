@@ -1,0 +1,128 @@
+# permissions-policy.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Light-rails governance so Human, Agent, and Codex can move fast without surprises.
+This policy covers what each actor may change, when PRs are required, and what
+triggers a “rail” (extra approval). It is docs-only; no runtime behavior.
+
+Actors
+------
+- Human (Owner/Assistant): Full control. May direct-commit or use PRs.
+- Agent (Kernel tasks at runtime): Adds/updates data via PREVIEW → COMMIT.
+- Codex (Repo maintainer): Proposes code/docs/task-pack changes via PR.
+
+Defaults
+--------
+- Agent: PR-by-default for any DATA-WRITE. Human can say “ship directly” for green-lane scopes.
+- Codex: PR-by-default.
+- Human fast lane: Allowed (Airtable/PowerShell direct commits).
+- Conflict policy: If file changed since preview → fail safe; re-preview required.
+- Allowlist: Heroku ALLOW_DIRS controls writable paths. dir-map.json (v2) is the registry.
+
+Lanes (what’s allowed, and when)
+--------------------------------
+🟢 GREEN — Auto-commit allowed (no human stop)
+- Docs/knowledge under: items/agents/knowledge/**/*.txt
+- New task-pack scaffolds: items/agents/**/(rules.json|prompt.md|schema.json)
+  (new files/folders only; no deletes/renames)
+- Mechanical hygiene: formatting/whitespace/key-sort/lint (≤200 lines changed, single-purpose)
+- Registry updates that originated from Airtable: items/agents/dir-map.json
+
+Rails for GREEN:
+- Clear commit/PR message with “what/why”
+- No deletes/renames/moves
+- Single-purpose change
+
+🟡 YELLOW — PR required (easy to approve)
+- Edits to existing task packs (changes to rules.json/prompt.md/schema.json)
+- Dataset mechanics (non-semantic) in /index/** or /items/**:
+  examples: add missing required keys with nulls, normalize https, reorder fields
+- Small data updates to event/venue files limited to “safe fields”:
+  display_name, official_link, labels (≤50 lines diff, ≤10 files)
+
+Rails for YELLOW:
+- Always PR (no direct commit)
+- PR includes diff summary (files + line counts + top fields touched)
+- No path moves/deletes
+- If HEAD changed since preview → fail safe
+
+🔴 RED — Explicit human approval required
+- Changes to dates, divisions, ratings, airports, relations (event↔venue/organizer)
+- Deletes/renames/path moves
+- Bulk edits >200 lines or >10 files
+- Schema changes in shared includes (e.g., event-rules.json / venue-rules.json)
+
+Rails for RED:
+- PR with explicit checklist & rationale
+- Human “Allow” needed before merge
+
+Rail Triggers (switch to stricter lane)
+---------------------------------------
+A change hits a rail (auto-escalate) if ANY of the following:
+- Touches a RED field (dates/ratings/relations/airports/divisions)
+- Renames/moves/deletes files or changes file paths
+- Diff exceeds thresholds (GREEN >200 lines, YELLOW >50 lines or >10 files)
+- Schema changes to shared includes
+- HEAD mismatch since preview (conflict)
+
+What every change must include (PR/commit metadata)
+---------------------------------------------------
+- Scope line: files & paths affected
+- Change class: green / yellow / red (+ which rail if any)
+- Diff summary: lines added/removed; top 3 fields touched
+- Why now: one sentence
+- Rollback note: how to revert (PR # / previous file hash)
+- Actor stamp: human / agent / codex, UTC timestamp
+
+Agent rules (runtime)
+---------------------
+- DATA-WRITE tasks: PREVIEW → COMMIT only
+  - PREVIEW must show proposed path, full payload, and (for updates) before→after summary
+  - On COMMIT, Agent uses PR-by-default unless Human says “ship directly” (GREEN only)
+- RESEARCH/QUERY: facts-only JSON, no commit
+- CREATE: content JSON/Markdown, no commit
+- REMINDERS: schedule JSON, no commit
+
+Codex rules (maintainer)
+------------------------
+Allowed by default (PRs):
+- Proxy & infra code (crt-items-proxy/**), tests/CI
+- Task packs scaffolds/edits (items/agents/**)
+- Knowledge docs (items/agents/knowledge/**)
+- Mechanical hygiene (lint/format) with limits
+
+Dataset mechanics:
+- Allowed with explicit notice in PR description; Human approves before merge
+
+Not allowed by default (require explicit request per PR):
+- Substantive content edits (descriptions/dates/ratings/airports/relations)
+- Structural refactors (directory renames/moves) or router/manifest changes
+
+Registry & Allowlist
+--------------------
+- dir-map.json (v2) is the directory registry (entities/normalizers/content)
+- ALLOW_DIRS is derived from dir-map.json and enforced by the proxy
+- Human maintains dir-map via Airtable → proxy commit; Codex may tidy with PR
+
+Overrides (plain-English controls)
+----------------------------------
+- “Ship this directly.” → permit direct commit if GREEN
+- “Treat this as yellow.” → force PR even if GREEN
+- “Escalate to red.” → require explicit checklist/approval
+- “Back out.” → revert the PR or restore previous file version
+
+Audit & Visibility
+------------------
+- All writes include actor stamp and clear message
+- PR descriptions must list lane, rails hit, and rollback note
+- (Optional) Weekly summary of merged PRs by lane
+
+Change Control for this Policy
+------------------------------
+- Policy updates are YELLOW by default (PR required)
+- Any loosening of thresholds requires an explicit note in the PR
+- File path: items/agents/knowledge/permissions-policy.txt
