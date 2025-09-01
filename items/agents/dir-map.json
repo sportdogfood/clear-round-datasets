@@ -1,28 +1,6 @@
 {
+  "normalizers": {},
+  "content": {},
   "version": "v2",
-  "entities": {
-    "events": "events",
-    "organizers": "organizers",
-    "sources": "sources",
-    "venues": "venues"
-  },
-  "normalizers": {
-    "airports": "airports",
-    "cities": "cities",
-    "countries": "countries",
-    "days": "days",
-    "forms": "forms",
-    "labels": "labels",
-    "months": "months",
-    "seasons": "seasons",
-    "states": "states",
-    "weather": "weather",
-    "weeks": "weeks",
-    "years": "years"
-  },
-  "content": {
-    "dine": "dine",
-    "locale": "locale",
-    "stay": "stay"
-  }
+  "entities": {}
 }
