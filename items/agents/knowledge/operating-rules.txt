@@ -1,0 +1,170 @@
+# operating-rules.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Operational ground rules for running a kernel-based, multi-agent setup without refactors.
+Covers: how starters load, what each domain must output, how PREVIEW→COMMIT works, and
+the day-to-day runbook (Airtable + proxy + Git). This is docs-only; no runtime behavior.
+
+1) Roles & Defaults
+-------------------
+- Human (Owner/Assistant)
+  - Stages data in Airtable; can commit via PowerShell or proxy.
+  - Approves PRs; may “ship directly” for green-lane items.
+- Agent (Kernel tasks at runtime)
+  - DATA-WRITE uses PREVIEW → COMMIT (PR-by-default).
+  - RESEARCH/QUERY/CREATE/REMINDERS do not write.
+- Codex (Repo maintainer)
+  - PRs for code, task packs, and knowledge docs. Dataset mechanics only with explicit notice.
+
+Conflict policy (all writers): if file changed since preview, fail safe and re-preview.
+
+2) Task Domains & Output Contracts
+----------------------------------
+Each task belongs to exactly one domain. Outputs are stable across tasks.
+
+- add/ (DATA-WRITE)
+  - Behavior: derive minimal safe fields; validate; produce PREVIEW; write only on COMMIT.
+  - Output: PREVIEW object with { path, payload, (if update) before_after or diff_summary }.
+- research/
+  - Behavior: gather facts, cite sources where relevant (no write).
+  - Output: facts-only JSON per the task schema.
+- create/
+  - Behavior: produce content JSON or Markdown (no write).
+  - Output: content object (task schema defines keys).
+- query/
+  - Behavior: compute/aggregate answers from repository (no write).
+  - Output: facts-only JSON (counts, lists, references).
+- reminders/
+  - Behavior: propose schedules (no write).
+  - Output: schedule JSON (e.g., RRULE snippets or structured times).
+
+3) Starter Loading (Kernel by Convention)
+-----------------------------------------
+No router/manifest edits to add tasks.
+
+Lookup order for a starter key (derived from the first user line):
+1) items/agents/<starter>/rules.json
+2) items/agents/<domain>/<starter>/rules.json   where <domain> ∈ {add, research, create, query, reminders}
+Else → { "error": "not_enabled", "detail": "<starter>" }
+
+Notes:
+- A starter’s optional files: prompt.md, schema.json (task-specific IO shape).
+- Shared includes (e.g., index/agents/event-rules.json) may be referenced inside rules.json.
+
+4) PREVIEW → COMMIT Lifecycle (DATA-WRITE)
+------------------------------------------
+Step 1: Input
+- Task validates inputs against its input_schema (rules.json).
+
+Step 2: Derive & Validate
+- Derive stable fields (UIDs, dates, link normalization).
+- Run validations (https_only, relation resolution, date windows, etc.).
+
+Step 3: PREVIEW
+- Emit PREVIEW object with:
+  - path: target write path
+  - payload: fully-formed file contents (sorted keys)
+  - before_after or diff_summary (updates only)
+  - (optional) notes: unresolved relations or deferrals
+
+Step 4: Human decision
+- COMMIT → Agent posts to proxy (PR-by-default).
+- EDIT → Agent re-derives and re-previews with edits.
+- CANCEL → end; no write.
+
+Step 5: Write
+- Proxy enforces ALLOW_DIRS and repository policy.
+- Conflicts → fail safe; request re-preview.
+
+5) Registry & Allowlist
+-----------------------
+- dir-map.json (v2) is the directory registry.
+  - Buckets: entities, normalizers, content.
+  - Maintained from Airtable; committed via proxy.
+- ALLOW_DIRS is derived from dir-map.json and enforced by the proxy to gate write paths.
+
+6) Day-to-Day Runbook (Human)
+-----------------------------
+A) Keep the registry in sync
+- In Airtable (dirs table):
+  1. Dry-run dir-map script; verify entities/normalizers/content.
+  2. Commit → items/agents/dir-map.json.
+  3. Run printed Heroku one-liner; verify: heroku config:get ALLOW_DIRS -a <app>.
+
+B) Commit data safely
+- Use Airtable “commit_all”/PowerShell to push records with explicit path + json.
+- Confirm response/sha; ensure paths fall within ALLOW_DIRS.
+
+C) Use tasks (when enabled)
+- Start with a clear first line (starter key), e.g., “Add Event” or “Update Event”.
+- Review PREVIEW; only COMMIT if the diff is correct.
+- Expect PR-by-default; approve or request changes.
+
+7) Lanes & Rails (summary)
+--------------------------
+- Green: auto-commit ok (docs, new task scaffolds, small hygiene). Clear message; no moves.
+- Yellow: PR required (task edits, dataset mechanics, small safe data updates).
+- Red: explicit approval (dates/ratings/relations, moves/deletes, bulk, schema changes).
+See permissions-policy.txt for exact thresholds and triggers.
+
+8) Naming & Paths (stable expectations)
+---------------------------------------
+- UIDs: lowercase, hyphen-slug, stable; derive from official names + dates where defined.
+- Paths: do not move existing files unless a Red-lane PR is explicitly approved.
+- Links: prefer https; validate format prior to PREVIEW.
+
+9) Testing Scripts (minimum checks)
+-----------------------------------
+- dir-map script:
+  - Dry-run shows valid JSON (v2 buckets).
+  - Commit writes items/agents/dir-map.json; ALLOW_DIRS matches union of keys.
+  - Negative: missing or invalid rows are ignored or reported (no partial writes).
+- commit_all script:
+  - Handles *_uid (single string) and *_uids (array) correctly.
+  - Empty path is rejected with clear message in {response}.
+  - Network/5xx errors are surfaced; no silent success.
+
+10) Agent Behavior Notes
+------------------------
+- Writes via proxy with same contract the Human uses (path, json, message).
+- Defaults to PR; Human may say “ship directly” for Green-lane scopes.
+- Always returns PREVIEW for DATA-WRITE; never writes on its own.
+- On conflict, Agent will re-fetch and re-PREVIEW (no forced merge).
+
+11) Codex Behavior Notes
+------------------------
+- PRs only by default. Keeps server code, task packs, and docs tidy.
+- Dataset mechanics allowed with explicit notice; wait for Human approval.
+- No substantive content edits or structural refactors unless requested.
+
+12) Operating Switches (plain English)
+-------------------------------------
+- “Ship this directly.” → allow direct commit if Green-lane.
+- “Treat this as yellow.” → force PR even if small.
+- “Escalate to red.” → require explicit checklist & approval.
+- “Back out.” → revert PR or restore previous file version.
+
+13) Appendices (file locations)
+-------------------------------
+- Knowledge docs: items/agents/knowledge/*.txt
+  - permissions-policy.txt (lanes/rails)
+  - operating-rules.txt (this file)
+  - manifest-contract.txt (what the manifest governs)
+  - ingestion-rules.txt (proxy/commit contract & safe ranges)
+- Task packs (examples):
+  - items/agents/add/add-event/(rules.json|prompt.md|schema.json?)
+  - items/agents/add/update-event/(rules.json|prompt.md|schema.json?)
+- Shared includes:
+  - index/agents/event-rules.json
+  - index/agents/venue-rules.json
+- Registry:
+  - items/agents/dir-map.json
+
+Change Control
+--------------
+- Updates to this file are Yellow by default (PR required).
+- Any loosening of guardrails must be called out in the PR description.
