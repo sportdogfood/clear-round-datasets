@@ -1,10 +1,155 @@
-Error Codes — v1
-needs_rules         = required rules missing/unreadable
-needs_review        = official link/name/date ambiguous/unconfirmed
-needs_source        = required source missing
-needs_normalizer    = referenced UID/normalizer missing
-venue_uid_suffix    = venue_uid not ending "-venue"
-invalid_geo         = latitude/longitude malformed or out of range
-missing_geo         = neither lat/long nor google_pin provided when required
-invalid_timezone    = timezone not valid IANA
-no_ad_hoc_values    = attempted invention; unknowns must remain empty
+# error-codes.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Canonical error codes used by Humans (Airtable/PS), the Agent (kernel tasks), the proxy,
+and Codex PR tooling. Keep messages short, specific, and actionable.
+
+Format
+------
+Each entry: code • when it happens • who fixes • HTTP (typical) • what to do next
+
+Core task/load errors
+---------------------
+not_enabled
+- When: Starter key can’t be resolved to a rules.json (both lookup paths miss).
+- Who: Human/Codex (add the task folder or fix the starter text).
+- HTTP: 404 or 422
+- Next: Check triggers.txt; create items/agents/<starter>/rules.json (or domain/<starter>/).
+
+ambiguous_starter
+- When: First line maps to multiple plausible starters (aliases collide).
+- Who: Human (restate with exact starter) / Codex (clarify aliases in triggers.txt).
+- HTTP: 422
+- Next: Use the normalized starter (e.g., “add-event”) in the first line.
+
+bad_input
+- When: Input fails task input_schema (type/required/enum/format).
+- Who: Human/Agent fixes inputs; Codex only if schema is wrong.
+- HTTP: 400
+- Next: See the schema error list; provide required fields; correct formats (dates, https, enums).
+
+validation_failed
+- When: Business rules reject (https_only, date window, UID/rules, relation unresolved without deferral).
+- Who: Human/Agent (fix data or mark explicit deferral); Codex only if rules are wrong.
+- HTTP: 422
+- Next: Read the rule messages; fix offending fields or add a PREVIEW “notes” deferral where allowed.
+
+Data + path errors
+------------------
+allowlist_denied
+- When: Target path is outside write_allowlist / ALLOW_DIRS.
+- Who: Human (adjust path or update dir-map/ALLOW_DIRS pipeline).
+- HTTP: 403
+- Next: Confirm items/agents/dir-map.json and Heroku ALLOW_DIRS; re-target within an allowed prefix.
+
+missing_file
+- When: UPDATE expects an existing file, but it does not exist.
+- Who: Human/Agent (verify UID/path); Codex if paths are misdocumented.
+- HTTP: 404
+- Next: Check naming-policy and actual repo tree; add file via ADD flow if appropriate.
+
+already_exists
+- When: ADD is creating a file that already exists and upsert isn’t allowed.
+- Who: Human/Agent (switch to UPDATE or enable upsert in task rules).
+- HTTP: 409
+- Next: Use update-event (or task’s update mode) instead of add.
+
+json_invalid
+- When: Target file or submitted payload isn’t valid JSON (parse error).
+- Who: Human/Agent (fix payload); Codex if repository file is corrupt.
+- HTTP: 400 (payload) or 500 (target file needs repair via PR)
+- Next: Validate JSON locally; if the repo file is broken, open a small “fix JSON” PR.
+
+Flow + commit errors
+--------------------
+commit_denied
+- When: Attempted write without a PREVIEW, or rails block direct commit.
+- Who: Agent/Human (run PREVIEW, then COMMIT); Codex if rules are mis-set.
+- HTTP: 403
+- Next: Re-run the task to get a PREVIEW; include lane/rails info; COMMIT after review.
+
+conflict
+- When: HEAD changed since PREVIEW (stale base); safe-merge is not allowed.
+- Who: Agent/Human/Codex (re-preview against current HEAD).
+- HTTP: 409
+- Next: Re-fetch latest file, re-apply changes, present a new PREVIEW, then COMMIT.
+
+Upstream/proxy errors
+---------------------
+auth_failed
+- When: Proxy rejects credentials or token (if used).
+- Who: Human (refresh creds) / Ops.
+- HTTP: 401
+- Next: Re-authenticate; verify environment variables/Heroku session.
+
+rate_limited
+- When: Upstream (Git provider/proxy) throttles requests.
+- Who: Human/Agent/Codex (slow down); Ops if chronic.
+- HTTP: 429
+- Next: Retry later; batch commits; enable read cache per manifest-contract.txt.
+
+upstream_error
+- When: Git provider or external API returns non-2xx/5xx.
+- Who: Ops/Human if transient; Codex only if code-level handling is wrong.
+- HTTP: 502/503
+- Next: Inspect proxy logs/raw upstream message; retry; if persistent, open an Ops ticket.
+
+server_error
+- When: Proxy threw an internal error.
+- Who: Codex/Ops.
+- HTTP: 500
+- Next: Check logs and recent changes; add a test; create a fix PR.
+
+Recommended payload shape (for errors)
+--------------------------------------
+{
+  "error": "<code>",
+  "message": "<short human message>",
+  "detail": { ... optional structured details ... }
+}
+
+Examples
+--------
+- not_enabled:
+  { "error": "not_enabled", "message": "starter 'add-venue' not found" }
+
+- bad_input:
+  {
+    "error": "bad_input",
+    "message": "input_schema failed",
+    "detail": [
+      {"path": "/user_input_event_name", "rule": "minLength", "expected": 3}
+    ]
+  }
+
+- validation_failed:
+  {
+    "error": "validation_failed",
+    "message": "https_only failed for official_link",
+    "detail": {"field": "official_link", "value": "http://..."}
+  }
+
+- conflict:
+  {
+    "error": "conflict",
+    "message": "file changed since preview",
+    "detail": {"path": "index/events/hampton-classic-2025-08.json"}
+  }
+
+Operator checklist (triage order)
+---------------------------------
+1) Read `error` and `message` first (do not guess).
+2) If allowlist_denied → confirm dir-map.json and ALLOW_DIRS.
+3) If bad_input → fix schema violations; if validation_failed → fix rule issues.
+4) If conflict → re-preview from HEAD.
+5) If server_error/upstream_error → check proxy logs; consider retry.
+6) Record actor (human/agent/codex) and the intended path in ticket/PR.
+
+Change control
+--------------
+- Additions to this list are Yellow (PR required).
+- Do not remove codes in active use; deprecate with a note and sunset date.
