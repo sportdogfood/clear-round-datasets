@@ -1,24 +1,29 @@
 {
-  "version": "v1",
+  "version": "v2",
   "entities": {
-    "events": "events",
     "event_series": "event-series",
-    "venues": "venues",
+    "events": "events",
     "organizers": "organizers",
-    "sources": "sources"
+    "sources": "sources",
+    "venues": "venues"
   },
   "normalizers": {
+    "airports": "airports",
+    "cities": "cities",
+    "countries": "countries",
     "days": "days",
+    "forms": "forms",
+    "labels": "labels",
     "months": "months",
     "seasons": "seasons",
-    "years": "years",
-    "weeks": "weeks",
-    "countries": "countries",
     "states": "states",
-    "cities": "cities",
     "weather": "weather",
-    "airports": "airports",
-    "labels": "labels",
-    "forms": "forms"
+    "weeks": "weeks",
+    "years": "years"
+  },
+  "content": {
+    "dine": "dine",
+    "locale": "locale",
+    "stay": "stay"
   }
 }
