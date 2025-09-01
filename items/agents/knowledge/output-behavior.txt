@@ -1,6 +1,156 @@
-Output Behavior — v1
-- Facts-only. No commentary, POV, or tone.
-- Stay within current task. While ADDING_EVENT:
-  - Ask only for missing confirmations (link/name/date/venue/source).
-  - On success: event written to events/{event_uid}.json (and series children if applicable).
-  - On failure: surface a single highest-priority error code with a one-line reason.
+# output-behavior.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Defines what each task domain must OUTPUT. Stable contracts keep humans, the Agent,
+and Codex interoperable. This file is docs-only; it does not change runtime behavior.
+
+Domains (summary)
+-----------------
+- add/        → DATA-WRITE with PREVIEW → COMMIT. Emits a PREVIEW object; writes only after COMMIT.
+- research/   → Facts-only JSON. No write.
+- create/     → Content JSON or Markdown. No write.
+- query/      → Facts-only JSON (counts/lists/refs). No write.
+- reminders/  → Schedule JSON (RRULE-style). No write.
+
+Common rules
+------------
+- No silent writes. Only add/ tasks may write, and only after explicit COMMIT.
+- Keys use lower_snake_case. URLs must be https.
+- Timestamps are UTC ISO 8601 when needed.
+- On conflict (target changed since preview), the Agent fails safe and re-PREVIEWS.
+
+ADD domain (DATA-WRITE)
+-----------------------
+Behavior:
+1) Validate input against task input_schema.
+2) Derive stable fields (UIDs, date normalization, link normalization).
+3) Validate domain rules (https_only, relation resolution or explicit deferral).
+4) Emit PREVIEW object (no write). Wait for COMMIT / EDIT / CANCEL.
+
+PREVIEW object (add/ create NEW file):
+{
+  "type": "PREVIEW",
+  "path": "index/events/<event_uid>.json",
+  "payload": { ... full file contents ... },
+  "notes": [ "any unresolved relations or assumptions" ]
+}
+
+PREVIEW object (add/ UPDATE existing file):
+{
+  "type": "PREVIEW",
+  "path": "index/events/<event_uid>.json",
+  "before_after": {
+    "changed_fields": ["description","official_link"],
+    "before": { "description": "old...", "official_link": "http://..." },
+    "after":  { "description": "new...", "official_link": "https://..." }
+  },
+  "diff_summary": { "lines_added": 3, "lines_removed": 1 },
+  "payload": { ... full updated file contents ... }
+}
+
+COMMIT (human action):
+- Agent posts { path, json: payload, message } to the proxy.
+- Default is PR-by-default. Human may instruct “ship directly” for green-lane items.
+
+RESEARCH domain (facts-only)
+----------------------------
+Behavior:
+- Gather verified facts; include source hints when applicable; no write.
+
+Output (example):
+{
+  "task": "research-hotels",
+  "scope": { "venue_uid": "wellington-international", "radius_km": 10 },
+  "facts": [
+    { "name": "XYZ Hotel", "distance_km": 2.1, "link": "https://...", "notes": "no resort fee reported" }
+  ],
+  "sources": [
+    { "domain": "officialhotel.com", "retrieved_at": "2025-09-01T12:00:00Z" }
+  ]
+}
+
+CREATE domain (content)
+-----------------------
+Behavior:
+- Produce content (JSON blocks or Markdown) per task schema; no write.
+
+Output (JSON blocks example):
+{
+  "format": "json",
+  "content": {
+    "heading": "Hampton Classic: Getting There",
+    "bullets": [
+      "Fly into ISP for a closer secondary airport.",
+      "Plan 20–30 minutes for on-site parking during peak."
+    ]
+  }
+}
+
+Output (Markdown example):
+{
+  "format": "markdown",
+  "content": "## Hampton Classic: Getting There\n- Fly into ISP...\n- Plan 20–30 minutes..."
+}
+
+QUERY domain (facts-only)
+-------------------------
+Behavior:
+- Compute/aggregate answers from repository; no write.
+
+Output (example):
+{
+  "task": "events-upcoming",
+  "params": { "from": "2025-09-01", "to": "2025-12-31" },
+  "results": [
+    { "event_uid": "hampton-classic-horse-show", "start_date": "2025-08-24", "venue_uid": "bridgehampton" }
+  ],
+  "counts": { "total": 1 }
+}
+
+REMINDERS domain (schedule)
+---------------------------
+Behavior:
+- Propose schedules; no write.
+
+Output (example):
+{
+  "task": "daily-due",
+  "schedule": {
+    "type": "rrule",
+    "value": "FREQ=DAILY;BYHOUR=9;BYMINUTE=0;BYSECOND=0"
+  },
+  "starts_at": "2025-09-02T09:00:00Z",
+  "notes": "Daily content review prompt"
+}
+
+Field expectations (all domains)
+--------------------------------
+- UIDs & slugs: follow naming-policy.txt (lowercase, hyphen, stable).
+- Links: must be https. If an official link is http, note in PREVIEW and propose https if resolvable.
+- Dates: ISO date (YYYY-MM-DD) for calendar dates; ISO datetime UTC for timestamps.
+- Relations: resolve to *_uid; if not resolvable, mark as deferred with a note (no silent guessing).
+
+Safe vs. sensitive fields (for add/update)
+------------------------------------------
+- Safe (generally yellow-lane): display_name, official_link, labels, simple description edits.
+- Sensitive (red-lane → human approval): dates, ratings, divisions, airports, organizer/venue relations, path moves/renames.
+
+Error signaling (non-exhaustive)
+--------------------------------
+- not_enabled          → starter not found
+- bad_input            → input_schema validation failed
+- validation_failed    → domain/field rule failed
+- allowlist_denied     → path not permitted by ALLOW_DIRS/write_allowlist
+- conflict             → target changed since preview; re-preview required
+(See error-codes.txt for remediation.)
+
+Notes for implementers
+----------------------
+- PREVIEW payload must be the full post-change file content to ensure reproducibility.
+- For updates, include a concise diff_summary and list changed_fields.
+- Never write on PREVIEW; only on explicit COMMIT.
+- When in doubt, return facts/content without writing and surface assumptions in notes.
