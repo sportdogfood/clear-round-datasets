@@ -5,122 +5,117 @@
 
 Purpose
 -------
-This README is the table of contents and runbook for our kernel-based agents.
-It explains definitions, day-to-day workflow, where policies live, and how we
-scale from our current single agent to five agents across the five domains.
+This README is the table of contents and day-to-day runbook for our kernel-based agent
+setup. It explains definitions, what files control behavior, how starters load (no
+router edits), and the minimal workflows for Humans, the Agent, and Codex.
 
 Glossary
 --------
-- Kernel: The lightweight loader that resolves a starter key to a task pack by
-  folder convention. No router/manifest edits to add tasks.
-- Domain: One of { add, research, create, query, reminders } that governs a task’s
-  output contract. See output-behavior.txt.
-- Starter: The first-line trigger key that loads a task pack (e.g., "Add Event").
-- Agent / Task Pack: A folder with rules.json (+ optional prompt.md, schema.json)
-  that defines one unit of work loaded by the kernel.
+- Kernel: Lightweight loader that resolves a starter key to a task pack by folder
+  convention. No manifest/router edits to add tasks.
+- Domain: One of { add, research, create, query, reminders } defining a task’s output.
+- Starter: The first-line trigger key (e.g., "add-event") that maps to a task pack.
+- Task pack / Agent: A folder with rules.json (+ optional prompt.md, schema.json)
+  implementing one unit of work.
 
-Where the rules live (read these)
----------------------------------
-- permissions-policy.txt — Light rails (green/yellow/red), who can change what, rail triggers.
-- operating-rules.txt — Roles, domain output contracts, PREVIEW→COMMIT lifecycle, runbook.
-- manifest-contract.txt — What the dataset manifest governs (proxy_base, git_base, allowlist).
-- output-behavior.txt — Stable outputs per domain (add/research/create/query/reminders).
-- triggers.txt — Mapping of starter phrases → expected folder key(s).
-- naming-policy.txt — UID, slug, path, link rules.
-- validation-checklist.txt — Pre-commit checks for DATA-WRITE.
-- error-codes.txt — Stable kernel/proxy error codes and suggested remediation.
+Knowledge files (authoritative references)
+------------------------------------------
+Read these for specifics; this README does not duplicate their content.
 
-Current state → Target
-----------------------
-- Today: 1 agent (our legacy chat agent) with its own instructions/schema/trigger/rules.
-- Target: 5 agents (one per domain) with additional starters as needed.
-  We do this incrementally—no refactor required. Add new task packs alongside the current one.
+- permissions-policy.txt   — Light rails (green/yellow/red), who can change what.
+- operating-rules.txt      — Roles, domain outputs, PREVIEW→COMMIT lifecycle, runbook.
+- output-behavior.txt      — Exact output contracts per domain.
+- triggers.txt             — Starter normalization and lookup order.
+- naming-policy.txt        — UID/slug/path conventions; link/date/boolean rules.
+- validation-checklist.txt — Add/Update PREVIEW checks; conflict handling; lanes.
+- error-codes.txt          — Canonical error codes with remediation.
+- manifest-contract.txt    — What the dataset manifest governs (proxy, git, allowlist).
 
-Kernel loader (no manifest edits)
----------------------------------
-Lookup order for a starter key:
-1) items/agents/<starter>/rules.json
-2) items/agents/<domain>/<starter>/rules.json
-Else → { "error": "not_enabled", "detail": "<starter>" }
+Current → Target
+----------------
+- Today: 1 legacy agent (chatagent) with its own instructions/schema/trigger.
+- Target: 5 agents across the 5 domains, plus additional starters as needed.
+- Migration: additive. Keep the legacy agent; add new task folders alongside it.
 
-Data registry & allowlist (unchanged)
+Kernel loader (by convention)
+-----------------------------
+Lookup order for a normalized starter key S:
+1) items/agents/<S>/rules.json
+2) items/agents/<domain>/<S>/rules.json    where <domain> ∈ {add, research, create, query, reminders}
+Else → { "error": "not_enabled", "detail": "<S>" }
+See triggers.txt for normalization rules and examples.
+
+Registry & allowlist (unchanged flow)
 -------------------------------------
-- dir-map.json (v2) at items/agents/dir-map.json is the directory registry:
-  { entities, normalizers, content }.
-- ALLOW_DIRS on Heroku is derived from dir-map.json and gates write paths.
+- Directory registry: items/agents/dir-map.json (v2) with { entities, normalizers, content }.
+- Write allowlist: Heroku ALLOW_DIRS mirrors the union of dir-map keys.
+- The proxy enforces ALLOW_DIRS (and manifest write_allowlist) on every write.
 
-Daily runbook (Human)
----------------------
-A) Registry: In Airtable (dirs table)
-   - Dry-run dir-map script → review JSON buckets.
-   - Commit → items/agents/dir-map.json via proxy.
-   - Run the printed Heroku one-liner to set ALLOW_DIRS, then verify.
+Governance summary (light rails)
+--------------------------------
+- Agent: PR-by-default for DATA-WRITE. Human may say “ship directly” for green-lane scopes.
+- Codex: PR-by-default. Dataset mechanics allowed with explicit notice.
+- Human: direct-commit permitted anytime (Airtable/PowerShell).
+- Conflicts: if target changed since PREVIEW → fail safe; re-preview.
+(See permissions-policy.txt and operating-rules.txt.)
 
-B) Data commits
-   - Use Airtable “commit_all”/PowerShell to push { path, json, message }.
-   - Confirm response/SHA. Paths must be within ALLOW_DIRS.
+Domains & outputs (pointer)
+---------------------------
+- add/        → PREVIEW → COMMIT (writes only after explicit COMMIT).
+- research/   → facts-only JSON (no write).
+- create/     → content JSON/Markdown (no write).
+- query/      → facts-only JSON (no write).
+- reminders/  → schedule JSON (no write).
+Details in output-behavior.txt.
 
-C) Tasks (when enabled)
-   - First line = starter key (e.g., “Add Event”, “Update Event”).
-   - Review PREVIEW; only COMMIT when correct. Agent writes as PR by default.
-
-PREVIEW → COMMIT (summary)
+Day-to-day runbook (Human)
 --------------------------
-1) Validate inputs per rules.json.
-2) Derive & validate (UIDs, dates, https links, relations or deferrals).
-3) PREVIEW: shows { path, payload, and diff summary if updating }.
-4) Human decides: COMMIT / EDIT / CANCEL.
-5) Write via proxy (PR-by-default). If file changed since preview → fail safe (re-preview).
+A) Keep registry in sync
+   1. In Airtable (dirs table) run the dir-map script: Dry-run → review; Commit → write items/agents/dir-map.json.
+   2. Run the printed Heroku one-liner to set ALLOW_DIRS; verify with `heroku config:get`.
 
-Agents catalog
---------------
-Below lists what exists now and the initial targets. Add folders when ready;
-no router or manifest changes needed.
+B) Commit data safely
+   - Use Airtable “commit_all” / PowerShell to send { path, json, message } to the proxy.
+   - Ensure path is within ALLOW_DIRS; confirm response/SHA.
 
-Current (legacy)
+C) Use tasks (when enabled)
+   - First line = starter key (e.g., “Add Event”, “Update Event”).
+   - Review PREVIEW (path + payload + diff for updates).
+   - Reply COMMIT to open a PR (default) or “ship directly” for green-lane items.
+
+Starter catalog (living list)
+-----------------------------
+Current (live)
 - starter: chatagent
-  location: items/agents/chatagent/ (or your current path)
-  notes: Has specific instructions/schema/trigger; remains active during transition.
+  folder:  items/agents/chatagent/
+  note:    Legacy agent; remains active during transition.
 
-Planned (phase-in; names are placeholders you can adjust)
-- Domain add/:
-  - starter: add-event
-    location: items/agents/add/add-event/
-    brief: creates a new event file with minimal safe fields; PR-by-default.
-  - starter: update-event
-    location: items/agents/add/update-event/
-    brief: surgical edits to a single event file (e.g., description, official_link); PR-by-default.
+Planned (pending; add when ready)
+- add/add-event/            — create new event file (PREVIEW → COMMIT).
+- add/update-event/         — surgical edits to one event file (PREVIEW → COMMIT).
+- research/research-hotels/ — facts-only lodging nearby (no write).
+- query/events-upcoming/    — structured list of upcoming events (no write).
+- create/create-section-content/ — content JSON/MD for a page section (no write).
+- reminders/daily-due/      — schedule JSON for daily prompts (no write).
+(See triggers.txt; only starters with folders are enabled.)
 
-- Domain research/:
-  - starter: research-hotels
-    location: items/agents/research/research-hotels/
-    brief: facts-only JSON about lodging near a venue; no commit.
+Testing scripts (minimum checks)
+--------------------------------
+- dir-map script:
+  - Dry-run shows valid v2 buckets.
+  - Commit writes items/agents/dir-map.json.
+  - ALLOW_DIRS equals union of keys (verify via Heroku CLI).
+- commit_all script:
+  - Handles *_uid and *_uids correctly; empty path is rejected with a clear message.
+  - Proxy/network errors surface cleanly; no silent success.
 
-- Domain query/:
-  - starter: events-upcoming
-    location: items/agents/query/events-upcoming/
-    brief: returns structured list of upcoming events; no commit.
+Error handling (pointer)
+------------------------
+- Common codes: not_enabled, bad_input, validation_failed, allowlist_denied, conflict,
+  commit_denied, server_error, upstream_error.
+- See error-codes.txt for when they occur and what to do next.
 
-- Domain create/:
-  - starter: create-section-content
-    location: items/agents/create/create-section-content/
-    brief: emits content JSON/Markdown per task schema; no commit.
-
-- Domain reminders/:
-  - starter: daily-due
-    location: items/agents/reminders/daily-due/
-    brief: emits schedule JSON (RRULE-like) for follow-ups; no commit.
-
-(Only enable what you need now; others can be added later.)
-
-Lanes & rails (operational defaults)
-------------------------------------
-- Agent: PR-by-default; you can say “ship directly” for green-lane changes.
-- Codex: PR-by-default; dataset mechanics allowed with an explicit notice.
-- Human: direct-commit permitted any time (fast lane).
-- On conflict (HEAD changed since preview): fail safe; re-preview.
-
-Change control for this README
-------------------------------
-- Updates to this file are Yellow (PR required).
-- Do not duplicate details from the other knowledge files; link conceptually.
+Change control
+--------------
+- Updates to this README are Yellow (PR required).
+- Do not duplicate specs that already live in the files above; link conceptually instead.
