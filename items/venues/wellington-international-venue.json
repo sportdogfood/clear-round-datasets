@@ -6,10 +6,12 @@
   "venue_zip": "",
   "venue_geo_lat": "",
   "venue_geo_long": "",
-  "record_last_modified": "8/31/2025 12:34pm",
+  "record_last_modified": "8/31/2025 9:15pm",
   "record_created": "8/27/2025 10:45pm",
   "venue_google_pin": "",
-  "events_uids": [],
+  "events_uids": [
+    "esp-october"
+  ],
   "shows_backlog": "wef-spring-week---1, wef-spring-week---2, wef-spring-week---3, esp-fall-circuit---1, esp-fall-circuit---2, esp-fall-circuit---3, esp-fall-holiday-r9uv, esp-holiday-circuit-finale-erpf, esp-november-2swd, esp-fall-finale-hdlv, esp-october-va1k, esp-new-years-equitation-day-h8hx, esp-pre-charity-9wpz, year-end-awards-f34k, holiday-and-horses-zoow, holiday-festial-zasg, holiday-festival-equitatation-day-ensh, wef-week---12, esp-spring---2, esp-fall-finale---4, esp-fall-circuit---3, holiday-festival---1, esp-fall-circuit---1, esp-spring---1, esp-spring---3, esp-pre-charity---3, esp-june---1, esp-june-equitation-day---1, wef-holiday-festival---1, esp-spring-iv---4, esp-spring---5, esp-june-equitation-day---2, esp-june---2, esp-summer---2, esp-fall-circuit---2, esp-summer---3, wef-week---1, wef-week---2, wef-week---3, wef-week---4, wef-week---5, wef-week---6, wef-week---7, wef-week---8, wef-week---9, wef-week---10, wef-week---11, esp-september-ador, esp-new-years-f7xq, esp-october-nxaz, esp-november-nalt, esp-labor-day-a9qq, rita-irish-memorial-nwdf, esp-holiday-circuit-finale-1kit, holiday-horses-eizq, esp-florida-state-fall-horse-show-grgj",
   "venue_link": "https://wellingtoninternational.com/",
   "state_uid": "florida",
@@ -21,8 +23,13 @@
   "mapping": "",
   "table": "truth_location",
   "venue_description": "",
-  "country_uid": "",
+  "country_uid": "united-states",
   "venue_long": "Wellington International",
   "venue_short": "WEF",
-  "organizers": "esp, wef"
+  "organizer_uids": [
+    "esp",
+    "wef"
+  ],
+  "dirs": "venues",
+  "dir_table_type": "truth_location"
 }
