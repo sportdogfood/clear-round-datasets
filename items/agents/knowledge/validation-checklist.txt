@@ -1,9 +1,143 @@
-Validation Checklist — v1
-1) Rules present: event-rules.json + venue-rules.json → else needs_rules
-2) Link: HTTPS, official homepage (non-social) → event_official_link + source record
-3) Name: confirm from official; sanitize; derive event_uid (immutable)
-4) Dates: confirm official start (and end if present); no guessing
-5) Venue: venue_uid present, ends -venue, relations resolve (city/state/country)
-6) Sources: at least one source_uid (official homepage should set is_official="y")
-7) Normalizers: time + location references exist (days, months, seasons, years, countries, states, cities, airports, weather, labels)
-8) Derived fields allowed but do not overwrite inputs (yyyymm, event_duration, status, next_start_est)
+# validation-checklist.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Single-source checklist for validating tasks and writes. Applies to Humans (Airtable/PS),
+the Agent (kernel tasks), and Codex (PRs). Use before any COMMIT.
+
+Applies to
+----------
+- ADD (create new file under /index/** or /items/**)
+- UPDATE (modify existing file)
+- Non-write domains (research/create/query/reminders) — output-only sanity
+
+Prerequisites (environment)
+---------------------------
+- dir-map.json (v2) exists at items/agents/dir-map.json with {entities, normalizers, content}
+- Heroku ALLOW_DIRS matches the union of dir-map keys (verify via `heroku config:get`)
+- manifest-contract.txt present; write paths must fall under write_allowlist/ALLOW_DIRS
+
+General (all tasks, before PREVIEW)
+-----------------------------------
+[ ] Input validated against task input_schema (types, required, enums)
+[ ] Normalize booleans to "y"/"n"; keys are lower_snake_case
+[ ] Derive stable fields (UIDs, slugs, normalized dates/links) per naming-policy.txt
+[ ] HTTPS only for links (official_link and external URLs); strip non-essential tracking params
+[ ] Dates in YYYY-MM-DD; timestamps UTC ISO 8601 (…Z)
+
+ADD — creating a new file (PREVIEW gate)
+----------------------------------------
+[ ] Target path computed from naming-policy + dir-map.json (no hardcoded paths)
+[ ] Path begins with an ALLOW_DIRS prefix (allowlist check)
+[ ] File does NOT already exist (unless explicitly allowed by task’s upsert mode)
+[ ] Payload is complete *final* file content (not a patch)
+[ ] Keys sorted deterministically; no undefined/null-only scaffolding unless schema allows
+[ ] Required fields present (event/venue/source-specific as applicable)
+[ ] Relations resolved to *_uid; if not resolvable, mark explicit deferrals in PREVIEW notes
+[ ] Link & date sanity (https_only, plausible date ranges)
+[ ] PREVIEW includes:
+    - path
+    - payload (full)
+    - notes (assumptions, deferrals)
+    - lane hint (green/yellow/red) per permissions-policy.txt
+STOP. Do not write until Human issues COMMIT.
+
+UPDATE — editing an existing file (PREVIEW gate)
+------------------------------------------------
+[ ] Target path computed (as above) and file **exists**
+[ ] Path within ALLOW_DIRS (allowlist check)
+[ ] Load current file; ensure valid JSON
+[ ] Apply *surgical* changes only to requested fields
+[ ] Sensitive fields changed? (dates, ratings, divisions, airports, relations, path) → mark as RED lane
+[ ] Safe fields only? (display_name, official_link, labels, minor description) → likely YELLOW lane
+[ ] Payload is complete post-change file content
+[ ] Include BEFORE/AFTER summary:
+    - changed_fields (list)
+    - before_after sample of key fields
+    - diff_summary (lines_added/removed)
+[ ] PREVIEW includes:
+    - path
+    - payload (full)
+    - before_after + diff_summary
+    - lane hint (green/yellow/red) per permissions-policy.txt
+STOP. Do not write until Human issues COMMIT.
+
+COMMIT (after PREVIEW approval)
+-------------------------------
+[ ] Commit body: { path, json: payload, message }
+[ ] Message is clear (“feat/fix/chore: <what> — <why>”); include actor (human/agent/codex)
+[ ] Default mode PR (Agent/Codex). Human may choose direct commit for GREEN items
+[ ] Proxy enforces ALLOW_DIRS/write_allowlist; reject on violation
+
+Conflict handling (all writers)
+-------------------------------
+[ ] If target changed since PREVIEW, **fail safe** (no write)
+[ ] Re-fetch current file, re-derive changes, present new PREVIEW
+[ ] Do not force-merge in Agent flow
+
+Non-write domains (sanity)
+--------------------------
+research/
+[ ] facts-only JSON; include minimal source hints (domain names, retrieved_at if relevant)
+create/
+[ ] content JSON or Markdown per task schema; no write
+query/
+[ ] counts/lists/refs; no write
+reminders/
+[ ] schedule JSON (RRULE or structured times); no write
+
+Naming & path rules (enforced)
+------------------------------
+[ ] UIDs & slugs per naming-policy (lowercase, hyphen slugs; stable)
+[ ] File paths match the patterns and registry (dir-map.json); no ad-hoc trees
+[ ] No path moves/renames without RED-lane approval
+
+Quality & size caps
+-------------------
+[ ] JSON is minified/pretty per repo norm; no trailing commas
+[ ] Large diffs: >50 lines (data) or >200 lines (hygiene) → escalate lane (see permissions-policy)
+[ ] Multi-file: >10 files in one PR → escalate lane
+
+Lane classification (reference)
+-------------------------------
+GREEN (auto-commit allowed): docs, new task scaffolds, small hygiene (≤200 lines), registry updates from Airtable
+YELLOW (PR required): task edits, dataset mechanics (non-semantic), small safe data updates
+RED (explicit approval): dates/ratings/divisions/airports/relations, deletes/renames/moves, bulk edits, schema changes
+
+Rollback plan (every PR/change)
+-------------------------------
+[ ] PR description includes how to revert (PR # or previous hash)
+[ ] For direct commits, note the prior SHA in message or ticket
+
+Negative checks (quick)
+-----------------------
+[ ] Empty path → reject with clear error
+[ ] Path outside ALLOW_DIRS/write_allowlist → allowlist_denied
+[ ] Invalid schema/enum → bad_input
+[ ] Rule failure (https_only/date window/relation unresolved without deferral) → validation_failed
+[ ] Starter not found → not_enabled
+[ ] Head mismatch → conflict
+
+Error codes (see error-codes.txt for remediation)
+-------------------------------------------------
+- not_enabled
+- bad_input
+- validation_failed
+- allowlist_denied
+- conflict
+- server_error / upstream_error
+
+Sign-off (prior to merge)
+-------------------------
+[ ] PREVIEW matched what was committed
+[ ] Lane and any rails hit were called out in the PR
+[ ] Commit/PR message is descriptive; actor and scope are clear
+[ ] If RED: human explicit approval recorded
+
+Change control for this checklist
+---------------------------------
+- Updates are Yellow (PR required).
+- Any relaxation of checks must be called out in the PR description.
