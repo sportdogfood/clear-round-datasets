@@ -1,7 +1,119 @@
-Triggers — v1
-Primary:
-- add-event        -> use event-rules.json + ingestion-rules.txt
-Control:
-- cancel           -> end current task and return to idle
-- status           -> report current task + missing confirmations
-Out-of-scope while task-locked (reject): "how many", "research-", "create content"
+# triggers.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v1
+# Last updated: 2025-09-01
+
+Purpose
+-------
+Defines how a user’s first line (“conversation starter”) maps to a task pack (agent).
+This is documentation for humans; the kernel loads by folder convention and does not
+require manifest edits.
+
+Core rule: Starter → Folder (by convention)
+-------------------------------------------
+Lookup order for a starter key S:
+1) items/agents/<S>/rules.json
+2) items/agents/<domain>/<S>/rules.json   where <domain> ∈ {add, research, create, query, reminders}
+If neither exists → { "error": "not_enabled", "detail": "<S>" }
+
+Starter normalization (how S is derived from user text)
+-------------------------------------------------------
+- Lowercase
+- Trim spaces
+- Convert spaces/underscores to hyphens
+- Drop punctuation (.,!?'":;)
+- Collapse multiple hyphens into one
+Examples:
+- "Add Event"      → add-event
+- "update  event!" → update-event
+- "Research_Hotels"→ research-hotels
+
+Current vs Planned Starters
+---------------------------
+Current (live)
+- starter: chatagent
+  folder:  items/agents/chatagent/
+  note:    Legacy agent with its own instructions/schema/rules. Remains active.
+
+Planned (pending enablement; folders will be added when ready)
+- domain add/:
+  - starter: add-event
+    folder:  items/agents/add/add-event/
+    intent:  create a new event file (PREVIEW → COMMIT; PR-by-default)
+  - starter: update-event
+    folder:  items/agents/add/update-event/
+    intent:  surgical edits to an existing event file (PREVIEW → COMMIT)
+
+- domain research/:
+  - starter: research-hotels
+    folder:  items/agents/research/research-hotels/
+    intent:  facts-only lodging research near a venue (no write)
+
+- domain query/:
+  - starter: events-upcoming
+    folder:  items/agents/query/events-upcoming/
+    intent:  list upcoming events from repository (no write)
+
+- domain create/:
+  - starter: create-section-content
+    folder:  items/agents/create/create-section-content/
+    intent:  emit content JSON/Markdown per task schema (no write)
+
+- domain reminders/:
+  - starter: daily-due
+    folder:  items/agents/reminders/daily-due/
+    intent:  emit schedule JSON for daily prompts (no write)
+
+Alias phrases (human-facing examples)
+-------------------------------------
+These are examples to keep phrasing consistent; aliases are not required by the kernel.
+Map common phrases to normalized starters:
+
+- add-event:
+  "Add event", "Create event", "New show", "Add show"
+
+- update-event:
+  "Update event", "Edit show", "Change event", "Fix event details"
+
+- research-hotels:
+  "Research hotels", "Find lodging", "Hotels near <venue>", "Stay options near <venue>"
+
+- events-upcoming:
+  "Upcoming events", "What’s next", "Next shows", "Events this fall"
+
+- create-section-content:
+  "Draft getting there", "Write ‘where to stay’ section", "Create venue tips"
+
+- daily-due:
+  "Daily reminder", "Set daily checklist", "Morning nudge"
+
+Disambiguation & errors
+-----------------------
+- Prefer exact starter match over aliases.
+- If multiple aliases could match or intent is unclear, return:
+  { "error": "not_enabled", "detail": "ambiguous_starter" }
+  (Human can then restate with a clearer first line.)
+- If starter key resolves to no folder, return:
+  { "error": "not_enabled", "detail": "<starter>" }
+
+How to add a new starter (no global edits)
+------------------------------------------
+1) Create a folder:
+   - items/agents/<starter>/  OR
+   - items/agents/<domain>/<starter>/
+   Include: rules.json (required), prompt.md/schema.json (optional).
+2) Test locally (dry-run PREVIEW).
+3) (Optional) Add an alias note here for human phrasing.
+4) Commit/PR. No manifest/router changes are required.
+
+Testing checklist (manual)
+--------------------------
+- Normalize: “Add  Event!!” → add-event
+- Lookup: items/agents/add/add-event/rules.json is found
+- Negative: “Make magic happen” → not_enabled
+- Ambiguity: “Update content” (no clear target) → not_enabled (ambiguous_starter)
+
+Notes
+-----
+- Keep alias examples short and concrete; avoid overfitting long phrases.
+- Do not duplicate schema or validation details here—see each task’s rules.json and brief.
