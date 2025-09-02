@@ -1,52 +1,71 @@
 {
-  "agent": "add-event",
+  "name": "add-event",
   "version": "v1",
-  "description": "Input and output schema for the Event Agent. Used for validation and PREVIEW/COMMIT envelopes.",
-  "input_schema": {
-    "official_link": "string (https-url, required)",
-    "official_name": "string (required)",
-    "start_date": "string (YYYY-MM-DD, required)",
-    "end_date": "string (YYYY-MM-DD, required)",
-    "is_series": "string (enum: y|n, optional)",
-    "venue_uid": "string (uid, optional)",
-    "organizer_uid": "string (uid, optional)",
-    "description": "string (optional)",
-    "label_uids": "array[string uid] (optional)"
-  },
-  "output_schema": {
-    "preview": {
-      "type": "string (always PREVIEW)",
-      "lane": "string (green|yellow|red)",
-      "writes": [
-        {
-          "op": "string (add|update)",
-          "path": "string (repo path, e.g. index/events/<event_uid>.json)",
-          "payload": "object (full event JSON)"
-        }
+  "io": {
+    "inputs": {
+      "required": ["user_input_event_link"],
+      "optional": [
+        "is_series",
+        "user_input_event_start_date",
+        "user_input_event_end_date",
+        "venue_uid",
+        "organizer_uid",
+        "label_uids",
+        "notes"
       ],
-      "notes": "array[string] (validation notes, unresolved relations, assumptions)"
-    },
-    "commit": {
-      "endpoint": "string (/items/commit)",
-      "body": {
-        "path": "string (repo path)",
-        "json": "object (full event payload)",
-        "message": "string (commit message format: feat|fix|chore|docs(scope): what — why (actor))"
+      "types": {
+        "user_input_event_link": "https-url",
+        "is_series": "enum[y|n]",
+        "user_input_event_start_date": "date(YYYY-MM-DD)",
+        "user_input_event_end_date": "date(YYYY-MM-DD)",
+        "venue_uid": "uid(-venue)",
+        "organizer_uid": "uid",
+        "label_uids": "array[string]",
+        "notes": "string"
       }
+    },
+    "derived": {
+      "event_official_link": "confirmed from official site (domain-first)",
+      "event_official_name": "extracted & sanitized per event-rules",
+      "event_display_name": "title-cased display variant",
+      "event_official_start_date": "confirmed from official schedule",
+      "event_official_end_date": "confirmed when present",
+      "event_uid": "computed from sanitized name & date policy; immutable",
+      "yyyymm": "from start_date",
+      "event_duration": "days between start and end when present",
+      "event_current_status": "computed vs. today (America/New_York)",
+      "event_estimated_next_start_date": "if annual"
     }
   },
-  "event_payload_schema": {
-    "event_uid": "string (slug-YYYY-MM or slug-YYYY-MM-DD)",
-    "official_name": "string",
-    "display_name": "string",
-    "official_link": "string (https-url)",
-    "official_start_date": "string (YYYY-MM-DD)",
-    "official_end_date": "string (YYYY-MM-DD)",
-    "venue_uid": "string (uid, optional)",
-    "organizer_uid": "string (uid, optional)",
-    "label_uids": "array[string uid]",
-    "description": "string (optional)",
-    "source_uids": "array[string uid, at least 1]",
-    "last_updated": "string (ISO UTC timestamp)"
+  "preview_envelope": {
+    "type": "PREVIEW",
+    "lane": "yellow",
+    "writes": [
+      {
+        "op": "add|update",
+        "path": "index/events/<event_uid>.json",
+        "payload": "<full event JSON object>"
+      }
+    ],
+    "notes": ["unresolved relations or assumptions"]
+  },
+  "commit_contract": {
+    "endpoint": "https://crt-b1434e13de34.herokuapp.com/items/commit",
+    "method": "POST",
+    "body": {
+      "path": "index/events/<event_uid>.json",
+      "json": "<full event JSON object>",
+      "message": "feat(events): add <event_uid> (actor: agent)"
+    },
+    "json_only": true
+  },
+  "constraints": {
+    "facts_only": true,
+    "uids_immutable": true,
+    "dates_format": "YYYY-MM-DD",
+    "snake_case": true,
+    "relations_must_resolve": true,
+    "legs_inside_hub": true,
+    "no_overlaps": true
   }
 }
