@@ -34,23 +34,29 @@ bad_input
 
 validation_failed
 - When: Business rules reject (https_only, date window, UID/rules, relation unresolved without deferral).
-- Who: Human/Agent (fix data or mark explicit deferral); Codex only if rules are wrong.
+- Who: Human/Agent (fix data or mark explicit deferral in PREVIEW); Codex only if rules are wrong.
 - HTTP: 422
 - Next: Read the rule messages; fix offending fields or add a PREVIEW “notes” deferral where allowed.
 
 Data + path errors
 ------------------
 allowlist_denied
-- When: Target path is outside write_allowlist / ALLOW_DIRS.
-- Who: Human (adjust path or update dir-map/ALLOW_DIRS pipeline).
-- HTTP: 403
-- Next: Confirm items/agents/dir-map.json and Heroku ALLOW_DIRS; re-target within an allowed prefix.
+- When: Target path is outside write_allowlist / ALLOW_DIRS (server rejects write).
+- Who: Human (adjust path or update dir-map/ALLOW_DIRS); Ops if env drift.
+- HTTP: 403 (write) • Note: proxy literal may be “Path not allowed”.
+- Next: Confirm items/agents/dir-map.json intent and Heroku ALLOW_DIRS; re-target within an allowed first-segment token (e.g., “index”, “agents”, “months”, …).
+
+bad_path
+- When: GET path fails shape/extension/allowlist checks.
+- Who: Human/Agent (fix path); Ops if env drift.
+- HTTP: 400 (read) • Note: proxy literal may be “Bad path”.
+- Next: Ensure no “..”, valid extension (.json/.txt/.md/.html/.js), and first segment is allowed.
 
 missing_file
 - When: UPDATE expects an existing file, but it does not exist.
 - Who: Human/Agent (verify UID/path); Codex if paths are misdocumented.
 - HTTP: 404
-- Next: Check naming-policy and actual repo tree; add file via ADD flow if appropriate.
+- Next: Check naming-policy and repo tree; add file via ADD flow if appropriate.
 
 already_exists
 - When: ADD is creating a file that already exists and upsert isn’t allowed.
@@ -93,9 +99,9 @@ rate_limited
 - Next: Retry later; batch commits; enable read cache per manifest-contract.txt.
 
 upstream_error
-- When: Git provider or external API returns non-2xx/5xx.
+- When: Git provider or external API returns non-2xx.
 - Who: Ops/Human if transient; Codex only if code-level handling is wrong.
-- HTTP: 502/503
+- HTTP: 5xx (502/503 typical)
 - Next: Inspect proxy logs/raw upstream message; retry; if persistent, open an Ops ticket.
 
 server_error
@@ -133,6 +139,13 @@ Examples
     "detail": {"field": "official_link", "value": "http://..."}
   }
 
+- allowlist_denied (proxy literal “Path not allowed”):
+  {
+    "error": "allowlist_denied",
+    "message": "path blocked by allowlist",
+    "detail": {"path": "index/months/february.json", "allow_dirs_mode": "first-segment-tokens"}
+  }
+
 - conflict:
   {
     "error": "conflict",
@@ -143,7 +156,7 @@ Examples
 Operator checklist (triage order)
 ---------------------------------
 1) Read `error` and `message` first (do not guess).
-2) If allowlist_denied → confirm dir-map.json and ALLOW_DIRS.
+2) If allowlist_denied/bad_path → confirm ALLOW_DIRS (tokens only) and dir-map intent.
 3) If bad_input → fix schema violations; if validation_failed → fix rule issues.
 4) If conflict → re-preview from HEAD.
 5) If server_error/upstream_error → check proxy logs; consider retry.
@@ -153,3 +166,9 @@ Change control
 --------------
 - Additions to this list are Yellow (PR required).
 - Do not remove codes in active use; deprecate with a note and sunset date.
+
+Notes (current model alignment)
+-------------------------------
+- The data model uses **hub + legs (events only)** — there is no separate Event-Series entity.
+- Wording across knowledge should avoid “event_series/event-series”; use “hub/leg” instead.
+- ALLOW_DIRS expects **first-segment tokens** (e.g., `index`, `agents`, `months`, …), not prefix paths like `index/months/`.
