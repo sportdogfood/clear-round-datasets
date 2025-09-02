@@ -1,0 +1,97 @@
+# Clear Round Travel — Project Brief  
+Version: v1 (Go-Live)  
+Date: 2025-09-02  
+Owner: Clear Round Travel (Wellington, FL)  
+
+---
+
+## 1. Purpose
+To create a modular, reliable data system and agent workflow that supports equestrian travel planning. The **event** is the catalyst — without an event, there’s no reason to generate venue markers, pins, experiences, or rendered content. All other families (venues, pins, labels, user-pins, etc.) exist to enrich the event hub.
+
+---
+
+## 2. Core Directories
+- **Entities (time & place anchors)**  
+  - `events` → hub + legs (time-centric stack)  
+  - `venues` → markers (place-centric)  
+  - `organizers` → stewards (management connector)  
+  - `sources` → provenance
+
+- **Normalizers (consistency)**  
+  - `days, weeks, months, seasons, years`  
+  - `airports, countries, states, cities, weather`  
+  - `labels, forms`  
+
+- **Pins (enrichers, lightweight cards)**  
+  - `stay` → hotels, RV parks, Airbnbs  
+  - `dine` → restaurants, cafés  
+  - `locale` → attractions, tack shops, neighborhoods  
+  - `essentials` → packing lists  
+  - `extras` → seasonal / leg-specific  
+  - `user-pins` → origin, travel-destination  
+
+- **Render (publish-ready)**  
+  - `render` → pages with h1, hero, sections, SEO, pov/tone rules, all_md
+
+---
+
+## 3. Agents (go-live set)
+- **Event Agent** → add/update events (hub + legs). *Catalyst.*  
+- **Reminder Agent** → track event timelines, schedule refreshes. *Timekeeper.*  
+- **Research Agent** → curate & refresh pins (stay, dine, locale, essentials, extras). *Facts only.*  
+- **Index Agent** → compute time/place index (statuses, distances, corridors). *No writes.*  
+- **Experience Agent** → stitch schemas (Anchor Experience, Travel Journey, Event Stack). *Structure only.*  
+- **Render Agent** → transform schemas into publish-ready pages with pov/tone rules. *Voice layer.*  
+
+---
+
+## 4. Knowledge (v1 baseline)
+- **Contract docs**: manifest, operating-rules, permissions-policy, triggers, naming-policy, validation-checklist, output-behavior, agent-git-access, error-codes.  
+- **Editorial docs**: pov-rules.txt, tone-rules.txt (new).  
+- **Guides**: label definitions, pins field guide, render brief.  
+
+---
+
+## 5. Naming & UID Discipline
+- **Events:** hub `eventname-YYYY-MM`, leg `eventname-YYYY-MM-DD`.  
+- **Venues/Pins:** slugified display name (short, stable).  
+- **Render:** anchor + date or journey (`hampton-classic-2025-08`, `miami-to-wellington-journey`).  
+- **Labels:** global, immutable slug UIDs.  
+
+---
+
+## 6. Refresh & Trust
+- All families are **lightweight**.  
+- Agents + reminders keep them **fresh routinely**.  
+- Index Agent calculates dynamic values (distance/time/status), never stored.  
+
+---
+
+## 7. Editorial Layer
+- Only **Render Agent** introduces voice.  
+- POV rules (owner, Clear Round Travel) and tone rules (upbeat, insider, equestrian-travel expert) drive copy.  
+- All other agents are factual, schema-only.  
+
+---
+
+## 8. Go-Live Task List
+1. Confirm **ALLOW_DIRS** tokens.  
+2. Lock agent lineup (6 agents).  
+3. Define **agent-specific briefs/rules** (inputs, outputs, lanes).  
+4. Update **knowledge files** with new starters and validation rules.  
+5. Stage new **pin directories** in Airtable (stay, dine, locale, essentials, extras, user-pins).  
+6. Add **labels directory** with curated tags.  
+7. Add **render directory** with schema.  
+8. Create **pov-rules.txt** and **tone-rules.txt**.  
+9. Dry-run Event Agent (hub + legs) → Index Agent → Research Agent → Experience Agent → Render Agent.  
+10. Confirm at least one PREVIEW→COMMIT cycle works end-to-end.  
+
+---
+
+## 9. Versioning & Future (v2+)
+- V2 reserved for: broader user-pins, advanced label hierarchies, richer distance/time (API-based), additional content families (lists, essentials expansions).  
+- Nothing in v1 requires retooling. All is additive.  
+
+---
+
+✅ This brief is your single source of truth until go-live.
