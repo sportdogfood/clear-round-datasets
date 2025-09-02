@@ -1,0 +1,66 @@
+{
+  "version": "v1",
+  "manifest_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json",
+  "summary": "Add the official event hub and, if multi-week, its legs (hub + legs). Facts-only. PREVIEW first, then COMMIT to JSON path under index/events.",
+  "name": "Add Event",
+  "description": "Create an official event hub and (if multi-week) weekly legs inside the hub window. No separate series entity.",
+  "system_prompt": "You operate in facts-only mode. Load the manifest from `manifest_url`. Confirm official link, official name, and dates from the official site before proceeding. Build a hub event UID <slug>-YYYY-MM. If multi-week, derive legs UID <slug>-YYYY-MM-DD fully inside the hub window, no overlaps, labeled Week 1..N. Output a PREVIEW envelope (full files, notes). Only after re-checking stability, output a COMMIT body { path, json, message }. Keys snake_case; dates YYYY-MM-DD; UIDs immutable. Lane: yellow by default; red on date shifts.",
+  "inputs": {
+    "required": ["official_link", "start_date"],
+    "optional": ["official_name", "end_date", "venue_uid", "organizer_uid", "is_series", "description", "label_uids"],
+    "types": {
+      "official_link": "https-url",
+      "official_name": "string",
+      "start_date": "date(YYYY-MM-DD)",
+      "end_date": "date(YYYY-MM-DD)",
+      "venue_uid": "uid (-venue suffix)",
+      "organizer_uid": "uid",
+      "is_series": "enum[y|n]",
+      "description": "string",
+      "label_uids": "array[string]"
+    }
+  },
+  "validations": [
+    "official_link is HTTPS & official source",
+    "start_date <= end_date (if provided)",
+    "UID patterns: hub <slug>-YYYY-MM, leg <slug>-YYYY-MM-DD",
+    "legs inside hub window; no overlaps; labels Week 1..N",
+    "venue_uid & organizer_uid resolve; label_uids exist"
+  ],
+  "preview_envelope": {
+    "type": "PREVIEW",
+    "lane": "yellow",
+    "writes": [
+      {
+        "op": "add|update",
+        "path": "index/events/<event_uid>.json",
+        "payload": "<full event JSON object>",
+        "base_sha": "<string|optional>"
+      }
+    ],
+    "notes": ["list unresolved relations or assumptions"]
+  },
+  "commit_envelope": {
+    "endpoint": "https://crt-b1434e13de34.herokuapp.com/items/commit",
+    "method": "POST",
+    "body": {
+      "path": "index/events/<event_uid>.json",
+      "json": "<full event JSON object>",
+      "message": "feat(events): add <event_uid> (actor: agent)"
+    },
+    "json_only": true
+  },
+  "lanes": {
+    "default": "yellow",
+    "red_when": ["shift hub/leg dates", "change official_name after creation"],
+    "green_only": ["editorial fields: description, label_uids"]
+  },
+  "ui_prompts": {
+    "running": "Reply COMMIT to post, EDIT <field>=<value> to patch, or CANCEL to stop.",
+    "on_cancel": "{\"ok\":true,\"state\":\"IDLE\"}"
+  },
+  "refs": {
+    "event_rules": "items/agents/event-rules.json",
+    "venue_rules": "items/agents/venue-rules.json"
+  }
+}
