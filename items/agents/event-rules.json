@@ -1,6 +1,6 @@
 {
   "name": "event-rules",
-  "version": "v2",
+  "version": "v3",
   "table": "events",
   "prefix": "event_",
   "uid_immutable": true,
@@ -21,6 +21,10 @@
 
   "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
   "uid_requires": ["event_official_name"],
+  "uid_patterns": {
+    "hub_uid_regex": "^([a-z0-9]+(?:-[a-z0-9]+)*)-\\d{4}-\\d{2}$",
+    "leg_uid_regex": "^([a-z0-9]+(?:-[a-z0-9]+)*)-\\d{4}-\\d{2}-\\d{2}$"
+  },
 
   "sanitize_official_name_policy": {
     "strip_sponsors_and_connectors": true,
@@ -40,8 +44,7 @@
     ],
     "remove_punctuation": [",", "/", "\"", "$"],
     "collapse_spaces": true,
-    "title_case": true,
-    "series_week_normalization": "If the show is a week within a family/series, normalize to '<Family> Series Week N'."
+    "title_case": true
   },
 
   "required_fields": [
@@ -73,26 +76,25 @@
     "rating_tag_uid": { "type": "single", "required": false },
     "discipline_tag_uid": { "type": "single", "required": false },
     "event_tag_uids": { "type": "multi", "required": false },
-    "series_tag_uid": { "type": "single", "required": false },
     "name_tag_uids": { "type": "multi", "required": false }
   },
 
   "normalizers_required": [
-    "items/days",
-    "items/months",
-    "items/seasons",
-    "items/years",
-    "items/countries",
-    "items/states",
-    "items/cities",
-    "items/weather",
-    "items/airports",
-    "items/labels"
+    "days",
+    "months",
+    "seasons",
+    "years",
+    "countries",
+    "states",
+    "cities",
+    "weather",
+    "airports",
+    "labels"
   ],
 
   "date_policies": {
     "format": "YYYY-MM-DD",
-    "macro_time_from": "event (parent) unless series children exist",
+    "macro_time_from": "hub (event) defines macro time; legs are discrete week/day windows inside the hub",
     "macro_outputs": ["season", "month", "weather_averages"]
   },
 
@@ -105,8 +107,7 @@
 
   "tags_policy": {
     "predefined_only": true,
-    "inheritance": "children inherit parent tags; children may add",
-    "series_tag_when": "set series_tag_uid only if is_series = 'y'"
+    "inheritance": "legs inherit hub tags; legs may add"
   },
 
   "derived": {
@@ -129,46 +130,16 @@
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
     "ignore_prefixes": ["dnu_", "ignore_"],
-    "on_failure": ["needs_review", "needs_normalizer", "needs_source"]
+    "on_failure": ["needs_review", "needs_normalizer", "needs_source"],
+    "hub_leg_consistency": [
+      "legs must sit fully inside hub window",
+      "legs must be non-overlapping",
+      "week labels must be consistent (Week 1..N)"
+    ]
   },
 
   "paths": {
-    "save_path_template": "events/{event_uid}.json",
+    "save_path_template": "index/events/{event_uid}.json",
     "sources_input_dir": "sources/"
-  },
-
-  "series": {
-    "is_series_field": "is_series",
-    "parent_uid_suffix_when_series": "-series",
-    "child_table": "event_series",
-    "child_uid_rule": "series_uid = parent_event_uid + '-' + series_sequence",
-    "child_required_fields": [
-      "parent_event_uid",
-      "series_sequence",
-      "event_official_start_date",
-      "event_official_end_date",
-      "created_date",
-      "last_updated"
-    ],
-    "child_inherit_from_parent": [
-      "event_official_name",
-      "event_display_name",
-      "venue_uid",
-      "organizer_uid",
-      "rating_tag_uid",
-      "discipline_tag_uid",
-      "event_tag_uids",
-      "name_tag_uids",
-      "label_uids",
-      "source_uids"
-    ],
-    "time_resolution_rule": {
-      "parent_window": ["season", "month", "weather_averages"],
-      "child_window": ["locale_selection", "daily_weather", "time_sensitive_details"],
-      "fallback": "if no children, parent drives all time-based triggers"
-    },
-    "child_paths": {
-      "save_path_template": "event_series/{series_uid}.json"
-    }
   }
 }
