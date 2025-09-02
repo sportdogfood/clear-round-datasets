@@ -1,7 +1,7 @@
 # manifest-contract.txt
 # Clear Round Travel — Kernel & Agents
 # Version: v1
-# Last updated: 2025-09-01
+# Last updated: 2025-09-02
 
 Purpose
 -------
@@ -10,129 +10,161 @@ This is a docs-only contract for humans and tools (proxy, kernel, Codex).
 
 Where it lives
 --------------
-Path: index/agents/manifest.json  (read by the proxy and referenced by tooling)
+Path (current model): **items/agents/manifest.json**  
+Read by the proxy and referenced by tooling. (The kernel still loads tasks by folder
+convention and does not depend on this file for routing.)
 
 Non-goal (important)
 --------------------
-Adding or modifying agents/tasks does NOT require changes to this manifest.
-The kernel loads tasks by folder convention (see operating-rules.txt).
+Adding or modifying agents/tasks does **NOT** require changes to this manifest.
+The kernel loads starters by folder convention (see operating-rules.txt).
 
 What the manifest governs (summary)
 -----------------------------------
-- Repository I/O endpoints (proxy_base, git_base)
-- Default branch and PR settings (optional)
-- Write allowlist (paths that may be written via proxy)
-- Read scope and caching hints (optional)
-- Commit/PR metadata defaults (optional)
+- Repository read bases and fetch order: `proxy_base`, `git_base`, `fetch.order`.
+- Pointers to rules and registry files under `items/agents/*`:
+  - `paths.event_rules_path`, `paths.venue_rules_path`,
+  - `paths.ingestion_rules_path`, `paths.dir_map_path`.
+- Canonical directory names used by tools (advisory): `dirs.*`, `items.*`.
+- Global policy hints (naming/date/link/geo booleans) under `policy.*`.
 
-Required keys (minimum)
------------------------
-- version (string)  
-  Schema version of the manifest (e.g., "v1").
+What it does **not** govern
+---------------------------
+- Kernel routing / task discovery (by-convention folder lookup).
+- Write authorization. The **proxy** enforces write lanes via **Heroku ALLOW_DIRS**
+  (first-segment tokens like `index`, `agents`, `events`, …). The manifest may carry
+  an advisory allowlist, but the proxy’s env is authoritative.
 
-- proxy_base (string, https URL)  
-  Base URL for the write/read proxy (e.g., Heroku).  
-  Used for commits and may be used for reads when available.
-
-- git_base (string, https URL)  
-  Raw read base for the dataset repository (e.g., GitHub raw/content API).  
-  Fallback source for reads if proxy is unavailable.
-
-- write_allowlist (array of strings)  
-  Top-level repo paths that the proxy may write to (directory prefixes).  
-  This SHOULD mirror the Heroku ALLOW_DIRS environment value.
+Required keys (CRT v2 minimum)
+------------------------------
+- `version` (string) — schema version for this manifest (e.g., `"v2.4"`).
+- `proxy_base` (https URL) — read/write proxy base **including** the `/items` path segment.
+- `git_base` (https URL) — raw read base for the repository **including** `/items`.
+- `fetch` (object) — `{"order": ["proxy","git"]}` defines read preference/fallback.
+- `paths` (object) — pointers (relative to `/items/`) to shared rules/registry:
+  - `event_rules_path`, `venue_rules_path`, `ingestion_rules_path`, `dir_map_path`.
+- `dirs` (object) — canonical names for entity folders (advisory to tools):
+  - `agents_dir`, `events_dir`, `venues_dir`, `organizers_dir`, `sources_dir`.
+  - **Note:** `event_series_dir` is **deprecated** (hub+legs model); avoid adding.
+- `items` (object) — canonical names for normalizer folders:
+  - `days_dir`, `months_dir`, `seasons_dir`, `years_dir`, `weeks_dir`,
+    `countries_dir`, `states_dir`, `cities_dir`, `weather_dir`,
+    `airports_dir`, `labels_dir`, `forms_dir`.
+- `policy` (object) — global hygiene/naming rules:
+  - `uid_regex`, `filename_equals_uid`, `uid_immutable`,
+  - `date_format`, `timezone_format`,
+  - `facts_only`, `bool_encoding`, `ignore_prefixes`,
+  - `official_link_must_be_https`,
+  - `source_uid_policy`, `source_type_policy`,
+  - `geo_input_modes`, `lat_field`, `long_field`, `pin_field`.
 
 Optional keys
 -------------
-- default_branch (string)  
-  The primary branch for PRs/commits (e.g., "main").
-
-- pr_by_default (boolean)  
-  Default behavior for commits initiated by automated actors (Agent/Codex).  
-  Operating default is PR; this key may reinforce that.
-
-- pr_branch_prefix (string)  
-  Prefix for auto-created PR branches (e.g., "chore/agent/").
-
-- reviewers (array of strings)  
-  Default Git usernames/teams to request on PR creation.
-
-- read_roots (array of strings)  
-  Directory prefixes the proxy/kernel should read from (advisory).
-
-- read_cache_ttl_seconds (integer)  
-  Hint for caching immutable reads to reduce rate limits.
-
-- commit_author (object)  
-  { "name": "Clear Round Bot", "email": "bot@clearround.travel" }
-
-- message_prefix (string)  
-  Text prepended to auto-generated commit messages.
+- `aliases` (object) — legacy folder aliases. Avoid “event-series” going forward.
+- PR/developer defaults (advisory): `default_branch`, `pr_by_default`, `pr_branch_prefix`,
+  `reviewers`, `read_roots`, `read_cache_ttl_seconds`, `commit_author`, `message_prefix`.
 
 Behavioral rules
 ----------------
-- Reads:  
-  1) Prefer proxy_base when available (may include caching),  
-  2) Fallback to git_base for canonical content.
+Reads
+- Tools **SHOULD** try `proxy_base` first (may be cached), then fall back to `git_base`.
+- Paths in `paths.*` are resolved relative to the `/items` base.
 
-- Writes:  
-  All writes go through the proxy and MUST target a path that starts with one of
-  the write_allowlist prefixes. The proxy may additionally enforce ALLOW_DIRS from
-  environment; both should match.
+Writes
+- All writes go through the proxy endpoint (`/items/commit`).
+- Authorization is enforced by the proxy via **ALLOW_DIRS first-segment tokens**.  
+  Example valid tokens: `index`, `agents`, `events`, `months`, `stay`, `dine`, `locale`.
+- A manifest-level allowlist (if present) is **advisory**; the proxy’s ALLOW_DIRS is authoritative.
 
-- Preview-first (policy):  
-  PREVIEW → COMMIT is enforced at the task level (see operating-rules.txt).  
-  The manifest does not waive preview; it can only set defaults (e.g., pr_by_default).
+Preview-first policy
+- PREVIEW → COMMIT is enforced at task level (see operating-rules.txt).  
+  The manifest does not waive preview; it can only carry defaults (e.g., `pr_by_default`).
 
-- No task enumeration:  
-  The manifest does not list agents/starters. It is not a router and should not be
-  edited to add or remove tasks.
+No task enumeration
+- The manifest is **not** a router. Do **not** add/remove starters here.
 
 Error modes (expected)
 ----------------------
-- missing_manifest: file not found or unreadable → tools should fail safe
-- invalid_manifest: required keys missing or malformed → fail safe
-- allowlist_denied: target path not under write_allowlist → reject write
-- upstream_error: git_base/proxy_base returned non-2xx → bubble up
-(See error-codes.txt for remediation steps.)
+- `missing_manifest` — file not found/unreadable → tools should fail safe.
+- `invalid_manifest` — required keys missing/malformed → fail safe.
+- `allowlist_denied` — proxy blocked a write (first segment not in ALLOW_DIRS).
+- `upstream_error` — proxy/raw upstream returned non-2xx.  
+See error-codes.txt for remediation.
 
 Security & audit
 ----------------
-- proxy_base MUST be https.  
-- write_allowlist is the primary guard; keep it tight and derived from actual use.
-- The proxy SHOULD stamp actor/type/timestamp in PR bodies or commit messages.
+- `proxy_base` MUST be https.
+- Keep ALLOW_DIRS (env) tight and aligned with actual usage; audit changes via PRs or ops notes.
+- Proxy SHOULD stamp actor/type/timestamp in commit messages or PR bodies.
 
 Backwards compatibility
 -----------------------
-- write_allowlist replaces historical ALLOW_DIRS spreadsheets; maintain parity with
-  the Heroku ALLOW_DIRS env var to avoid drift.
-- Tools should ignore unknown keys to allow forward evolution.
+- `event_series_dir` and any `aliases` pointing to `event-series` are **legacy**.  
+  Prefer the hub+legs (events only) model.
+- Tools should ignore unknown keys for forward evolution.
 
-Example (minimal)
------------------
+Example (aligned with current repo)
+-----------------------------------
 {
-  "version": "v1",
-  "proxy_base": "https://crt-b1434e13de34.herokuapp.com",
-  "git_base":   "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main",
-  "default_branch": "main",
-  "pr_by_default": true,
-  "write_allowlist": [
-    "index/events/",
-    "index/venues/",
-    "index/event-series/",
-    "items/agents/",
-    "items/forms/",
-    "items/stay/",
-    "items/dine/",
-    "items/locale/"
-  ]
+  "version": "v2.4",
+  "proxy_base": "https://crt-b1434e13de34.herokuapp.com/items",
+  "git_base":   "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
+  "fetch": { "order": ["proxy", "git"] },
+  "paths": {
+    "event_rules_path":     "agents/event-rules.json",
+    "venue_rules_path":     "agents/venue-rules.json",
+    "ingestion_rules_path": "agents/ingestion-rules.txt",
+    "dir_map_path":         "agents/dir-map.json"
+  },
+  "dirs": {
+    "agents_dir":      "agents",
+    "events_dir":      "events",
+    "venues_dir":      "venues",
+    "organizers_dir":  "organizers",
+    "sources_dir":     "sources"
+    /* legacy (avoid): "event_series_dir": "event-series" */
+  },
+  "items": {
+    "days_dir":      "days",
+    "months_dir":    "months",
+    "seasons_dir":   "seasons",
+    "years_dir":     "years",
+    "weeks_dir":     "weeks",
+    "countries_dir": "countries",
+    "states_dir":    "states",
+    "cities_dir":    "cities",
+    "weather_dir":   "weather",
+    "airports_dir":  "airports",
+    "labels_dir":    "labels",
+    "forms_dir":     "forms"
+  },
+  "policy": {
+    "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "filename_equals_uid": true,
+    "uid_immutable": true,
+    "date_format": "YYYY-MM-DD",
+    "timezone_format": "IANA",
+    "facts_only": true,
+    "bool_encoding": "yn",
+    "ignore_prefixes": ["dnu_", "ignore_"],
+    "official_link_must_be_https": true,
+    "source_uid_policy": "domain_slug + '-src'",
+    "source_type_policy": "first_path_token_or_key",
+    "geo_input_modes": ["lat_long", "google_pin"],
+    "lat_field":  "venue_geo_lat",
+    "long_field": "venue_geo_long",
+    "pin_field":  "venue_google_pin"
+  }
 }
+
+Testing checklist (manual)
+--------------------------
+- GET `https://crt-…/items/agents/manifest.json` returns JSON with the keys above.
+- GET `https://crt-…/items/_manifest.json` lists first-segment directories from ALLOW_DIRS.
+- A write to `/items/commit` succeeds when the **first segment** of `path` is in ALLOW_DIRS.
+- Removing `event_series_dir` in manifest does **not** affect task loading (by-convention).
 
 Change control
 --------------
 - Updates to this manifest-contract.txt are Yellow (PR required).
-- Any widening of write_allowlist should be called out in the PR description.
-
-
-
-
+- Any widening of write scope should be called out in the PR description.
