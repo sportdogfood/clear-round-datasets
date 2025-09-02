@@ -7,7 +7,7 @@
   "paths": {
     "event_rules_path": "items/agents/event-rules.json",
     "venue_rules_path": "items/agents/venue-rules.json",
-    "ingestion_rules_path": "items/agents/knowledge/ingestion-rules.txt",
+    "ingestion_rules_path": "items/agents/ingestion-rules.txt",
     "dir_map_path": "items/agents/dir-map.json"
   },
 
@@ -34,7 +34,7 @@
     "forms_dir": "index/forms"
   },
 
-  "aliases": { },
+  "aliases": {},
 
   "policy": {
     "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
