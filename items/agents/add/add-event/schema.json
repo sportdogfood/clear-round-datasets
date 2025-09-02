@@ -1,0 +1,52 @@
+{
+  "agent": "add-event",
+  "version": "v1",
+  "description": "Input and output schema for the Event Agent. Used for validation and PREVIEW/COMMIT envelopes.",
+  "input_schema": {
+    "official_link": "string (https-url, required)",
+    "official_name": "string (required)",
+    "start_date": "string (YYYY-MM-DD, required)",
+    "end_date": "string (YYYY-MM-DD, required)",
+    "is_series": "string (enum: y|n, optional)",
+    "venue_uid": "string (uid, optional)",
+    "organizer_uid": "string (uid, optional)",
+    "description": "string (optional)",
+    "label_uids": "array[string uid] (optional)"
+  },
+  "output_schema": {
+    "preview": {
+      "type": "string (always PREVIEW)",
+      "lane": "string (green|yellow|red)",
+      "writes": [
+        {
+          "op": "string (add|update)",
+          "path": "string (repo path, e.g. index/events/<event_uid>.json)",
+          "payload": "object (full event JSON)"
+        }
+      ],
+      "notes": "array[string] (validation notes, unresolved relations, assumptions)"
+    },
+    "commit": {
+      "endpoint": "string (/items/commit)",
+      "body": {
+        "path": "string (repo path)",
+        "json": "object (full event payload)",
+        "message": "string (commit message format: feat|fix|chore|docs(scope): what — why (actor))"
+      }
+    }
+  },
+  "event_payload_schema": {
+    "event_uid": "string (slug-YYYY-MM or slug-YYYY-MM-DD)",
+    "official_name": "string",
+    "display_name": "string",
+    "official_link": "string (https-url)",
+    "official_start_date": "string (YYYY-MM-DD)",
+    "official_end_date": "string (YYYY-MM-DD)",
+    "venue_uid": "string (uid, optional)",
+    "organizer_uid": "string (uid, optional)",
+    "label_uids": "array[string uid]",
+    "description": "string (optional)",
+    "source_uids": "array[string uid, at least 1]",
+    "last_updated": "string (ISO UTC timestamp)"
+  }
+}
