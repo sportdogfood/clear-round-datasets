@@ -1,0 +1,80 @@
+{
+  "agent": "add-event",
+  "version": "v1",
+  "purpose": "Create an event hub and, if is_series=y, generate its leg events inside the hub window.",
+  "inputs": {
+    "required": [
+      "official_link",
+      "official_name",
+      "start_date",
+      "end_date"
+    ],
+    "optional": [
+      "is_series",
+      "venue_uid",
+      "organizer_uid",
+      "description",
+      "label_uids"
+    ],
+    "types": {
+      "official_link": "https-url",
+      "official_name": "string",
+      "start_date": "date",
+      "end_date": "date",
+      "is_series": "enum[y,n]",
+      "venue_uid": "uid",
+      "organizer_uid": "uid",
+      "description": "string",
+      "label_uids": "array[uid]"
+    }
+  },
+  "validations": {
+    "https_only": ["official_link"],
+    "date_order": ["start_date","end_date"],
+    "hub_uid_rule": "event-slug-YYYY-MM",
+    "leg_uid_rule": "event-slug-YYYY-MM-DD",
+    "hub_vs_legs": [
+      "legs must sit fully inside hub window",
+      "no overlaps",
+      "consistent week labels"
+    ]
+  },
+  "outputs": {
+    "preview": {
+      "type": "PREVIEW",
+      "lane": "yellow",
+      "writes": [
+        {
+          "op": "add|update",
+          "path": "index/events/<event_uid>.json",
+          "payload": "full event JSON"
+        }
+      ],
+      "notes": ["list unresolved relations or assumptions"]
+    },
+    "commit": {
+      "endpoint": "/items/commit",
+      "body": {
+        "path": "index/events/<event_uid>.json",
+        "json": "{...full payload...}",
+        "message": "feat(events): add <event_uid> (actor: agent)"
+      }
+    }
+  },
+  "lanes": {
+    "default": "yellow",
+    "red_triggers": [
+      "shifting hub or leg dates after creation",
+      "changing official_name after creation"
+    ],
+    "green_triggers": [
+      "editorial-only updates (non-critical fields)"
+    ]
+  },
+  "dependencies": [
+    "event-rules.json",
+    "venue-rules.json",
+    "validation-checklist.txt",
+    "permissions-policy.txt"
+  ]
+}
