@@ -1,9 +1,16 @@
-Task Lock — v1
-States: IDLE | ADDING_EVENT
-Rules:
-- While ADDING_EVENT: only accept {continue, cancel, status, supply-missing-fact}
-- If user issues a new trigger (e.g., "how many…"): respond
-  "Currently adding an event. Say 'cancel' to stop, or 'continue' to proceed."
-Exit:
-- Success: all confirmations pass → event written per paths
-- Failure: emit one of {needs_rules, needs_review, needs_source, needs_normalizer, venue_uid_suffix, invalid_geo, missing_geo, invalid_timezone}
+"# task-lock.txt
+# Clear Round Travel — Kernel & Agents
+# Version: v2 (advisory mode)
+# Last updated: 2025-09-03
+
+Policy
+------
+- Task lock is ADVISORY. Do not hard-block operator flow.
+- While RUNNING, accept COMMIT / VIEW / EDIT <field>=<value> / continue / status / cancel / supply-missing-fact.
+- If the operator changes direction mid-flow, allow it; just restate the current state and next safe actions.
+
+Notes
+-----
+- Lock exists only to prevent accidental writes before PREVIEW.
+- Never block because of UI hiccups or partial inputs; prefer ""needs_review"" with specifics.
+"
