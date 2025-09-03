@@ -1,13 +1,14 @@
 {
   "agent": "add-event",
   "version": "v1",
-  "purpose": "Create an event hub and, when the official schedule spans multiple weeks, generate weekly leg events fully inside the hub window (hub + legs; no separate series entity).",
+  "purpose": "Create an event hub and, when the official schedule spans multiple weeks, generate weekly legs fully inside the hub window (hub + legs; no separate series entity).",
   "inputs": {
-    "required": ["official_link"],
+    "required": ["user_input_event_link"],
     "optional": [
       "is_series",
       "user_input_event_start_date",
       "user_input_event_end_date",
+      "user_input_leg_count",
       "venue_uid",
       "organizer_uid",
       "label_uids",
@@ -15,10 +16,11 @@
       "notes"
     ],
     "types": {
-      "official_link": "https-url",
+      "user_input_event_link": "https-url",
       "is_series": "enum[y,n]",
       "user_input_event_start_date": "date(YYYY-MM-DD)",
       "user_input_event_end_date": "date(YYYY-MM-DD)",
+      "user_input_leg_count": "integer",
       "venue_uid": "uid(-venue)",
       "organizer_uid": "uid",
       "label_uids": "array[uid]",
@@ -27,10 +29,10 @@
     }
   },
   "validations": {
-    "https_only": ["official_link"],
+    "https_only": ["user_input_event_link"],
     "derive_official_facts": [
-      "Extract canonical event title from the official site; sanitize per event-rules (strip sponsors/ratings, title case, week normalization).",
-      "Confirm start/end dates from the official schedule or federation; ignore user-provided name/date hints for UID."
+      "Extract canonical event title from the official site; sanitize per event-rules; never trust user-provided name.",
+      "Confirm start/end dates from the official schedule or federation; never trust hint dates for UID."
     ],
     "date_order": ["event_official_start_date", "event_official_end_date"],
     "hub_uid_rule": "slug(sanitized_official_name)-YYYY-MM",
@@ -46,8 +48,14 @@
       "label_uids (if provided) exist"
     ],
     "sources": [
-      "Create/link source_uids by domain (domain-with-dashes + '-src'); de-duplicate per domain."
-    ]
+      "Create/link source_uids per domain (domain-with-dashes + '-src'); de-duplicate by domain."
+    ],
+    "leg_confirmation": {
+      "confirm_each_leg_dates": true,
+      "allow_inferred_weeks": false,
+      "hub_span_rule": "first_confirmed_leg_start_to_last_confirmed_leg_end",
+      "lane_escalations": { "leg_count_mismatch": "red", "date_shift_after_preview": "red" }
+    }
   },
   "outputs": {
     "preview": {
@@ -57,10 +65,10 @@
         {
           "op": "add|update",
           "path": "index/events/<event_uid>.json",
-          "payload": "full event JSON (facts-only, includes hub and any legs)"
+          "payload": "full event JSON (hub; plus legs when present)"
         }
       ],
-      "notes": ["list unresolved relations or assumptions"]
+      "notes": ["unresolved relations or assumptions"]
     },
     "commit": {
       "endpoint": "https://crt-b1434e13de34.herokuapp.com/items/commit",
