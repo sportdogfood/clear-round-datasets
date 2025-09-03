@@ -4,37 +4,37 @@ Starters: add-event (primary), add-event-series (alias), update-event
 Role: Certify the official event identity. For multi-week shows: hub + legs (no “series” entity).
 
 Purpose
-- Create a hub event and (if needed) weekly legs fully inside the hub window.
-- Normalize official name, link, and dates; enforce UID/path rules.
+- Create a hub event and (if the official schedule spans multiple weeks) weekly legs fully inside the hub window.
+- Discover and normalize official name, link, and dates from the official site; enforce UID/path rules.
 - Perform surgical updates with clear lane rules.
 
-Inputs (minimum)
-- official_link (https), official_name
-- start_date (YYYY-MM-DD), end_date (YYYY-MM-DD)
-- is_series: "y"|"n"    (if "y": derive leg count/labels from dates)
-- venue_uid, organizer_uid (or resolvable fields)
-- labels_uids (optional), description (optional)
+Inputs (hints-only)
+- official_link (https) — REQUIRED. User text is a hint only.
+- is_series: "y"|"n" — optional hint; agent must still confirm the schedule.
+- Optional hints: user_input_event_start_date, user_input_event_end_date, venue_uid, organizer_uid, label_uids, description.
 
-Derivations & Rules
-- UIDs: hub = event-slug-YYYY-MM; legs = event-slug-YYYY-MM-DD
-- Legs: non-overlapping, fully inside hub window; consistent labels (Week 1…N)
-- Links must be https; dates must be valid ISO; booleans = "y"/"n"
-- Paths: index/events/<event_uid>.json (no collisions)
+Derivations & Rules (authoritative)
+- Official name: extracted from official site; sanitize per event-rules (strip sponsors/ratings, title case, week normalization).
+- Official dates: confirmed from the official schedule (or federation).
+- UIDs: hub = slug(sanitized official name)-YYYY-MM; legs = slug(sanitized official name)-YYYY-MM-DD.
+- Legs: non-overlapping, fully inside hub window; consistent labels (Week 1..N).
+- Sources: domain-first; create/link source_uids by domain and de-dup per domain.
+- Paths: index/events/<event_uid>.json (no collisions; filename == UID; immutable).
 
 Validation (PREVIEW gate)
-- Confirm official name/link from sources; confirm date window
-- Resolve venue_uid and organizer_uid (or note deferral)
-- Ensure hub vs Week 1 path collision is impossible
-- Lane: YELLOW by default; RED when shifting any live dates or identity-critical fields
+- Confirm official link/domain; extract + sanitize official name; confirm date window.
+- Resolve venue_uid and organizer_uid (or hold PREVIEW with lane≥yellow and notes until resolvable, per permissions policy).
+- Ensure hub vs leg window consistency and no overlaps.
+- Lane: YELLOW by default; RED when shifting any live dates or identity-critical fields (name/UID).
 
 Outputs
-- PREVIEW: lane + writes[] (full payloads, not patches), notes[], summary
-- COMMIT: only after HEAD re-check; hub written first, then legs
+- PREVIEW: lane + writes[] (full payloads, not patches), notes[], summary.
+- COMMIT: only after HEAD re-check; hub written first, then legs.
 
 Dependencies
 - naming-policy.txt, validation-checklist.txt, permissions-policy.txt
 - event-rules.json (shared), venue-rules.json (for relation checks)
 
 Acceptance (Go-Live)
-- One hub + N legs PREVIEW passes all checks; COMMIT produces a PR
-- Update flow PREVIEW shows before/after + diff counts
+- One hub + N legs PREVIEW passes all checks; COMMIT produces a JSON write under index/events.
+- Update flow PREVIEW shows before/after + diff counts.
