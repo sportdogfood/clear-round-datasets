@@ -1,0 +1,125 @@
+{
+  "path": "agents/index-agent/openapi.json",
+  "json": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "CRT Items Proxy (nested, ref-free)",
+      "version": "1.2.4",
+      "description": "JSON-only commits; GET supports .json/.txt/.md/.html/.js. First path segment must be allowed."
+    },
+    "servers": [
+      { "url": "https://crt-b1434e13de34.herokuapp.com" }
+    ],
+    "paths": {
+      "/items/_manifest.json": {
+        "get": {
+          "operationId": "getManifest",
+          "summary": "Generated directory/file index (JSON-only)",
+          "responses": {
+            "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+            "500": { "description": "Manifest failed", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } } }
+          }
+        }
+      },
+      "/items/{dir}/{file}.{ext}": {
+        "get": {
+          "operationId": "getItem0",
+          "summary": "Fetch a file from an allowed top-level folder",
+          "parameters": [
+            { "in": "path", "name": "dir", "required": true, "schema": { "type": "string", "description": "First-segment token (ALLOW_DIRS)", "enum": ["index","agents","events","venues","organizers","sources","airports","cities","countries","states","days","weeks","months","seasons","years","weather","labels","forms","stay","dine","locale"] } },
+            { "in": "path", "name": "file", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "ext",  "required": true, "schema": { "type": "string", "enum": ["json","txt","md","html","js"] } }
+          ],
+          "responses": {
+            "200": { "description": "OK", "content": {
+              "application/json": { "schema": { "type": "object", "additionalProperties": true } },
+              "text/plain":       { "schema": { "type": "string" } },
+              "text/markdown":    { "schema": { "type": "string" } },
+              "text/html":        { "schema": { "type": "string" } },
+              "application/javascript": { "schema": { "type": "string" } }
+            }},
+            "400": { "description": "Bad path or disallowed dir/ext", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } },
+            "404": { "description": "Not found", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } }
+          }
+        }
+      },
+      "/items/{dir}/{subdir1}/{subdir2}/{file}.{ext}": {
+        "get": {
+          "operationId": "getItem2",
+          "summary": "Fetch a file two levels deep",
+          "parameters": [
+            { "in": "path", "name": "dir", "required": true, "schema": { "type": "string", "enum": ["index","agents","events","venues","organizers","sources","airports","cities","countries","states","days","weeks","months","seasons","years","weather","labels","forms","stay","dine","locale"] } },
+            { "in": "path", "name": "subdir1", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "subdir2", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "file",    "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "ext",     "required": true, "schema": { "type": "string", "enum": ["json","txt","md","html","js"] } }
+          ],
+          "responses": {
+            "200": { "description": "OK", "content": {
+              "application/json": { "schema": { "type": "object", "additionalProperties": true } },
+              "text/plain":       { "schema": { "type": "string" } },
+              "text/markdown":    { "schema": { "type": "string" } },
+              "text/html":        { "schema": { "type": "string" } },
+              "application/javascript": { "schema": { "type": "string" } }
+            }},
+            "400": { "description": "Bad path or disallowed dir/ext", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } },
+            "404": { "description": "Not found", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } }
+          }
+        }
+      },
+      "/items/{dir}/{subdir1}/{subdir2}/{subdir3}/{file}.{ext}": {
+        "get": {
+          "operationId": "getItem3",
+          "summary": "Fetch a file three levels deep",
+          "parameters": [
+            { "in": "path", "name": "dir", "required": true, "schema": { "type": "string", "enum": ["index","agents","events","venues","organizers","sources","airports","cities","countries","states","days","weeks","months","seasons","years","weather","labels","forms","stay","dine","locale"] } },
+            { "in": "path", "name": "subdir1", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "subdir2", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "subdir3", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "file",    "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+            { "in": "path", "name": "ext",     "required": true, "schema": { "type": "string", "enum": ["json","txt","md","html","js"] } }
+          ],
+          "responses": {
+            "200": { "description": "OK", "content": {
+              "application/json": { "schema": { "type": "object", "additionalProperties": true } },
+              "text/plain":       { "schema": { "type": "string" } },
+              "text/markdown":    { "schema": { "type": "string" } },
+              "text/html":        { "schema": { "type": "string" } },
+              "application/javascript": { "schema": { "type": "string" } }
+            }},
+            "400": { "description": "Bad path or disallowed dir/ext", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } },
+            "404": { "description": "Not found", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } }
+          }
+        }
+      },
+      "/items/commit": {
+        "post": {
+          "operationId": "commitItem",
+          "summary": "Create or update a JSON file (JSON-only)",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "path":    { "type": "string", "description": "Must start with an allowed token (e.g., index/events/…) and end with \".json\"" },
+                    "json":    { "type": "object", "additionalProperties": true },
+                    "message": { "type": "string" }
+                  },
+                  "required": ["path","json"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": { "description": "Commit OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "path": { "type": "string" }, "commit": { "type": "object", "properties": { "sha": { "type": "string" }, "url": { "type": "string" } } } }, "required": ["ok","path"] } } } },
+            "400": { "description": "Missing path/json, non-.json path, or disallowed dir", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } },
+            "500": { "description": "Commit failed", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } }, "required": ["error"] } } } }
+          }
+        }
+      }
+    }
+  },
+  "message": "feat(actions): add nested openapi for agent import (actor: human)"
+}
