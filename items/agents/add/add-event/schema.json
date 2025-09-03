@@ -1,71 +1,90 @@
 {
-  "name": "add-event",
+  "agent": "add-event",
   "version": "v1",
-  "io": {
-    "inputs": {
-      "required": ["user_input_event_link"],
-      "optional": [
-        "is_series",
-        "user_input_event_start_date",
-        "user_input_event_end_date",
-        "venue_uid",
-        "organizer_uid",
-        "label_uids",
-        "notes"
-      ],
-      "types": {
-        "user_input_event_link": "https-url",
-        "is_series": "enum[y|n]",
-        "user_input_event_start_date": "date(YYYY-MM-DD)",
-        "user_input_event_end_date": "date(YYYY-MM-DD)",
-        "venue_uid": "uid(-venue)",
-        "organizer_uid": "uid",
-        "label_uids": "array[string]",
-        "notes": "string"
-      }
-    },
-    "derived": {
-      "event_official_link": "confirmed from official site (domain-first)",
-      "event_official_name": "extracted & sanitized per event-rules",
-      "event_display_name": "title-cased display variant",
-      "event_official_start_date": "confirmed from official schedule",
-      "event_official_end_date": "confirmed when present",
-      "event_uid": "computed from sanitized name & date policy; immutable",
-      "yyyymm": "from start_date",
-      "event_duration": "days between start and end when present",
-      "event_current_status": "computed vs. today (America/New_York)",
-      "event_estimated_next_start_date": "if annual"
+  "purpose": "Create an event hub and, when the official schedule spans multiple weeks, generate weekly leg events fully inside the hub window (hub + legs; no separate series entity).",
+  "inputs": {
+    "required": ["official_link"],
+    "optional": [
+      "is_series",
+      "user_input_event_start_date",
+      "user_input_event_end_date",
+      "venue_uid",
+      "organizer_uid",
+      "label_uids",
+      "description",
+      "notes"
+    ],
+    "types": {
+      "official_link": "https-url",
+      "is_series": "enum[y,n]",
+      "user_input_event_start_date": "date(YYYY-MM-DD)",
+      "user_input_event_end_date": "date(YYYY-MM-DD)",
+      "venue_uid": "uid(-venue)",
+      "organizer_uid": "uid",
+      "label_uids": "array[uid]",
+      "description": "string",
+      "notes": "string"
     }
   },
-  "preview_envelope": {
-    "type": "PREVIEW",
-    "lane": "yellow",
-    "writes": [
-      {
-        "op": "add|update",
-        "path": "index/events/<event_uid>.json",
-        "payload": "<full event JSON object>"
-      }
+  "validations": {
+    "https_only": ["official_link"],
+    "derive_official_facts": [
+      "Extract canonical event title from the official site; sanitize per event-rules (strip sponsors/ratings, title case, week normalization).",
+      "Confirm start/end dates from the official schedule or federation; ignore user-provided name/date hints for UID."
     ],
-    "notes": ["unresolved relations or assumptions"]
+    "date_order": ["event_official_start_date", "event_official_end_date"],
+    "hub_uid_rule": "slug(sanitized_official_name)-YYYY-MM",
+    "leg_uid_rule": "slug(sanitized_official_name)-YYYY-MM-DD",
+    "hub_vs_legs": [
+      "Legs must sit fully inside hub window",
+      "No overlaps",
+      "Consistent labels: Week 1..N"
+    ],
+    "relations": [
+      "venue_uid ends with -venue and resolves",
+      "organizer_uid resolves",
+      "label_uids (if provided) exist"
+    ],
+    "sources": [
+      "Create/link source_uids by domain (domain-with-dashes + '-src'); de-duplicate per domain."
+    ]
   },
-  "commit_contract": {
-    "endpoint": "https://crt-b1434e13de34.herokuapp.com/items/commit",
-    "method": "POST",
-    "body": {
-      "path": "index/events/<event_uid>.json",
-      "json": "<full event JSON object>",
-      "message": "feat(events): add <event_uid> (actor: agent)"
+  "outputs": {
+    "preview": {
+      "type": "PREVIEW",
+      "lane": "yellow",
+      "writes": [
+        {
+          "op": "add|update",
+          "path": "index/events/<event_uid>.json",
+          "payload": "full event JSON (facts-only, includes hub and any legs)"
+        }
+      ],
+      "notes": ["list unresolved relations or assumptions"]
     },
-    "json_only": true
+    "commit": {
+      "endpoint": "https://crt-b1434e13de34.herokuapp.com/items/commit",
+      "body": {
+        "path": "index/events/<event_uid>.json",
+        "json": "{...full payload...}",
+        "message": "feat(events): add <event_uid> (actor: agent)"
+      }
+    }
   },
-  "constraints": {
-    "facts_only": true,
-    "uids_immutable": true,
-    "dates_format": "YYYY-MM-DD",
-    "snake_case": true,
-    "relations_must_resolve": true,
-    "legs_inside_hub": true,
-    "no_overlaps": true
-  }
+  "lanes": {
+    "default": "yellow",
+    "red_triggers": [
+      "Shifting hub or leg dates after creation",
+      "Changing sanitized official_name after creation"
+    ],
+    "green_triggers": [
+      "Editorial-only updates (description, label_uids)"
+    ]
+  },
+  "dependencies": [
+    "event-rules.json",
+    "venue-rules.json",
+    "validation-checklist.txt",
+    "permissions-policy.txt"
+  ]
 }
