@@ -1,5 +1,5 @@
 {
-  "version": "v2.5",
+  "version": "v2.6",
   "proxy_base": "https://crt-b1434e13de34.herokuapp.com",
   "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main",
   "fetch": { "order": ["proxy", "git"] },
@@ -31,10 +31,13 @@
     "weather_dir": "index/weather",
     "airports_dir": "index/airports",
     "labels_dir": "index/labels",
-    "forms_dir": "index/forms"
+    "forms_dir": "index/forms",
+    "stay_dir": "index/stay",
+    "dine_dir": "index/dine",
+    "locale_dir": "index/locale"
   },
 
-  "aliases": { },
+  "aliases": {},
 
   "policy": {
     "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -51,6 +54,8 @@
     "geo_input_modes": ["lat_long", "google_pin"],
     "lat_field": "venue_geo_lat",
     "long_field": "venue_geo_long",
-    "pin_field": "venue_google_pin"
+    "pin_field": "venue_google_pin",
+    "venue_uid_suffix": "-venue",
+    "commit_allows_text": true
   }
 }
