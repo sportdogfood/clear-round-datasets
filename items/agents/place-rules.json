@@ -1,0 +1,142 @@
+{
+  "name": "place-rules",
+  "version": "v1",
+  "table": "places",
+  "prefix": "place_",
+  "uid_immutable": true,
+
+  "scope": {
+    "allowed_place_types": ["hotel", "airbnb", "rvpark", "restaurant", "site", "park"],
+    "excludes": ["venue"]
+  },
+
+  "naming": {
+    "field_case": "snake_case",
+    "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "filename_equals_uid": true,
+    "uid_disallow_suffix": "-venue"
+  },
+
+  "base_vars": [
+    "place_uid",
+    "place_name",
+    "place_display_name",
+    "place_type",
+    "place_recordId"
+  ],
+
+  "uid_rule": "place_uid = slugify(place_name)",
+  "uid_requires": ["place_name", "place_type"],
+
+  "uid_collision_policy": {
+    "on_collision_append": "-{city_uid_stem}",
+    "city_uid_stem_rule": "use city_uid; if absent, use state_uid; else country_uid"
+  },
+
+  "required_fields": [
+    "place_link",
+    "place_name",
+    "place_display_name",
+    "place_type",
+    "created_date",
+    "last_updated",
+    "city_uid",
+    "state_uid",
+    "country_uid"
+  ],
+
+  "optional_fields": [
+    "place_address_line1",
+    "place_address_line2",
+    "place_zip",
+    "place_phone",
+    "place_email",
+    "place_hours_note",
+    "notes",
+    "form_uid",
+    "git_status"
+  ],
+
+  "relations": {
+    "city_uid":            { "type": "single", "required": true },
+    "state_uid":           { "type": "single", "required": true },
+    "country_uid":         { "type": "single", "required": true },
+    "airport_uids":        { "type": "multi",  "required": false },
+    "primary_venue_uid":   { "type": "single", "required": false, "must_end_with": "-venue" },
+    "near_venue_uids":     { "type": "multi",  "required": false, "must_end_with": "-venue" },
+    "source_uids":         { "type": "multi",  "required": true,  "min_items": 1 },
+    "label_uids":          { "type": "multi",  "required": false }
+  },
+
+  "normalizers_required": [
+    "countries", "states", "cities", "airports", "labels"
+  ],
+
+  "date_policies": {
+    "format": "YYYY-MM-DD"
+  },
+
+  "geo_policies": {
+    "lat_field": "place_geo_lat",
+    "long_field": "place_geo_long",
+    "pin_field": "place_google_pin",
+    "lat_range": [-90, 90],
+    "long_range": [-180, 180],
+    "lat_long_required": false
+  },
+
+  "image_policy": {
+    "allow_external_cdn": true,
+    "disallow_ephemeral_links": true
+  },
+
+  "source_uid_policy": {
+    "construction": "domain_slug",
+    "domain_slug_rule": "lowercase primary domain; dots→hyphens (e.g., usef.org → usef-org)",
+    "source_type_hint": "first path token or identifying key (e.g., '/', 'map', 'listing', 'official')",
+    "flags": { "is_official": "y|n", "is_favorite": "y|n" }
+  },
+
+  "tags_policy": {
+    "predefined_only": true
+  },
+
+  "derived": {
+    "allow": true,
+    "fields": {
+      "yyyymm": "optional: when a verification or inspection date is present",
+      "place_last_verified": "operator-maintained; not auto"
+    },
+    "never_overwrite_inputs": true
+  },
+
+  "validation": {
+    "official_link_must_be_https": true,
+    "relations_must_resolve": true,
+    "halt_on_missing_normalizer": true,
+    "no_ad_hoc_values": true,
+    "bool_encoding": "yn",
+    "ignore_prefixes": ["dnu_", "ignore_"],
+    "place_type_must_be_allowed": true,
+    "uid_must_not_end_with_forbidden_suffix": true,
+    "filename_must_equal_uid": true
+  },
+
+  "paths": {
+    "save_path_templates": {
+      "hotel":      "index/hotels/{place_uid}.json",
+      "airbnb":     "index/airbnbs/{place_uid}.json",
+      "rvpark":     "index/rvparks/{place_uid}.json",
+      "restaurant": "index/restaurants/{place_uid}.json",
+      "site":       "index/sites/{place_uid}.json",
+      "park":       "index/parks/{place_uid}.json"
+    },
+    "sources_input_dir": "index/sources"
+  },
+
+  "notes": {
+    "facts_only": "Content tone/POV never lives in place records; use content cards.",
+    "venue_gate": "If binding to a venue, confirm via primary_venue_uid or near_venue_uids; never guess.",
+    "indices": "Distance/proximity buckets and computed facets live in index files, not in place records."
+  }
+}
