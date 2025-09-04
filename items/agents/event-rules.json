@@ -1,6 +1,6 @@
 {
   "name": "event-rules",
-  "version": "v3",
+  "version": "v4",
   "table": "events",
   "prefix": "event_",
   "uid_immutable": true,
@@ -8,7 +8,8 @@
   "naming": {
     "field_case": "snake_case",
     "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-    "filename_equals_uid": true
+    "filename_equals_uid": false,
+    "filename_template": "{organizer_uid}-{event_uid}.json"
   },
 
   "base_vars": [
@@ -21,26 +22,19 @@
 
   "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
   "uid_requires": ["event_official_name"],
-  "uid_patterns": {
-    "hub_uid_regex": "^([a-z0-9]+(?:-[a-z0-9]+)*)-\\d{4}-\\d{2}$",
-    "leg_uid_regex": "^([a-z0-9]+(?:-[a-z0-9]+)*)-\\d{4}-\\d{2}-\\d{2}$"
-  },
 
   "sanitize_official_name_policy": {
     "strip_sponsors_and_connectors": true,
+    "strip_venue_name": true,
+    "strip_organizer_name": true,
+    "remove_terms": [
+      "horse show", "horse shows", "circuit", "festival", "classic",
+      "series", "presented by"
+    ],
+    "remove_year_tokens": true,
     "remove_rating_tokens": [
-      "CSI",
-      "CSIO",
-      "CSI*",
-      "CSI**",
-      "CSI***",
-      "CSI****",
-      "CSI*****",
-      "WCHR",
-      "USEF",
-      "Premier",
-      "AA",
-      "A"
+      "CSI", "CSIO", "CSI*", "CSI**", "CSI***", "CSI****", "CSI*****",
+      "WCHR", "USEF", "Premier", "AA", "A"
     ],
     "remove_punctuation": [",", "/", "\"", "$"],
     "collapse_spaces": true,
@@ -66,43 +60,43 @@
   ],
 
   "relations": {
-    "venue_uid": { "type": "single", "required": true, "must_end_with": "-venue" },
+    "venue_uid":   { "type": "single", "required": true, "must_end_with": "-venue" },
     "organizer_uid": { "type": "single", "required": true },
-    "city_uid": { "type": "single", "required": false },
-    "state_uid": { "type": "single", "required": false },
+    "city_uid":    { "type": "single", "required": false },
+    "state_uid":   { "type": "single", "required": false },
     "country_uid": { "type": "single", "required": false },
     "source_uids": { "type": "multi", "required": true, "min_items": 1 },
-    "label_uids": { "type": "multi", "required": false },
-    "rating_tag_uid": { "type": "single", "required": false },
+    "label_uids":  { "type": "multi", "required": false },
+    "rating_tag_uid":     { "type": "single", "required": false },
     "discipline_tag_uid": { "type": "single", "required": false },
-    "event_tag_uids": { "type": "multi", "required": false },
-    "name_tag_uids": { "type": "multi", "required": false }
+    "event_tag_uids":     { "type": "multi", "required": false },
+    "name_tag_uids":      { "type": "multi", "required": false }
   },
 
   "normalizers_required": [
-    "days",
-    "months",
-    "seasons",
-    "years",
-    "countries",
-    "states",
-    "cities",
-    "weather",
-    "airports",
-    "labels"
+    "days", "months", "seasons", "years",
+    "countries", "states", "cities",
+    "weather", "airports", "labels"
   ],
 
   "date_policies": {
     "format": "YYYY-MM-DD",
-    "macro_time_from": "hub (event) defines macro time; legs are discrete week/day windows inside the hub",
+    "macro_time_from": "hub (event) defines macro time; legs are discrete windows inside the hub",
     "macro_outputs": ["season", "month", "weather_averages"]
   },
 
   "source_uid_policy": {
-    "construction": "domain_slug + '-src'",
+    "construction": "domain_slug",
     "domain_slug_rule": "lowercase primary domain, dots→hyphens (e.g., usef.org → usef-org)",
     "source_type_hint": "first path token or identifying key (e.g., '/', 'events', 'search', 'ShowGUID')",
     "flags": { "is_official": "y|n", "is_favorite": "y|n" }
+  },
+
+  "series_policy": {
+    "is_series_values": ["y","n","auto"],
+    "leg_label_scheme": "Leg N",
+    "require_non_overlapping_legs": true,
+    "require_legs_inside_hub": true
   },
 
   "tags_policy": {
@@ -130,16 +124,15 @@
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
     "ignore_prefixes": ["dnu_", "ignore_"],
-    "on_failure": ["needs_review", "needs_normalizer", "needs_source"],
     "hub_leg_consistency": [
       "legs must sit fully inside hub window",
       "legs must be non-overlapping",
-      "week labels must be consistent (Week 1..N)"
+      "leg labels must be consistent (Leg 1..N)"
     ]
   },
 
   "paths": {
-    "save_path_template": "index/events/{event_uid}.json",
-    "sources_input_dir": "sources/"
+    "save_path_template": "index/events/{organizer_uid}-{event_uid}.json",
+    "sources_input_dir": "index/sources"
   }
 }
