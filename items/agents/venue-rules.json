@@ -1,6 +1,6 @@
 {
   "name": "venue-rules",
-  "version": "v2",
+  "version": "v3",
   "table": "venues",
   "prefix": "venue_",
   "uid_immutable": true,
@@ -51,24 +51,19 @@
   ],
 
   "relations": {
-    "city_uid":         { "type": "single", "required": true,  "resolves_in": "items/cities" },
-    "state_uid":        { "type": "single", "required": true,  "resolves_in": "items/states" },
-    "country_uid":      { "type": "single", "required": true,  "resolves_in": "items/countries" },
-    "airport_uids":     { "type": "multi",  "required": false, "resolves_in": "items/airports" },
-    "weather_uid":      { "type": "single", "required": false, "resolves_in": "items/weather" },
-    "events_uids":      { "type": "multi",  "required": false, "resolves_in": "events" },
-    "organizer_uids":   { "type": "multi",  "required": false, "resolves_in": "organizers" },
-    "source_uids":      { "type": "multi",  "required": true,  "min_items": 1, "resolves_in": "sources" },
-    "label_uids":       { "type": "multi",  "required": false, "resolves_in": "labels" }
+    "city_uid":      { "type": "single", "required": true },
+    "state_uid":     { "type": "single", "required": true },
+    "country_uid":   { "type": "single", "required": true },
+    "airport_uids":  { "type": "multi",  "required": false },
+    "weather_uid":   { "type": "single", "required": false },
+    "events_uids":   { "type": "multi",  "required": false },
+    "organizer_uids":{ "type": "multi",  "required": false },
+    "source_uids":   { "type": "multi",  "required": true, "min_items": 1 },
+    "label_uids":    { "type": "multi",  "required": false }
   },
 
   "location_normalizers_required": [
-    "items/countries",
-    "items/states",
-    "items/cities",
-    "items/airports",
-    "items/weather",
-    "items/labels"
+    "countries", "states", "cities", "airports", "weather", "labels"
   ],
 
   "date_policies": {
@@ -82,7 +77,7 @@
     "lat_range": [-90, 90],
     "long_range": [-180, 180],
     "lat_long_required": false,
-    "timezone_format": "IANA (e.g., America/New_York)"
+    "timezone_format": "IANA"
   },
 
   "image_policy": {
@@ -91,7 +86,7 @@
   },
 
   "source_uid_policy": {
-    "construction": "domain_slug + '-src'",
+    "construction": "domain_slug",
     "domain_slug_rule": "lowercase primary domain; dots→hyphens (e.g., usef.org → usef-org)",
     "source_type_hint": "first path token or identifying key (e.g., '/', 'events', 'search', 'ShowGUID')",
     "flags": { "is_official": "y|n", "is_favorite": "y|n" }
@@ -111,8 +106,8 @@
   },
 
   "paths": {
-    "save_path_template": "venues/{venue_uid}.json",
-    "sources_input_dir": "sources/"
+    "save_path_template": "index/venues/{venue_uid}.json",
+    "sources_input_dir": "index/sources"
   },
 
   "enrichment": {
@@ -128,6 +123,6 @@
       "venue_address_line1",
       "venue_zip"
     ],
-    "inheritance_notes": "Events reference venue for authoritative location; downstream content (stay, dine, locale, weather) keys off venue or an explicit this_stay."
+    "inheritance_notes": "Events reference venue for authoritative location; downstream content (stay, dine, locale, weather) keys off venue or explicit this_stay."
   }
 }
