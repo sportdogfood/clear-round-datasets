@@ -1,124 +1,146 @@
-# Clear Round Travel — Agents README
-# Version: v1
-# Last updated: 2025-09-03 (ET)
+# README — CRT Tasks & Proxy Usage
+# Scope: small, operator-led system for events, places, content, and indices
+# Last updated: 2025-09-04 (America/New_York)
 
-Purpose
--------
-This README is the single entry point for running “kernel-style” agents against the Clear Round datasets.
-It explains where truth lives, how agents load rules, and how to run the add-event flow (hints-only) without drift.
+Base & Health
+-------------
+Proxy base (always use full URLs):
+- https://crt-b1434e13de34.herokuapp.com
 
-Sources of Truth (must-read)
-----------------------------
-- Proxy (READ/WRITE): https://crt-b1434e13de34.herokuapp.com
-- Manifest (agents):  /items/agents/manifest.json   (full URL: https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json)
-- Repo (read-through): https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items  (fallback only)
+Health check:
+- https://crt-b1434e13de34.herokuapp.com/health  → {"ok":true,...}
 
-Key Model
----------
-- Events are **hub + legs** (weekly “legs” inside a hub window). There is **no separate Event-Series entity**.
-- Venue is the location anchor; organizer is the producing entity (not the venue, not the event).
-- Records are lightweight and modular; normalizers keep names/dates/labels consistent.
-- Inputs supplied by the operator are **hints**. Agents confirm facts (official name/link/dates) before any preview/commit.
+Directory & Allowlist Visibility
+--------------------------------
+Generated listing (sanity check; served as text):
+- https://crt-b1434e13de34.herokuapp.com/items/_manifest.json
 
-Critical Infra Notes
---------------------
-- **ALLOW_DIRS** on the proxy must be first-segment tokens only (e.g., `index,agents,events,venues,organizers,...`), not path prefixes like `index/events/`.
-- GET supports: .json, .txt, .md, .html, .js
-- POST /items/commit supports: **.json and text** files
-  - JSON path → body.json = object (pretty-printed by server)
-  - Text path (.txt/.md/.html/.js) → body.json = string (server normalizes newlines; appends trailing newline)
+If a GET fails, stop and resolve before proceeding.
 
-Load Order (every run)
-----------------------
-1) Fetch manifest (proxy-first, then git fallback).
-2) If present, load dir-map to resolve/override any folder names the rules expect.
-3) Load **ingestion-rules.txt** + the trigger’s rule files (e.g., **event-rules.json** for add-event).
-4) Validate availability of normalizers and required relations before any preview.
+Drift Protection (session rails)
+--------------------------------
+- Facts-only in cards (entities/places/tags/indices). Content tone/POV lives only in content cards.
+- Inputs are hints; confirm official link/name/dates via proxyed sources before write.
+- Venue gate: confirm / input / exit; never guess. Venue UID must end with "-venue".
+- Event model: time-centric hub (+ legs). Legs sit fully inside hub; non-overlapping; label as "Leg N".
+- Event naming: stripped `event_uid` (e.g., `spring`, `circuit-leg-1`). Do not include venue, organizer, sponsor, rating, year.
+- Event filenames: organizer-fronted, flat `{organizer_uid}-{event_uid}.json` (append `-YEAR` only on collision).
+- Labels: `label_uids` are curated only. Derived facets belong in indices, not tags.
+- Booleans: `y|n`. Dates: `YYYY-MM-DD` (accept `YYYY-MM` as hint only). TZ: America/New_York.
+- Preview → Commit: Assistant returns PREVIEW files; operator must say COMMIT to write. No implicit writes.
+- Full proxy URLs only. Hard-stop on the first failed GET and report the exact URL.
 
-Current Directories (top-level under /items)
---------------------------------------------
-- /index/*         → canonical entity stores (events, venues, organizers, sources, months, days, labels, etc.)
-- /agents/*        → agent rules, knowledge, starters (see below)
+Card Families (records)
+-----------------------
+- Events: `items/events/`
+- Venues: `items/venues/`  (UID must end with `-venue`)
+- Organizers: `items/organizers/`
+- Places: `items/hotels/`, `items/airbnbs/`, `items/rvparks/`, `items/restaurants/`, `items/sites/`, `items/parks/`
+- Labels (curated): `items/labels/`
+- Sources (domain-first): `items/sources/`
+- Content (agnostic): `items/content/`
 
-Agents & Starters (today)
+Indices (derived artifacts; read-only)
+--------------------------------------
+- `items/index/` (e.g., `events.index.js`, `places.index.js`, `content.index.js`)
+  - by_time: byYear, byMonth, bySeason, byWeek, next7d, next30d
+  - by_location: byCity, byState, byCountry
+  - by_relation: byVenue, byOrganizer
+  - by_label: label_uid → [card_uids]
+
+Normalizers (read-only)
+-----------------------
+- Time: `items/years/`, `items/seasons/`, `items/months/`, `items/weeks/`, `items/days/`
+- Location: `items/countries/`, `items/states/`, `items/cities/`
+
+Rules (read before tasks)
+-------------------------
+- Manifest:        https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Ingestion rules: https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+- Event rules:     https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.json
+- Venue rules:     https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.json
+
+GET (Reads)
+-----------
+Pattern:
+- https://crt-b1434e13de34.herokuapp.com/items/<dir>/<file>.<ext>
+
+Notes:
+- `.json` is served as `text/plain` for reliable rendering; body is unchanged JSON text.
+- Use the generated listing to confirm allowlisted dirs before relying on GETs.
+
+PUT (Writes) — via /items/commit
+--------------------------------
+Endpoint:
+- POST https://crt-b1434e13de34.herokuapp.com/items/commit
+
+Request fields:
+- `path`   (string)  Target path under `items/` (e.g., `items/events/desert-circuit-leg-1.json`).
+- `json`   (object|string) If target is `.json`, send an object (or a JSON string); for text files, send a string body.
+- `message`(string)  Commit message.
+
+Behavior:
+- Path must pass allowlist and extension checks.
+- JSON payloads are pretty-printed on write.
+- Non-JSON text normalized to LF with a trailing newline.
+- Cache for that path is invalidated on success.
+
+Session Start (no re-education; paste once at top of chat)
+----------------------------------------------------------
+SESSION-START: proxy=https://crt-b1434e13de34.herokuapp.com manifest=/items/agents/manifest.json overrides: filename_equals_uid=false, leg_label=Leg, tz=America/New_York mode=task-only
+
+Operator Checklist (every new session)
+-------------------------------------
+1) Health: GET /health — must be 200.
+2) Manifest: GET /items/agents/manifest.json — must be readable.
+3) Rules: GET event-rules, venue-rules, ingestion-rules — must be readable.
+4) If any GET fails, stop and resolve. Do not proceed.
+5) Start the task with a “Task:” line (see below). Expect PREVIEW only; then reply COMMIT/EDIT/CANCEL.
+
+Tasks (enabled & planned)
 -------------------------
 ENABLED
-- add/add-event/            → Create event hub (+ legs when applicable); inputs = *hints only*.
-  - brief.txt
-  - rules.json
-  - schema.json
-  - instructions.txt
+- add-event — Create event record(s). Inputs are hints; confirm official details; hub(+legs) when applicable.
 
-SCAFFOLDED (enable when ready)
-- add/update-event/         → Surgical edits to an existing hub/leg (PREVIEW required).
+PLANNED
+- add-location — Create a place record (one spec covers: venue | hotel | airbnb | rvpark | restaurant | site | park).
+- research-locations — Facts-only lookup/normalize within constraints (no write).
+- refresh-derived-card-data — Recompute derived fields (facts-only).
+- index-cards — Rebuild indices across families (read-only artifacts).
+- curate-content — Bind content ↔ entities by *_uid / *_uids.
+- render-content — Emit MD for site from curated binds.
 
-PLANNED / HOLD (not enabled here)
-- research-*                → facts-only research (e.g., hotels, restaurants, locale).
-- curated-*                 → stitch curated lists and produce curated content.
-- index-agent               → local index maintenance & freshness checks.
-- reminder-agent            → date-driven reminders (agent-side).
-- render/experience         → held until content tracks are finalized.
+Task Inputs (concise)
+---------------------
+add-event (hints)
+- Required: `link`, `name`, `start(YYYY-MM or YYYY-MM-DD)`, `venue_uid` OR `venue_hint`
+- Optional: `end`, `is_series (y|n|auto)`, `series_label`, `total_legs_hint`, `organizer_uid`
 
-Absolute Musts for add-event
-----------------------------
-- Treat user inputs as **hints**. Confirm **official** link/name/dates from the show/organizer/federation.
-- Enforce UID naming from **event-rules.json** (slug of sanitized official name).
-- If legs exist: confirm each leg’s start/end date; hub window = first leg start → last leg end.
-- Source policy: de-duplicate by domain; create/link minimal source records under /index/sources.
+add-location (hints; when enabled)
+- Required: `place_type` ∈ { venue | hotel | airbnb | rvpark | restaurant | site | park }, `official_name`, `official_link`
+- Optional: `aka[]`, `keywords[]`, `city_uid`, `state_uid`, `country_uid`, `geo_lat`, `geo_long`, `google_pin`
+- Special: if `place_type=venue`, UID must end with `-venue` and venue gate applies.
 
-Quick Operator “Session Boot”
------------------------------
-Paste these two lines at the top of a new session to avoid drift:
+Derived Fields (examples; never overwrite inputs)
+-------------------------------------------------
+- Time: `yyyymm`, `season_uid`, `month_uid`, `year_uid`, optional `week_uid/day_uid`; `event_duration`, `event_status`, `days_until_start`, `days_until_end`.
+- Location: `city_uid`, `state_uid`, `country_uid`.
+- Meta: `created_date`, `last_updated`.
+- Series: `is_series (y|n)`, `total_legs`, legs inside hub only.
 
-1) Force proxy/tool use
-   Use the OpenAPI tool and GET `/items/agents/manifest.json` from `https://crt-b1434e13de34.herokuapp.com` (proxy-first; no raw git).
+Preview → Commit Handshake
+--------------------------
+1) PREVIEW: full files with `path`, `message`, and `content` (and any unresolved relation notes).
+2) Operator replies COMMIT to write (or EDIT/CANCEL).
+3) On success: cache is invalidated; indices may be rebuilt as needed.
 
-2) Start add-event with hints (facts must be confirmed)
-   Trigger: add-event — HINTS ONLY
-   link=<official or candidate HTTPS>
-   name=<as seen on site>
-   start=YYYY-MM-DD
-   is_series=y|n
-   Load ingestion-rules + event-rules from manifest paths, confirm official link/name/dates, then PREVIEW.
-
-Preview→Commit Contract (always)
---------------------------------
-- PREVIEW shows: lane, full payload(s), target path(s), and notes about unresolved relations.
-- COMMIT re-checks HEAD. If drifted, return conflict; re-preview.
-- Commit messages include actor: “(actor: human|agent|codex)”.
-
-Common Errors (fast triage)
----------------------------
-- not_enabled           → Starter folder/rules missing. Check triggers.txt; add rules.json.
-- needs_rules           → Required rule file unreadable (see manifest paths.*).
-- needs_normalizer      → Relation didn’t resolve (e.g., venue_uid). Add/point to correct /index/* record.
-- validation_failed     → HTTPS/UID/date/series window constraints violated.
-- allowlist_denied      → First path segment not in ALLOW_DIRS tokens.
-- conflict              → HEAD changed since preview; re-run PREVIEW.
-
-Do/Don’t
---------
-- DO keep all rule/knowledge files aligned with hub + legs terminology (no “event-series” entity references).
-- DO use proxy URLs in tools and agents; git raw is fallback only.
-- DO keep content (POV/tone) out of ops agents; content belongs to separate render/content agents.
-- DON’T hardcode “events/…”; use manifest.dirs.* and/or dir-map.
-- DON’T skip PREVIEW. Never commit blind.
-
-Where to Edit / Add
--------------------
-- Knowledge (rules/policies): /items/agents/knowledge/*
-- add-event starter:         /items/agents/add/add-event/*
-- update-event starter:      /items/agents/add/update-event/*
-- Shared rules:              /items/agents/event-rules.json, /items/agents/venue-rules.json
+Failure Handling
+----------------
+- On any failed GET (non-200 or unreadable): stop and report the exact full URL and status; do not proceed.
+- Commit failures return a JSON error body from the proxy; correct and retry.
 
 Operator Notes
 --------------
-- If something suddenly 404s, first GET `/items/_manifest.json` to verify ALLOW_DIRS and upstream base.
-- If a write fails with “Path not allowed”, confirm the **first token** of the path is in ALLOW_DIRS.
-- To test text writes quickly: POST /items/commit with { path: "agents/knowledge/TEST.txt", json: "hello\n" }.
-
-Ownership
----------
-- Project owner: Clear Round Travel
-- Contact: (fill in)
-- Timezone: America/New_York
+- Keep `ALLOW_DIRS` current with your working dirs; confirm via generated listing.
+- Keep `organizer_uid` out of `event_uid`. Use organizer-fronted filenames only.
+- Use curated `label_uids` sparingly; put computed/derived facets into index files, not tags.
