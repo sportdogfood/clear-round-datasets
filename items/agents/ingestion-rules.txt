@@ -1,119 +1,92 @@
-INGESTION RULES — v3.3
+INGESTION RULES — v3.4
 
 Purpose & Scope
-- Facts-only ingestion layer for events and venues (plus organizers and sources), using items/* normalizers.
+- Facts-only ingestion for events and venues (plus organizers and sources), normalized by items/* time & location normalizers.
 - Source of truth: Git (served via proxy). Airtable is staging/cleanup only.
 - Every written value must be source-confirmed (via source_uids). Unknowns remain empty and trigger needs_review / needs_source.
 
 Bootstrap & Loading
-- Read the agents manifest first:
-  manifest_url = https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Read the agents manifest first (full proxy URL): https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
 - From that manifest, use:
   - proxy_base, git_base
   - paths.event_rules_path, paths.venue_rules_path, paths.ingestion_rules_path
-  - (optional) paths.dir_map_path — if present, load it and override directory names before any fetches
+  - (optional) paths.dir_map_path — if present, load before any fetches
   - dirs.* and items.* directory names (AFTER any dir-map overrides)
   - aliases (optional): map incoming keys to canonical folder names (if present)
-  - policy.* (uid_regex, date_format, timezone_format, facts_only, bool_encoding, ignore_prefixes, source_uid_policy, source_type_policy, geo_input modes/fields)
-- Fetch rules via proxy_base; if 404/timeout, fall back to git_base.
-- Required rules: items/agents/event-rules.json and items/agents/venue-rules.json.
-  If either missing/unreadable → error: needs_rules (stop).
+  - policy.* (uid_regex, date_format, timezone_format, facts_only, bool_encoding, ignore_prefixes, source_uid_policy, source_type_policy, geo_input fields)
+- Fetch rules via proxy_base; if 404/timeout, stop and report the exact full URL (do not proceed).
 
 Intake (starter payload; non-authoritative)
 - user_input_event_link
 - user_input_event_name
 - user_input_event_start_date
 - user_input_event_end_date (optional)
-- is_series ("y"|"n")
-Notes:
-- Treat these as hints only. Do not write entities until confirmed by sources.
+- is_series ("y"|"n"|"auto")
 
 Field Conventions
 - Keys: snake_case.
 - UIDs: must match manifest.policy.uid_regex (^[a-z0-9]+(?:-[a-z0-9]+)*$). Collapse repeated hyphens; no leading/trailing hyphen.
-- Filename equals UID; UIDs are immutable after publish.
-- Boolean-like flags in staging: store as "y"/"n" (strings). Coerce true→"y", false→"n".
+- Filename policy:
+  - Events: filename != UID. Use organizer-fronted flat filenames: {organizer_uid}-{event_uid}.json
+  - Venues & others: filename == UID.
+- Boolean-like flags: "y"/"n" strings only (true→"y", false→"n").
 - Ignore any field whose name starts with dnu_ or ignore_.
-- Dates: ISO YYYY-MM-DD only (manifest.policy.date_format). No inferred dates.
+- Dates: ISO YYYY-MM-DD only (manifest.policy.date_format). Accept YYYY-MM as a hint, but confirm day before write.
 
 Confirmation Gate (must pass before any write)
-1) Link → event_official_link: confirm it is the official show/organizer homepage (HTTPS, non-social). Record a source entry.
+1) Link → event_official_link: confirm official homepage (HTTPS, non-social). Record a source entry.
 2) Name → event_official_name + event_display_name: take canonical title from official site, then apply Official Event Name sanitize policy (see Naming & UID).
-3) Date → event_official_start_date (and end if present): confirm from official schedule; do not infer. If ambiguous/conflicting → needs_review (stop).
+3) Date → event_official_start_date (+ end if present): confirm from official schedule; do not infer. If ambiguous/conflicting → needs_review (stop).
 
 Naming & UID Policy
 - Official Event Name sanitize:
-  - Strip sponsors/connectors (e.g., "presented by").
+  - Strip sponsors/connectors (“presented by”, etc.).
   - Remove ratings/codes: CSI*, CSIO*, USEF, AA, WCHR, etc.
-  - Remove punctuation: commas, slashes, quotes; collapse spaces.
-  - Title Case result.
-- event_uid = slug(sanitized official name) + time disambiguator:
-  - If single event: append -yyyy-mm-dd (start date).
-  - If multiple weekly legs (is_series="y"):
-      hub: append hub start date -> <base>-yyyy-mm-dd
-      each leg: append that leg’s start date -> <base>-yyyy-mm-dd
-- Do not encode the word "week" in the UID; treat week/leg as metadata (labels), not part of the identifier.
-- Venues: no forced suffix (e.g., "-venue" not required).
+  - Strip venue & organizer names (using venue/organizer canonical name + AKAs).
+  - Remove “Horse Show(s)”, “Circuit”, “Festival”, “Classic”, year tokens.
+  - Remove punctuation; collapse spaces; Title Case result.
+- event_uid = slug(sanitized official name)  // NO dates, NO organizer, NO venue, NO sponsor.
+- Series:
+  - Hub = the confirmed full window. Legs are discrete windows inside the hub.
+  - Leg labels: "Leg N" (never "Week").
+- Venues:
+  - venue_uid MUST end with "-venue".
 
 Directories (resolve from manifest; do not hardcode)
-- Entities (input) — read from manifest.dirs.* (after dir-map overrides):
-  - events_dir, venues_dir, organizers_dir, sources_dir
-- Normalizers (reference) — read from manifest.items.*:
-  - days_dir, months_dir, seasons_dir, years_dir, weeks_dir, countries_dir, states_dir, cities_dir, weather_dir, airports_dir, labels_dir, forms_dir
-- Aliases (optional): if manifest.aliases exists, normalize lookups using it.
-- Construct fetch URLs by prefixing proxy_base (fallback to git_base only on 404/timeout).
+- Entities (input) — manifest.dirs.*: events_dir, venues_dir, organizers_dir, sources_dir
+- Normalizers (reference) — manifest.items.*: days_dir, months_dir, seasons_dir, years_dir, weeks_dir, countries_dir, states_dir, cities_dir, weather_dir, airports_dir, labels_dir, forms_dir
 
 Relations (resolution required)
 - *_uid = single relation; *_uids = array.
 - All relations must resolve to existing files (or to a known normalizer item). If missing → needs_normalizer (stop).
 - Location precedence for derived labels: venue → city → state → country.
 
-Sources (minimal, domain-first policy)
-- Purpose: provenance only; the agent may also return raw URLs. Records are lightweight.
-- Required per source record:
-  - source_uid
-  - source_link (full URL, HTTPS preferred)
-- Optional per source record:
-  - source_name, source_type, source_accessed_date (YYYY-MM-DD), is_favorite ("y"|"n"), is_official ("y"|"n")
-- Construction:
-  - domain_slug = primary domain lowercased with dots→hyphens (e.g., usef.org → usef-org; fei.org → fei-org; hamptonclassic.com → hamptonclassic-com)
-  - source_uid = domain_slug   (per manifest.policy.source_uid_policy = "domain_slug")
-  - source_type = first path segment or identifying token (e.g., "/", "events", "search", "ShowGUID") (per manifest.policy.source_type_policy)
-- Examples:
-  - https://www.hamptonclassic.com/ → source_uid: hamptonclassic-com, source_type: "/"
-  - https://www.usef.org/search/competitions?... → usef-org, source_type: "search"
-  - https://www.fei.org/events/... → fei-org, source_type: "events"
-  - https://www.horseshowsonline.com/ShowDetails?ShowGUID=... → horseshowsonline-com, source_type: "ShowGUID"
-- De-duplication: one source record per domain_slug; attach multiple links by repeating in event.source_uids if needed.
-- Official event homepage should set is_official="y". Favorites may set is_favorite="y".
+Sources (domain-first policy)
+- source_uid = domain_slug (lowercase primary domain, dots→hyphens: usef.org→usef-org).
+- source_type = first path segment or identifying token ("/", "events", "search", "ShowGUID").
+- Flags: is_official ("y"|"n"), is_favorite ("y"|"n").
+- One source record per domain_slug; attach multiple links by repeating in event.source_uids if needed.
 
 Events (apply event-rules.json)
 Required base fields before write:
 - event_uid, event_official_name, event_display_name, event_official_link, event_official_start_date, created_date, last_updated.
 Required relations:
-- venue_uid, organizer_uid.
-Optional relations/fields:
-- city_uid, state_uid, country_uid, source_uids, label_uids, rating_tag_uid, discipline_tag_uid, event_tag_uids, name_tag_uids.
-- For legs (is_series="y"): leg_flag ("y"), leg_label (e.g., "Week 1"), hub_uid (optional cross-reference to the hub’s event_uid).
-Allowed derived (never overwrite inputs):
-- yyyymm, event_duration (when start & end present), event_current_status (vs today), event_estimated_next_start_date (if annual).
-Normalizers:
-- Derive days/months/seasons/years from confirmed dates.
-- Derive location labels via venue → city/state/country.
+- venue_uid (must end with -venue), organizer_uid; source_uids (min 1).
+Optional:
+- city_uid, state_uid, country_uid, label_uids, rating_tag_uid, discipline_tag_uid, event_tag_uids, name_tag_uids.
+Legs (when is_series="y"):
+- leg_flag="y", leg_label="Leg N", hub_uid reference to hub event_uid.
+
+Allowed derived (never overwrite inputs)
+- yyyymm, event_duration (start+end), event_current_status (vs today, America/New_York), event_estimated_next_start_date (if annual).
 
 Venues (apply venue-rules.json)
 Required base:
-- venue_uid, venue_name, venue_display_name, venue_link, created_date, last_updated.
+- venue_uid (-venue suffix), venue_name, venue_display_name, venue_link, created_date, last_updated, city_uid, state_uid, country_uid.
 Required relations:
-- city_uid, state_uid, country_uid, source_uids (min 1).
-Optional relations:
-- airport_uids (multi), weather_uid, events_uids, organizer_uids, label_uids.
+- source_uids (min 1). Optional: airport_uids, weather_uid, events_uids, organizer_uids, label_uids.
 Geo/timezone:
-- Provide numeric latitude/longitude using manifest.policy.lat_field & long_field (defaults: venue_geo_lat, venue_geo_long).
-- Valid ranges: lat -90..90, long -180..180.
-- venue_google_pin (manifest.policy.pin_field) is optional helper; do not parse or reverse-geocode it at ingest.
-- Timezone must be valid IANA (manifest.policy.timezone_format).
-- Ephemeral image links disallowed; external CDN ok.
+- Numeric latitude/longitude (lat -90..90, long -180..180). venue_google_pin optional helper. Timezone must be valid IANA.
 
 Time & Location Precedence
 - Macro (hub window) drives: season, month, weather averages.
@@ -126,7 +99,6 @@ Validation & Failure Modes
 - needs_source: required source missing.
 - needs_normalizer: referenced UID or normalizer missing.
 - invalid_geo: latitude/longitude out of range or malformed.
-- missing_geo: neither lat/long nor google_pin provided when venue-rules require location; treat as needs_review.
 - invalid_timezone: timezone not valid IANA.
 - no_ad_hoc_values: do not invent values; leave empty and note.
 - facts_only: enforced per manifest.policy.facts_only.
@@ -134,11 +106,11 @@ Validation & Failure Modes
 Commit Order (happy path)
 1) Ensure required normalizers (time + location) exist.
 2) Ensure venue and organizer records exist and pass their rules (else needs_normalizer).
-3) Write/patch event hub to events/{event_uid}.json (full span).
-4) If is_series="y": write each leg to events/{event_uid_for_leg}.json (narrow spans).
-5) Write/update sources/{source_uid}.json for official and any additional confirmed sources.
+3) Write/patch event hub to {events_dir}/{organizer_uid}-{event_uid}.json (full span).
+4) If is_series="y": write each leg to {events_dir}/{organizer_uid}-{event_uid}-leg-N.json (narrow spans).
+5) Write/update {sources_dir}/{source_uid}.json (official + confirmed sources).
 6) Apply predefined tags/labels only; update label_uids as union.
 
 Notes
 - This layer is facts-only (no commentary, POV, or tone).
-- The agent must remain task-locked during add-event; cross-task requests are rejected until completion or explicit cancel.
+- The agent remains task-locked during add-event; cross-task requests are rejected until completion or explicit cancel.
