@@ -1,24 +1,31 @@
 {
-  "version": "v2.6.1",
+  "version": "v2.7.0",
   "proxy_base": "https://crt-b1434e13de34.herokuapp.com",
   "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main",
-  "fetch": { "order": ["proxy", "git"] },
-
+  "fetch": {
+    "order": ["proxy", "git"]
+  },
   "paths": {
     "event_rules_path": "items/agents/event-rules.json",
     "venue_rules_path": "items/agents/venue-rules.json",
+    "place_rules_path": "items/agents/place-rules.json",
     "ingestion_rules_path": "items/agents/ingestion-rules.txt",
     "dir_map_path": "items/agents/dir-map.json"
   },
-
   "dirs": {
     "agents_dir": "items/agents",
     "events_dir": "index/events",
     "venues_dir": "index/venues",
     "organizers_dir": "index/organizers",
-    "sources_dir": "index/sources"
-  },
+    "sources_dir": "index/sources",
 
+    "hotels_dir": "index/hotels",
+    "airbnbs_dir": "index/airbnbs",
+    "rvparks_dir": "index/rvparks",
+    "restaurants_dir": "index/restaurants",
+    "sites_dir": "index/sites",
+    "parks_dir": "index/parks"
+  },
   "items": {
     "days_dir": "index/days",
     "months_dir": "index/months",
@@ -36,9 +43,7 @@
     "dine_dir": "index/dine",
     "locale_dir": "index/locale"
   },
-
   "aliases": {},
-
   "policy": {
     "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
     "filename_equals_uid": true,
