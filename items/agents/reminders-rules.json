@@ -1,0 +1,76 @@
+{
+  "path": "items/agents/reminders-rules.json",
+  "message": "add: reminders task (read-only queries over indices and live windows)",
+  "json": {
+    "name": "reminders-rules",
+    "version": "v1",
+    "task_id": "reminders",
+    "aliases": ["reminders", "upcoming", "query-upcoming"],
+    "facts_only": true,
+
+    "policy": {
+      "timezone": "America/New_York",
+      "date_format": "YYYY-MM-DD",
+      "index_files": {
+        "by_time": "items/index/by_time.json",
+        "by_location": "items/index/by_location.json",
+        "by_relation": "items/index/by_relation.json",
+        "by_label": "items/index/by_label.json"
+      },
+      "prefer_indices": true,
+      "fallback_scan_events_if_index_missing": true
+    },
+
+    "inputs": {
+      "window": "7|30|custom (days) — default 7",
+      "start_date": "optional; YYYY-MM-DD — default today",
+      "filters": {
+        "venue_uid": "optional",
+        "organizer_uid": "optional",
+        "city_uid": "optional",
+        "state_uid": "optional",
+        "country_uid": "optional",
+        "label_uid": "optional"
+      },
+      "limit": "optional; default 100"
+    },
+
+    "logic": {
+      "time_window": "select events that intersect [start_date .. start_date+window-1]",
+      "apply_filters": "if any filter present, event must appear in the corresponding index group",
+      "dedupe_sort": "unique event_uids; sort by event_official_start_date asc, then event_uid"
+    },
+
+    "output": {
+      "shape": {
+        "generated_at": "ISO",
+        "start_date": "YYYY-MM-DD",
+        "end_date": "YYYY-MM-DD",
+        "count": "integer",
+        "events": [
+          {
+            "event_uid": "string",
+            "event_official_name": "string",
+            "event_display_name": "string",
+            "event_official_link": "string",
+            "event_official_start_date": "YYYY-MM-DD",
+            "event_official_end_date": "YYYY-MM-DD or ''",
+            "venue_uid": "string",
+            "organizer_uid": "string",
+            "city_uid": "string or ''",
+            "state_uid": "string or ''",
+            "country_uid": "string or ''",
+            "is_finals": "y|n or ''",
+            "days_until_start": "int"
+          }
+        ]
+      },
+      "write": "none (read-only task)"
+    },
+
+    "errors": {
+      "on_missing_index": "if an index file is missing, proceed by scanning events directly; annotate 'source=scan'.",
+      "on_bad_filter": "return error with the specific filter key that failed"
+    }
+  }
+}
