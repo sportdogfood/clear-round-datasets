@@ -1,72 +1,70 @@
-CRT TASK RUNNER — README (v3)
+CRT TASK RUNNER — README (v3.1)
 
-RESET / SESSION START
-- Always run a session start line:
-  SESSION-START vX: proxy=https://crt-b1434e13de34.herokuapp.com manifest=/items/agents/manifest.json overrides: tz=America/New_York mode=task-only
-- Startup checklist (stop on any failure; report exact URL + status):
-  GET /health
-  GET /items/agents/manifest.json
-  GET /items/agents/ingestion-rules.txt
-  GET /items/agents/event-rules.json
-  GET /items/agents/venue-rules.json
-  GET /items/agents/place-rules.json
-  GET /items/_manifest.json
-- Fetch order: proxy first, then git (as defined in manifest). Facts-only; no tone content.
+RESET AND SESSION START
+Always run a session start line:
+SESSION-START vX: proxy=https://crt-b1434e13de34.herokuapp.com manifest= https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json overrides: tz=America/New_York mode=task-only
 
-FILE / UID POLICY (applies to all families)
-- snake_case keys; bools encoded y|n; dates YYYY-MM-DD; ET timezone.
-- Filenames equal UIDs; flat layout under items/index/{family}/.
-- Events: legs are separate files with UIDs hub_uid-N. Venue UIDs must end with -venue.
-- Source UIDs: domain slugs (lowercase; dots→hyphens).
+Startup checklist. Stop on any failure and report the exact URL and status.
+GET https://crt-b1434e13de34.herokuapp.com/health
+GET https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+GET https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+GET https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.json
+GET https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.json
+GET https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.json
+GET https://crt-b1434e13de34.herokuapp.com/items/_manifest.json
 
-CONTRACTS (read these before running tasks)
-- Events:  items/agents/knowledge/events-contract.txt
-- Venues:  items/agents/knowledge/venues-contract.txt
-- Places:  items/agents/knowledge/places-contract.txt
+Fetch order is proxy first then git as defined in the manifest. Facts only. No tone content.
 
-TASKS (enabled)
-1) add_event (aliases: add-event, add_event)
-   Inputs (hints): link= name= start= organizer_uid= venue_uid=|venue_hint= [end=] [is_series=y|n|auto] [series_label=] [total_legs_hint=] [public_leg_label=] [event_description=] [is_finals=y|n]
-   Flow: confirm name/link/dates → build hub/legs as needed → PREVIEW (full files + paths) → COMMIT/EDIT/CANCEL.
+FILE AND UID POLICY APPLIES TO ALL FAMILIES
+snake_case keys. Bools encoded y or n. Dates use YYYY-MM-DD. Timezone is America New York.
+Filenames equal UIDs and layout is flat under items slash index slash family.
+Events store legs as separate files with UIDs hub_uid dash N. Venue UIDs must end with -venue.
+Source UIDs are domain slugs lowercase with dots to hyphens.
 
-2) add_venue (aliases: add-venue, add_venue)
-   Inputs (hints): link= name= city_uid= state_uid= country_uid= [aka=]
-   Flow: confirm official name/link → derive uid/keywords/sources/geo (from pin if present) → PREVIEW → COMMIT.
+CONTRACTS. READ BEFORE RUNNING TASKS
+Events: https://crt-b1434e13de34.herokuapp.com/items/agents/knowledge/events-contract.txt
+Venues: https://crt-b1434e13de34.herokuapp.com/items/agents/knowledge/venues-contract.txt
+Places: https://crt-b1434e13de34.herokuapp.com/items/agents/knowledge/places-contract.txt
 
-3) add_place (aliases: add-place, add_place, add-location, add_location)
-   Inputs (hints): place_type=hotel|restaurant|airbnb|rvpark|site|park link= name= city_uid= state_uid= country_uid= [aka=]
-   Flow: confirm official name/link → derive uid/keywords/sources/geo (from pin if present) → PREVIEW → COMMIT.
+TASKS ENABLED
+1) add_event (aliases add-event add_event)
+ Inputs hints: link= name= start= organizer_uid= venue_uid= or venue_hint= and optional end= is_series=y or n or auto series_label= total_legs_hint= public_leg_label= event_description= is_finals=y or n
+ Flow: confirm name link and dates then build hub and legs as needed then PREVIEW with full files and paths then COMMIT or EDIT or CANCEL.
 
-4) index_cards (aliases: index-cards, build-indices, reindex)
-   Inputs: [scope=all|events|venues|places] [uids=a|b] [dry_run=y|n]
-   Emits (read-only artifacts):
-     items/index/by_time.json
-     items/index/by_location.json
-     items/index/by_relation.json
-     items/index/by_label.json
+2) add_venue (aliases add-venue add_venue)
+ Inputs hints: link= name= city_uid= state_uid= country_uid= optional aka=
+ Flow: confirm official name and link then derive uid keywords and geo from pin if present then PREVIEW then COMMIT.
 
-5) reminders (aliases: reminders, upcoming, query-upcoming)
-   Inputs: [window=7|30|N] [start_date=YYYY-MM-DD] [venue_uid=] [organizer_uid=] [city_uid=] [state_uid=] [country_uid=] [label_uid=] [limit=]
-   Output: read-only list of upcoming events in window. Uses indices when present; falls back to scanning events.
+3) add_place (aliases add-place add_place add-location add_location)
+ Inputs hints: place_type=hotel or restaurant or airbnb or rvpark or site or park link= name= city_uid= state_uid= country_uid= optional aka=
+ Flow: confirm official name and link then derive uid keywords and geo from pin if present then PREVIEW then COMMIT.
 
-6) curate_places (aliases: curate-places, curate_places, curate-hotels, curate_restaurants, curate_airbnbs, curate_rvparks, curate_sites, curate_parks)
-   Inputs: place_type=… [link=] [name=] city_uid= state_uid= country_uid= [near_venue_uid=] [radius_miles=] [price_band=] [min_review_score=] [max_results=] [save=y|n] [filename_hint=]
-   Output: table in PREVIEW; optional CSV-as-text under items/agents/curations/{place_type}/…  (no card writes).
+4) index_cards (aliases index-cards build-indices reindex)
+ Inputs: optional scope=all or events or venues or places optional uids=a pipe b optional dry_run=y or n
+ Emits read only artifacts:
+ items/index/by_time.json
+ items/index/by_location.json
+ items/index/by_relation.json
+ items/index/by_label.json
 
-GUARDS & DRIFT PROTECTION
-- Stop on failed GETs; report exact URL + status.
-- Use proxy base in ALL reads/writes. Never hardcode GitHub URLs.
-- No implicit writes. Only COMMIT writes and invalidates cache.
-- Relations must resolve (venue_uid must end -venue; normalizers must exist). No ad hoc values.
+5) reminders (aliases reminders upcoming query-upcoming)
+ Inputs: optional window=7 or 30 or N optional start_date=YYYY-MM-DD optional venue_uid= organizer_uid= city_uid= state_uid= country_uid= label_uid= limit=
+ Output: read only list of upcoming events in window. Uses indices when present and falls back to scanning events.
 
-WRITE API (operator runs POSTs; the assistant only returns PREVIEW)
-- POST /items/commit  with body: { path, json, message }
-  • path: e.g., items/index/events/desert-circuit.json
-  • json: for .json files, pass an object; for text files (.txt/.md/.js/.html) pass a string body (UTF-8, LF).
+6) curate_places (aliases curate-places curate_places curate-hotels curate_restaurants curate_airbnbs curate_rvparks curate_sites curate_parks)
+ Inputs: place_type=… optional link= optional name= city_uid= state_uid= country_uid= optional near_venue_uid= optional radius_miles= optional price_band= optional min_review_score= optional max_results= optional save=y or n optional filename_hint=
+ Output: table in PREVIEW and optional CSV as text under items slash agents slash curations slash place_type without card writes.
+
+GUARDS AND DRIFT PROTECTION
+Stop on failed GETs and report the exact URL and status.
+Use the proxy base in all reads and writes. Never hardcode raw GitHub URLs.
+No implicit writes. Only COMMIT writes and invalidates cache.
+Relations must resolve. venue_uid must end with -venue. Normalizers must exist. No ad hoc values.
+
+WRITE API. OPERATOR RUNS POSTS. THE ASSISTANT ONLY RETURNS PREVIEW
+POST https://crt-b1434e13de34.herokuapp.com/items/commit with body { path, json, message }
+path example items/index/events/desert-circuit.json
+json for .json files is an object. For text files use a string body with UTF 8 and LF.
 
 SESSION MAINTENANCE
-- To realign a drifting session:  RESET → version vX; use proxy; reload manifest. Rerun startup checklist.
-
-NOTES
-- All outputs are facts-only. Content/prose lives in separate content cards.
-- For any ambiguity in venue/place resolution, set git_status=needs_review and include facts-only notes in PREVIEW diagnostics.
+To realign a drifting session use RESET then version vX then use proxy then reload manifest then rerun the startup checklist.
