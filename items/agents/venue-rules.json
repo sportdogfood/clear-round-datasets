@@ -1,6 +1,6 @@
 {
   "name": "venue-rules",
-  "version": "v3",
+  "version": "v3.3",
   "table": "venues",
   "prefix": "venue_",
   "uid_immutable": true,
@@ -14,13 +14,13 @@
 
   "base_vars": [
     "venue_uid",
-    "venue_name",
+    "venue_official_name",
     "venue_display_name",
     "venue_recordId"
   ],
 
-  "uid_rule": "venue_uid = ensure_suffix(slugify(venue_name), '-venue')",
-  "uid_requires": ["venue_name"],
+  "uid_rule": "venue_uid = ensure_suffix(slugify(venue_official_name), '-venue')",
+  "uid_requires": ["venue_official_name"],
 
   "uid_collision_policy": {
     "on_collision_append": "-{city_uid_stem}",
@@ -28,8 +28,8 @@
   },
 
   "required_fields": [
-    "venue_link",
-    "venue_name",
+    "venue_official_link",
+    "venue_official_name",
     "venue_display_name",
     "city_uid",
     "state_uid",
@@ -40,9 +40,17 @@
   ],
 
   "optional_fields": [
+    "user_input_venue_link",
+    "user_input_venue_name",
+
     "aka",
     "keywords",
     "label_uids",
+
+    "venue_city",
+    "venue_state",
+    "venue_description",
+
     "venue_address_line1",
     "venue_address_line2",
     "venue_zip",
@@ -53,27 +61,30 @@
     "venue_google_pin",
     "venue_geo_lat",
     "venue_geo_long",
+
     "organizer_uids",
     "events_uids",
+
     "notes",
     "form_uid",
-    "git_status"
+    "git_status",
+
+    "venue_name",
+    "venue_link"
   ],
 
   "relations": {
     "city_uid":    { "type": "single", "required": true },
     "state_uid":   { "type": "single", "required": true },
     "country_uid": { "type": "single", "required": true },
-    "airport_uids":      { "type": "multi", "required": false },
-    "organizer_uids":    { "type": "multi", "required": false },
-    "events_uids":       { "type": "multi", "required": false },
-    "source_uids":       { "type": "multi", "required": true, "min_items": 1 },
-    "label_uids":        { "type": "multi", "required": false }
+    "airport_uids":   { "type": "multi", "required": false },
+    "organizer_uids": { "type": "multi", "required": false },
+    "events_uids":    { "type": "multi", "required": false },
+    "source_uids":    { "type": "multi", "required": true, "min_items": 1 },
+    "label_uids":     { "type": "multi", "required": false }
   },
 
-  "normalizers_required": [
-    "countries", "states", "cities", "labels"
-  ],
+  "normalizers_required": ["countries", "states", "cities", "labels"],
 
   "date_policies": {
     "format": "YYYY-MM-DD",
@@ -89,7 +100,8 @@
 
   "normalize_on_add": {
     "from_inputs": [
-      "venue_link",
+      "user_input_venue_link",
+      "user_input_venue_name",
       "city_uid",
       "state_uid",
       "country_uid",
@@ -97,9 +109,10 @@
     ],
     "from_official_pages": {
       "enabled": true,
-      "allow_paths": ["/", "/contact", "/reach-us", "/about", "/visit", "/map"],
+      "allow_paths": ["/", "/contact", "/reach-us", "/about", "/visit", "/map", "/location"],
       "fields": [
-        "venue_name",
+        "venue_official_name",
+        "venue_official_link",
         "venue_address_line1",
         "venue_zip",
         "venue_google_pin"
@@ -111,12 +124,15 @@
       }
     },
     "computed": {
-      "venue_name": "if input name provided, treat as hint; confirm/canonicalize from official page when available; fallback to hint if not contradicted",
-      "venue_display_name": "copy of venue_name",
+      "venue_official_name": "treat user_input_venue_name as a hint; confirm/canonicalize from official pages; fallback to hint if not contradicted",
+      "venue_official_link": "start from user_input_venue_link; follow redirects to final canonical HTTPS on same site when available",
+      "venue_display_name": "copy of venue_official_name",
       "venue_uid": "ensure '-venue' suffix; append city stem on collision",
-      "source_uids": "derive from venue_link domain (domain_slug)",
+      "source_uids": "derive from venue_official_link domain (domain_slug)",
       "aka": "trim, collapse whitespace, dedupe (case-insensitive)",
-      "keywords": "build deterministic set from tokens: venue_name + aka + city_uid + state_uid (hyphen/space normalized), lowercased, deduped; cap 12",
+      "keywords": "deterministic set from tokens: venue_official_name + aka + city_uid + state_uid (hyphen/space normalized), lowercased, deduped; cap 12",
+      "venue_city": "human-readable city name from city_uid normalizer",
+      "venue_state": "human-readable state name from state_uid normalizer",
       "created_date": "today (ET)",
       "last_updated": "today (ET)"
     },
@@ -139,7 +155,8 @@
       "geo",
       "tz",
       "labels",
-      "keywords"
+      "keywords",
+      "description"
     ],
     "notes": "research step may refine/append but must not overwrite operator inputs without explicit confirmation"
   },
@@ -169,8 +186,7 @@
   },
 
   "notes": {
-    "scope": "This rule is for VENUES only (entities that must end with -venue). Non-venue places use place-rules.json.",
-    "labels": "label_uids are curated; do not auto-tag beyond deterministic keywords corpus.",
-    "inheritance": "events may inherit city/state/country from venue on refresh if missing (no overwrite)."
+    "hints": "Use user_input_venue_link/name strictly as hints. Persist only venue_official_* fields.",
+    "deprecated": "venue_name and venue_link are legacy; new writes should set only venue_official_*."
   }
 }
