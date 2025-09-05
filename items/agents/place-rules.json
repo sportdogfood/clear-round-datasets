@@ -1,142 +1,138 @@
 {
-  "name": "place-rules",
-  "version": "v1",
-  "table": "places",
-  "prefix": "place_",
+  "name": "event-rules",
+  "version": "v4",
+  "table": "events",
+  "prefix": "event_",
   "uid_immutable": true,
-
-  "scope": {
-    "allowed_place_types": ["hotel", "airbnb", "rvpark", "restaurant", "site", "park"],
-    "excludes": ["venue"]
-  },
 
   "naming": {
     "field_case": "snake_case",
     "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-    "filename_equals_uid": true,
-    "uid_disallow_suffix": "-venue"
+    "filename_equals_uid": false,
+    "filename_template": "{organizer_uid}-{event_uid}.json"
   },
 
   "base_vars": [
-    "place_uid",
-    "place_name",
-    "place_display_name",
-    "place_type",
-    "place_recordId"
+    "event_uid",
+    "event_image",
+    "event_official_name",
+    "event_display_name",
+    "event_recordId"
   ],
 
-  "uid_rule": "place_uid = slugify(place_name)",
-  "uid_requires": ["place_name", "place_type"],
+  "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
+  "uid_requires": ["event_official_name"],
 
-  "uid_collision_policy": {
-    "on_collision_append": "-{city_uid_stem}",
-    "city_uid_stem_rule": "use city_uid; if absent, use state_uid; else country_uid"
+  "sanitize_official_name_policy": {
+    "strip_sponsors_and_connectors": true,
+    "strip_venue_name": true,
+    "strip_organizer_name": true,
+    "remove_terms": [
+      "horse show", "horse shows", "circuit", "festival", "classic",
+      "series", "presented by"
+    ],
+    "remove_year_tokens": true,
+    "remove_rating_tokens": [
+      "CSI", "CSIO", "CSI*", "CSI**", "CSI***", "CSI****", "CSI*****",
+      "WCHR", "USEF", "Premier", "AA", "A"
+    ],
+    "remove_punctuation": [",", "/", "\"", "$"],
+    "collapse_spaces": true,
+    "title_case": true
   },
 
   "required_fields": [
-    "place_link",
-    "place_name",
-    "place_display_name",
-    "place_type",
+    "event_official_link",
+    "event_official_name",
+    "event_display_name",
+    "event_official_start_date",
     "created_date",
-    "last_updated",
-    "city_uid",
-    "state_uid",
-    "country_uid"
+    "last_updated"
   ],
 
   "optional_fields": [
-    "place_address_line1",
-    "place_address_line2",
-    "place_zip",
-    "place_phone",
-    "place_email",
-    "place_hours_note",
+    "event_official_end_date",
     "notes",
     "form_uid",
-    "git_status"
+    "git_status",
+    "is_annual",
+    "is_series"
   ],
 
   "relations": {
-    "city_uid":            { "type": "single", "required": true },
-    "state_uid":           { "type": "single", "required": true },
-    "country_uid":         { "type": "single", "required": true },
-    "airport_uids":        { "type": "multi",  "required": false },
-    "primary_venue_uid":   { "type": "single", "required": false, "must_end_with": "-venue" },
-    "near_venue_uids":     { "type": "multi",  "required": false, "must_end_with": "-venue" },
-    "source_uids":         { "type": "multi",  "required": true,  "min_items": 1 },
-    "label_uids":          { "type": "multi",  "required": false }
+    "venue_uid":   { "type": "single", "required": true, "must_end_with": "-venue" },
+    "organizer_uid": { "type": "single", "required": true },
+    "city_uid":    { "type": "single", "required": false },
+    "state_uid":   { "type": "single", "required": false },
+    "country_uid": { "type": "single", "required": false },
+    "source_uids": { "type": "multi", "required": true, "min_items": 1 },
+    "label_uids":  { "type": "multi", "required": false },
+    "rating_tag_uid":     { "type": "single", "required": false },
+    "discipline_tag_uid": { "type": "single", "required": false },
+    "event_tag_uids":     { "type": "multi", "required": false },
+    "name_tag_uids":      { "type": "multi", "required": false }
   },
 
   "normalizers_required": [
-    "countries", "states", "cities", "airports", "labels"
+    "days", "months", "seasons", "years",
+    "countries", "states", "cities",
+    "weather", "airports", "labels"
   ],
 
   "date_policies": {
-    "format": "YYYY-MM-DD"
-  },
-
-  "geo_policies": {
-    "lat_field": "place_geo_lat",
-    "long_field": "place_geo_long",
-    "pin_field": "place_google_pin",
-    "lat_range": [-90, 90],
-    "long_range": [-180, 180],
-    "lat_long_required": false
-  },
-
-  "image_policy": {
-    "allow_external_cdn": true,
-    "disallow_ephemeral_links": true
+    "format": "YYYY-MM-DD",
+    "macro_time_from": "hub (event) defines macro time; legs are discrete windows inside the hub",
+    "macro_outputs": ["season", "month", "weather_averages"]
   },
 
   "source_uid_policy": {
     "construction": "domain_slug",
-    "domain_slug_rule": "lowercase primary domain; dots→hyphens (e.g., usef.org → usef-org)",
-    "source_type_hint": "first path token or identifying key (e.g., '/', 'map', 'listing', 'official')",
+    "domain_slug_rule": "lowercase primary domain, dots→hyphens (e.g., usef.org → usef-org)",
+    "source_type_hint": "first path token or identifying key (e.g., '/', 'events', 'search', 'ShowGUID')",
     "flags": { "is_official": "y|n", "is_favorite": "y|n" }
   },
 
+  "series_policy": {
+    "is_series_values": ["y","n","auto"],
+    "leg_label_scheme": "Leg N",
+    "require_non_overlapping_legs": true,
+    "require_legs_inside_hub": true
+  },
+
   "tags_policy": {
-    "predefined_only": true
+    "predefined_only": true,
+    "inheritance": "legs inherit hub tags; legs may add"
   },
 
   "derived": {
     "allow": true,
     "fields": {
-      "yyyymm": "optional: when a verification or inspection date is present",
-      "place_last_verified": "operator-maintained; not auto"
+      "yyyymm": "YYYYMM from event_official_start_date",
+      "event_duration": "days_between(event_official_start_date, event_official_end_date) when both present",
+      "event_current_status": "computed vs today (America/New_York) using start/end",
+      "event_estimated_next_start_date": "if is_annual='y', roll forward ~1 year from start"
     },
     "never_overwrite_inputs": true
   },
 
   "validation": {
     "official_link_must_be_https": true,
+    "official_link_must_be_official_site": true,
+    "require_confirmed_name_date_link_before_write": true,
     "relations_must_resolve": true,
     "halt_on_missing_normalizer": true,
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
     "ignore_prefixes": ["dnu_", "ignore_"],
-    "place_type_must_be_allowed": true,
-    "uid_must_not_end_with_forbidden_suffix": true,
-    "filename_must_equal_uid": true
+    "hub_leg_consistency": [
+      "legs must sit fully inside hub window",
+      "legs must be non-overlapping",
+      "leg labels must be consistent (Leg 1..N)"
+    ]
   },
 
   "paths": {
-    "save_path_templates": {
-      "hotel":      "index/hotels/{place_uid}.json",
-      "airbnb":     "index/airbnbs/{place_uid}.json",
-      "rvpark":     "index/rvparks/{place_uid}.json",
-      "restaurant": "index/restaurants/{place_uid}.json",
-      "site":       "index/sites/{place_uid}.json",
-      "park":       "index/parks/{place_uid}.json"
-    },
+    "save_path_template": "index/events/{organizer_uid}-{event_uid}.json",
     "sources_input_dir": "index/sources"
-  },
-
-  "notes": {
-    "facts_only": "Content tone/POV never lives in place records; use content cards.",
-    "venue_gate": "If binding to a venue, confirm via primary_venue_uid or near_venue_uids; never guess.",
-    "indices": "Distance/proximity buckets and computed facets live in index files, not in place records."
   }
 }
