@@ -1,0 +1,90 @@
+{
+  "path": "items/agents/labels-rules.json",
+  "message": "add: labels-rules v1 — per-file label schema + validation + index outputs",
+  "json": {
+    "name": "labels-rules",
+    "version": "v1",
+    "dir": "index/labels",
+    "facts_only": true,
+
+    "uid_policy": {
+      "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "filename_equals_uid": true,
+      "case": "kebab",
+      "unique_across": ["index/labels"]
+    },
+
+    "required_fields": [
+      "label_uid",
+      "label_display_name",
+      "label_family",
+      "allow_on",
+      "synonyms",
+      "is_active",
+      "created_date",
+      "last_updated"
+    ],
+    "optional_fields": [
+      "description",
+      "implies",
+      "conflicts_with",
+      "replaces",
+      "deprecated_by",
+      "notes"
+    ],
+
+    "enums": {
+      "label_family": [
+        "general",
+        "place",
+        "hotel",
+        "restaurant",
+        "rvpark",
+        "airbnb",
+        "site",
+        "park",
+        "event",
+        "venue"
+      ],
+      "allow_on": [
+        "events",
+        "venues",
+        "places",
+        "content"
+      ]
+    },
+
+    "field_rules": {
+      "label_uid": "kebab-case; <= 48 chars; no leading/trailing hyphen",
+      "label_display_name": "Title case; <= 64 chars",
+      "synonyms": "array of kebab-case strings; unique; must not include label_uid",
+      "allow_on": "non-empty array; values from enums.allow_on",
+      "implies": "array of label_uids; optional; no cycles",
+      "conflicts_with": "array of label_uids; optional; cannot include self",
+      "description": "facts-only, <= 240 chars",
+      "is_active": "y|n"
+    },
+
+    "validation": {
+      "synonyms_unique_global": true,
+      "no_uid_duplication": true,
+      "no_overlap_synonym_uid": true,
+      "deprecation_rules": "if deprecated_by set => is_active='n'; 'replaces' allowed only when is_active='y'",
+      "unknown_refs_error": true
+    },
+
+    "index_outputs": {
+      "labels_index_path": "items/index/labels/_index.json",
+      "shape": {
+        "generated_at": "ISO",
+        "count": "number",
+        "by_uid": "map uid -> {display_name,family,allow_on,is_active}",
+        "synonyms_map": "map synonym -> canonical uid",
+        "families": "map family -> [uids]",
+        "allow_on_map": "map surface -> [uids]"
+      }
+    },
+
+    "notes": "Predefined labels are curated here and used everywhere else (events/venues/places/content). Tasks must validate include/exclude sets and filter any derived tags to this catalog."
+  }
+}
