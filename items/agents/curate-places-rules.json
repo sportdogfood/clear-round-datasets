@@ -1,9 +1,9 @@
 {
   "path": "items/agents/curate-places-rules.json",
-  "message": "update: curate_places v1.3 — use global labels (index/labels) for include/exclude + filtering; remove local catalog",
+  "message": "update: curate_places v1.4 — add target_time (month_uids/season_uid/start/end) + diagnostics with events_in_window when near_venue_uid present; filename time_key",
   "json": {
     "name": "curate-places",
-    "version": "v1.3",
+    "version": "v1.4",
     "task_id": "curate_places",
     "aliases": [
       "curate-places","curate_places",
@@ -32,6 +32,10 @@
         "predefined_only": true,
         "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
       },
+      "indices": {
+        "by_time": "items/index/by_time.json",
+        "by_relation": "items/index/by_relation.json"
+      },
       "notes": "Search public web; emit table preview and optional CSV; no card writes."
     },
 
@@ -42,6 +46,7 @@
       "city_uid": "required",
       "state_uid": "required",
       "country_uid": "required",
+
       "near_venue_uid": "optional; enables distance/walkable",
       "radius_miles": "number; default 5; min 0.1; max 50",
       "price_band": "$|$$|$$$|$$$$|$$-$$$|$-$$|$$$-$$$$ (optional)",
@@ -51,7 +56,12 @@
       "exclude_labels": "optional pipe list of GLOBAL label_uids from index/labels",
       "max_results": "default 12; hard max 40",
       "save": "y|n (default y)",
-      "filename_hint": "optional suffix for saved CSV-as-text"
+      "filename_hint": "optional suffix for saved CSV-as-text",
+
+      "target_month_uids": "optional pipe list of YYYY-MM",
+      "target_season_uid": "optional; winter|spring|summer|fall",
+      "target_start_date": "optional; YYYY-MM-DD",
+      "target_end_date": "optional; YYYY-MM-DD"
     },
 
     "attributes_lock": {
@@ -93,6 +103,15 @@
           "exclude": "drop rows with detected brand",
           "only": "keep rows with detected brand"
         }
+      },
+      "target_time": {
+        "notes": "Time context for targeting and naming only; places are not filtered by time.",
+        "normalize": {
+          "prefer_start_end_when_both": true,
+          "month_uids_to_range": "if only month_uids provided, compute start as first day of earliest month and end as last day of latest month (calendar end).",
+          "season_uid_passthrough": "season_uid is metadata only unless a start/end is also provided."
+        },
+        "filename_time_key_rule": "time_key = start_end_if_available else month_uids_joined else season_uid; format start_end as YYYYMMDD-YYYYMMDD; month list as YYYYMM[+YYYYMM…]"
       }
     },
 
@@ -197,57 +216,24 @@
         "place_type": "string",
         "center": { "city_uid": "string", "state_uid": "string", "country_uid": "string", "near_venue_uid": "string|''" },
         "filters": { "radius_miles": "number", "price_band": "string|''", "min_review_score": "number|''", "chain_mode": "allow|exclude|only", "include_labels": "string|''", "exclude_labels": "string|''" },
+        "target_time": {
+          "month_uids": "string|''",
+          "season_uid": "string|''",
+          "start_date": "string|''",
+          "end_date": "string|''",
+          "time_key": "string|''"
+        },
         "columns": ["…"],
-        "rows": [
-          {
-            "place_official_name": "string",
-            "place_official_link": "string",
-            "place_type": "hotel|restaurant|…",
-            "address_line1": "string|''",
-            "city_uid": "string",
-            "state_uid": "string",
-            "country_uid": "string",
-            "distance_miles": "number|''",
-            "walkable": "y|n|''",
-            "price_band": "$|$$|$$$|$$$$|''",
-            "review_score": "number|''",
-            "reviews_count": "number|''",
-            "tags": "string|''",
-            "source_domain": "string",
-            "source_page": "string",
-            "notes": "string|''",
-            "loyalty_brand": "string|''",
-            "resort_fee_note": "string|''",
-            "parking_note": "string|''",
-            "pet_friendly": "y|n|''",
-            "cancellation_window": "string|''",
-            "cuisine": "string|''",
-            "reservations_link": "string|''",
-            "outdoor_seating": "y|n|''",
-            "takes_reservations": "y|n|''",
-            "hookups": "string|''",
-            "pull_through": "y|n|''",
-            "rig_length_max": "number|''",
-            "dump_station": "y|n|''",
-            "pets_allowed": "y|n|''",
-            "superhost": "y|n|''",
-            "bedrooms": "number|''",
-            "sleeps": "number|''",
-            "entire_home": "y|n|''",
-            "category": "string|''",
-            "hours_note": "string|''",
-            "entry_fee_note": "string|''",
-            "confidence_score": "0..100"
-          }
-        ],
+        "rows": [ { "…": "see columns" } ],
         "diagnostics": {
           "sources_used": ["domain1","domain2"],
           "candidate_counts": { "scanned": 0, "deduped": 0, "returned": 0 },
+          "events_in_window": { "count": 0, "sample_event_uids": [] },
           "notes": "facts-only"
         }
       },
       "save_mode": "When save=='y', emit CSV-as-text (UTF-8, LF) mirroring preview columns.",
-      "save_path_template": "items/agents/curations/{place_type}/{near_key}-{yyyymmdd}{dash_hint}.txt",
+      "save_path_template": "items/agents/curations/{place_type}/{near_key}-{time_key}{dash_hint}.txt",
       "near_key_rule": "prefer near_venue_uid; else city_uid (or city_uid+state_uid)",
       "dash_hint_rule": "prepend '-' + filename_hint if provided"
     },
