@@ -1,121 +1,100 @@
-# README — Kernel & Agents Knowledge
-# Clear Round Travel
-# Version: v1
-# Last updated: 2025-09-01
+CRT AGENTS — KNOWLEDGE README (Session Boot & Rails) — v1.2
 
-Purpose
--------
-This README is the table of contents and day-to-day runbook for our kernel-based agent
-setup. It explains definitions, what files control behavior, how starters load (no
-router edits), and the minimal workflows for Humans, the Agent, and Codex.
+PURPOSE
+This file is the fast, factual “session boot” and guardrails reference. It ensures any new session loads the same rules, uses the proxy, and never guesses. It does not repeat the full Operator README.
 
-Glossary
---------
-- Kernel: Lightweight loader that resolves a starter key to a task pack by folder
-  convention. No manifest/router edits to add tasks.
-- Domain: One of { add, research, create, query, reminders } defining a task’s output.
-- Starter: The first-line trigger key (e.g., "add-event") that maps to a task pack.
-- Task pack / Agent: A folder with rules.json (+ optional prompt.md, schema.json)
-  implementing one unit of work.
+CANONICAL PATHS (proxy-first, always use full URLs)
+- Base:            https://crt-b1434e13de34.herokuapp.com
+- Health:          GET /health
+- Manifest:        GET /items/agents/manifest.json
+- Generated dirs:  GET /items/_manifest.json
+- Rules:
+  • Ingestion:     GET /items/agents/ingestion-rules.txt
+  • Events:        GET /items/agents/event-rules.json
+  • Venues:        GET /items/agents/venue-rules.json
+  • Places:        GET /items/agents/place-rules.json
+  • Cards core:    GET /items/agents/cards-core.txt
+  • Labels rules:  GET /items/agents/labels-rules.json
 
-Knowledge files (authoritative references)
-------------------------------------------
-Read these for specifics; this README does not duplicate their content.
+WRITES (operator-triggered only)
+- Commit endpoint: POST /items/commit  (body: { path, json, message })
+- Allowed file types: .json .txt .md .html .js
+- Allowed dirs: governed by proxy ALLOW_DIRS (inspect via /items/_manifest.json)
+- Proxy busts its cache for the path after a successful commit.
 
-- permissions-policy.txt   — Light rails (green/yellow/red), who can change what.
-- operating-rules.txt      — Roles, domain outputs, PREVIEW→COMMIT lifecycle, runbook.
-- output-behavior.txt      — Exact output contracts per domain.
-- triggers.txt             — Starter normalization and lookup order.
-- naming-policy.txt        — UID/slug/path conventions; link/date/boolean rules.
-- validation-checklist.txt — Add/Update PREVIEW checks; conflict handling; lanes.
-- error-codes.txt          — Canonical error codes with remediation.
-- manifest-contract.txt    — What the dataset manifest governs (proxy, git, allowlist).
+SESSION START (paste this single line at the top of any new session)
+SESSION-START vX: proxy=https://crt-b1434e13de34.herokuapp.com manifest=/items/agents/manifest.json mode=task-only overrides: filename_equals_uid=false leg_label=Leg tz=America/New_York
 
-Current → Target
-----------------
-- Today: 1 legacy agent (chatagent) with its own instructions/schema/trigger.
-- Target: 5 agents across the 5 domains, plus additional starters as needed.
-- Migration: additive. Keep the legacy agent; add new task folders alongside it.
+WHAT MUST LOAD (startup checklist; STOP on any failure)
+- GET /health → 200
+- GET /items/agents/manifest.json → 200
+- GET /items/agents/ingestion-rules.txt → 200
+- GET /items/agents/event-rules.json → 200
+- GET /items/agents/venue-rules.json → 200
+- GET /items/agents/place-rules.json → 200
+- GET /items/agents/cards-core.txt → 200
+- GET /items/agents/labels-rules.json → 200
+- GET /items/_manifest.json → 200
+If any call fails: halt immediately and report the exact URL + HTTP status.
 
-Kernel loader (by convention)
------------------------------
-Lookup order for a normalized starter key S:
-1) items/agents/<S>/rules.json
-2) items/agents/<domain>/<S>/rules.json    where <domain> ∈ {add, research, create, query, reminders}
-Else → { "error": "not_enabled", "detail": "<S>" }
-See triggers.txt for normalization rules and examples.
+MID-SESSION RESET (use when drift is suspected)
+RESET → version vX; use proxy; reload manifest
+(Then rerun the full startup checklist above.)
 
-Registry & allowlist (unchanged flow)
--------------------------------------
-- Directory registry: items/agents/dir-map.json (v2) with { entities, normalizers, content }.
-- Write allowlist: Heroku ALLOW_DIRS mirrors the union of dir-map keys.
-- The proxy enforces ALLOW_DIRS (and manifest write_allowlist) on every write.
+GLOBAL POLICY (do not restate in tasks)
+- facts_only=true
+- timezone=America/New_York
+- date_format=YYYY-MM-DD
+- bool_encoding=yn
+- uid_regex=^[a-z0-9]+(?:-[a-z0-9]+)*$
+- filename_equals_uid=false (events only; see event rules)
+- official_link_must_be_https=true
+- relations_must_resolve=true
+- labels are predefined only (items/index/labels/ + _index.json)
 
-Governance summary (light rails)
---------------------------------
-- Agent: PR-by-default for DATA-WRITE. Human may say “ship directly” for green-lane scopes.
-- Codex: PR-by-default. Dataset mechanics allowed with explicit notice.
-- Human: direct-commit permitted anytime (Airtable/PowerShell).
-- Conflicts: if target changed since PREVIEW → fail safe; re-preview.
-(See permissions-policy.txt and operating-rules.txt.)
+VENUE GATE (applies wherever a venue bind is needed)
+- Must resolve venue by UID or operator-confirmed hint.
+- Never guess. Flow = confirm / input / exit.
+- venue_uid must end with “-venue”.
 
-Domains & outputs (pointer)
----------------------------
-- add/        → PREVIEW → COMMIT (writes only after explicit COMMIT).
-- research/   → facts-only JSON (no write).
-- create/     → content JSON/Markdown (no write).
-- query/      → facts-only JSON (no write).
-- reminders/  → schedule JSON (no write).
-Details in output-behavior.txt.
+EVENT NAMING & SERIES GUARDS (summary; see event-rules for details)
+- Strip venue/organizer/sponsors/ratings/years/common terms from the official title to derive event_uid.
+- Filename (events only): {organizer_uid}-{event_uid}.json
+- is_series ∈ {y|n|auto}; legs must sit fully inside hub window and must not overlap.
+- Internal leg label is “Leg N”; public display MUST NOT include “Leg” unless the source uses it.
 
-Day-to-day runbook (Human)
---------------------------
-A) Keep registry in sync
-   1. In Airtable (dirs table) run the dir-map script: Dry-run → review; Commit → write items/agents/dir-map.json.
-   2. Run the printed Heroku one-liner to set ALLOW_DIRS; verify with `heroku config:get`.
+TASK TRIGGERS (aliases)
+- add-event      = add-event | add_event
+- add-venue      = add-venue | add_venue
+- add-place      = add-location | add_location | add-place | add_place
+- refresh-derived= refresh-derived | refresh_derived
+- index-cards    = index-cards | index_cards
+- curate-places  = curate-places | curate_places
 
-B) Commit data safely
-   - Use Airtable “commit_all” / PowerShell to send { path, json, message } to the proxy.
-   - Ensure path is within ALLOW_DIRS; confirm response/SHA.
+TASK HANDSHAKE (always the same)
+1) Operator posts one Task: … line with inputs (hints).
+2) Assistant returns PREVIEW blocks: full target path + full file content (no diffs).
+3) Operator replies COMMIT (or EDIT/CANCEL).
+4) Assistant returns exact POST body for /items/commit. No implicit writes.
 
-C) Use tasks (when enabled)
-   - First line = starter key (e.g., “Add Event”, “Update Event”).
-   - Review PREVIEW (path + payload + diff for updates).
-   - Reply COMMIT to open a PR (default) or “ship directly” for green-lane items.
+LABELS (global tags)
+- Store one file per label under items/index/labels/{label_uid}.json
+- Validate any include/exclude/derived tags against items/index/labels/_index.json
+- Unknown labels: error on include/exclude; drop on derived.
 
-Starter catalog (living list)
------------------------------
-Current (live)
-- starter: chatagent
-  folder:  items/agents/chatagent/
-  note:    Legacy agent; remains active during transition.
+DIRECTORIES SUMMARY (read-only guidance; confirm via /items/_manifest.json)
+- Events:   items/index/events/{organizer_uid}-{event_uid}.json
+- Venues:   items/index/venues/{venue_uid}.json (must end -venue)
+- Places:   items/index/{stay|dine|…}/{place_uid}.json (place-rules)
+- Labels:   items/index/labels/{label_uid}.json + _index.json
+- Indices:  items/index/{by_time|by_location|by_relation|by_label}.json
+- Sources:  items/index/sources/{source_uid}.json (domain-slug)
 
-Planned (pending; add when ready)
-- add/add-event/            — create new event file (PREVIEW → COMMIT).
-- add/update-event/         — surgical edits to one event file (PREVIEW → COMMIT).
-- research/research-hotels/ — facts-only lodging nearby (no write).
-- query/events-upcoming/    — structured list of upcoming events (no write).
-- create/create-section-content/ — content JSON/MD for a page section (no write).
-- reminders/daily-due/      — schedule JSON for daily prompts (no write).
-(See triggers.txt; only starters with folders are enabled.)
+AIRTABLE (optional)
+- Airtable is for collecting hints/exports only. System of record is the repo via /items/commit after PREVIEW.
 
-Testing scripts (minimum checks)
---------------------------------
-- dir-map script:
-  - Dry-run shows valid v2 buckets.
-  - Commit writes items/agents/dir-map.json.
-  - ALLOW_DIRS equals union of keys (verify via Heroku CLI).
-- commit_all script:
-  - Handles *_uid and *_uids correctly; empty path is rejected with a clear message.
-  - Proxy/network errors surface cleanly; no silent success.
+SEE ALSO
+- Operator README: /items/agents/README.txt (system overview, deeper rationale)
+- This file is for session boot and rails only.
 
-Error handling (pointer)
-------------------------
-- Common codes: not_enabled, bad_input, validation_failed, allowlist_denied, conflict,
-  commit_denied, server_error, upstream_error.
-- See error-codes.txt for when they occur and what to do next.
-
-Change control
---------------
-- Updates to this README are Yellow (PR required).
-- Do not duplicate specs that already live in the files above; link conceptually instead.
+END
