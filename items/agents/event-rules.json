@@ -1,6 +1,6 @@
 {
   "name": "event-rules",
-  "version": "v4",
+  "version": "v5",
   "table": "events",
   "prefix": "event_",
   "uid_immutable": true,
@@ -8,8 +8,7 @@
   "naming": {
     "field_case": "snake_case",
     "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-    "filename_equals_uid": false,
-    "filename_template": "{organizer_uid}-{event_uid}.json"
+    "filename_equals_uid": true
   },
 
   "base_vars": [
@@ -22,19 +21,37 @@
 
   "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
   "uid_requires": ["event_official_name"],
+  "uid_patterns": {
+    "hub_uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "leg_uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*-[1-9][0-9]*$"
+  },
 
   "sanitize_official_name_policy": {
     "strip_sponsors_and_connectors": true,
     "strip_venue_name": true,
     "strip_organizer_name": true,
     "remove_terms": [
-      "horse show", "horse shows", "circuit", "festival", "classic",
-      "series", "presented by"
+      "horse show",
+      "horse shows",
+      "festival",
+      "classic",
+      "series",
+      "presented by"
     ],
     "remove_year_tokens": true,
     "remove_rating_tokens": [
-      "CSI", "CSIO", "CSI*", "CSI**", "CSI***", "CSI****", "CSI*****",
-      "WCHR", "USEF", "Premier", "AA", "A"
+      "CSI",
+      "CSIO",
+      "CSI*",
+      "CSI**",
+      "CSI***",
+      "CSI****",
+      "CSI*****",
+      "WCHR",
+      "USEF",
+      "Premier",
+      "AA",
+      "A"
     ],
     "remove_punctuation": [",", "/", "\"", "$"],
     "collapse_spaces": true,
@@ -56,27 +73,42 @@
     "form_uid",
     "git_status",
     "is_annual",
-    "is_series"
+    "is_series",
+    "hub_uid",
+    "series_index",
+    "series_total",
+    "event_leg_uids",
+    "leg_label",
+    "public_leg_label"
   ],
 
   "relations": {
-    "venue_uid":   { "type": "single", "required": true, "must_end_with": "-venue" },
-    "organizer_uid": { "type": "single", "required": true },
-    "city_uid":    { "type": "single", "required": false },
-    "state_uid":   { "type": "single", "required": false },
-    "country_uid": { "type": "single", "required": false },
-    "source_uids": { "type": "multi", "required": true, "min_items": 1 },
-    "label_uids":  { "type": "multi", "required": false },
-    "rating_tag_uid":     { "type": "single", "required": false },
+    "venue_uid":        { "type": "single", "required": true,  "must_end_with": "-venue" },
+    "organizer_uid":    { "type": "single", "required": true },
+    "hub_uid":          { "type": "single", "required": false },              // references another event (the hub)
+    "event_leg_uids":   { "type": "multi",  "required": false },              // references child leg events
+    "city_uid":         { "type": "single", "required": false },
+    "state_uid":        { "type": "single", "required": false },
+    "country_uid":      { "type": "single", "required": false },
+    "source_uids":      { "type": "multi",  "required": true, "min_items": 1 },
+    "label_uids":       { "type": "multi",  "required": false },
+    "rating_tag_uid":   { "type": "single", "required": false },
     "discipline_tag_uid": { "type": "single", "required": false },
-    "event_tag_uids":     { "type": "multi", "required": false },
-    "name_tag_uids":      { "type": "multi", "required": false }
+    "event_tag_uids":   { "type": "multi",  "required": false },
+    "name_tag_uids":    { "type": "multi",  "required": false }
   },
 
   "normalizers_required": [
-    "days", "months", "seasons", "years",
-    "countries", "states", "cities",
-    "weather", "airports", "labels"
+    "days",
+    "months",
+    "seasons",
+    "years",
+    "countries",
+    "states",
+    "cities",
+    "weather",
+    "airports",
+    "labels"
   ],
 
   "date_policies": {
@@ -93,10 +125,16 @@
   },
 
   "series_policy": {
-    "is_series_values": ["y","n","auto"],
+    "is_series_values": ["y", "n", "auto"],
     "leg_label_scheme": "Leg N",
     "require_non_overlapping_legs": true,
-    "require_legs_inside_hub": true
+    "require_legs_inside_hub": true,
+    "leg_uid_rule": "event_uid = hub_uid + '-' + series_index",
+    "public_leg_label_default": "",
+    "leg_display_policy": {
+      "official_name_for_legs": "use hub's official name (no Leg/Week/number)",
+      "display_name_for_legs": "default to date range (e.g., 'Desert Circuit — Jan 7–11, 2026'); if public_leg_label is set (e.g., 'Week'), render 'Hub — Week N'"
+    }
   },
 
   "tags_policy": {
@@ -108,8 +146,10 @@
     "allow": true,
     "fields": {
       "yyyymm": "YYYYMM from event_official_start_date",
-      "event_duration": "days_between(event_official_start_date, event_official_end_date) when both present",
+      "event_duration": "days_between(event_official_start_date, event_official_end_date) when both present (exclusive end)",
       "event_current_status": "computed vs today (America/New_York) using start/end",
+      "days_until_start": "days_between(today, event_official_start_date)",
+      "days_until_end": "days_between(today, event_official_end_date)",
       "event_estimated_next_start_date": "if is_annual='y', roll forward ~1 year from start"
     },
     "never_overwrite_inputs": true
@@ -128,11 +168,18 @@
       "legs must sit fully inside hub window",
       "legs must be non-overlapping",
       "leg labels must be consistent (Leg 1..N)"
-    ]
+    ],
+    "filename_must_equal_uid": true
   },
 
   "paths": {
-    "save_path_template": "index/events/{organizer_uid}-{event_uid}.json",
+    "save_path_template": "index/events/{event_uid}.json",
     "sources_input_dir": "index/sources"
+  },
+
+  "notes": {
+    "uids": "Hub UIDs are stripped (e.g., 'desert-circuit'); leg UIDs are hub-prefixed ('desert-circuit-1'). Never include 'series/leg/week' words in UIDs.",
+    "names": "Leg official names mirror the hub; display uses date ranges by default (or an approved public_leg_label).",
+    "filenames": "Flat layout; filename == UID under index/events/."
   }
 }
