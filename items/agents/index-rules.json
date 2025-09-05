@@ -1,0 +1,105 @@
+{
+  "path": "items/agents/index-rules.json",
+  "message": "add: index_cards task (time/location/relation/label facets)",
+  "json": {
+    "name": "index-rules",
+    "version": "v1",
+    "task_id": "index_cards",
+    "aliases": ["index-cards", "build-indices", "reindex"],
+    "facts_only": true,
+
+    "policy": {
+      "timezone": "America/New_York",
+      "date_format": "YYYY-MM-DD",
+      "families": ["events", "venues", "places"],
+      "read_sources": ["index/events", "index/venues", "index/hotels", "index/airbnbs", "index/rvparks", "index/restaurants", "index/sites", "index/parks"],
+      "never_mutate_inputs": true
+    },
+
+    "inputs": {
+      "scope": "all|events|venues|places (default all)",
+      "uids": "optional; '|' separated list to restrict which cards are considered",
+      "dry_run": "y|n (default n)"
+    },
+
+    "facets": {
+      "by_time": {
+        "notes": "Events only for time-based groupings; venues/places aren’t time-sliced.",
+        "year":   { "field": "year_uid",     "output_key": "byYear"   },
+        "month":  { "field": "month_uids",   "output_key": "byMonth"  },
+        "season": { "field": "season_uid",   "output_key": "bySeason" },
+        "week":   { "field": "week_uids",    "output_key": "byWeek"   },
+        "windows": {
+          "next7d":  { "from": "today", "days": 7 },
+          "next30d": { "from": "today", "days": 30 }
+        }
+      },
+      "by_location": {
+        "city":    { "field": "city_uid",    "output_key": "byCity"    },
+        "state":   { "field": "state_uid",   "output_key": "byState"   },
+        "country": { "field": "country_uid", "output_key": "byCountry" }
+      },
+      "by_relation": {
+        "venue":     { "field": "venue_uid",     "output_key": "byVenue",     "families": ["events", "places"] },
+        "organizer": { "field": "organizer_uid", "output_key": "byOrganizer", "families": ["events"] }
+      },
+      "by_label": {
+        "labels": { "field": "label_uids", "output_key": "byLabel", "families": ["events", "venues", "places"] }
+      }
+    },
+
+    "emit": {
+      "files": [
+        { "path": "items/index/by_time.json",      "shape": "combined" },
+        { "path": "items/index/by_location.json",  "shape": "combined" },
+        { "path": "items/index/by_relation.json",  "shape": "combined" },
+        { "path": "items/index/by_label.json",     "shape": "combined" }
+      ],
+      "combined_shape_examples": {
+        "by_time.json": {
+          "generated_at": "ISO",
+          "byYear":   { "2026": { "events": ["desert-circuit", "desert-circuit-1"] } },
+          "byMonth":  { "2026-01": { "events": ["desert-circuit-1"] } },
+          "bySeason": { "winter": { "events": ["desert-circuit", "desert-circuit-1"] } },
+          "byWeek":   { "2026-W02": { "events": ["desert-circuit-1"] } },
+          "next7d":   { "events": ["…"] },
+          "next30d":  { "events": ["…"] }
+        },
+        "by_location.json": {
+          "generated_at": "ISO",
+          "byCity":    { "thermal":  { "events": ["…"], "venues": ["…"], "places": ["…"] } },
+          "byState":   { "california": { "events": ["…"], "venues": ["…"], "places": ["…"] } },
+          "byCountry": { "united-states": { "events": ["…"], "venues": ["…"], "places": ["…"] } }
+        },
+        "by_relation.json": {
+          "generated_at": "ISO",
+          "byVenue":     { "desert-international-horse-park-venue": { "events": ["…"], "places": ["…"] } },
+          "byOrganizer": { "desert": ["desert-circuit", "desert-circuit-1"] }
+        },
+        "by_label.json": {
+          "generated_at": "ISO",
+          "byLabel": { "walking-distance": { "events": [], "venues": [], "places": ["hotel-xyz"] } }
+        }
+      }
+    },
+
+    "shape_rules": {
+      "lists_are_uid_only": true,
+      "omit_empty_groups": true,
+      "sort_keys_alpha": true,
+      "sort_lists_alpha": true
+    },
+
+    "validation": {
+      "relations_must_resolve": true,
+      "ignore_prefixes": ["dnu_", "ignore_"]
+    },
+
+    "dry_run_output": {
+      "report": {
+        "will_write": ["items/index/by_time.json", "items/index/by_location.json", "items/index/by_relation.json", "items/index/by_label.json"],
+        "counts": { "events": 0, "venues": 0, "places": 0 }
+      }
+    }
+  }
+}
