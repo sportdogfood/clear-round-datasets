@@ -1,25 +1,18 @@
 {
   "path": "items/agents/curate-places-rules.json",
-  "message": "add: curate_places (curate_hotels / curate_restaurants / …) — web curation to table, no card writes",
+  "message": "update: curate_places v1.3 — use global labels (index/labels) for include/exclude + filtering; remove local catalog",
   "json": {
     "name": "curate-places",
-    "version": "v1",
+    "version": "v1.3",
     "task_id": "curate_places",
     "aliases": [
-      "curate-places",
-      "curate_places",
-      "curate-hotels",
-      "curate_hotels",
-      "curate-restaurants",
-      "curate_restaurants",
-      "curate-airbnbs",
-      "curate_airbnbs",
-      "curate-rvparks",
-      "curate_rvparks",
-      "curate-sites",
-      "curate_sites",
-      "curate-parks",
-      "curate_parks"
+      "curate-places","curate_places",
+      "curate-hotels","curate_hotels",
+      "curate-restaurants","curate_restaurants",
+      "curate-airbnbs","curate_airbnbs",
+      "curate-rvparks","curate_rvparks",
+      "curate-sites","curate_sites",
+      "curate-parks","curate_parks"
     ],
     "facts_only": true,
 
@@ -33,113 +26,169 @@
       "max_candidates_per_domain": 12,
       "max_total_candidates": 60,
       "dedupe_key": "normalized_name + domain + address_line1",
-      "notes": "This task searches the public web, prioritizing official pages, and emits a table. It does NOT write place cards."
+      "labels_source": {
+        "type": "normalizer",
+        "dir": "index/labels",
+        "predefined_only": true,
+        "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "notes": "Search public web; emit table preview and optional CSV; no card writes."
     },
 
     "inputs": {
       "place_type": "hotel|restaurant|airbnb|rvpark|site|park (required)",
-      "link": "optional seed/candidate HTTPS URL (hint to center the search or brand)",
-      "name": "optional hint for the target name/brand",
+      "link": "optional seed HTTPS URL",
+      "name": "optional brand/name hint",
       "city_uid": "required",
       "state_uid": "required",
       "country_uid": "required",
-      "near_venue_uid": "optional; if given, compute distance and walkable",
-      "radius_miles": "optional; default 5 (used when near_venue_uid present)",
-      "price_band": "optional filter; $, $$, $$$, $$$$ or a range like $$-$$$",
-      "min_review_score": "optional; float 0–5 (default none)",
-      "chains": "optional; allow|exclude (default allow)",
-      "include_labels": "optional pipe list (e.g., pet-friendly|walking-distance)",
-      "exclude_labels": "optional pipe list (e.g., smoking)",
-      "max_results": "optional; default 12; hard max 40",
-      "save": "y|n (default y) — if y, write CSV-as-text under items/agents/curations/",
-      "filename_hint": "optional; suffix for saved file name"
+      "near_venue_uid": "optional; enables distance/walkable",
+      "radius_miles": "number; default 5; min 0.1; max 50",
+      "price_band": "$|$$|$$$|$$$$|$$-$$$|$-$$|$$$-$$$$ (optional)",
+      "min_review_score": "0..5 (optional)",
+      "chain_mode": "allow|exclude|only (default allow)",
+      "include_labels": "optional pipe list of GLOBAL label_uids from index/labels",
+      "exclude_labels": "optional pipe list of GLOBAL label_uids from index/labels",
+      "max_results": "default 12; hard max 40",
+      "save": "y|n (default y)",
+      "filename_hint": "optional suffix for saved CSV-as-text"
+    },
+
+    "attributes_lock": {
+      "radius_miles": { "default": 5, "min": 0.1, "max": 50, "round_to": 1 },
+      "price_band": {
+        "allowed": ["$","$$","$$$","$$$$","$-$$","$$-$$$","$$$-$$$$"],
+        "normalize_ranges": {
+          "$-$$": "$$",
+          "$$-$$$": "$$-$$$",
+          "$$$-$$$$": "$$$"
+        }
+      },
+      "min_review_score": { "min": 0.0, "max": 5.0, "step": 0.1 },
+      "chain_mode": { "allowed": ["allow","exclude","only"], "default": "allow" }
     },
 
     "resolution": {
-      "centerpoint": "If near_venue_uid provided and the venue has google pin lat/long, use that as (lat,long). Otherwise center on city_uid centroid from normalizers (when available).",
+      "centerpoint": "If near_venue_uid has lat/long, use that; else city centroid (when available).",
       "ranking": {
         "signals": [
-          "distance (if near_venue_uid present)",
-          "review_score (normalized 0–5)",
-          "match to price_band",
-          "match to include_labels",
-          "officialness of domain"
+          "distance (if centerpoint)",
+          "review_score",
+          "price_band_match",
+          "label_inclusions",
+          "official_domain_score"
         ],
-        "tie_breakers": [
-          "reviews_count desc",
-          "name alpha"
-        ],
+        "tie_breakers": ["reviews_count desc","name alpha"],
         "score_field": "confidence_score (0–100)"
       },
       "dedupe": {
-        "normalize_name": "lowercase, strip punctuation & common suffixes (hotel, inn, restaurant, rv park, campground)",
-        "address_fallback": "if address not available, rely on domain+name"
+        "normalize_name": "lowercase; strip punctuation & common suffixes (hotel|inn|restaurant|rv park|campground)",
+        "address_fallback": "if no address, dedupe on domain+name"
+      },
+      "chain_detection": {
+        "brand_terms": ["marriott","hilton","ihg","hyatt","choice","best western","accor","radisson","wyndham","kimpton","joie de vivre","ritz-carlton","four seasons","fairmont","waldorf","hampton","courtyard","residence inn","holiday inn","intercontinental","doubletree","embassy suites","ritz","st. regis","westin","sheraton","moxy","aloft"],
+        "emit_fields": { "loyalty_brand": "Brand name (title-cased) when confidently detected" },
+        "enforce_by_mode": {
+          "allow": "no-op",
+          "exclude": "drop rows with detected brand",
+          "only": "keep rows with detected brand"
+        }
       }
     },
 
     "columns": {
       "base": [
-        "place_official_name",
-        "place_official_link",
-        "place_type",
-        "address_line1",
-        "city_uid",
-        "state_uid",
-        "country_uid",
-        "distance_miles",
-        "walkable",              "price_band",
-        "review_score",          "reviews_count",
-        "tags",
-        "source_domain",
-        "source_page",
-        "notes"
+        "place_official_name","place_official_link","place_type",
+        "address_line1","city_uid","state_uid","country_uid",
+        "distance_miles","walkable","price_band",
+        "review_score","reviews_count",
+        "tags","source_domain","source_page","notes"
       ],
-      "hotel_extra": [
-        "loyalty_brand",
-        "resort_fee_note",
-        "parking_note",
-        "pet_friendly",
-        "cancellation_window"
-      ],
-      "restaurant_extra": [
-        "cuisine",
-        "reservations_link",
-        "outdoor_seating",
-        "takes_reservations"
-      ],
-      "rvpark_extra": [
-        "hookups",
-        "pull_through",
-        "rig_length_max",
-        "dump_station",
-        "pets_allowed"
-      ],
-      "airbnb_extra": [
-        "superhost",
-        "bedrooms",
-        "sleeps",
-        "entire_home"
-      ],
-      "site_extra": [
-        "category",
-        "hours_note",
-        "entry_fee_note"
-      ],
-      "park_extra": [
-        "category",
-        "hours_note",
-        "entry_fee_note"
-      ]
+      "hotel_extra": ["loyalty_brand","resort_fee_note","parking_note","pet_friendly","cancellation_window"],
+      "restaurant_extra": ["cuisine","reservations_link","outdoor_seating","takes_reservations"],
+      "rvpark_extra": ["hookups","pull_through","rig_length_max","dump_station","pets_allowed"],
+      "airbnb_extra": ["superhost","bedrooms","sleeps","entire_home"],
+      "site_extra": ["category","hours_note","entry_fee_note"],
+      "park_extra": ["category","hours_note","entry_fee_note"]
+    },
+
+    "labels_mapping": {
+      "derive_tags": {
+        "distance_rules": [
+          { "if": "distance_miles <= 0.5", "add": ["walking-distance"] },
+          { "if": "distance_miles > 0.5 && distance_miles <= 2", "add": ["short-drive"] },
+          { "if": "near_venue_uid && distance_miles <= 5", "add": ["near-venue"] }
+        ],
+        "parking_rules": [
+          { "if_text": ["free parking","complimentary parking"], "add": ["free-parking"] },
+          { "if_text": ["paid parking","valet fee","parking fee"], "add": ["paid-parking"] },
+          { "if_text": ["trailer parking","oversize parking","horse trailer"], "add": ["trailer-parking"] }
+        ],
+        "pet_rules": [
+          { "if_text": ["pet friendly","pets welcome","dog friendly","dogs welcome"], "add": ["pet-friendly"] }
+        ],
+        "hotel_rules": [
+          { "if_text": ["resort fee"], "add": ["resort-fee"] },
+          { "if_text": ["breakfast included","free breakfast"], "add": ["breakfast-included"] },
+          { "if_text": ["kitchenette","suite with kitchen","full kitchen"], "add": ["kitchenette"] },
+          { "if_text": ["laundry","guest laundry"], "add": ["laundry-on-site"] },
+          { "if_text": ["pool"], "add": ["pool"] },
+          { "if_text": ["gym","fitness center"], "add": ["gym"] }
+        ],
+        "restaurant_rules": [
+          { "if_text": ["outdoor seating","patio"], "add": ["outdoor-seating"] },
+          { "if_text": ["reservations","book a table","opentable"], "add": ["takes-reservations"] },
+          { "if_text": ["late night","open late"], "add": ["late-night"] },
+          { "if_text": ["kid friendly","kids menu"], "add": ["kid-friendly"] },
+          { "if_text": ["gluten-free","celiac"], "add": ["gluten-free-options"] },
+          { "if_text": ["dog friendly patio","dogs on patio"], "add": ["dog-friendly-patio"] }
+        ],
+        "rvpark_rules": [
+          { "if_text": ["full hookups","full hook-ups","FHU"], "add": ["full-hookups"] },
+          { "if_text": ["pull-through"], "add": ["pull-through"] },
+          { "if_text": ["big rig","oversize"], "add": ["big-rig-friendly"] },
+          { "if_text": ["dump station"], "add": ["dump-station"] }
+        ],
+        "airbnb_rules": [
+          { "if_text": ["entire home","entire place"], "add": ["entire-home"] },
+          { "if_text": ["superhost"], "add": ["superhost"] },
+          { "if_text": ["fenced yard","fenced backyard"], "add": ["fenced-yard"] },
+          { "if_text": ["washer","dryer"], "add": ["washer-dryer"] }
+        ],
+        "site_park_rules": [
+          { "if_text": ["hiking","trail"], "add": ["hiking"] },
+          { "if_text": ["scenic","viewpoint"], "add": ["scenic"] },
+          { "if_text": ["shade","shaded"], "add": ["shaded"] },
+          { "if_text": ["picnic"], "add": ["picnic-area"] }
+        ],
+        "price_rules": [
+          { "if_price": "$", "add": ["budget"] },
+          { "if_price": "$$", "add": ["mid-price"] },
+          { "if_price": "$$-$$$", "add": ["mid-price"] },
+          { "if_price": "$$$", "add": ["upper-mid"] },
+          { "if_price": "$$$$", "add": ["premium"] }
+        ],
+        "chain_rules": [
+          { "if_brand_detected": true, "add": ["chain"] }
+        ]
+      },
+      "filtering": {
+        "source": "policy.labels_source",
+        "predefined_only": true,
+        "unknown_label_behavior": "error_on_include_exclude; drop_on_derived",
+        "dedupe": true,
+        "alpha_sort": true,
+        "limit": 16
+      }
     },
 
     "extraction": {
-      "allowed_sources": "official domains; major travel/meta (e.g., marriott.com, hilton.com, booking.com, expedia.com, google.com/maps/place, yelp.com/biz, opentable.com); prioritize official first",
-      "price_band_norm": "map textual $ indicators to $, $$, $$$, $$$$; if numeric price ranges appear, map by quartiles",
-      "review_norm": "extract star or numeric score; clamp 0..5; reviews_count integer when available",
-      "distance_calc": "if centerpoint available and candidate has lat/long in its map link, compute haversine miles; otherwise leave blank",
-      "walkable_rule": "walkable = 'y' when distance_miles <= 0.5; else 'n' or '' when unknown",
-      "pet_friendly_rule": "tag as pet-friendly when explicitly listed on official or aggregator page; do not infer",
-      "tags_build": "deterministic, semicolon-free comma list (e.g., 'pet-friendly, free-parking, breakfast')"
+      "allowed_sources": "official domains; trusted travel/meta (marriott.com, hilton.com, booking.com, expedia.com, google.com/maps/place, yelp.com/biz, opentable.com, airbnb.com, recreation.gov, nps.gov)",
+      "price_band_norm": "map textual $ indicators to $, $$, $$$, $$$$; normalize simple ranges via attributes_lock",
+      "review_norm": "extract star/number; clamp 0..5; reviews_count integer",
+      "distance_calc": "if centerpoint and candidate pin has lat/long, compute haversine miles; else blank",
+      "walkable_rule": "walkable=y when distance_miles <= 0.5; else n when known; blank when unknown",
+      "tags_build": "compose from labels_mapping; final set filtered to global label_uids only"
     },
 
     "output": {
@@ -147,7 +196,7 @@
         "generated_at": "ISO",
         "place_type": "string",
         "center": { "city_uid": "string", "state_uid": "string", "country_uid": "string", "near_venue_uid": "string|''" },
-        "filters": { "radius_miles": "number", "price_band": "string|''", "min_review_score": "number|''", "chains": "allow|exclude|''", "include_labels": "string|''", "exclude_labels": "string|''" },
+        "filters": { "radius_miles": "number", "price_band": "string|''", "min_review_score": "number|''", "chain_mode": "allow|exclude|only", "include_labels": "string|''", "exclude_labels": "string|''" },
         "columns": ["…"],
         "rows": [
           {
@@ -192,26 +241,35 @@
           }
         ],
         "diagnostics": {
-          "sources_used": ["domain1", "domain2", "…"],
+          "sources_used": ["domain1","domain2"],
           "candidate_counts": { "scanned": 0, "deduped": 0, "returned": 0 },
           "notes": "facts-only"
         }
       },
-      "save_mode": "When save=='y', emit a CSV-as-text file (UTF-8, LF) with the same columns & rows.",
+      "save_mode": "When save=='y', emit CSV-as-text (UTF-8, LF) mirroring preview columns.",
       "save_path_template": "items/agents/curations/{place_type}/{near_key}-{yyyymmdd}{dash_hint}.txt",
       "near_key_rule": "prefer near_venue_uid; else city_uid (or city_uid+state_uid)",
       "dash_hint_rule": "prepend '-' + filename_hint if provided"
     },
 
+    "validation": {
+      "labels": {
+        "source": "policy.labels_source",
+        "include_exclude_must_exist": true,
+        "error_on_unknown_include_exclude": true
+      }
+    },
+
     "errors": {
       "on_missing_normalizer": "hard stop with needs_normalizer",
       "on_unusable_centerpoint": "proceed without distance/walkable; annotate diagnostics",
-      "on_zero_results": "return empty rows with diagnostics.notes='no candidates matched filters'"
+      "on_zero_results": "return empty rows with diagnostics.notes='no candidates matched filters'",
+      "on_unknown_label": "return error listing the offending label_uids in include/exclude"
     },
 
     "next_steps": {
-      "promote": "Operator can select rows and run add_place for each with the official link/name; this task intentionally does not write place cards.",
-      "audit": "Rows include source_domain/source_page for quick manual verification before promotion."
+      "promote": "Operator can select rows and run add_place for each (official link/name); this task does not write place cards.",
+      "audit": "Rows include source_domain/source_page for quick verification."
     }
   }
 }
