@@ -1,6 +1,6 @@
 {
   "name": "event-rules",
-  "version": "v5",
+  "version": "v6.2",
   "table": "events",
   "prefix": "event_",
   "uid_immutable": true,
@@ -40,20 +40,10 @@
     ],
     "remove_year_tokens": true,
     "remove_rating_tokens": [
-      "CSI",
-      "CSIO",
-      "CSI*",
-      "CSI**",
-      "CSI***",
-      "CSI****",
-      "CSI*****",
-      "WCHR",
-      "USEF",
-      "Premier",
-      "AA",
-      "A"
+      "CSI","CSIO","CSI*","CSI**","CSI***","CSI****","CSI*****",
+      "WCHR","USEF","Premier","AA","A"
     ],
-    "remove_punctuation": [",", "/", "\"", "$"],
+    "remove_punctuation": [",","/","\"","$"],
     "collapse_spaces": true,
     "title_case": true
   },
@@ -69,6 +59,8 @@
 
   "optional_fields": [
     "event_official_end_date",
+    "event_description",
+    "is_finals",
     "notes",
     "form_uid",
     "git_status",
@@ -79,53 +71,53 @@
     "series_total",
     "event_leg_uids",
     "leg_label",
-    "public_leg_label"
+    "public_leg_label",
+    "yyyymm",
+    "event_duration",
+    "event_current_status",
+    "days_until_start",
+    "days_until_end",
+    "event_estimated_next_start_date",
+    "month_uids",
+    "year_uid",
+    "season_uid",
+    "week_uids",
+    "day_uids"
   ],
 
   "relations": {
-    "venue_uid":        { "type": "single", "required": true,  "must_end_with": "-venue" },
-    "organizer_uid":    { "type": "single", "required": true },
-    "hub_uid":          { "type": "single", "required": false },              // references another event (the hub)
-    "event_leg_uids":   { "type": "multi",  "required": false },              // references child leg events
-    "city_uid":         { "type": "single", "required": false },
-    "state_uid":        { "type": "single", "required": false },
-    "country_uid":      { "type": "single", "required": false },
-    "source_uids":      { "type": "multi",  "required": true, "min_items": 1 },
-    "label_uids":       { "type": "multi",  "required": false },
-    "rating_tag_uid":   { "type": "single", "required": false },
-    "discipline_tag_uid": { "type": "single", "required": false },
-    "event_tag_uids":   { "type": "multi",  "required": false },
-    "name_tag_uids":    { "type": "multi",  "required": false }
+    "venue_uid":      { "type": "single", "required": true,  "must_end_with": "-venue" },
+    "organizer_uid":  { "type": "single", "required": true },
+    "hub_uid":        { "type": "single", "required": false },
+    "event_leg_uids": { "type": "multi",  "required": false },
+    "city_uid":       { "type": "single", "required": false },
+    "state_uid":      { "type": "single", "required": false },
+    "country_uid":    { "type": "single", "required": false },
+    "source_uids":    { "type": "multi",  "required": true, "min_items": 1 },
+    "label_uids":     { "type": "multi",  "required": false }
   },
 
   "normalizers_required": [
-    "days",
-    "months",
-    "seasons",
-    "years",
-    "countries",
-    "states",
-    "cities",
-    "weather",
-    "airports",
-    "labels"
+    "days","months","seasons","years",
+    "countries","states","cities",
+    "weather","airports","labels"
   ],
 
   "date_policies": {
     "format": "YYYY-MM-DD",
     "macro_time_from": "hub (event) defines macro time; legs are discrete windows inside the hub",
-    "macro_outputs": ["season", "month", "weather_averages"]
+    "macro_outputs": ["season","month","weather_averages"]
   },
 
   "source_uid_policy": {
     "construction": "domain_slug",
-    "domain_slug_rule": "lowercase primary domain, dots→hyphens (e.g., usef.org → usef-org)",
-    "source_type_hint": "first path token or identifying key (e.g., '/', 'events', 'search', 'ShowGUID')",
+    "domain_slug_rule": "lowercase primary domain, dots→hyphens",
+    "source_type_hint": "first path token or identifying key",
     "flags": { "is_official": "y|n", "is_favorite": "y|n" }
   },
 
   "series_policy": {
-    "is_series_values": ["y", "n", "auto"],
+    "is_series_values": ["y","n","auto"],
     "leg_label_scheme": "Leg N",
     "require_non_overlapping_legs": true,
     "require_legs_inside_hub": true,
@@ -133,13 +125,14 @@
     "public_leg_label_default": "",
     "leg_display_policy": {
       "official_name_for_legs": "use hub's official name (no Leg/Week/number)",
-      "display_name_for_legs": "default to date range (e.g., 'Desert Circuit — Jan 7–11, 2026'); if public_leg_label is set (e.g., 'Week'), render 'Hub — Week N'"
+      "display_name_for_legs": "default to date range; if public_leg_label set (e.g., 'Week'), render 'Hub — Week N'"
     }
   },
 
   "tags_policy": {
     "predefined_only": true,
-    "inheritance": "legs inherit hub tags; legs may add"
+    "labels_only": true,
+    "deprecated_fields": ["rating_tag_uid","discipline_tag_uid","event_tag_uids","name_tag_uids"]
   },
 
   "derived": {
@@ -150,9 +143,26 @@
       "event_current_status": "computed vs today (America/New_York) using start/end",
       "days_until_start": "days_between(today, event_official_start_date)",
       "days_until_end": "days_between(today, event_official_end_date)",
-      "event_estimated_next_start_date": "if is_annual='y', roll forward ~1 year from start"
+      "event_estimated_next_start_date": "if is_annual='y', roll forward ~1 year from start",
+      "month_uids": "all distinct YYYY-MM that intersect the window (hub & legs)",
+      "year_uid": "YYYY from start date (hub & legs)",
+      "season_uid": "season from start date (hub & legs)",
+      "week_uids": "legs only: ISO weeks overlapping the leg window",
+      "day_uids": "legs only: every YYYY-MM-DD in the leg window inclusive"
     },
     "never_overwrite_inputs": true
+  },
+
+  "detection_on_add": {
+    "finals_detection": {
+      "enabled": true,
+      "only_if_missing": true,
+      "bool_encoding": "yn",
+      "positive_tokens": ["final","finals","championship","championships","national championship","world cup final"],
+      "negative_context_tokens": ["qualifier","welcome","warm-up","warmup","classic","series"],
+      "sources": ["event_official_name","event_display_name","event_official_link_path"],
+      "set_rule": "set is_finals='y' only when a positive token is present and no negative-context token appears nearby; otherwise leave is_finals unset"
+    }
   },
 
   "validation": {
@@ -163,7 +173,7 @@
     "halt_on_missing_normalizer": true,
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
-    "ignore_prefixes": ["dnu_", "ignore_"],
+    "ignore_prefixes": ["dnu_","ignore_"],
     "hub_leg_consistency": [
       "legs must sit fully inside hub window",
       "legs must be non-overlapping",
@@ -178,8 +188,7 @@
   },
 
   "notes": {
-    "uids": "Hub UIDs are stripped (e.g., 'desert-circuit'); leg UIDs are hub-prefixed ('desert-circuit-1'). Never include 'series/leg/week' words in UIDs.",
-    "names": "Leg official names mirror the hub; display uses date ranges by default (or an approved public_leg_label).",
-    "filenames": "Flat layout; filename == UID under index/events/."
+    "event_description": "short, factual, 1–2 lines; no tone; optional; may be suggested by research task but not autogenerated here.",
+    "is_finals": "operator may pass is_finals=y|n; if missing, detector may set to 'y' when confident; never auto-set 'n'."
   }
 }
