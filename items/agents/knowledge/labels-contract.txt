@@ -1,0 +1,40 @@
+LABELS — OPERATOR CONTRACT (v1)
+
+GOAL
+Predefine a clean, finite set of label_uids (global tags) for targeting, curation, and stitching. Labels live as one-file-per-label under items/index/labels/ and are referenced by UID everywhere else.
+
+STORAGE MODEL
+- Path: items/index/labels/{label_uid}.json (filename = UID)
+- UID: kebab-case, stable, <=48 chars (e.g., walking-distance, pet-friendly)
+- Core fields:
+  • label_uid              : canonical uid
+  • label_display_name     : human title (Title Case)
+  • label_family           : general|place|hotel|restaurant|rvpark|airbnb|site|park|event|venue
+  • allow_on[]             : one or more of events|venues|places|content
+  • synonyms[]             : kebab-case alternates (for lookup only)
+  • is_active              : y|n (n = deprecated)
+  • created_date, last_updated : YYYY-MM-DD (ET)
+  • description?           : short factual note (<=240 chars)
+  • implies[]?             : selecting this implies those labels (no cycles)
+  • conflicts_with[]?      : mutually exclusive labels
+  • replaces[]?/deprecated_by? : tidy migrations (only one direction active)
+
+INDEX
+- Built file: items/index/labels/_index.json with:
+  • by_uid map (fast metadata)
+  • synonyms_map (string -> canonical uid)
+  • families map (family -> [uids])
+  • allow_on_map (surface -> [uids])
+Tasks (add_event, add_place, curate_places, etc.) must validate label_uids against this index. Unknown labels → error for include/exclude; derived tags not in catalog are dropped.
+
+SCOPE BOUNDARY
+- Keep computed facets (e.g., price bands, precise miles) OUT of labels; let indices derive them. Only curate durable concepts (e.g., walking-distance, pet-friendly, near-venue, chain, resort-fee).
+
+LIFECYCLE
+- To retire a label: set is_active=n; add deprecated_by to point to replacement. Index preserves synonyms_map for backward compatibility.
+- To split/merge families, prefer migration via replaces/deprecated_by rather than renaming UIDs.
+
+USAGE RULES
+- Entities store label_uids[] only (no synonyms). 
+- UI/search can accept synonyms; resolve via synonyms_map to the canonical uid.
+- Tasks may propose auto-derived tags, but must filter to this catalog before emitting.
