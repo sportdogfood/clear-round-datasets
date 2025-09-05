@@ -1,0 +1,31 @@
+VENUES — OPERATOR CONTRACT (v1.0)
+
+SCOPE & TRUTH
+- Facts-only. Operator supplies HINTS; system confirms official name/link from the site.
+- UID must end with -venue. Filename equals UID: items/index/venues/{venue_uid}.json
+
+REQUIRED INPUTS (Task: add_venue)
+- link            : HTTPS to official or candidate page (hint)
+- name            : candidate title (hint)
+- city_uid        : required
+- state_uid       : required
+- country_uid     : required
+- aka             : optional (pipe-delimited), used as hints
+
+WHAT THE SYSTEM CONFIRMS / DERIVES
+- venue_official_link : canonical HTTPS on same domain (follow redirects)
+- venue_official_name : confirmed from official page (fallback to hint if not contradicted)
+- venue_display_name  : copy of official name
+- venue_uid           : slug(official name) with -venue suffix; on collision append -{city stem}
+- source_uids         : domain slug of official link
+- keywords            : deterministic set from official name + aka + city_uid + state_uid (lowercased, deduped, capped)
+- venue_city/state    : friendly names from normalizers (convenience only)
+- created_date, last_updated
+- Geo parse (no geocoder): if a Google Maps pin exists on official pages, parse lat/long from the URL; store as strings.
+
+GUARDS / STOPS
+- Hard-stop if: link not HTTPS; link not official; city/state/country normalizers missing.
+- Duplicates: choose first ranked candidate, set git_status=needs_review, append facts-only note listing alternates in PREVIEW diagnostics.
+
+PREVIEW → COMMIT
+- PREVIEW shows full file and target path. No write without explicit COMMIT.
