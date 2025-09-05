@@ -1,0 +1,217 @@
+{
+  "path": "items/agents/curate-places-rules.json",
+  "message": "add: curate_places (curate_hotels / curate_restaurants / …) — web curation to table, no card writes",
+  "json": {
+    "name": "curate-places",
+    "version": "v1",
+    "task_id": "curate_places",
+    "aliases": [
+      "curate-places",
+      "curate_places",
+      "curate-hotels",
+      "curate_hotels",
+      "curate-restaurants",
+      "curate_restaurants",
+      "curate-airbnbs",
+      "curate_airbnbs",
+      "curate-rvparks",
+      "curate_rvparks",
+      "curate-sites",
+      "curate_sites",
+      "curate-parks",
+      "curate_parks"
+    ],
+    "facts_only": true,
+
+    "policy": {
+      "timezone": "America/New_York",
+      "date_format": "YYYY-MM-DD",
+      "never_mutate_inputs": true,
+      "no_paid_apis": true,
+      "https_only": true,
+      "prefer_official_domains": true,
+      "max_candidates_per_domain": 12,
+      "max_total_candidates": 60,
+      "dedupe_key": "normalized_name + domain + address_line1",
+      "notes": "This task searches the public web, prioritizing official pages, and emits a table. It does NOT write place cards."
+    },
+
+    "inputs": {
+      "place_type": "hotel|restaurant|airbnb|rvpark|site|park (required)",
+      "link": "optional seed/candidate HTTPS URL (hint to center the search or brand)",
+      "name": "optional hint for the target name/brand",
+      "city_uid": "required",
+      "state_uid": "required",
+      "country_uid": "required",
+      "near_venue_uid": "optional; if given, compute distance and walkable",
+      "radius_miles": "optional; default 5 (used when near_venue_uid present)",
+      "price_band": "optional filter; $, $$, $$$, $$$$ or a range like $$-$$$",
+      "min_review_score": "optional; float 0–5 (default none)",
+      "chains": "optional; allow|exclude (default allow)",
+      "include_labels": "optional pipe list (e.g., pet-friendly|walking-distance)",
+      "exclude_labels": "optional pipe list (e.g., smoking)",
+      "max_results": "optional; default 12; hard max 40",
+      "save": "y|n (default y) — if y, write CSV-as-text under items/agents/curations/",
+      "filename_hint": "optional; suffix for saved file name"
+    },
+
+    "resolution": {
+      "centerpoint": "If near_venue_uid provided and the venue has google pin lat/long, use that as (lat,long). Otherwise center on city_uid centroid from normalizers (when available).",
+      "ranking": {
+        "signals": [
+          "distance (if near_venue_uid present)",
+          "review_score (normalized 0–5)",
+          "match to price_band",
+          "match to include_labels",
+          "officialness of domain"
+        ],
+        "tie_breakers": [
+          "reviews_count desc",
+          "name alpha"
+        ],
+        "score_field": "confidence_score (0–100)"
+      },
+      "dedupe": {
+        "normalize_name": "lowercase, strip punctuation & common suffixes (hotel, inn, restaurant, rv park, campground)",
+        "address_fallback": "if address not available, rely on domain+name"
+      }
+    },
+
+    "columns": {
+      "base": [
+        "place_official_name",
+        "place_official_link",
+        "place_type",
+        "address_line1",
+        "city_uid",
+        "state_uid",
+        "country_uid",
+        "distance_miles",
+        "walkable",              "price_band",
+        "review_score",          "reviews_count",
+        "tags",
+        "source_domain",
+        "source_page",
+        "notes"
+      ],
+      "hotel_extra": [
+        "loyalty_brand",
+        "resort_fee_note",
+        "parking_note",
+        "pet_friendly",
+        "cancellation_window"
+      ],
+      "restaurant_extra": [
+        "cuisine",
+        "reservations_link",
+        "outdoor_seating",
+        "takes_reservations"
+      ],
+      "rvpark_extra": [
+        "hookups",
+        "pull_through",
+        "rig_length_max",
+        "dump_station",
+        "pets_allowed"
+      ],
+      "airbnb_extra": [
+        "superhost",
+        "bedrooms",
+        "sleeps",
+        "entire_home"
+      ],
+      "site_extra": [
+        "category",
+        "hours_note",
+        "entry_fee_note"
+      ],
+      "park_extra": [
+        "category",
+        "hours_note",
+        "entry_fee_note"
+      ]
+    },
+
+    "extraction": {
+      "allowed_sources": "official domains; major travel/meta (e.g., marriott.com, hilton.com, booking.com, expedia.com, google.com/maps/place, yelp.com/biz, opentable.com); prioritize official first",
+      "price_band_norm": "map textual $ indicators to $, $$, $$$, $$$$; if numeric price ranges appear, map by quartiles",
+      "review_norm": "extract star or numeric score; clamp 0..5; reviews_count integer when available",
+      "distance_calc": "if centerpoint available and candidate has lat/long in its map link, compute haversine miles; otherwise leave blank",
+      "walkable_rule": "walkable = 'y' when distance_miles <= 0.5; else 'n' or '' when unknown",
+      "pet_friendly_rule": "tag as pet-friendly when explicitly listed on official or aggregator page; do not infer",
+      "tags_build": "deterministic, semicolon-free comma list (e.g., 'pet-friendly, free-parking, breakfast')"
+    },
+
+    "output": {
+      "preview_shape": {
+        "generated_at": "ISO",
+        "place_type": "string",
+        "center": { "city_uid": "string", "state_uid": "string", "country_uid": "string", "near_venue_uid": "string|''" },
+        "filters": { "radius_miles": "number", "price_band": "string|''", "min_review_score": "number|''", "chains": "allow|exclude|''", "include_labels": "string|''", "exclude_labels": "string|''" },
+        "columns": ["…"],
+        "rows": [
+          {
+            "place_official_name": "string",
+            "place_official_link": "string",
+            "place_type": "hotel|restaurant|…",
+            "address_line1": "string|''",
+            "city_uid": "string",
+            "state_uid": "string",
+            "country_uid": "string",
+            "distance_miles": "number|''",
+            "walkable": "y|n|''",
+            "price_band": "$|$$|$$$|$$$$|''",
+            "review_score": "number|''",
+            "reviews_count": "number|''",
+            "tags": "string|''",
+            "source_domain": "string",
+            "source_page": "string",
+            "notes": "string|''",
+            "loyalty_brand": "string|''",
+            "resort_fee_note": "string|''",
+            "parking_note": "string|''",
+            "pet_friendly": "y|n|''",
+            "cancellation_window": "string|''",
+            "cuisine": "string|''",
+            "reservations_link": "string|''",
+            "outdoor_seating": "y|n|''",
+            "takes_reservations": "y|n|''",
+            "hookups": "string|''",
+            "pull_through": "y|n|''",
+            "rig_length_max": "number|''",
+            "dump_station": "y|n|''",
+            "pets_allowed": "y|n|''",
+            "superhost": "y|n|''",
+            "bedrooms": "number|''",
+            "sleeps": "number|''",
+            "entire_home": "y|n|''",
+            "category": "string|''",
+            "hours_note": "string|''",
+            "entry_fee_note": "string|''",
+            "confidence_score": "0..100"
+          }
+        ],
+        "diagnostics": {
+          "sources_used": ["domain1", "domain2", "…"],
+          "candidate_counts": { "scanned": 0, "deduped": 0, "returned": 0 },
+          "notes": "facts-only"
+        }
+      },
+      "save_mode": "When save=='y', emit a CSV-as-text file (UTF-8, LF) with the same columns & rows.",
+      "save_path_template": "items/agents/curations/{place_type}/{near_key}-{yyyymmdd}{dash_hint}.txt",
+      "near_key_rule": "prefer near_venue_uid; else city_uid (or city_uid+state_uid)",
+      "dash_hint_rule": "prepend '-' + filename_hint if provided"
+    },
+
+    "errors": {
+      "on_missing_normalizer": "hard stop with needs_normalizer",
+      "on_unusable_centerpoint": "proceed without distance/walkable; annotate diagnostics",
+      "on_zero_results": "return empty rows with diagnostics.notes='no candidates matched filters'"
+    },
+
+    "next_steps": {
+      "promote": "Operator can select rows and run add_place for each with the official link/name; this task intentionally does not write place cards.",
+      "audit": "Rows include source_domain/source_page for quick manual verification before promotion."
+    }
+  }
+}
