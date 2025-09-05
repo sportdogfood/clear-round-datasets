@@ -1,0 +1,33 @@
+PLACES — OPERATOR CONTRACT (v1.0)
+
+SCOPE & TRUTH
+- Single schema for hotels, restaurants, airbnbs, rvparks, sites, parks. Determined by place_type.
+- Filenames are flat and equal to UID: items/index/{plural}/{place_uid}.json where plural∈{hotels,airbnbs,rvparks,restaurants,sites,parks}.
+
+REQUIRED INPUTS (Task: add_place)
+- place_type      : hotel | restaurant | airbnb | rvpark | site | park
+- link            : HTTPS to official or candidate page (hint)
+- name            : candidate title (hint)
+- city_uid        : required
+- state_uid       : required
+- country_uid     : required
+- aka             : optional (pipe-delimited), used as hints
+
+WHAT THE SYSTEM CONFIRMS / DERIVES
+- place_official_link : canonical HTTPS on same domain (follow redirects)
+- place_official_name : confirmed from official page (fallback to hint if not contradicted)
+- place_display_name  : copy of official name
+- place_uid           : slug(official name); on collision append -{city stem}
+- source_uids         : domain slug of official link
+- keywords            : deterministic set from official name + aka + city_uid + state_uid (lowercased, deduped, capped)
+- place_city/state    : friendly names from normalizers (convenience only)
+- created_date, last_updated
+- Optional relations: primary_venue_uid, near_venue_uids[] (must end -venue if provided)
+- Geo parse (no geocoder): if a Google Maps pin exists on official pages, parse lat/long from the URL; store as strings.
+
+GUARDS / STOPS
+- Hard-stop if: link not HTTPS; link not official; city/state/country normalizers missing; invalid place_type.
+- Duplicates: choose first ranked candidate, set git_status=needs_review, append facts-only note listing alternates in PREVIEW diagnostics.
+
+PREVIEW → COMMIT
+- PREVIEW shows full file and target path. No write without explicit COMMIT.
