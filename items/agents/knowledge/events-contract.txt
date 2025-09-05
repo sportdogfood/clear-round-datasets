@@ -1,1 +1,57 @@
-"json": "EVENTS — OPERATOR CONTRACT (v1.0)\n\nSCOPE & TRUTH\n- Facts-only. Operator inputs are HINTS; system confirms from official sources.\n- All dates = YYYY-MM-DD (ET). Official links must be HTTPS and on the official site.\n- Filenames are flat and equal to UID: items/index/events/{event_uid}.json\n\nREQUIRED INPUTS (Task: add_event)\n- link            : HTTPS to official or candidate page (hint)\n- name            : candidate title (hint)\n- start           : YYYY-MM or YYYY-MM-DD (hub start)\n- organizer_uid   : existing organizer UID\n- venue_uid OR venue_hint (venue gate: confirm / input / exit)\n\nOPTIONAL INPUTS\n- end             : YYYY-MM-DD (hub end)\n- is_series       : y | n | auto\n- series_label    : e.g., Circuit, Spring (for display purposes only)\n- total_legs_hint : integer (for is_series=y|auto)\n- public_leg_label: preferred public label for legs (e.g., Week)\n- event_description: short factual 1–2 lines\n- is_finals       : y | n (if omitted, detector may set y when confident; never auto-set n)\n\nWHAT THE SYSTEM CONFIRMS / DERIVES\n- Canonical URL (HTTPS) on the same domain (follow redirects).\n- Official name from the official page; fall back to hint only when not contradicted.\n- Display name = official name (copy).\n- event_uid = slugify( sanitize_official_name(official name) ), stripped of venue/organizer/sponsors/ratings/years/common series words.\n- Sources: source_uids from domain slug (dots→hyphens; e.g., usef.org→usef-org).\n- Relations: venue_uid (required), organizer_uid (required). If city/state/country missing, inherit from venue on refresh.\n\nSERIES / LEGS\n- If is_series=y|auto, build a hub + N legs fully inside [hub start..hub end], non-overlapping.\n- UIDs: hub_uid = event_uid; leg UIDs = {hub_uid}-1..N.\n- Hub fields: event_leg_uids=[ordered leg UIDs], series_total=N.\n- Leg fields: hub_uid, series_index (1-based), series_total=N.\n- Names: leg official names mirror the hub (no Leg/Week number). Display defaults to date range; if public_leg_label provided, render “Hub — Week N”.\n\nDERIVED FIELDS (set by refresh-derived)\n- created_date, last_updated\n- yyyymm\n- event_duration (days; exclusive end)\n- event_current_status (past|live|upcoming vs today ET)\n- days_until_start, days_until_end\n- event_estimated_next_start_date (if is_annual=y)\n- month_uids (array of YYYY-MM intersecting window)\n- year_uid (YYYY from start)\n- season_uid (winter|spring|summer|fall from start)\n- week_uids (legs only; ISO weeks, e.g., 2026-W03)\n- day_uids (legs only; each YYYY-MM-DD in leg window)\n\nGUARDS / STOPS\n- Hard-stop if: link not HTTPS; link not official; venue/organizer unresolved; normalizers missing.\n- Series guards: legs must sit fully inside hub; no overlaps; leg UIDs must be hub_uid-N.\n\nPREVIEW → COMMIT\n- PREVIEW always shows full file(s) and target path(s). Nothing writes without explicit COMMIT.\n"
+EVENTS — OPERATOR CONTRACT (v1.0)
+
+SCOPE & TRUTH
+- Facts-only. Operator inputs are HINTS; system confirms from official sources.
+- All dates = YYYY-MM-DD (ET). Official links must be HTTPS and on the official site.
+- Filenames are flat and equal to UID: items/index/events/{event_uid}.json
+
+REQUIRED INPUTS (Task: add_event)
+- link            : HTTPS to official or candidate page (hint)
+- name            : candidate title (hint)
+- start           : YYYY-MM or YYYY-MM-DD (hub start)
+- organizer_uid   : existing organizer UID
+- venue_uid OR venue_hint (venue gate: confirm / input / exit)
+
+OPTIONAL INPUTS
+- end             : YYYY-MM-DD (hub end)
+- is_series       : y | n | auto
+- series_label    : e.g., Circuit, Spring (for display purposes only)
+- total_legs_hint : integer (for is_series=y|auto)
+- public_leg_label: preferred public label for legs (e.g., Week)
+- event_description: short factual 1–2 lines
+- is_finals       : y | n (if omitted, detector may set y when confident; never auto-set n)
+
+WHAT THE SYSTEM CONFIRMS / DERIVES
+- Canonical URL (HTTPS) on the same domain (follow redirects).
+- Official name from the official page; fall back to hint only when not contradicted.
+- Display name = official name (copy).
+- event_uid = slugify( sanitize_official_name(official name) ), stripped of venue/organizer/sponsors/ratings/years/common series words.
+- Sources: source_uids from domain slug (dots→hyphens; e.g., usef.org→usef-org).
+- Relations: venue_uid (required), organizer_uid (required). If city/state/country missing, inherit from venue on refresh.
+
+SERIES / LEGS
+- If is_series=y|auto, build a hub + N legs fully inside [hub start..hub end], non-overlapping.
+- UIDs: hub_uid = event_uid; leg UIDs = {hub_uid}-1..N.
+- Hub fields: event_leg_uids=[ordered leg UIDs], series_total=N.
+- Leg fields: hub_uid, series_index (1-based), series_total=N.
+- Names: leg official names mirror the hub (no Leg/Week number). Display defaults to date range; if public_leg_label provided, render “Hub — Week N”.
+
+DERIVED FIELDS (set by refresh-derived)
+- created_date, last_updated
+- yyyymm
+- event_duration (days; exclusive end)
+- event_current_status (past|live|upcoming vs today ET)
+- days_until_start, days_until_end
+- event_estimated_next_start_date (if is_annual=y)
+- month_uids (array of YYYY-MM intersecting window)
+- year_uid (YYYY from start)
+- season_uid (winter|spring|summer|fall from start)
+- week_uids (legs only; ISO weeks, e.g., 2026-W03)
+- day_uids (legs only; each YYYY-MM-DD in leg window)
+
+GUARDS / STOPS
+- Hard-stop if: link not HTTPS; link not official; venue/organizer unresolved; normalizers missing.
+- Series guards: legs must sit fully inside hub; no overlaps; leg UIDs must be hub_uid-N.
+
+PREVIEW → COMMIT
+- PREVIEW always shows full file(s) and target path(s). Nothing writes without explicit COMMIT.
