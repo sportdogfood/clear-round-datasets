@@ -1,0 +1,80 @@
+# Linkage & Refresh Rails — v1
+# Scope: venue↔event backrefs, location inheritance, and derived updates
+# Last updated: 2025-09-04 (America/New_York)
+
+Purpose
+-------
+Codify how events and venues reference each other, what gets derived after initial create, and which fields may be inherited (without overwriting inputs).
+
+Venue ↔ Event Linkage (symmetric)
+---------------------------------
+- Events carry: `venue_uid` (single, must end `-venue`) and `organizer_uid`.
+- Venues carry: `events_uids: [...]` (hub + legs).
+- On **add-event COMMIT**:
+  - Append hub/leg UIDs to the venue’s `events_uids` (idempotent; de-dup).
+  - Do not modify event inputs beyond what the task produced.
+- On **venue edits**:
+  - Keep `events_uids` authoritative for backrefs; no implicit removal unless explicitly requested.
+
+Series Model (flat but related)
+-------------------------------
+- **Hub UID** (series): e.g., `desert-circuit`
+- **Leg UIDs**: `desert-circuit-1 … desert-circuit-N`
+- Files are flat (no folders). **Filename == UID**.
+- Each leg stores:
+  - `hub_uid` (the hub’s UID)
+  - `series_index` (1-based)
+  - `series_total`
+  - `leg_label` = "Leg N" (internal ordering only; never shown to users)
+- Names:
+  - `event_official_name` (hub & legs): hub’s official title only (no “Leg/Week”)
+  - `event_display_name` (legs): date range (e.g., `Desert Circuit — Jan 20–25, 2026`) or, if configured, a public pattern like “Week N”
+  - UIDs/filenames **never** include “series”, “leg”, or “week” words beyond the leg IDs themselves.
+
+Refresh-Derived (events & legs)
+-------------------------------
+Run after initial create; touches **derived-only** fields. Inputs are never overwritten.
+- Time-derived:
+  - `yyyymm` (YYYYMM from `event_official_start_date`)
+  - Optional index stems: `year_uid`, `month_uid`, `season_uid` (if your indexer emits them)
+  - `event_duration` (days between start/end; current rule = exclusive end)
+  - `event_current_status` (past | live | upcoming) vs today (America/New_York)
+  - `days_until_start`, `days_until_end` (signed integers)
+  - If `is_annual="y"`: `event_estimated_next_start_date` ≈ +1 year
+- Series consistency checks (no write if violated):
+  - Every leg window must sit **fully inside** the hub window.
+  - Legs must be **non-overlapping** (ordered by date).
+  - Missing `series_index/total` are filled if dates + total are known.
+
+Location Inheritance (events from venue)
+----------------------------------------
+- Fields considered: `city_uid`, `state_uid`, `country_uid`.
+- Rule: If the event is **missing** any of these, fill from the linked `venue_uid`.
+- Never overwrite values that are already present on the event.
+- Airports/weather are not copied; they’re used by indices/lookups.
+
+Indices (read-only artifacts)
+-----------------------------
+- Rebuilt on demand (after refresh) and stored under `items/index/`.
+- Recommended facets:
+  - **by_time**: `byYear`, `byMonth`, `bySeason`, `byWeek`, `next7d`, `next30d`
+  - **by_location**: `byCity`, `byState`, `byCountry`
+  - **by_relation**: `byVenue`, `byOrganizer`
+  - **by_label**: `label_uid → [card_uids]`
+- Computed proximity/“walking-distance” type buckets live **only in indices**, not as labels on cards.
+
+Guards & Failure Modes
+----------------------
+- `venue_uid` must end `-venue`; reject otherwise.
+- Official links must be HTTPS.
+- Relations must resolve (no dangling UIDs); else `needs_normalizer`.
+- No ad-hoc values. If uncertain, halt with `needs_review` or `needs_source`.
+- Facts-only: no tone/POV in entity cards.
+
+Operator Notes
+--------------
+- Use Airtable (or your staging tool) to massage names/UIDs on bulk imports.
+- After COMMITing hub + legs, run:
+  - `refresh_derived` (targeted or family-wide)
+  - `index_cards` (to update all facets)
+- If you observe drift, paste a session `RESET` line to reload manifest/rules and re-assert these rails.
