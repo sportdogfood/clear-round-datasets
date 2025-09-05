@@ -1,6 +1,6 @@
 {
   "name": "place-rules",
-  "version": "v3.2",
+  "version": "v3.3",
   "table": "places",
   "prefix": "place_",
   "uid_immutable": true,
@@ -101,7 +101,102 @@
     "flags": { "is_official": "y|n", "is_favorite": "y|n" }
   },
 
+  "typed_input_aliases": {
+    "notes": "Allow operators to use type-prefixed inputs; we map to canonical fields before validation.",
+    "hotel": {
+      "hotel_link": "user_input_place_link",
+      "hotel_name": "user_input_place_name",
+      "hotel_city": "city_uid",
+      "hotel_state": "state_uid",
+      "hotel_country": "country_uid",
+      "hotel_address_line1": "place_address_line1",
+      "hotel_address_line2": "place_address_line2",
+      "hotel_zip": "place_zip",
+      "hotel_google_pin": "place_google_pin",
+      "hotel_lat": "place_geo_lat",
+      "hotel_long": "place_geo_long",
+      "hotel_phone": "place_phone",
+      "hotel_email": "place_email"
+    },
+    "restaurant": {
+      "restaurant_link": "user_input_place_link",
+      "restaurant_name": "user_input_place_name",
+      "restaurant_city": "city_uid",
+      "restaurant_state": "state_uid",
+      "restaurant_country": "country_uid",
+      "restaurant_address_line1": "place_address_line1",
+      "restaurant_address_line2": "place_address_line2",
+      "restaurant_zip": "place_zip",
+      "restaurant_google_pin": "place_google_pin",
+      "restaurant_lat": "place_geo_lat",
+      "restaurant_long": "place_geo_long",
+      "restaurant_phone": "place_phone",
+      "restaurant_email": "place_email"
+    },
+    "rvpark": {
+      "rvpark_link": "user_input_place_link",
+      "rvpark_name": "user_input_place_name",
+      "rvpark_city": "city_uid",
+      "rvpark_state": "state_uid",
+      "rvpark_country": "country_uid",
+      "rvpark_address_line1": "place_address_line1",
+      "rvpark_address_line2": "place_address_line2",
+      "rvpark_zip": "place_zip",
+      "rvpark_google_pin": "place_google_pin",
+      "rvpark_lat": "place_geo_lat",
+      "rvpark_long": "place_geo_long",
+      "rvpark_phone": "place_phone",
+      "rvpark_email": "place_email"
+    },
+    "airbnb": {
+      "airbnb_link": "user_input_place_link",
+      "airbnb_name": "user_input_place_name",
+      "airbnb_city": "city_uid",
+      "airbnb_state": "state_uid",
+      "airbnb_country": "country_uid",
+      "airbnb_address_line1": "place_address_line1",
+      "airbnb_address_line2": "place_address_line2",
+      "airbnb_zip": "place_zip",
+      "airbnb_google_pin": "place_google_pin",
+      "airbnb_lat": "place_geo_lat",
+      "airbnb_long": "place_geo_long",
+      "airbnb_phone": "place_phone",
+      "airbnb_email": "place_email"
+    },
+    "site": {
+      "site_link": "user_input_place_link",
+      "site_name": "user_input_place_name",
+      "site_city": "city_uid",
+      "site_state": "state_uid",
+      "site_country": "country_uid",
+      "site_address_line1": "place_address_line1",
+      "site_address_line2": "place_address_line2",
+      "site_zip": "place_zip",
+      "site_google_pin": "place_google_pin",
+      "site_lat": "place_geo_lat",
+      "site_long": "place_geo_long",
+      "site_phone": "place_phone",
+      "site_email": "place_email"
+    },
+    "park": {
+      "park_link": "user_input_place_link",
+      "park_name": "user_input_place_name",
+      "park_city": "city_uid",
+      "park_state": "state_uid",
+      "park_country": "country_uid",
+      "park_address_line1": "place_address_line1",
+      "park_address_line2": "place_address_line2",
+      "park_zip": "place_zip",
+      "park_google_pin": "place_google_pin",
+      "park_lat": "place_geo_lat",
+      "park_long": "place_geo_long",
+      "park_phone": "place_phone",
+      "park_email": "place_email"
+    }
+  },
+
   "normalize_on_add": {
+    "accept_typed_aliases": true,
     "from_inputs": [
       "user_input_place_link",
       "user_input_place_name",
@@ -189,6 +284,7 @@
 
   "notes": {
     "hints": "Use user_input_place_link/name strictly as hints. Persist only place_official_* fields.",
+    "typed_inputs": "When accept_typed_aliases is true, any provided type-prefixed inputs are mapped to canonical fields before validation.",
     "deprecated": "place_name and place_link are legacy; new writes should set only place_official_*."
   }
 }
