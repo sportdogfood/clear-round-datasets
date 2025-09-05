@@ -1,9 +1,9 @@
 {
   "path": "items/agents/curate-places-rules.json",
-  "message": "update: curate_places v1.4 — add target_time (month_uids/season_uid/start/end) + diagnostics with events_in_window when near_venue_uid present; filename time_key",
+  "message": "update: curate_places v1.6 — add light, heuristic enrichments (EV charging, valet, wheelchair, trailer parking, pet fee, delivery/takeout, RV amps/Wi-Fi, Airbnb min nights/cleaning fee/cancel policy, site/park dog-allowed) without expanding label set",
   "json": {
     "name": "curate-places",
-    "version": "v1.4",
+    "version": "v1.6",
     "task_id": "curate_places",
     "aliases": [
       "curate-places","curate_places",
@@ -35,8 +35,7 @@
       "indices": {
         "by_time": "items/index/by_time.json",
         "by_relation": "items/index/by_relation.json"
-      },
-      "notes": "Search public web; emit table preview and optional CSV; no card writes."
+      }
     },
 
     "inputs": {
@@ -49,11 +48,12 @@
 
       "near_venue_uid": "optional; enables distance/walkable",
       "radius_miles": "number; default 5; min 0.1; max 50",
-      "price_band": "$|$$|$$$|$$$$|$$-$$$|$-$$|$$$-$$$$ (optional)",
+
+      "price_band": "$|$$|$$$|$$$$|$$-$$$|$-$$|$$$-$$$$ (optional; targeting preference)",
       "min_review_score": "0..5 (optional)",
       "chain_mode": "allow|exclude|only (default allow)",
-      "include_labels": "optional pipe list of GLOBAL label_uids from index/labels",
-      "exclude_labels": "optional pipe list of GLOBAL label_uids from index/labels",
+      "include_labels": "optional pipe list from global index/labels",
+      "exclude_labels": "optional pipe list from global index/labels",
       "max_results": "default 12; hard max 40",
       "save": "y|n (default y)",
       "filename_hint": "optional suffix for saved CSV-as-text",
@@ -61,7 +61,9 @@
       "target_month_uids": "optional pipe list of YYYY-MM",
       "target_season_uid": "optional; winter|spring|summer|fall",
       "target_start_date": "optional; YYYY-MM-DD",
-      "target_end_date": "optional; YYYY-MM-DD"
+      "target_end_date": "optional; YYYY-MM-DD",
+
+      "strict_price": "y|n (default n) — if y, drop candidates with price_band_match='n'"
     },
 
     "attributes_lock": {
@@ -72,7 +74,8 @@
           "$-$$": "$$",
           "$$-$$$": "$$-$$$",
           "$$$-$$$$": "$$$"
-        }
+        },
+        "band_order": ["$","$$","$$$","$$$$"]
       },
       "min_review_score": { "min": 0.0, "max": 5.0, "step": 0.1 },
       "chain_mode": { "allowed": ["allow","exclude","only"], "default": "allow" }
@@ -84,7 +87,7 @@
         "signals": [
           "distance (if centerpoint)",
           "review_score",
-          "price_band_match",
+          "price_band_distance (smaller is better; exact=0, adjacent=1, else large)",
           "label_inclusions",
           "official_domain_score"
         ],
@@ -96,7 +99,7 @@
         "address_fallback": "if no address, dedupe on domain+name"
       },
       "chain_detection": {
-        "brand_terms": ["marriott","hilton","ihg","hyatt","choice","best western","accor","radisson","wyndham","kimpton","joie de vivre","ritz-carlton","four seasons","fairmont","waldorf","hampton","courtyard","residence inn","holiday inn","intercontinental","doubletree","embassy suites","ritz","st. regis","westin","sheraton","moxy","aloft"],
+        "brand_terms": ["marriott","hilton","ihg","hyatt","choice","best western","accor","radisson","wyndham","kimpton","ritz-carlton","four seasons","fairmont","waldorf","hampton","courtyard","residence inn","holiday inn","intercontinental","doubletree","embassy suites","st. regis","westin","sheraton","moxy","aloft"],
         "emit_fields": { "loyalty_brand": "Brand name (title-cased) when confidently detected" },
         "enforce_by_mode": {
           "allow": "no-op",
@@ -105,13 +108,77 @@
         }
       },
       "target_time": {
-        "notes": "Time context for targeting and naming only; places are not filtered by time.",
         "normalize": {
           "prefer_start_end_when_both": true,
-          "month_uids_to_range": "if only month_uids provided, compute start as first day of earliest month and end as last day of latest month (calendar end).",
-          "season_uid_passthrough": "season_uid is metadata only unless a start/end is also provided."
+          "month_uids_to_range": "if only month_uids provided, compute start as first day of earliest month and end as last day of latest month"
         },
         "filename_time_key_rule": "time_key = start_end_if_available else month_uids_joined else season_uid; format start_end as YYYYMMDD-YYYYMMDD; month list as YYYYMM[+YYYYMM…]"
+      },
+      "price_model": {
+        "detect": {
+          "currency": "USD default; infer from symbol ($, C$, AU$) or ISO codes if present",
+          "unit": "hotel: night; restaurant: per-person; rvpark: site-night; airbnb: night; site/park: entry",
+          "raw_capture": "store short price snippets into price_evidence[] (preview-only)"
+        },
+        "normalize": {
+          "to_band": "map detected numeric or $-count to $, $$, $$$, $$$$; keep price_min/price_max",
+          "band_distance": "absolute steps between normalized band and requested price_band; if no input band, distance=0",
+          "match": "price_band_match = y|partial|n",
+          "strict_filter": "if strict_price=y and price_band_match='n' → drop row"
+        }
+      },
+      "light_enrichment": {
+        "notes": "Heuristic, text-based booleans/values; preview-only confidence implied by confidence_score.",
+        "detect_rules": {
+          "ev_charging": {
+            "if_text": ["ev charging","ev charger","electric vehicle charging","tesla charger"],
+            "count_regex": "(\\d+)\\s*(ev|electric)\\s*chargers?",
+            "emit": ["ev_charging","ev_charger_count"]
+          },
+          "valet_available": {
+            "if_text": ["valet parking","valet service"],
+            "emit": ["valet_available"]
+          },
+          "wheelchair_accessible": {
+            "if_text": ["wheelchair accessible","ada accessible","accessible entrance"],
+            "emit": ["wheelchair_accessible"]
+          },
+          "trailer_parking": {
+            "if_text": ["trailer parking","horse trailer","oversize parking","rv parking (hotel)"],
+            "emit": ["trailer_parking"]
+          },
+          "pet_fee": {
+            "if_text": ["pet fee","pet deposit","pet charge"],
+            "amount_regex": "\\$\\s*([0-9]+(?:\\.[0-9]{1,2})?)",
+            "unit_hints": ["per night","per stay","one-time","per pet"],
+            "emit": ["pet_fee_amount","pet_fee_unit"]
+          },
+          "breakfast_included": {
+            "if_text": ["breakfast included","free breakfast","complimentary breakfast"],
+            "emit": ["breakfast_included"]
+          },
+          "delivery_takeout": {
+            "if_text_delivery": ["delivery","we deliver","uber eats","doordash","grubhub"],
+            "if_text_takeout": ["takeout","to-go","pickup"],
+            "emit": ["delivery","takeout"]
+          },
+          "rv_amp_wifi": {
+            "if_text_50": ["50 amp","50-amp","50amp"],
+            "if_text_30": ["30 amp","30-amp","30amp"],
+            "if_text_wifi": ["wifi","wi-fi","wireless internet"],
+            "emit": ["amp_50","amp_30","wifi"]
+          },
+          "airbnb_meta": {
+            "min_nights_regex": "(?:minimum|min\\.?)[^0-9]{0,8}([0-9]{1,2})\\s+nights?",
+            "cleaning_fee_regex": "cleaning fee[^$]*\\$\\s*([0-9]+(?:\\.[0-9]{1,2})?)",
+            "cancel_policy_hints": ["flexible","moderate","strict","firm"],
+            "emit": ["min_nights","cleaning_fee_amount","cancellation_policy"]
+          },
+          "site_park_pets": {
+            "if_text_dog": ["dogs allowed","pets allowed","leashed dogs"],
+            "emit": ["dog_allowed"]
+          }
+        }
       }
     },
 
@@ -119,16 +186,47 @@
       "base": [
         "place_official_name","place_official_link","place_type",
         "address_line1","city_uid","state_uid","country_uid",
-        "distance_miles","walkable","price_band",
+        "distance_miles","walkable",
+
+        "price_band_input","price_band_detected","price_band",
+        "price_band_match","price_band_distance",
+        "price_currency","price_unit","price_min","price_max",
+
         "review_score","reviews_count",
         "tags","source_domain","source_page","notes"
       ],
-      "hotel_extra": ["loyalty_brand","resort_fee_note","parking_note","pet_friendly","cancellation_window"],
-      "restaurant_extra": ["cuisine","reservations_link","outdoor_seating","takes_reservations"],
-      "rvpark_extra": ["hookups","pull_through","rig_length_max","dump_station","pets_allowed"],
-      "airbnb_extra": ["superhost","bedrooms","sleeps","entire_home"],
-      "site_extra": ["category","hours_note","entry_fee_note"],
-      "park_extra": ["category","hours_note","entry_fee_note"]
+      "hotel_extra": [
+        "loyalty_brand",
+        "nightly_rate_min","nightly_rate_max","nightly_rate_avg",
+        "resort_fee_note","resort_fee_amount",
+        "parking_note","parking_fee_amount","parking_fee_unit",
+        "pet_friendly","cancellation_window",
+        "breakfast_included","valet_available","wheelchair_accessible",
+        "ev_charging","ev_charger_count","trailer_parking",
+        "pet_fee_amount","pet_fee_unit"
+      ],
+      "restaurant_extra": [
+        "cuisine","reservations_link","outdoor_seating","takes_reservations",
+        "delivery","takeout","wheelchair_accessible"
+      ],
+      "rvpark_extra": [
+        "hookups","pull_through","rig_length_max","dump_station","pets_allowed",
+        "site_rate_min","site_rate_max","price_currency",
+        "amp_50","amp_30","wifi","ev_charging","ev_charger_count"
+      ],
+      "airbnb_extra": [
+        "superhost","bedrooms","sleeps","entire_home",
+        "nightly_rate_min","nightly_rate_max","nightly_rate_avg","price_currency",
+        "min_nights","cleaning_fee_amount","cancellation_policy"
+      ],
+      "site_extra": [
+        "category","hours_note","entry_fee_note","entry_fee_min","entry_fee_max","price_currency",
+        "dog_allowed","wheelchair_accessible"
+      ],
+      "park_extra": [
+        "category","hours_note","entry_fee_note","entry_fee_min","entry_fee_max","price_currency",
+        "dog_allowed","wheelchair_accessible"
+      ]
     },
 
     "labels_mapping": {
@@ -203,11 +301,12 @@
 
     "extraction": {
       "allowed_sources": "official domains; trusted travel/meta (marriott.com, hilton.com, booking.com, expedia.com, google.com/maps/place, yelp.com/biz, opentable.com, airbnb.com, recreation.gov, nps.gov)",
-      "price_band_norm": "map textual $ indicators to $, $$, $$$, $$$$; normalize simple ranges via attributes_lock",
+      "price_band_norm": "map textual $ indicators and numeric ranges to normalized band; also fill price_min/max, currency, unit",
       "review_norm": "extract star/number; clamp 0..5; reviews_count integer",
       "distance_calc": "if centerpoint and candidate pin has lat/long, compute haversine miles; else blank",
       "walkable_rule": "walkable=y when distance_miles <= 0.5; else n when known; blank when unknown",
-      "tags_build": "compose from labels_mapping; final set filtered to global label_uids only"
+      "price_evidence_capture": "collect short snippets/phrases where price was seen; include in preview.diagnostics only",
+      "light_enrichment_apply": "apply resolution.light_enrichment.detect_rules; set booleans/values when matched (strings 'y'/'n' where applicable)"
     },
 
     "output": {
@@ -215,7 +314,15 @@
         "generated_at": "ISO",
         "place_type": "string",
         "center": { "city_uid": "string", "state_uid": "string", "country_uid": "string", "near_venue_uid": "string|''" },
-        "filters": { "radius_miles": "number", "price_band": "string|''", "min_review_score": "number|''", "chain_mode": "allow|exclude|only", "include_labels": "string|''", "exclude_labels": "string|''" },
+        "filters": {
+          "radius_miles": "number",
+          "price_band": "string|''",
+          "min_review_score": "number|''",
+          "chain_mode": "allow|exclude|only",
+          "include_labels": "string|''",
+          "exclude_labels": "string|''",
+          "strict_price": "y|n"
+        },
         "target_time": {
           "month_uids": "string|''",
           "season_uid": "string|''",
@@ -229,6 +336,7 @@
           "sources_used": ["domain1","domain2"],
           "candidate_counts": { "scanned": 0, "deduped": 0, "returned": 0 },
           "events_in_window": { "count": 0, "sample_event_uids": [] },
+          "price_evidence": ["short snippet 1","short snippet 2"],
           "notes": "facts-only"
         }
       },
