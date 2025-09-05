@@ -1,120 +1,117 @@
 {
-  "path": "items/agents/refresh-derived-rules.json",
-  "message": "add: refresh-derived-card-data task (events, venues, places)",
-  "json": {
-    "name": "refresh-derived-card-data",
-    "version": "v1",
-    "task_id": "refresh_derived",
-    "aliases": ["refresh-derived-card-data", "refresh_derived", "refresh-derived"],
-    "facts_only": true,
+  "name": "refresh-derived-card-data",
+  "version": "v1.2",
+  "task_id": "refresh_derived",
+  "aliases": ["refresh-derived-card-data","refresh_derived","refresh-derived"],
+  "facts_only": true,
 
-    "policy": {
-      "timezone": "America/New_York",
-      "date_format": "YYYY-MM-DD",
-      "never_overwrite_inputs": true,
-      "touch_last_updated_on_change": true,
-      "relations_must_resolve": true
+  "policy": {
+    "timezone": "America/New_York",
+    "date_format": "YYYY-MM-DD",
+    "never_overwrite_inputs": true,
+    "touch_last_updated_on_change": true,
+    "relations_must_resolve": true
+  },
+
+  "scope_policy": {
+    "families": ["events","venues","places"],
+    "default_scope": "all",
+    "inputs": {
+      "scope": "events|venues|places|all",
+      "uids": "optional; '|' separated list of UIDs to target",
+      "dry_run": "y|n (default n)"
+    }
+  },
+
+  "events": {
+    "derive": {
+      "yyyymm": "from event_official_start_date → YYYYMM",
+      "event_duration": "days_between(start, end) exclusive; skip if end missing",
+      "event_current_status": {
+        "rule": "vs today (ET)",
+        "labels": { "past": "end < today OR (start < today AND end missing)", "live": "start <= today && today <= end", "upcoming": "start > today" }
+      },
+      "days_until_start": "days_between(today, event_official_start_date)",
+      "days_until_end": "days_between(today, event_official_end_date) when present",
+      "event_estimated_next_start_date": "if is_annual == 'y' and start present, add ~1 year (same month/day when possible)",
+      "month_uids": "all distinct YYYY-MM intersecting [start..end] inclusive (or [start..start] if end missing)",
+      "year_uid": "YYYY from start date",
+      "season_uid": "season from start date (US meteorological)",
+      "week_uids": "legs only: ISO weeks intersecting the leg window",
+      "day_uids": "legs only: every YYYY-MM-DD in the leg window inclusive"
     },
-
-    "scope_policy": {
-      "families": ["events", "venues", "places"],
-      "default_scope": "all",
-      "inputs": {
-        "scope":   "events|venues|places|all",
-        "uids":    "optional; '|' separated list of UIDs to target",
-        "dry_run": "y|n (default n)"
-      }
+    "inherit_from_venue": {
+      "fields": ["city_uid","state_uid","country_uid"],
+      "only_if_missing": true,
+      "venue_uid_required_suffix": "-venue"
     },
-
-    "events": {
-      "derive": {
-        "yyyymm":      "from event_official_start_date → YYYYMM",
-        "event_duration": "days_between(start, end) exclusive; skip if end missing",
-        "event_current_status": {
-          "rule": "vs today (ET)",
-          "labels": { "past": "end < today OR (start < today AND end missing)", "live": "start <= today <= end", "upcoming": "start > today" }
-        },
-        "days_until_start": "days_between(today, event_official_start_date)",
-        "days_until_end":   "days_between(today, event_official_end_date) when present",
-        "event_estimated_next_start_date": "if is_annual == 'y' and start present, add ~1 year (same month/day when possible)"
-      },
-      "inherit_from_venue": {
-        "fields": ["city_uid", "state_uid", "country_uid"],
-        "only_if_missing": true,
-        "venue_uid_required_suffix": "-venue"
-      },
-      "series_consistency": {
-        "require_legs_inside_hub": true,
-        "require_non_overlapping_legs": true,
-        "fill_series_index_if_missing": true,
-        "respect_leg_uid_rule": "leg UID should be hub_uid + '-' + series_index (1-based)"
-      },
-      "no_changes": [
-        "event_official_name",
-        "event_display_name",
-        "event_uid",
-        "hub_uid",
-        "event_leg_uids",
-        "leg_label",
-        "public_leg_label",
-        "organizer_uid",
-        "venue_uid",
-        "source_uids",
-        "label_uids"
-      ]
+    "series_consistency": {
+      "require_legs_inside_hub": true,
+      "require_non_overlapping_legs": true,
+      "fill_series_index_if_missing": true,
+      "respect_leg_uid_rule": "leg UID should be hub_uid + '-' + series_index (1-based)"
     },
-
-    "venues": {
-      "derive": {
-        "keywords": "rebuild deterministic set from venue_name + aka + city_uid + state_uid (lowercased, deduped, capped at 12)",
-        "yyyymm": "optional; if you stamp inspection months elsewhere"
-      },
-      "geo_parse": {
-        "from_google_pin": "if venue_google_pin contains '@lat,long' or 'query=lat,long', extract numeric lat/long (strings); no third-party geocoding"
-      },
-      "no_changes": [
-        "venue_name",
-        "venue_display_name",
-        "venue_uid",
-        "label_uids",
-        "organizer_uids",
-        "events_uids",
-        "source_uids"
-      ]
+    "finals_detection": {
+      "enabled": true,
+      "only_if_missing": true,
+      "bool_encoding": "yn",
+      "positive_tokens": ["final","finals","championship","championships","national championship","world cup final"],
+      "negative_context_tokens": ["qualifier","welcome","warm-up","warmup","classic","series"],
+      "sources": ["event_official_name","event_display_name","event_official_link_path"],
+      "set_rule": "set is_finals='y' only when positive and not negated; otherwise do nothing"
     },
+    "no_changes": [
+      "event_official_name",
+      "event_display_name",
+      "event_uid",
+      "hub_uid",
+      "event_leg_uids",
+      "leg_label",
+      "public_leg_label",
+      "organizer_uid",
+      "venue_uid",
+      "source_uids",
+      "label_uids",
+      "event_description"
+    ]
+  },
 
-    "places": {
-      "derive": {
-        "keywords": "rebuild deterministic set from place_name + aka + city_uid + state_uid (lowercased, deduped, capped at 12)",
-        "yyyymm": "optional; if you stamp inspection months elsewhere"
-      },
-      "geo_parse": {
-        "from_google_pin": "if place_google_pin contains '@lat,long' or 'query=lat,long', extract numeric lat/long (strings); no third-party geocoding"
-      },
-      "no_changes": [
-        "place_name",
-        "place_display_name",
-        "place_uid",
-        "label_uids",
-        "primary_venue_uid",
-        "near_venue_uids",
-        "source_uids"
-      ]
+  "venues": {
+    "derive": {
+      "keywords": "rebuild deterministic set from venue_name + aka + city_uid + state_uid (lowercased, deduped, capped at 12)"
     },
-
-    "errors": {
-      "on_missing_required_field": "skip record; flag needs_review",
-      "on_unresolved_relation": "skip record; flag needs_normalizer",
-      "on_series_violation": "skip write; include reason: outside_hub_window|overlap_detected"
+    "geo_parse": {
+      "from_google_pin": "if venue_google_pin contains '@lat,long' or 'query=lat,long', extract numeric lat/long (strings); no third-party geocoding"
     },
+    "no_changes": [
+      "venue_name","venue_display_name","venue_uid","label_uids","organizer_uids","events_uids","source_uids"
+    ]
+  },
 
-    "output": {
-      "write_mode": "only_if_changed",
-      "dry_run": "when dry_run == 'y', return plan only (no writes)",
-      "report_shape": {
-        "path": "index/{family}/{uid}.json",
-        "will_set": "object of derived fields that would change"
-      }
+  "places": {
+    "derive": {
+      "keywords": "rebuild deterministic set from place_name + aka + city_uid + state_uid (lowercased, deduped, capped at 12)"
+    },
+    "geo_parse": {
+      "from_google_pin": "if place_google_pin contains '@lat,long' or 'query=lat,long', extract numeric lat/long (strings); no third-party geocoding"
+    },
+    "no_changes": [
+      "place_name","place_display_name","place_uid","label_uids","primary_venue_uid","near_venue_uids","source_uids"
+    ]
+  },
+
+  "errors": {
+    "on_missing_required_field": "skip record; flag needs_review",
+    "on_unresolved_relation": "skip record; flag needs_normalizer",
+    "on_series_violation": "skip write; include reason: outside_hub_window|overlap_detected"
+  },
+
+  "output": {
+    "write_mode": "only_if_changed",
+    "dry_run": "when dry_run == 'y', return plan only (no writes)",
+    "report_shape": {
+      "path": "index/{family}/{uid}.json",
+      "will_set": "object of derived fields that would change"
     }
   }
 }
