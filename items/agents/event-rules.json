@@ -4,13 +4,11 @@
   "table": "events",
   "prefix": "event_",
   "uid_immutable": true,
-
   "naming": {
     "field_case": "snake_case",
     "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
     "filename_equals_uid": true
   },
-
   "base_vars": [
     "event_uid",
     "event_image",
@@ -18,14 +16,14 @@
     "event_display_name",
     "event_recordId"
   ],
-
   "uid_rule": "event_uid = slugify( sanitize_official_name(event_official_name) )",
-  "uid_requires": ["event_official_name"],
+  "uid_requires": [
+    "event_official_name"
+  ],
   "uid_patterns": {
     "hub_uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
     "leg_uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*-[1-9][0-9]*$"
   },
-
   "sanitize_official_name_policy": {
     "strip_sponsors_and_connectors": true,
     "strip_venue_name": true,
@@ -40,14 +38,28 @@
     ],
     "remove_year_tokens": true,
     "remove_rating_tokens": [
-      "CSI","CSIO","CSI*","CSI**","CSI***","CSI****","CSI*****",
-      "WCHR","USEF","Premier","AA","A"
+      "CSI",
+      "CSIO",
+      "CSI*",
+      "CSI**",
+      "CSI***",
+      "CSI****",
+      "CSI*****",
+      "WCHR",
+      "USEF",
+      "Premier",
+      "AA",
+      "A"
     ],
-    "remove_punctuation": [",","/","\"","$"],
+    "remove_punctuation": [
+      ",",
+      "/",
+      "\"",
+      "$"
+    ],
     "collapse_spaces": true,
     "title_case": true
   },
-
   "required_fields": [
     "event_official_link",
     "event_official_name",
@@ -56,7 +68,6 @@
     "created_date",
     "last_updated"
   ],
-
   "optional_fields": [
     "event_official_end_date",
     "event_description",
@@ -84,40 +95,82 @@
     "week_uids",
     "day_uids"
   ],
-
   "relations": {
-    "venue_uid":      { "type": "single", "required": true,  "must_end_with": "-venue" },
-    "organizer_uid":  { "type": "single", "required": true },
-    "hub_uid":        { "type": "single", "required": false },
-    "event_leg_uids": { "type": "multi",  "required": false },
-    "city_uid":       { "type": "single", "required": false },
-    "state_uid":      { "type": "single", "required": false },
-    "country_uid":    { "type": "single", "required": false },
-    "source_uids":    { "type": "multi",  "required": true, "min_items": 1 },
-    "label_uids":     { "type": "multi",  "required": false }
+    "venue_uid": {
+      "type": "single",
+      "required": true,
+      "must_end_with": "-venue"
+    },
+    "organizer_uid": {
+      "type": "single",
+      "required": true
+    },
+    "hub_uid": {
+      "type": "single",
+      "required": false
+    },
+    "event_leg_uids": {
+      "type": "multi",
+      "required": false
+    },
+    "city_uid": {
+      "type": "single",
+      "required": false
+    },
+    "state_uid": {
+      "type": "single",
+      "required": false
+    },
+    "country_uid": {
+      "type": "single",
+      "required": false
+    },
+    "source_uids": {
+      "type": "multi",
+      "required": true,
+      "min_items": 1
+    },
+    "label_uids": {
+      "type": "multi",
+      "required": false
+    }
   },
-
   "normalizers_required": [
-    "days","months","seasons","years",
-    "countries","states","cities",
-    "weather","airports","labels"
+    "days",
+    "months",
+    "seasons",
+    "years",
+    "countries",
+    "states",
+    "cities",
+    "weather",
+    "airports",
+    "labels"
   ],
-
   "date_policies": {
     "format": "YYYY-MM-DD",
     "macro_time_from": "hub (event) defines macro time; legs are discrete windows inside the hub",
-    "macro_outputs": ["season","month","weather_averages"]
+    "macro_outputs": [
+      "season",
+      "month",
+      "weather_averages"
+    ]
   },
-
   "source_uid_policy": {
     "construction": "domain_slug",
     "domain_slug_rule": "lowercase primary domain, dots→hyphens",
     "source_type_hint": "first path token or identifying key",
-    "flags": { "is_official": "y|n", "is_favorite": "y|n" }
+    "flags": {
+      "is_official": "y|n",
+      "is_favorite": "y|n"
+    }
   },
-
   "series_policy": {
-    "is_series_values": ["y","n","auto"],
+    "is_series_values": [
+      "y",
+      "n",
+      "auto"
+    ],
     "leg_label_scheme": "Leg N",
     "require_non_overlapping_legs": true,
     "require_legs_inside_hub": true,
@@ -128,13 +181,16 @@
       "display_name_for_legs": "default to date range; if public_leg_label set (e.g., 'Week'), render 'Hub — Week N'"
     }
   },
-
   "tags_policy": {
     "predefined_only": true,
     "labels_only": true,
-    "deprecated_fields": ["rating_tag_uid","discipline_tag_uid","event_tag_uids","name_tag_uids"]
+    "deprecated_fields": [
+      "rating_tag_uid",
+      "discipline_tag_uid",
+      "event_tag_uids",
+      "name_tag_uids"
+    ]
   },
-
   "derived": {
     "allow": true,
     "fields": {
@@ -152,19 +208,35 @@
     },
     "never_overwrite_inputs": true
   },
-
   "detection_on_add": {
     "finals_detection": {
       "enabled": true,
       "only_if_missing": true,
       "bool_encoding": "yn",
-      "positive_tokens": ["final","finals","championship","championships","national championship","world cup final"],
-      "negative_context_tokens": ["qualifier","welcome","warm-up","warmup","classic","series"],
-      "sources": ["event_official_name","event_display_name","event_official_link_path"],
+      "positive_tokens": [
+        "final",
+        "finals",
+        "championship",
+        "championships",
+        "national championship",
+        "world cup final"
+      ],
+      "negative_context_tokens": [
+        "qualifier",
+        "welcome",
+        "warm-up",
+        "warmup",
+        "classic",
+        "series"
+      ],
+      "sources": [
+        "event_official_name",
+        "event_display_name",
+        "event_official_link_path"
+      ],
       "set_rule": "set is_finals='y' only when a positive token is present and no negative-context token appears nearby; otherwise leave is_finals unset"
     }
   },
-
   "validation": {
     "official_link_must_be_https": true,
     "official_link_must_be_official_site": true,
@@ -173,7 +245,10 @@
     "halt_on_missing_normalizer": true,
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
-    "ignore_prefixes": ["dnu_","ignore_"],
+    "ignore_prefixes": [
+      "dnu_",
+      "ignore_"
+    ],
     "hub_leg_consistency": [
       "legs must sit fully inside hub window",
       "legs must be non-overlapping",
@@ -181,12 +256,28 @@
     ],
     "filename_must_equal_uid": true
   },
-
   "paths": {
     "save_path_template": "index/events/{event_uid}.json",
     "sources_input_dir": "index/sources"
   },
-
+  "path_rules": {
+    "version": "v14",
+    "decision_tree": [
+      "If is_finals = y → branch = finals",
+      "Else if is_series = y → branch = series",
+      "Else → branch = annual"
+    ],
+    "event_uid_rule": "event_uid = slugify(prefer event_official_name, else event_display_name, else name). Slugify = lowercase → ASCII → replace '&' with 'and' → remove non-alphanumerics except spaces → collapse spaces/punctuation to single '-' → trim leading/trailing '-'.",
+    "filename_rule": "filename = {event_uid}.json",
+    "directory_rule": "path = items/events/{branch}/",
+    "suggested_path_precedence": "If resolved.suggested_save_path exists and matches ^/items/events/(annual|series|finals)/[a-z0-9-]+\\.json$ and filename’s stem equals event_uid, use it (minus leading '/'). Otherwise derive from rules above.",
+    "extension_rule": "Events save as .json",
+    "validation_rule": [
+      "Ensure event_uid is non-empty",
+      "Ensure branch ∈ {annual, series, finals}",
+      "Ensure final path matches ^items/events/(annual|series|finals)/[a-z0-9-]+\\.json$"
+    ]
+  },
   "notes": {
     "event_description": "short, factual, 1–2 lines; no tone; optional; may be suggested by research task but not autogenerated here.",
     "is_finals": "operator may pass is_finals=y|n; if missing, detector may set to 'y' when confident; never auto-set 'n'."
