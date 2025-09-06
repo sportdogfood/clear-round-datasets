@@ -1,0 +1,89 @@
+{
+  "version": "v3.2",
+  "updated": "2025-09-06",
+  "task": "add_event",
+  "policy": {
+    "keys": "snake_case",
+    "bools": "yn",
+    "dates": "YYYY-MM-DD",
+    "tz": "America/New_York",
+    "filename_equals_uid": false
+  },
+  "contract": {
+    "required": [
+      "link",
+      "name",
+      "start",
+      "venue_uid"
+    ],
+    "optional": [
+      "end",
+      "organizer_uid",
+      "is_series",
+      "series_label",
+      "series_sequence",
+      "is_finals",
+      "notes",
+      "source_uids",
+      "sources"
+    ],
+    "rules": {
+      "link_https_only": true,
+      "start_format": "YYYY-MM[-DD]",
+      "end_format": "YYYY-MM[-DD]"
+    }
+  },
+  "emitter": {
+    "envelope": "commit_flat_v1",
+    "shape": [
+      "path",
+      "message",
+      "json"
+    ],
+    "path_template": "shows/annual/{event_uid}.json",
+    "message_template": "add: {event_display_name} — {event_official_start_date} to {event_official_end_date} ({venue_official_name})",
+    "content_key": "json"
+  },
+  "map": {
+    "event_official_link": "link",
+    "event_official_name": "name",
+    "event_display_name": "name",
+    "event_official_start_date": "start",
+    "event_official_end_date": "end",
+    "venue_uid": "venue_uid",
+    "organizer_uid": "organizer_uid",
+    "is_series": "is_series",
+    "is_finals": "is_finals",
+    "notes": "notes",
+    "source_uids": "source_uids",
+    "sources": "sources"
+  },
+  "derived": {
+    "event_uid": "slugify(event_display_name)",
+    "yyyymm": "format(event_official_start_date,'YYYYMM')",
+    "event_month": "format(event_official_start_date,'MMMM')",
+    "created_date": "today('America/New_York')",
+    "last_updated": "today('America/New_York')",
+    "venue_official_name": "resolve(venue_uid,'venues').venue_official_name||venue_uid"
+  },
+  "normalizers": {
+    "display_from_name": "titlecase",
+    "official_from_name": "uppercase",
+    "dates": "to_iso_no_tz_shift",
+    "bools": "yn"
+  },
+  "validations": {
+    "venue_uid_suffix_required": "-venue",
+    "date_order": "end>=start",
+    "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+  },
+  "sources": {
+    "collect": "optional",
+    "arrays": [
+      "source_uids",
+      "sources"
+    ],
+    "source_uid_rule": "{event_uid}-{source_name_slug}",
+    "source_name_slug": "slugify(source_name)"
+  }
+}
