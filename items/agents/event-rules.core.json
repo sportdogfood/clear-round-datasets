@@ -1,6 +1,6 @@
 {
   "name": "event-rules.core",
-  "version": "v1.0",
+  "version": "v1.1",
   "required_fields": [
     "event_uid",
     "event_official_name",
@@ -20,9 +20,29 @@
       "strip_sponsors": true,
       "strip_venue_name": true,
       "strip_organizer_name": true,
-      "remove_terms": ["horse show", "horse shows", "festival", "classic", "series", "presented by"],
+      "remove_terms": [
+        "horse show",
+        "horse shows",
+        "festival",
+        "classic",
+        "series",
+        "presented by"
+      ],
       "remove_year_tokens": true,
-      "remove_rating_tokens": ["CSI", "CSIO", "CSI*", "CSI**", "CSI***", "CSI****", "CSI*****", "WCHR", "USEF", "Premier", "AA", "A"]
+      "remove_rating_tokens": [
+        "CSI",
+        "CSIO",
+        "CSI*",
+        "CSI**",
+        "CSI***",
+        "CSI****",
+        "CSI*****",
+        "WCHR",
+        "USEF",
+        "Premier",
+        "AA",
+        "A"
+      ]
     }
   },
   "paths": {
@@ -38,8 +58,25 @@
     "date_format": "YYYY-MM-DD",
     "no_ad_hoc_values": true
   },
+  "discrepancy_policy": {
+    "fields": {
+      "event_official_name": "prefer_official_with_flag",
+      "event_official_start_date": "prefer_official_with_flag",
+      "event_official_end_date": "prefer_official_with_flag"
+    },
+    "hard_stops": [
+      "venue_uid_missing",
+      "invalid_https",
+      "no_official_page"
+    ]
+  },
   "related_policy": {
     "include_related_uids": true,
-    "fields": ["venue_uid", "organizer_uid", "label_uids", "source_uids"]
+    "fields": [
+      "venue_uid",
+      "organizer_uid",
+      "label_uids",
+      "source_uids"
+    ]
   }
 }
