@@ -1,35 +1,39 @@
 {
   "name": "place-rules",
-  "version": "v3.3",
+  "version": "v3.4",
   "table": "places",
   "prefix": "place_",
   "uid_immutable": true,
-
   "naming": {
     "field_case": "snake_case",
     "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
     "filename_equals_uid": true
   },
-
   "place_type_policy": {
-    "allowed": ["hotel", "airbnb", "rvpark", "restaurant", "site", "park"],
+    "allowed": [
+      "hotel",
+      "airbnb",
+      "rvpark",
+      "restaurant",
+      "site",
+      "park"
+    ],
     "required": true
   },
-
   "base_vars": [
     "place_uid",
     "place_official_name",
     "place_display_name",
     "place_recordId"
   ],
-
   "uid_rule": "place_uid = slugify(place_official_name)",
-  "uid_requires": ["place_official_name"],
+  "uid_requires": [
+    "place_official_name"
+  ],
   "uid_collision_policy": {
     "on_collision_append": "-{city_uid_stem}",
     "city_uid_stem_rule": "use city_uid when present; else state_uid; else country_uid"
   },
-
   "required_fields": [
     "place_official_link",
     "place_type",
@@ -42,22 +46,17 @@
     "created_date",
     "last_updated"
   ],
-
   "optional_fields": [
     "user_input_place_link",
     "user_input_place_name",
-
     "aka",
     "keywords",
     "label_uids",
-
     "place_city",
     "place_state",
     "place_description",
-
     "primary_venue_uid",
     "near_venue_uids",
-
     "place_address_line1",
     "place_address_line2",
     "place_zip",
@@ -68,39 +67,64 @@
     "place_google_pin",
     "place_geo_lat",
     "place_geo_long",
-
     "notes",
     "form_uid",
     "git_status",
-
     "place_name",
     "place_link"
   ],
-
   "relations": {
-    "city_uid":          { "type": "single", "required": true },
-    "state_uid":         { "type": "single", "required": true },
-    "country_uid":       { "type": "single", "required": true },
-    "primary_venue_uid": { "type": "single", "required": false, "must_end_with": "-venue" },
-    "near_venue_uids":   { "type": "multi",  "required": false, "must_end_with": "-venue" },
-    "source_uids":       { "type": "multi",  "required": true,  "min_items": 1 },
-    "label_uids":        { "type": "multi",  "required": false }
+    "city_uid": {
+      "type": "single",
+      "required": true
+    },
+    "state_uid": {
+      "type": "single",
+      "required": true
+    },
+    "country_uid": {
+      "type": "single",
+      "required": true
+    },
+    "primary_venue_uid": {
+      "type": "single",
+      "required": false,
+      "must_end_with": "-venue"
+    },
+    "near_venue_uids": {
+      "type": "multi",
+      "required": false,
+      "must_end_with": "-venue"
+    },
+    "source_uids": {
+      "type": "multi",
+      "required": true,
+      "min_items": 1
+    },
+    "label_uids": {
+      "type": "multi",
+      "required": false
+    }
   },
-
-  "normalizers_required": ["countries", "states", "cities", "labels"],
-
+  "normalizers_required": [
+    "countries",
+    "states",
+    "cities",
+    "labels"
+  ],
   "date_policies": {
     "format": "YYYY-MM-DD",
     "timezone": "America/New_York"
   },
-
   "source_uid_policy": {
     "construction": "domain_slug",
     "domain_slug_rule": "lowercase primary domain; dots→hyphens",
     "source_type_hint": "first path token or key (e.g., '/', 'contact', 'about', 'map')",
-    "flags": { "is_official": "y|n", "is_favorite": "y|n" }
+    "flags": {
+      "is_official": "y|n",
+      "is_favorite": "y|n"
+    }
   },
-
   "typed_input_aliases": {
     "notes": "Allow operators to use type-prefixed inputs; we map to canonical fields before validation.",
     "hotel": {
@@ -194,7 +218,6 @@
       "park_email": "place_email"
     }
   },
-
   "normalize_on_add": {
     "accept_typed_aliases": true,
     "from_inputs": [
@@ -208,7 +231,14 @@
     ],
     "from_official_pages": {
       "enabled": true,
-      "allow_paths": ["/", "/contact", "/about", "/visit", "/map", "/location"],
+      "allow_paths": [
+        "/",
+        "/contact",
+        "/about",
+        "/visit",
+        "/map",
+        "/location"
+      ],
       "fields": [
         "place_official_name",
         "place_official_link",
@@ -246,12 +276,18 @@
       "facts_only": true
     }
   },
-
   "enrich_on_research": {
-    "allowed_facets": ["address", "contacts", "geo", "tz", "labels", "keywords", "description"],
+    "allowed_facets": [
+      "address",
+      "contacts",
+      "geo",
+      "tz",
+      "labels",
+      "keywords",
+      "description"
+    ],
     "notes": "research step may refine/append but must not overwrite operator inputs without explicit confirmation"
   },
-
   "derived": {
     "allow": true,
     "fields": {
@@ -259,18 +295,20 @@
     },
     "never_overwrite_inputs": true
   },
-
   "validation": {
     "official_link_must_be_https": true,
     "relations_must_resolve": true,
     "halt_on_missing_normalizer": true,
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
-    "ignore_prefixes": ["dnu_", "ignore_"]
+    "ignore_prefixes": [
+      "dnu_",
+      "ignore_"
+    ]
   },
-
   "paths": {
-    "save_path_template": "index/{place_type_plural}/{place_uid}.json",
+    "save_path_template": "items/index/{place_type_plural}/{place_uid}.json",
+    "validation_regex": "^items/index/(hotels|airbnbs|rvparks|restaurants|sites|parks)/[a-z0-9-]+\\.json$",
     "place_type_plural_map": {
       "hotel": "hotels",
       "airbnb": "airbnbs",
@@ -279,9 +317,18 @@
       "site": "sites",
       "park": "parks"
     },
-    "sources_input_dir": "index/sources"
+    "sources_input_dir": "items/sources",
+    "no_branch_dirs": true
   },
-
+  "related_policy": {
+    "include_related_uids": true,
+    "fields": [
+      "primary_venue_uid",
+      "near_venue_uids",
+      "label_uids",
+      "source_uids"
+    ]
+  },
   "notes": {
     "hints": "Use user_input_place_link/name strictly as hints. Persist only place_official_* fields.",
     "typed_inputs": "When accept_typed_aliases is true, any provided type-prefixed inputs are mapped to canonical fields before validation.",
