@@ -1,5 +1,5 @@
 {
-  "version": "v2.7.2",
+  "version": "v2.9.0",
   "proxy_base": "https://crt-b1434e13de34.herokuapp.com",
   "git_base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main",
   "fetch": {
@@ -8,12 +8,29 @@
       "git"
     ]
   },
+  "kit": {
+    "boot_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
+    "event_rules_core_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json",
+    "enforce_hash": true,
+    "hashes": {
+      "boot_sha256": "",
+      "event_rules_core_sha256": ""
+    }
+  },
   "paths": {
     "manifest_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json",
     "ingestion_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt",
     "event_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.json",
+    "event_rules_core_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json",
+    "boot_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
     "venue_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.json",
     "place_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.json",
+    "index_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/index-rules.json",
+    "reminders_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/reminders-rules.json",
+    "curate_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/curate-rules.json",
+    "research_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/research-rules.json",
+    "create_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/create-rules.json",
+    "render_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/render-rules.json",
     "cards_core_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/cards-core.txt",
     "labels_rules_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/labels-rules.json",
     "dir_map_url": "https://crt-b1434e13de34.herokuapp.com/items/dir-map.json",
@@ -23,8 +40,8 @@
   "dirs": {
     "agents_dir": "items/agents",
     "events_dir": "items/events",
-    "venues_dir": "items/venues",
-    "organizers_dir": "items/organizers",
+    "venues_dir": "items/index/venues",
+    "organizers_dir": "items/index/organizers",
     "sources_dir": "items/sources",
     "hotels_dir": "items/index/hotels",
     "airbnbs_dir": "items/index/airbnbs",
@@ -47,6 +64,9 @@
     "stay_dir": "items/index/stay",
     "dine_dir": "items/index/dine",
     "locale_dir": "items/index/locale"
+  },
+  "templates": {
+    "event_write_template": "items/events/{organizer_uid}-{event_uid}.json"
   },
   "policy": {
     "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -71,6 +91,36 @@
     "long_field": "venue_geo_long",
     "pin_field": "venue_google_pin",
     "venue_uid_suffix": "-venue",
-    "commit_allows_text": true
-  }
+    "commit_allows_text": true,
+    "path_prefix": "/items/"
+  },
+  "enforcement": {
+    "write_allow_prefixes": [
+      "/items/"
+    ],
+    "events_path_regex": "^items/events/[a-z0-9-]+-[a-z0-9-]+\\.json$",
+    "require_rules_boot": true,
+    "require_core_rules_loaded": true,
+    "require_kit_hash": true,
+    "require_path_rules_preview": true,
+    "require_source_check": true,
+    "retry_policy": {
+      "attempts": 5,
+      "initial_delay_ms": 500,
+      "backoff": 2,
+      "jitter_ms": 250
+    },
+    "no_branch_dirs": true,
+    "preview_required_before_commit": true,
+    "commit_full_drop_only": true
+  },
+  "tasks_supported": [
+    "add_event",
+    "add_venue",
+    "add_place",
+    "index_cards",
+    "reminders",
+    "curate_places",
+    "refresh"
+  ]
 }
