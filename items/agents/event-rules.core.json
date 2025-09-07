@@ -1,0 +1,49 @@
+{
+  "path": "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json",
+  "message": "event-rules.core v1.0 — essentials for deterministic add_event writes (flat paths; required fields)",
+  "json": {
+    "name": "event-rules.core",
+    "version": "v1.0",
+    "required_fields": [
+      "event_uid",
+      "event_official_name",
+      "event_display_name",
+      "event_official_link",
+      "event_official_start_date",
+      "created_date",
+      "last_updated",
+      "venue_uid",
+      "organizer_uid",
+      "source_uids"
+    ],
+    "uid_policy": {
+      "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "event_uid_rule": "slugify(sanitize_official_name(event_official_name))",
+      "sanitize_rules": {
+        "strip_sponsors": true,
+        "strip_venue_name": true,
+        "strip_organizer_name": true,
+        "remove_terms": ["horse show", "horse shows", "festival", "classic", "series", "presented by"],
+        "remove_year_tokens": true,
+        "remove_rating_tokens": ["CSI", "CSIO", "CSI*", "CSI**", "CSI***", "CSI****", "CSI*****", "WCHR", "USEF", "Premier", "AA", "A"]
+      }
+    },
+    "paths": {
+      "save_path_template": "items/events/{organizer_uid}-{event_uid}.json",
+      "validation_regex": "^items/events/[a-z0-9-]+-[a-z0-9-]+\\.json$",
+      "sources_input_dir": "items/sources",
+      "no_branch_dirs": true
+    },
+    "validation": {
+      "official_link_must_be_https": true,
+      "relations_must_resolve": true,
+      "bool_encoding": "yn",
+      "date_format": "YYYY-MM-DD",
+      "no_ad_hoc_values": true
+    },
+    "related_policy": {
+      "include_related_uids": true,
+      "fields": ["venue_uid", "organizer_uid", "label_uids", "source_uids"]
+    }
+  }
+}
