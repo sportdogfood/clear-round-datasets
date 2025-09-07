@@ -1,32 +1,29 @@
 {
   "name": "venue-rules",
-  "version": "v3.3",
+  "version": "v3.4",
   "table": "venues",
   "prefix": "venue_",
   "uid_immutable": true,
-
   "naming": {
     "field_case": "snake_case",
     "uid_charset_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
     "filename_equals_uid": true,
     "uid_required_suffix": "-venue"
   },
-
   "base_vars": [
     "venue_uid",
     "venue_official_name",
     "venue_display_name",
     "venue_recordId"
   ],
-
   "uid_rule": "venue_uid = ensure_suffix(slugify(venue_official_name), '-venue')",
-  "uid_requires": ["venue_official_name"],
-
+  "uid_requires": [
+    "venue_official_name"
+  ],
   "uid_collision_policy": {
     "on_collision_append": "-{city_uid_stem}",
     "city_uid_stem_rule": "use city_uid when present; else state_uid; else country_uid"
   },
-
   "required_fields": [
     "venue_official_link",
     "venue_official_name",
@@ -38,19 +35,15 @@
     "created_date",
     "last_updated"
   ],
-
   "optional_fields": [
     "user_input_venue_link",
     "user_input_venue_name",
-
     "aka",
     "keywords",
     "label_uids",
-
     "venue_city",
     "venue_state",
     "venue_description",
-
     "venue_address_line1",
     "venue_address_line2",
     "venue_zip",
@@ -61,43 +54,68 @@
     "venue_google_pin",
     "venue_geo_lat",
     "venue_geo_long",
-
     "organizer_uids",
     "events_uids",
-
     "notes",
     "form_uid",
     "git_status",
-
     "venue_name",
     "venue_link"
   ],
-
   "relations": {
-    "city_uid":    { "type": "single", "required": true },
-    "state_uid":   { "type": "single", "required": true },
-    "country_uid": { "type": "single", "required": true },
-    "airport_uids":   { "type": "multi", "required": false },
-    "organizer_uids": { "type": "multi", "required": false },
-    "events_uids":    { "type": "multi", "required": false },
-    "source_uids":    { "type": "multi", "required": true, "min_items": 1 },
-    "label_uids":     { "type": "multi", "required": false }
+    "city_uid": {
+      "type": "single",
+      "required": true
+    },
+    "state_uid": {
+      "type": "single",
+      "required": true
+    },
+    "country_uid": {
+      "type": "single",
+      "required": true
+    },
+    "airport_uids": {
+      "type": "multi",
+      "required": false
+    },
+    "organizer_uids": {
+      "type": "multi",
+      "required": false
+    },
+    "events_uids": {
+      "type": "multi",
+      "required": false
+    },
+    "source_uids": {
+      "type": "multi",
+      "required": true,
+      "min_items": 1
+    },
+    "label_uids": {
+      "type": "multi",
+      "required": false
+    }
   },
-
-  "normalizers_required": ["countries", "states", "cities", "labels"],
-
+  "normalizers_required": [
+    "countries",
+    "states",
+    "cities",
+    "labels"
+  ],
   "date_policies": {
     "format": "YYYY-MM-DD",
     "timezone": "America/New_York"
   },
-
   "source_uid_policy": {
     "construction": "domain_slug",
     "domain_slug_rule": "lowercase primary domain; dots→hyphens (e.g., oldsalemfarm.net → oldsalemfarm-net)",
     "source_type_hint": "first path token or key (e.g., '/', 'contact', 'reach-us', 'map')",
-    "flags": { "is_official": "y|n", "is_favorite": "y|n" }
+    "flags": {
+      "is_official": "y|n",
+      "is_favorite": "y|n"
+    }
   },
-
   "normalize_on_add": {
     "from_inputs": [
       "user_input_venue_link",
@@ -109,7 +127,15 @@
     ],
     "from_official_pages": {
       "enabled": true,
-      "allow_paths": ["/", "/contact", "/reach-us", "/about", "/visit", "/map", "/location"],
+      "allow_paths": [
+        "/",
+        "/contact",
+        "/reach-us",
+        "/about",
+        "/visit",
+        "/map",
+        "/location"
+      ],
       "fields": [
         "venue_official_name",
         "venue_official_link",
@@ -147,7 +173,6 @@
       "facts_only": true
     }
   },
-
   "enrich_on_research": {
     "allowed_facets": [
       "address",
@@ -160,7 +185,6 @@
     ],
     "notes": "research step may refine/append but must not overwrite operator inputs without explicit confirmation"
   },
-
   "derived": {
     "allow": true,
     "fields": {
@@ -168,23 +192,35 @@
     },
     "never_overwrite_inputs": true
   },
-
   "validation": {
     "official_link_must_be_https": true,
     "relations_must_resolve": true,
     "halt_on_missing_normalizer": true,
     "no_ad_hoc_values": true,
     "bool_encoding": "yn",
-    "ignore_prefixes": ["dnu_", "ignore_"],
+    "ignore_prefixes": [
+      "dnu_",
+      "ignore_"
+    ],
     "uid_must_have_required_suffix": true,
     "filename_must_equal_uid": true
   },
-
   "paths": {
-    "save_path_template": "index/venues/{venue_uid}.json",
-    "sources_input_dir": "index/sources"
+    "save_path_template": "items/index/venues/{venue_uid}.json",
+    "validation_regex": "^items/index/venues/[a-z0-9-]+-venue\\.json$",
+    "sources_input_dir": "items/sources",
+    "no_branch_dirs": true
   },
-
+  "related_policy": {
+    "include_related_uids": true,
+    "fields": [
+      "organizer_uids",
+      "events_uids",
+      "airport_uids",
+      "label_uids",
+      "source_uids"
+    ]
+  },
   "notes": {
     "hints": "Use user_input_venue_link/name strictly as hints. Persist only venue_official_* fields.",
     "deprecated": "venue_name and venue_link are legacy; new writes should set only venue_official_*."
