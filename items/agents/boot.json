@@ -1,43 +1,39 @@
 {
-  "path": "https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
-  "message": "boot v1.0 — minimal lane kit for add_event (flat organizer-fronted paths; fail-closed)",
-  "json": {
-    "name": "boot",
-    "version": "v1.0",
-    "updated": "2025-09-07",
-    "policy": {
-      "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-      "date_format": "YYYY-MM-DD",
-      "timezone": "America/New_York",
-      "bool_encoding": "yn",
-      "path_prefix": "/items/"
-    },
-    "dirs": {
-      "events_dir": "items/events",
-      "venues_dir": "items/index/venues",
-      "sources_dir": "items/sources"
-    },
-    "templates": {
-      "event_filename": "{organizer_uid}-{event_uid}.json",
-      "event_path": "items/events/{organizer_uid}-{event_uid}.json"
-    },
-    "enforcement": {
-      "require_boot_ok": true,
-      "require_core_rules_loaded": true,
-      "require_path_prefix_items": true,
-      "no_branch_dirs": true,
-      "preview_required_before_commit": true
-    },
-    "tasks": {
-      "add_event": {
-        "path_template": "items/events/{organizer_uid}-{event_uid}.json",
-        "validation_regex": "^items/events/[a-z0-9-]+-[a-z0-9-]+\\.json$",
-        "required_relations": ["venue_uid", "organizer_uid"],
-        "requires_sources_min": 1
-      }
-    },
-    "core_rules": {
-      "event_rules_core_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json"
+  "name": "boot",
+  "version": "v1.0",
+  "updated": "2025-09-07",
+  "policy": {
+    "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "date_format": "YYYY-MM-DD",
+    "timezone": "America/New_York",
+    "bool_encoding": "yn",
+    "path_prefix": "/items/"
+  },
+  "dirs": {
+    "events_dir": "items/events",
+    "venues_dir": "items/index/venues",
+    "sources_dir": "items/sources"
+  },
+  "templates": {
+    "event_filename": "{organizer_uid}-{event_uid}.json",
+    "event_path": "items/events/{organizer_uid}-{event_uid}.json"
+  },
+  "enforcement": {
+    "require_boot_ok": true,
+    "require_core_rules_loaded": true,
+    "require_path_prefix_items": true,
+    "no_branch_dirs": true,
+    "preview_required_before_commit": true
+  },
+  "tasks": {
+    "add_event": {
+      "path_template": "items/events/{organizer_uid}-{event_uid}.json",
+      "validation_regex": "^items/events/[a-z0-9-]+-[a-z0-9-]+\\.json$",
+      "required_relations": ["venue_uid", "organizer_uid"],
+      "requires_sources_min": 1
     }
+  },
+  "core_rules": {
+    "event_rules_core_url": "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json"
   }
 }
