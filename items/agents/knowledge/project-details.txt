@@ -1,0 +1,87 @@
+CLEAR ROUND TRAVEL — PROJECT DETAILS (Human-Readable Canon)
+Version: v1.0 • Updated: 2025-09-08 (ET)
+
+WHAT YOU’RE BUILDING — EXPANDED
+Overview
+- A private, single-operator content system. Every artifact is a small, factual “card” saved as JSON under /items/… .
+- Lanes (tasks) do one thing: add_event, add_venue, add_place, refresh, index, curate, research, create, render. Each lane loads only its tiny kit.
+- Airtable is an operator console for visibility/spot-fixes; Git (served via proxy) is the source of truth.
+
+Card Families
+- Entities: events (primary), venues (special), places (hotel, airbnb, rvpark, restaurant, site, park), organizers, sources.
+- Normalizers: time (days, weeks, months, seasons, years) and location (cities, states, countries) plus airports/weather/labels.
+- Content: opinionated or narrative cards (rendered to MD/HTML later). Entity cards remain facts-only.
+- Tags/Labels: curated global labels (items/index/labels/…), referenced by label_uids[] in entity cards.
+
+Events Are Primary
+- An event is time-centric and inherits location from a venue. Events can be hubs with optional legs (weeks) inside the hub window.
+- Filenames are organizer-fronted: items/events/{organizer_uid}-{event_uid}.json . event_uid is a sanitized slug of the official name.
+- Series rules: legs do not overlap and must sit inside the hub’s window; “Leg N” label scheme by default.
+
+Normalization
+- Time keys: day/week/month/season/year are derived or indexed, making every card findable on a calendar axis.
+- Location keys: cities/states/countries attach to venues/places and flow to events via venue.
+- Labels: a small, curated vocabulary enabling targeting (e.g., walkable, petfriendly, FEI).
+
+Master Indexability
+- Every card contains _uid and explicit *_uid / *_uids relations. Indexers can stitch journeys across entities without heavy joins.
+- Small, deterministic filenames keep refresh and re-index fast.
+
+Beyond Events
+- Venues are the gate (must end -venue). Places are lightweight cards tied to geography and optionally near_venue_uids.
+- All are facts-only until content lanes (create/render) introduce POV.
+
+Content Is Separate
+- Content cards live under dedicated dirs and reference entities by *_uid. POV, tone, and editorial lines exist only there.
+- Render lane emits Markdown/HTML for the site from content+entities (stitched via UIDs).
+
+Routines (Independent)
+- refresh: recompute derived fields (days_until, status, yyyymm), keep last_updated fresh.
+- index: rebuild time/location/label indices.
+- reminders: surface upcoming windows based on time keys.
+- curate: assemble target lists (e.g., hotels within X miles, restaurants with certain labels).
+- research: verify/augment facts; never overwrite operator inputs without confirmation.
+- create/render: generate opinionated narratives from stitched cards; output MD/HTML.
+
+Operator Flow
+- LOAD-KIT-TEST → LOAD+PREVIEW → human approves → COMMIT (full drop). Fail closed on rule/load ambiguity.
+
+KNOWN LIMITS (Explicit)
+1) Rule-load fragility
+   - Proxy (Heroku) can cold-start; large files may time out or be truncated by viewers. Solution: tiny lane kits (boot.json + *-rules.core.json) with retry/backoff and strict key checks.
+2) Assumption drift
+   - When rules fail to load, the runner must not “guess.” Solution: fail-closed; no memory; no heuristics. Hints are not facts.
+3) Cross-file coupling
+   - Path templates vs. manifest dirs can diverge. Solution: dir-map.json + contracts and Planned Change Reports (PCR) before edits.
+4) Unreviewed behavior changes
+   - Silent rewrites can drop capabilities. Solution: PCR (before) + CCR (after) for any rule/path change; enumerate preserved/removed functions.
+5) Single-user infra realities
+   - No autoscaling; first hit is cold. Solution: small, cacheable files; proxy→git fallback; hash/key sanity checks; clear error codes.
+
+CRITICAL FILES (Must stay aligned)
+- items/agents/manifest.json — full URLs, dirs, policy, enforcement, retry strategy.
+- items/agents/boot.json — global lane-kit pointers and minimal enforcement.
+- items/dir-map.json — canonical directories, plural map, path templates, regex guards.
+- items/agents/ingestion-rules.txt — facts-only gates, hints→facts confirmation, path rules, fail-closed errors.
+- items/agents/cards-core.txt — shared card conventions (UIDs, relations, filename policy).
+- items/agents/labels-rules.json — labels schema and index path.
+- Lane cores: items/agents/event-rules.core.json, venue-rules.core.json, place-rules.core.json — required fields, relations, save_path_template, regex.
+- Lane modes: items/agents/modes/<lane>.load-kit-test.txt and <lane>.load-preview.txt — loading/preview envelopes.
+- Lane contracts: items/agents/knowledge/events-contract.txt, venues-contract.txt, places-contract.txt — schemas & envelopes.
+- items/agents/agent-git-access.txt — commit contract.
+- items/agents/output-behavior.txt — PREVIEW/COMMIT envelopes; full-drop only.
+- items/agents/error-codes.txt — canonical error names used by lanes.
+- items/agents/README.txt — canonical operator entrypoint.
+
+Canonical URLs (examples)
+- Manifest: https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Dir Map:  https://crt-b1434e13de34.herokuapp.com/items/dir-map.json
+- Boot:     https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+- Ingestion:https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+- Cards:    https://crt-b1434e13de34.herokuapp.com/items/agents/cards-core.txt
+- Labels:   https://crt-b1434e13de34.herokuapp.com/items/agents/labels-rules.json
+- Events core: https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
+- Events mode (preview): https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_event.load-preview.txt
+- Operator README: https://crt-b1434e13de34.herokuapp.com/items/agents/README.txt
+
+END
