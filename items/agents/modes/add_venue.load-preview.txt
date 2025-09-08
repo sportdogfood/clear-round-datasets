@@ -1,0 +1,38 @@
+MODE: LOAD+PREVIEW (add_venue lane). Use web access.
+
+First, run LOAD-KIT-TEST (add_venue). If status != "ok", STOP and return that JSON.
+
+Inputs (hints)
+- task=add_venue
+- link=https://<official-venue-home>
+- name=<venue name hint>
+- city_uid=<city-uid>
+- state_uid=<state-uid>
+- country_uid=<country-uid>
+- aka=<optional comma-separated>
+
+What to do
+1) Confirm official link (HTTPS, <=2 redirects). Fail if social or non-HTTPS.
+2) Confirm canonical venue name from official site (title/H1/structured data). Sanitize; ensure venue_uid ends with '-venue'.
+3) Confirm city/state/country UIDs exist (normalizers). If missing → status=error, reason=needs_normalizer.
+4) Build path from core template: items/venues/{venue_uid}.json.
+5) Build minimal, valid venue card with required fields + relations. source_uids[0] = domain_slug of confirmed URL.
+
+Return ONLY this JSON:
+{
+  "event":"ADD_VENUE_PREVIEW",
+  "status":"ok|error",
+  "reason":"rules_unavailable|needs_source|needs_review|needs_normalizer",
+  "path":"items/venues/<venue_uid>.json",
+  "message":"add: <Venue Display Name> (<city_uid>, <state_uid>)",
+  "json": { /* complete venue card with _uid (== venue_uid), official fields, city/state/country, source_uids[0], created_date, last_updated, related_uids{...} */ },
+  "sources_checked":[ {"url":"<final_url>","source_uid":"<domain-slug>","is_official":"y"} ],
+  "load_ledger":[
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json","status":"ok"},
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.core.json","status":"ok"}
+  ],
+  "timestamp":"ISO-8601"
+}
+
+Rules
+- Filename must equal UID. UID must end with -venue. Relations must resolve. Facts-only.
