@@ -1,57 +1,104 @@
-EVENTS — OPERATOR CONTRACT (v1.0)
+EVENTS CONTRACT — v3.0 (ET)
+Last updated: 2025-09-07
 
-SCOPE & TRUTH
-- Facts-only. Operator inputs are HINTS; system confirms from official sources.
-- All dates = YYYY-MM-DD (ET). Official links must be HTTPS and on the official site.
-- Filenames are flat and equal to UID: items/index/events/{event_uid}.json
+SCOPE
+- Defines the canonical event "card" for Clear Round Travel.
+- Facts-only (no POV). Inputs are hints; agent confirms against official sources before write.
+- Supports hubs (the event) and optional legs (weeks) inside the hub window. No legacy branch dirs.
 
-REQUIRED INPUTS (Task: add_event)
-- link            : HTTPS to official or candidate page (hint)
-- name            : candidate title (hint)
-- start           : YYYY-MM or YYYY-MM-DD (hub start)
-- organizer_uid   : existing organizer UID
-- venue_uid OR venue_hint (venue gate: confirm / input / exit)
+MUST-LOAD (FULL URLs; fail-closed)
+- Manifest: https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Ingestion rules: https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+- Event rules (core): https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
+- Event rules (rich): https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.json
+- Cards core (shared): https://crt-b1434e13de34.herokuapp.com/items/agents/cards-core.txt
+- Labels rules: https://crt-b1434e13de34.herokuapp.com/items/agents/labels-rules.json
 
-OPTIONAL INPUTS
-- end             : YYYY-MM-DD (hub end)
-- is_series       : y | n | auto
-- series_label    : e.g., Circuit, Spring (for display purposes only)
-- total_legs_hint : integer (for is_series=y|auto)
-- public_leg_label: preferred public label for legs (e.g., Week)
-- event_description: short factual 1–2 lines
-- is_finals       : y | n (if omitted, detector may set y when confident; never auto-set n)
+DIRS & PATHS (from manifest/templates; do not hardcode)
+- Write path template: items/events/{organizer_uid}-{event_uid}.json
+- Allowed prefix: /items/ (enforced). Events must match regex: ^items/events/[a-z0-9-]+-[a-z0-9-]+\.json$
+- No legacy shows/*, annual/series/finals branches, or ad-hoc locations.
 
-WHAT THE SYSTEM CONFIRMS / DERIVES
-- Canonical URL (HTTPS) on the same domain (follow redirects).
-- Official name from the official page; fall back to hint only when not contradicted.
-- Display name = official name (copy).
-- event_uid = slugify( sanitize_official_name(official name) ), stripped of venue/organizer/sponsors/ratings/years/common series words.
-- Sources: source_uids from domain slug (dots→hyphens; e.g., usef.org→usef-org).
-- Relations: venue_uid (required), organizer_uid (required). If city/state/country missing, inherit from venue on refresh.
+UID & FILENAME POLICY
+- event_uid = slugify( sanitize_official_name(event_official_name) )
+  • Sanitize: drop sponsors/venue/organizer; remove year/rating tokens; collapse spaces; title-case then slug.
+- _uid for event cards = event_uid.
+- Filename = {organizer_uid}-{event_uid}.json (organizer-fronted; filename != UID).
 
-SERIES / LEGS
-- If is_series=y|auto, build a hub + N legs fully inside [hub start..hub end], non-overlapping.
-- UIDs: hub_uid = event_uid; leg UIDs = {hub_uid}-1..N.
-- Hub fields: event_leg_uids=[ordered leg UIDs], series_total=N.
-- Leg fields: hub_uid, series_index (1-based), series_total=N.
-- Names: leg official names mirror the hub (no Leg/Week number). Display defaults to date range; if public_leg_label provided, render “Hub — Week N”.
+REQUIRED FIELDS (union of core + relations)
+- _uid (== event_uid)
+- event_uid
+- event_official_name
+- event_display_name (copy of official name unless policy dictates otherwise)
+- event_official_link (HTTPS)
+- event_official_start_date (YYYY-MM-DD)
+- venue_uid (must end -venue)
+- organizer_uid
+- source_uids (array; ≥1; domain slugs)
+- created_date (ET, YYYY-MM-DD)
+- last_updated (ET, YYYY-MM-DD)
 
-DERIVED FIELDS (set by refresh-derived)
-- created_date, last_updated
-- yyyymm
-- event_duration (days; exclusive end)
-- event_current_status (past|live|upcoming vs today ET)
-- days_until_start, days_until_end
-- event_estimated_next_start_date (if is_annual=y)
-- month_uids (array of YYYY-MM intersecting window)
-- year_uid (YYYY from start)
-- season_uid (winter|spring|summer|fall from start)
-- week_uids (legs only; ISO weeks, e.g., 2026-W03)
-- day_uids (legs only; each YYYY-MM-DD in leg window)
+OPTIONAL FIELDS
+- event_official_end_date (YYYY-MM-DD)
+- event_description
+- is_series ("y"|"n"|"auto")
+- is_finals ("y"|"n")
+- notes, form_uid, git_status
+- city_uid, state_uid, country_uid, label_uids[]
+- hub_uid, series_index, series_total, public_leg_label, leg_label
+- event_leg_uids[] (for legs), yyyymm, event_duration, event_current_status, days_until_start, days_until_end, event_estimated_next_start_date
+- month_uids[], year_uid, season_uid, week_uids[], day_uids[]
 
-GUARDS / STOPS
-- Hard-stop if: link not HTTPS; link not official; venue/organizer unresolved; normalizers missing.
-- Series guards: legs must sit fully inside hub; no overlaps; leg UIDs must be hub_uid-N.
+RELATED_UIDS BLOCK (include for stitching; mirrors relations)
+- related_uids: {
+    "venue_uid": "…",
+    "organizer_uid": "…",
+    "event_leg_uids": [ … ],
+    "label_uids": [ … ],
+    "source_uids": [ … ]
+  }
 
-PREVIEW → COMMIT
-- PREVIEW always shows full file(s) and target path(s). Nothing writes without explicit COMMIT.
+SERIES / HUB / LEGS POLICY
+- If is_series = "y":
+  • Hub window = min(leg start) → max(leg end). Legs must be non-overlapping and fully inside the hub.
+  • Default leg label scheme: "Leg N"; public display avoids "Leg" unless source uses it.
+  • leg_uid = hub event_uid + "-" + series_index (1-based), if leg files are emitted.
+- If is_series = "auto": infer from official page structure; else leave "n".
+
+SOURCES
+- source_uid = domain_slug (e.g., usef.org → usef-org); one per domain.
+- sources_checked[] preview payload must include final URL used and is_official flag ("y").
+
+DERIVED (allowed; never overwrite inputs)
+- yyyymm from start date; durations; current status vs today (ET); next estimated start if annual; time buckets (months/seasons/years/weeks/days).
+
+VALIDATION (fail-closed)
+- official_link_must_be_https=true; must be the official site or federation page (no social).
+- relations_must_resolve=true (venue gate, organizer).
+- bool_encoding=yn; date_format=YYYY-MM-DD.
+- filename must match template; path must start with /items/ and match regex.
+
+DISCREPANCY POLICY (core)
+- If hint != official for name/start/end: prefer_official_with_flag; record in preview.discrepancies[].
+
+PREVIEW ENVELOPE (read-only)
+{
+  "event":"ADD_EVENT_PREVIEW",
+  "status":"ok|error",
+  "path":"items/events/<organizer_uid>-<event_uid>.json",
+  "message":"add: <Display Name> — <YYYY-MM-DD>[ to <YYYY-MM-DD>] (<venue_display_name or venue_uid>)",
+  "json": { /* complete event card (fields above) */ },
+  "discrepancies":[ {"field":"…","hint":"…","official":"…","resolution":"official_overrode_hint"} ],
+  "sources_checked":[ {"url":"<final_url>","source_uid":"<domain-slug>","is_official":"y"} ],
+  "load_ledger":[ {"url":"…/boot.json","status":"ok"}, {"url":"…/event-rules.core.json","status":"ok"} ],
+  "timestamp":"ISO-8601"
+}
+
+COMMIT ENVELOPE (full-drop only)
+- JSON: { "path": "https://…/items/events/{organizer_uid}-{event_uid}.json", "message": "add: …", "json": { … } }
+- No ops wrappers. No diffs.
+
+FAILURE MODES
+- needs_rules | needs_source | needs_review | needs_normalizer | invalid_path | validation_failed
+
+END
