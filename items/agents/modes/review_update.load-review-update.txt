@@ -1,0 +1,65 @@
+MODE: REVIEW+UPDATE (facts-only). Use web access. Return no prose.
+
+Goal
+- Review a primary file and its related set for version and functionality, carry all functionality forward, modify only if necessary to resolve conflicts with current manifest/policy/dir-map, and prepare full-drop commit payloads for any changed files.
+
+Inputs
+- primary_file_url=<FULL HTTPS URL under https://crt-b1434e13de34.herokuapp.com/items/...>
+- files_related=<comma-separated FULL HTTPS URLs>   (original placeholder: &{files-related}&)
+
+Required preloads (fail-closed; do not guess)
+- Manifest: https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Dir Map:  https://crt-b1434e13de34.herokuapp.com/items/agents/dir-map.json
+- Cards:    https://crt-b1434e13de34.herokuapp.com/items/agents/cards-core.txt
+- Ingestion:https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+
+Load Gate (must pass before any analysis)
+1) Fetch primary_file_url and every URL in files_related over HTTPS.
+2) Treat success only if each fetch returns a non-empty body AND (for JSON) parses OR (for text) has ≥ 10 non-whitespace chars.
+3) If any required file fails to load or parse → STOP and return a single JSON object:
+{
+  "event":"REVIEW-ERROR",
+  "reason":"load_failed",
+  "failed_urls":[ "<full url>", ... ],
+  "timestamp":"<ISO-8601>"
+}
+
+Version & Functionality Inventory
+- For JSON: read `name` and `version` fields when present; otherwise set version="unknown".
+- For text: detect a leading “Version:” or “vX.Y” line when present; otherwise version="unknown".
+- Extract a concise list of functional sections/keys (e.g., paths, validation, enforcement, required_fields, relations, templates, regex).
+
+Conflict Policy (when to modify)
+- Modify only to resolve clear conflicts with: manifest.dirs.*, dir-map.path_templates/validation_regex, manifest.policy.*.
+- Preserve all existing functionality unless it directly violates current manifest/policy/dir-map OR is internally inconsistent.
+- No speculative additions. No behavior changes without explicit rationale.
+
+Dependency Check (must do before edits)
+- If the primary file’s changes affect any file in files_related (schemas, paths, enforcement, templates), update those too in this run.
+- If a dependent file would need non-trivial redesign, STOP and return REVIEW-ERROR with reason="needs_planned_change_report".
+
+Output (return EXACTLY in this order; no extra text)
+1) A single REVIEW-REPORT object:
+{
+  "event":"REVIEW-REPORT",
+  "status":"ok|no_change|error",
+  "primary": { "url":"<full url>", "detected_version":"<string>", "functions":[ "<key/section>", ... ] },
+  "related": [ { "url":"<full url>", "detected_version":"<string>", "functions":[ "<key/section>", ... ] }, ... ],
+  "conflicts_resolved":[ "<short notes or empty>" ],
+  "functionality_preserved":[ "<bullets of key behavior kept>" ],
+  "functionality_altered":[ "<bullets of changes with rationale>" ],
+  "timestamp":"<ISO-8601>"
+}
+
+2) Zero or more full-drop commit envelopes (one JSON object per changed file). Use FULL URLs in `path`. For .json files, `json` must be an object; for text files, `json` must be the entire string body.
+{
+  "path": "https://crt-b1434e13de34.herokuapp.com/items/.../filename.ext",
+  "message": "<succinct commit message with version bump if applicable>",
+  "json": { ... }    // or a full text body string for .txt/.md/.html
+}
+
+Rules
+- All `path` values must be FULL HTTPS URLs under https://crt-b1434e13de34.herokuapp.com/items/.
+- No partial diffs; full-drop bodies only.
+- If nothing needs changing, return only the REVIEW-REPORT with status="no_change" and do not include any commit objects.
+- If any load or validation step fails, return only the REVIEW-ERROR object described above.
