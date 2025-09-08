@@ -1,0 +1,40 @@
+MODE: LOAD+PREVIEW (add_place lane). Use web access.
+
+First, run LOAD-KIT-TEST (add_place). If status != "ok", STOP and return that JSON.
+
+Inputs (hints)
+- task=add_place
+- place_type=hotel|airbnb|rvpark|restaurant|site|park
+- link=https://<official-homepage>
+- name=<place name hint>
+- city_uid=<city-uid>
+- state_uid=<state-uid>
+- country_uid=<country-uid>
+- near_venue_uid=<optional -venue>
+- aka=<optional comma-separated>
+
+What to do
+1) Confirm official link (HTTPS). Fail if social or non-HTTPS.
+2) Confirm canonical place name. Derive place_uid via slugify(name).
+3) Confirm city/state/country UIDs exist; if near_venue_uid present, ensure it exists.
+4) Map place_type → plural via plural_map; build path: items/index/{plural}/{place_uid}.json.
+5) Build minimal, valid place card with required fields + relations. source_uids[0] = domain_slug of confirmed URL.
+
+Return ONLY this JSON:
+{
+  "event":"ADD_PLACE_PREVIEW",
+  "status":"ok|error",
+  "reason":"rules_unavailable|needs_source|needs_review|needs_normalizer",
+  "path":"items/index/<plural>/<place_uid>.json",
+  "message":"add: <Place Display Name> (<city_uid>, <state_uid>)",
+  "json": { /* complete place card with _uid, official fields, city/state/country, (optional) near_venue_uids[], source_uids[0], created_date, last_updated */ },
+  "sources_checked":[ {"url":"<final_url>","source_uid":"<domain-slug>","is_official":"y"} ],
+  "load_ledger":[
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json","status":"ok"},
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.core.json","status":"ok"}
+  ],
+  "timestamp":"ISO-8601"
+}
+
+Rules
+- Filename must equal UID. Relations must resolve. Facts-only. No assumptions.
