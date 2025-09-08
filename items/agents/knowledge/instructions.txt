@@ -1,0 +1,55 @@
+CRT — PROJECT INSTRUCTIONS & LOG (Living Doc)
+Version: v1.0 • Updated: 2025-09-08 (ET)
+
+PURPOSE
+- Central place to paste decisions, constraints, and conversation snippets that shape the overall project.
+- Not a rules engine; it references canonical files. Use Planned Change Reports (PCR) before edits and Change Confirm Reports (CCR) after.
+
+CANONICAL POINTERS (always current)
+- Operator README: https://crt-b1434e13de34.herokuapp.com/items/agents/README.txt
+- Manifest:        https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Dir Map:         https://crt-b1434e13de34.herokuapp.com/items/dir-map.json
+- Boot:            https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+- Ingestion Rules: https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+- Cards Core:      https://crt-b1434e13de34.herokuapp.com/items/agents/cards-core.txt
+- Labels Rules:    https://crt-b1434e13de34.herokuapp.com/items/agents/labels-rules.json
+- Events: core/rich/modes/contract under items/agents/*
+- Venues: core/rich/modes/contract under items/agents/*
+- Places: core/rich/modes/contract under items/agents/*
+
+USAGE
+- Append concise entries with date stamps. Keep facts and decisions crisp. Link to commits when possible.
+- Do not duplicate rule text here; reference the source file URLs and include a 1–2 line rationale.
+
+ENTRY TEMPLATE (paste and fill)
+---
+[YYYY-MM-DD] <Title>
+Context: <one paragraph>
+Decision: <final decision/constraint>
+Impact: <files affected>
+Links: <full URLs or commit SHAs>
+---
+
+PCR (PLANNED CHANGE REPORT) TEMPLATE
+- Intent: <exact behavior to change and why>
+- Primary files: <list>
+- Dependent files: <list + how they must adjust>
+- Risk: <behaviors that could degrade/change>
+- Rollback: <how to revert>
+
+CCR (CHANGE CONFIRM REPORT) TEMPLATE
+- Original behavior: <brief, factual>
+- New behavior: <brief, factual>
+- Preserved: <list>
+- Removed/altered: <list>
+- Schema/paths: <confirm no drift or enumerate drift with why>
+
+CURRENT OPERATING STANCE (short)
+- Lanes run only with tiny kits (boot + lane core). If a kit fails to load or fails key checks, lanes STOP with a precise error.
+- Hints are not facts. When official confirmation disagrees, official wins and a discrepancy is reported in preview.
+- Paths must begin with /items/ and match regex in dir-map.json. No legacy branches (shows/*, annual/series/finals).
+
+SESSION NOTES (seed)
+- 2025-09-08: Introduced global boot.json + lane cores + MODE docs; established fail-closed gates and PCR/CCR discipline.
+
+END
