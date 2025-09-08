@@ -1,0 +1,163 @@
+{
+  "name": "clear-round-travel",
+  "version": "v1.0",
+  "updated": "2025-09-08",
+  "what_you_are_building": {
+    "cards": [
+      "entities",
+      "normalizers",
+      "content",
+      "labels"
+    ],
+    "primary_entity": "events",
+    "filename_policy": {
+      "events": "items/events/{organizer_uid}-{event_uid}.json",
+      "venues": "items/index/venues/{venue_uid}.json",
+      "places": "items/index/{place_type_plural}/{place_uid}.json"
+    },
+    "normalizers": {
+      "time": [
+        "days",
+        "weeks",
+        "months",
+        "seasons",
+        "years"
+      ],
+      "location": [
+        "cities",
+        "states",
+        "countries"
+      ]
+    },
+    "labels": "items/index/labels/*",
+    "relations_required": true,
+    "facts_only_entities": true,
+    "content_is_separate": true
+  },
+  "lanes": {
+    "add_event": {
+      "kit": [
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json"
+      ],
+      "modes": [
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_event.load-kit-test.txt",
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_event.load-preview.txt"
+      ],
+      "contract": "https://crt-b1434e13de34.herokuapp.com/items/agents/knowledge/events-contract.txt"
+    },
+    "add_venue": {
+      "kit": [
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.core.json"
+      ],
+      "modes": [
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_venue.load-kit-test.txt",
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_venue.load-preview.txt"
+      ],
+      "contract": "https://crt-b1434e13de34.herokuapp.com/items/agents/knowledge/venues-contract.txt"
+    },
+    "add_place": {
+      "kit": [
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.core.json"
+      ],
+      "modes": [
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_place.load-kit-test.txt",
+        "https://crt-b1434e13de34.herokuapp.com/items/agents/modes/add_place.load-preview.txt"
+      ],
+      "contract": "https://crt-b1434e13de34.herokuapp.com/items/agents/knowledge/places-contract.txt"
+    },
+    "refresh": {
+      "kit": [],
+      "modes": [],
+      "contract": ""
+    },
+    "index": {
+      "kit": [],
+      "modes": [],
+      "contract": ""
+    },
+    "curate": {
+      "kit": [],
+      "modes": [],
+      "contract": ""
+    },
+    "research": {
+      "kit": [],
+      "modes": [],
+      "contract": ""
+    },
+    "create": {
+      "kit": [],
+      "modes": [],
+      "contract": ""
+    },
+    "render": {
+      "kit": [],
+      "modes": [],
+      "contract": ""
+    }
+  },
+  "policies": {
+    "uid_regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "bool_encoding": "yn",
+    "date_format": "YYYY-MM-DD",
+    "facts_only": true,
+    "official_link_must_be_https": true,
+    "filename_equals_uid": {
+      "events": false,
+      "venues": true,
+      "places": true
+    }
+  },
+  "routines": [
+    "refresh",
+    "index",
+    "reminders",
+    "curate",
+    "render",
+    "research"
+  ],
+  "known_limits": [
+    "rule_load_fragility",
+    "assumption_drift",
+    "cross_file_coupling",
+    "unreviewed_behavior_changes",
+    "single_user_infra"
+  ],
+  "critical_files": [
+    "items/agents/manifest.json",
+    "items/agents/boot.json",
+    "items/dir-map.json",
+    "items/agents/ingestion-rules.txt",
+    "items/agents/cards-core.txt",
+    "items/agents/labels-rules.json",
+    "items/agents/event-rules.core.json",
+    "items/agents/venue-rules.core.json",
+    "items/agents/place-rules.core.json",
+    "items/agents/modes/add_event.load-kit-test.txt",
+    "items/agents/modes/add_event.load-preview.txt",
+    "items/agents/modes/add_venue.load-kit-test.txt",
+    "items/agents/modes/add_venue.load-preview.txt",
+    "items/agents/modes/add_place.load-kit-test.txt",
+    "items/agents/modes/add_place.load-preview.txt",
+    "items/agents/knowledge/events-contract.txt",
+    "items/agents/knowledge/venues-contract.txt",
+    "items/agents/knowledge/places-contract.txt",
+    "items/agents/agent-git-access.txt",
+    "items/agents/output-behavior.txt",
+    "items/agents/error-codes.txt",
+    "items/agents/README.txt"
+  ],
+  "gating": {
+    "load_kit_test": true,
+    "fail_closed": true,
+    "retry_policy": {
+      "attempts": 5,
+      "initial_delay_ms": 500,
+      "backoff": 2,
+      "jitter_ms": 250
+    }
+  }
+}
