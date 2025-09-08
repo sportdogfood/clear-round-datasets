@@ -1,0 +1,23 @@
+MODE: LOAD-KIT-TEST (add_place lane). Use web access. Return no prose.
+
+Required files (fail-closed; do not guess)
+- https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+- https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.core.json
+
+What to do
+1) GET both URLs.
+2) Success only if: boot.json has keys policy, dirs, templates OR tasks; place-rules.core.json has name, version, required_fields, paths.save_path_template.
+3) On failure → return only error form (same as other lanes) with lane="add_place".
+
+If ok, return:
+{
+  "event":"LOAD-KIT-TEST",
+  "lane":"add_place",
+  "status":"ok",
+  "files":[
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json","status":"ok","size_bytes":<int>,"has_keys":{"policy":true,"dirs":true,"templates_or_tasks":true}},
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.core.json","status":"ok","size_bytes":<int>,"has_keys":{"name":true,"version":true,"required_fields":true,"paths_template":true}}
+  ],
+  "errors":[],
+  "timestamp":"ISO-8601"
+}
