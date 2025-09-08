@@ -1,31 +1,81 @@
-VENUES — OPERATOR CONTRACT (v1.0)
+VENUES CONTRACT — v2.6 (ET)
+Last updated: 2025-09-07
 
-SCOPE & TRUTH
-- Facts-only. Operator supplies HINTS; system confirms official name/link from the site.
-- UID must end with -venue. Filename equals UID: items/index/venues/{venue_uid}.json
+SCOPE
+- Canonical venue card schema and write behavior.
+- Facts-only; inputs are hints; confirm from official site (HTTPS) before write.
 
-REQUIRED INPUTS (Task: add_venue)
-- link            : HTTPS to official or candidate page (hint)
-- name            : candidate title (hint)
-- city_uid        : required
-- state_uid       : required
-- country_uid     : required
-- aka             : optional (pipe-delimited), used as hints
+MUST-LOAD (FULL URLs; fail-closed)
+- Manifest: https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json
+- Ingestion rules: https://crt-b1434e13de34.herokuapp.com/items/agents/ingestion-rules.txt
+- Venue rules: https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.json
+- Cards core (shared): https://crt-b1434e13de34.herokuapp.com/items/agents/cards-core.txt
+- Labels rules: https://crt-b1434e13de34.herokuapp.com/items/agents/labels-rules.json
 
-WHAT THE SYSTEM CONFIRMS / DERIVES
-- venue_official_link : canonical HTTPS on same domain (follow redirects)
-- venue_official_name : confirmed from official page (fallback to hint if not contradicted)
-- venue_display_name  : copy of official name
-- venue_uid           : slug(official name) with -venue suffix; on collision append -{city stem}
-- source_uids         : domain slug of official link
-- keywords            : deterministic set from official name + aka + city_uid + state_uid (lowercased, deduped, capped)
-- venue_city/state    : friendly names from normalizers (convenience only)
-- created_date, last_updated
-- Geo parse (no geocoder): if a Google Maps pin exists on official pages, parse lat/long from the URL; store as strings.
+DIRS & PATHS
+- Write path template: items/index/venues/{venue_uid}.json
+- Allowed prefix: /items/; must match regex: ^items/index/venues/[a-z0-9-]+-venue\.json$
 
-GUARDS / STOPS
-- Hard-stop if: link not HTTPS; link not official; city/state/country normalizers missing.
-- Duplicates: choose first ranked candidate, set git_status=needs_review, append facts-only note listing alternates in PREVIEW diagnostics.
+UID & FILENAME POLICY
+- venue_uid = ensure_suffix(slugify(venue_official_name), "-venue").
+- _uid for venue cards = venue_uid.
+- Filename equals UID.
 
-PREVIEW → COMMIT
-- PREVIEW shows full file and target path. No write without explicit COMMIT.
+REQUIRED FIELDS
+- _uid (== venue_uid)
+- venue_uid (ends -venue)
+- venue_official_name
+- venue_display_name
+- venue_official_link (HTTPS)
+- city_uid, state_uid, country_uid
+- source_uids (array; ≥1; domain slugs)
+- created_date (ET), last_updated (ET)
+
+OPTIONAL FIELDS
+- aka[], keywords[], label_uids[]
+- venue_city, venue_state, venue_description
+- venue_address_line1, venue_address_line2, venue_zip
+- venue_timezone (IANA), venue_phone, venue_email, venue_hours_note
+- venue_google_pin, venue_geo_lat, venue_geo_long
+- organizer_uids[], events_uids[]
+- notes, form_uid, git_status
+
+RELATED_UIDS BLOCK (include for stitching)
+- related_uids: {
+    "organizer_uids": [ … ],
+    "events_uids": [ … ],
+    "label_uids": [ … ],
+    "source_uids": [ … ]
+  }
+
+SOURCES
+- source_uid = domain_slug of official site; single domain can have one source record under /items/sources.
+
+DERIVED (allowed; never overwrite inputs)
+- yyyymm (when inspection month is set elsewhere)
+
+VALIDATION (fail-closed)
+- official_link_must_be_https=true
+- relations_must_resolve=true (city/state/country normalizers, labels when present)
+- bool_encoding=yn; date_format=YYYY-MM-DD
+- uid_must_have_required_suffix=true; filename_must_equal_uid=true
+
+PREVIEW ENVELOPE (read-only)
+{
+  "event":"ADD_VENUE_PREVIEW",
+  "status":"ok|error",
+  "path":"items/index/venues/<venue_uid>.json",
+  "message":"add: <Venue Display Name> (<city/state>)",
+  "json": { /* complete venue card (fields above) */ },
+  "sources_checked":[ {"url":"<final_url>","source_uid":"<domain-slug>","is_official":"y"} ],
+  "load_ledger":[ {"url":"…/boot.json","status":"ok"}, {"url":"…/venue-rules.json","status":"ok"} ],
+  "timestamp":"ISO-8601"
+}
+
+COMMIT ENVELOPE (full-drop only)
+- JSON: { "path": "https://…/items/index/venues/{venue_uid}.json", "message": "add: …", "json": { … } }
+
+FAILURE MODES
+- needs_rules | needs_source | needs_review | needs_normalizer | invalid_path | validation_failed
+
+END
