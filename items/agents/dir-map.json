@@ -1,28 +1,74 @@
 {
-  "version": "v2",
-  "entities": {
-    "events": "events",
-    "organizers": "organizers",
-    "sources": "sources",
-    "venues": "venues"
+  "name": "dir-map",
+  "version": "v1.6",
+  "updated": "2025-09-08",
+  "dirs": {
+    "agents_dir": "items/agents",
+    "modes_dir": "items/agents/modes",
+    "knowledge_dir": "items/agents/knowledge",
+    "events_dir": "items/events",
+    "venues_dir": "items/venues",
+    "organizers_dir": "items/organizers",
+    "places_root": "items/index",
+    "places_dirs": {
+      "hotels_dir": "items/index/hotels",
+      "airbnbs_dir": "items/index/airbnbs",
+      "rvparks_dir": "items/index/rvparks",
+      "restaurants_dir": "items/index/restaurants",
+      "sites_dir": "items/index/sites",
+      "parks_dir": "items/index/parks"
+    },
+    "sources_dir": "items/sources",
+    "labels_dir": "items/index/labels",
+    "time_dirs": {
+      "days_dir": "items/index/days",
+      "months_dir": "items/index/months",
+      "seasons_dir": "items/index/seasons",
+      "years_dir": "items/index/years",
+      "weeks_dir": "items/index/weeks"
+    },
+    "geo_dirs": {
+      "countries_dir": "items/index/countries",
+      "states_dir": "items/index/states",
+      "cities_dir": "items/index/cities",
+      "airports_dir": "items/index/airports",
+      "weather_dir": "items/index/weather"
+    },
+    "forms_dir": "items/index/forms",
+    "locale_dir": "items/index/locale"
   },
-  "normalizers": {
-    "airports": "airports",
-    "cities": "cities",
-    "countries": "countries",
-    "days": "days",
-    "forms": "forms",
-    "labels": "labels",
-    "months": "months",
-    "seasons": "seasons",
-    "states": "states",
-    "weather": "weather",
-    "weeks": "weeks",
-    "years": "years"
+  "plural_map": {
+    "hotel": "hotels",
+    "airbnb": "airbnbs",
+    "rvpark": "rvparks",
+    "restaurant": "restaurants",
+    "site": "sites",
+    "park": "parks"
   },
-  "content": {
-    "dine": "dine",
-    "locale": "locale",
-    "stay": "stay"
+  "path_templates": {
+    "event": "items/events/{organizer_uid}-{event_uid}.json",
+    "venue": "items/venues/{venue_uid}.json",
+    "place": "items/index/{place_type_plural}/{place_uid}.json",
+    "source": "items/sources/{source_uid}.json",
+    "labels_index": "items/index/labels/_index.json"
+  },
+  "validation_regex": {
+    "event": "^items/events/[a-z0-9-]+-[a-z0-9-]+\\.json$",
+    "venue": "^items/venues/[a-z0-9-]+-venue\\.json$",
+    "place": "^items/index/(hotels|airbnbs|rvparks|restaurants|sites|parks)/[a-z0-9-]+\\.json$",
+    "source": "^items/sources/[a-z0-9-]+(?:-[a-z0-9-]+)*\\.json$",
+    "label": "^items/index/labels/[a-z0-9-]+\\.json$"
+  },
+  "enforcement": {
+    "write_allow_prefixes": [
+      "/items/"
+    ],
+    "no_branch_dirs": true,
+    "events_path_regex": "^items/events/[a-z0-9-]+-[a-z0-9-]+\\.json$"
+  },
+  "notes": {
+    "no_legacy": "No shows/* or annual/series/finals branches — flat organizer-fronted event filenames only.",
+    "filenames": "Venues/places filename == UID; events filename != UID (organizer_uid prefix).",
+    "sources": "One source card per domain_slug under items/sources/."
   }
 }
