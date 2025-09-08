@@ -1,0 +1,37 @@
+MODE: LOAD-KIT-TEST (add_event lane). Use web access.
+
+Required files (fail-closed; do not guess):
+- https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+- https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
+
+What to do:
+1) Fetch both URLs over HTTPS.
+2) Treat success only if each fetch returns a non-empty JSON body AND contains these keys:
+   - boot.json → must contain: policy, dirs, (templates OR tasks)
+   - event-rules.core.json → must contain: name, version, required_fields, paths.save_path_template
+3) Return ONLY this JSON (no prose):
+
+{
+  "event":"LOAD-KIT-TEST",
+  "status":"ok|error",
+  "files":[
+    {
+      "url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
+      "status":"ok|error",
+      "size_bytes":null,
+      "has_keys":{"policy":false,"dirs":false,"templates_or_tasks":false}
+    },
+    {
+      "url":"https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json",
+      "status":"ok|error",
+      "size_bytes":null,
+      "has_keys":{"name":false,"version":false,"required_fields":false,"paths_template":false}
+    }
+  ],
+  "errors":[],
+  "timestamp":"ISO-8601"
+}
+
+Rules:
+- If either file fails or lacks required keys → status="error".
+- No alternate URLs. No memory. No summaries.
