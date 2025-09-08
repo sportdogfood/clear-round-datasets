@@ -1,48 +1,41 @@
 MODE: LOAD+PREVIEW (add_event lane). Use web access.
 
-First, run LOAD-KIT-TEST for:
-- https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
-- https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
-If LOAD-KIT-TEST status != "ok", STOP and return that JSON.
+First, run LOAD-KIT-TEST (same URLs as lane kit). If status != "ok", STOP and return that JSON.
 
-Inputs (hints; newline-separated key=value pairs — no quotes):
+Inputs (hints)
+- task=add_event
+- link=https://<official-event-homepage>
+- name=<event name hint>
+- start=YYYY-MM-DD
+- end=YYYY-MM-DD (optional)
+- venue_uid=<must end -venue>
+- organizer_uid=<organizer uid>
+- is_series=y|n|auto
+- is_finals=y|n (optional)
 
-task=add_event
-link=https://<official-event-homepage>
-name=<event name hint>
-start=YYYY-MM-DD
-end=YYYY-MM-DD                <-- optional; leave blank if unknown (end=)
-venue_uid=<must end -venue>
-organizer_uid=<organizer uid>
-is_series=y|n|auto
-is_finals=y|n                 <-- optional
-series_label=<Series|Week|Leg>  <-- optional; used when is_series=y
-total_legs_hint=<integer>       <-- optional; used when is_series=y
+What to do
+1) Confirm the official link (HTTPS, <=2 redirects). Fail if social or non-HTTPS.
+2) Confirm canonical event name from obvious page signals (JSON-LD Event.name, <title>, <h1>). Sanitize per core rules.
+3) Confirm start (and end when present) only if clearly stated in ISO or unambiguous page text/PDF. If ambiguous → status=error, reason=needs_review.
+4) Derive event_uid via slugify(canonical name). Build path: items/events/{organizer_uid}-{event_uid}.json.
+5) Build minimal, valid event card (facts-only) with required fields + relations. source_uids[0] must be the domain_slug of the confirmed URL.
 
-What to do:
-1) Confirm the official link (HTTPS, follow ≤2 redirects). Fail if social or non-HTTPS.
-2) Confirm canonical event name from structured or obvious page signals (JSON-LD Event.name, <title>, <h1>).
-3) Confirm start (and end if present) only if clearly stated (ISO). Otherwise STOP with needs_review.
-4) Derive event_uid via slugify(canonical name). Build path: items/events/{organizer_uid}-{event_uid}.json. Enforce prefix /items/ and events_path_regex when present.
-5) Return ONLY this JSON (no prose):
-
+Return ONLY this JSON (no prose):
 {
-  "event": "ADD_EVENT_PREVIEW",
-  "status": "ok|error",
-  "path": "items/events/<organizer_uid>-<event_uid>.json",
-  "message": "add: <Display Name> — <YYYY-MM-DD>[ to <YYYY-MM-DD>] (<venue_display_name or venue_uid>)",
+  "event":"ADD_EVENT_PREVIEW",
+  "status":"ok|error",
+  "reason":"rules_unavailable|needs_source|needs_review|needs_normalizer|" ,
+  "path":"items/events/<organizer_uid>-<event_uid>.json",
+  "message":"add: <Display Name> — <YYYY-MM-DD>[ to <YYYY-MM-DD>] (<venue_display_name or venue_uid>)",
   "json": { /* complete event card with _uid, event_uid, official fields, venue_uid, organizer_uid, source_uids[0], created_date, last_updated, related_uids{...} */ },
-  "discrepancies": [ { "field":"…","hint":"…","official":"…","resolution":"official_overrode_hint" } ],
-  "sources_checked": [ { "url":"<final_url>", "source_uid":"<domain-slug>", "is_official":"y" } ],
-  "load_ledger": [
-    { "url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json", "status":"ok" },
-    { "url":"https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json", "status":"ok" }
+  "sources_checked":[ {"url":"<final_url>","source_uid":"<domain-slug>","is_official":"y"} ],
+  "load_ledger":[
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json","status":"ok"},
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json","status":"ok"}
   ],
-  "timestamp": "ISO-8601"
+  "timestamp":"ISO-8601"
 }
 
-Errors (use one precise reason):
-- rules_unavailable | needs_source | needs_review | needs_normalizer | invalid_path
-
-Guards:
-- No alternate paths. No legacy dirs. No assumptions. Hints are not facts.
+Rules
+- If any confirmation is ambiguous → status=error with reason above.
+- No alternate paths. No legacy dirs. No assumptions.
