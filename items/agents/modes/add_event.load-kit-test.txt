@@ -1,37 +1,33 @@
-MODE: LOAD-KIT-TEST (add_event lane). Use web access.
+MODE: LOAD-KIT-TEST (add_event lane). Use web access. Return no prose.
 
-Required files (fail-closed; do not guess):
+Required files (fail-closed; do not guess)
 - https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
 - https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
 
-What to do:
-1) Fetch both URLs over HTTPS.
-2) Treat success only if each fetch returns a non-empty JSON body AND contains these keys:
-   - boot.json → must contain: policy, dirs, (templates OR tasks)
-   - event-rules.core.json → must contain: name, version, required_fields, paths.save_path_template
-3) Return ONLY this JSON (no prose):
-
+What to do
+1) GET both URLs over HTTPS.
+2) Treat success only if each fetch returns non-empty body AND parses (JSON) with mandatory keys:
+   - boot.json: must contain keys: policy, dirs, templates OR tasks
+   - event-rules.core.json: must contain keys: name, version, required_fields, paths.save_path_template
+3) If either file fails load/parse/key-check → STOP and return only this JSON:
 {
   "event":"LOAD-KIT-TEST",
-  "status":"ok|error",
+  "lane":"add_event",
+  "status":"error",
+  "files":[ {"url":"<boot>","status":"error","size_bytes":null,"has_keys":{}}, {"url":"<core>","status":"error","size_bytes":null,"has_keys":{}} ],
+  "errors":["<messages>"],
+  "timestamp":"ISO-8601"
+}
+
+If ok, return exactly this JSON (no prose):
+{
+  "event":"LOAD-KIT-TEST",
+  "lane":"add_event",
+  "status":"ok",
   "files":[
-    {
-      "url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json",
-      "status":"ok|error",
-      "size_bytes":null,
-      "has_keys":{"policy":false,"dirs":false,"templates_or_tasks":false}
-    },
-    {
-      "url":"https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json",
-      "status":"ok|error",
-      "size_bytes":null,
-      "has_keys":{"name":false,"version":false,"required_fields":false,"paths_template":false}
-    }
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json","status":"ok","size_bytes":<int>,"has_keys":{"policy":true,"dirs":true,"templates_or_tasks":true}},
+    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json","status":"ok","size_bytes":<int>,"has_keys":{"name":true,"version":true,"required_fields":true,"paths_template":true}}
   ],
   "errors":[],
   "timestamp":"ISO-8601"
 }
-
-Rules:
-- If either file fails or lacks required keys → status="error".
-- No alternate URLs. No memory. No summaries.
