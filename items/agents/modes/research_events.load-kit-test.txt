@@ -1,0 +1,28 @@
+MODE: LOAD-KIT-TEST (research_events lane). Use web access. Return ONLY a single JSON object in a fenced code block (```json … ```); no prose.
+
+kit_min_bytes=boot:900,event_core:1200,research_core:900; kit_fail_on_under=y
+
+Required files (HTTPS GET)
+- https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json                      → must contain: policy, dirs, (templates OR tasks)
+- https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json          → must contain: name, version, required_fields, paths.save_path_template
+- https://crt-b1434e13de34.herokuapp.com/items/agents/research-events-rules.core.json→ must contain: name, version, inputs, paths.snapshot_prefix
+
+SUCCESS
+```json
+{ "event":"LOAD-KIT-TEST", "lane":"research_events", "status":"ok",
+  "files":[ {"url":"…/boot.json","status":"ok","size_bytes":1234,"has_keys":{"policy":true,"dirs":true,"templates_or_tasks":true}},
+             {"url":"…/event-rules.core.json","status":"ok","size_bytes":1500,"has_keys":{"name":true,"version":true,"required_fields":true,"paths_template":true}},
+             {"url":"…/research-events-rules.core.json","status":"ok","size_bytes":980,"has_keys":{"name":true,"version":true,"inputs":true,"snapshot_prefix":true}} ],
+  "errors":[], "timestamp":"ISO-8601" }
+```
+
+FAILURE
+```json
+{ "event":"LOAD-KIT-TEST", "lane":"research_events", "status":"error",
+  "files":[ … ], "errors":["…"], "timestamp":"ISO-8601" }
+```
+
+Rules
+- Non-200, empty, or invalid JSON → error.
+- Enforce kit_min_bytes.
+- One JSON object only.
