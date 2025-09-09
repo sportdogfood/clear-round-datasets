@@ -1,0 +1,33 @@
+{
+  "name": "refresh-rules.core",
+  "version": "v1.0",
+  "families": [
+    "events",
+    "venues",
+    "places",
+    "labels",
+    "sources"
+  ],
+  "policy": {
+    "no_web_fetch": true,
+    "timezone": "America/New_York",
+    "never_overwrite_inputs": true
+  },
+  "derived_allowed": {
+    "events": [
+      "yyyymm",
+      "event_duration",
+      "event_current_status",
+      "days_until_start",
+      "days_until_end",
+      "event_estimated_next_start_date"
+    ],
+    "venues": [],
+    "places": [],
+    "labels": [],
+    "sources": []
+  },
+  "paths": {
+    "must_live_under_items": true
+  }
+}
