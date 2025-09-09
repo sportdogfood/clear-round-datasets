@@ -1,0 +1,31 @@
+REFRESH LANE — CONTRACT (v1.0)
+
+Responsibility
+- Re-read cards and recompute allowed derived values (e.g., yyyymm, days_until, event_current_status) and update last_updated when changes occur.
+- Local filesystem only; NO web fetch. Facts-only; do not alter authoritative fields.
+
+Inputs (caller → lane)
+- target ∈ {events, venues, places, labels, sources} (required)
+- scope  ∈ {all | state:<uid> | city:<uid> | organizer:<uid> | month:<yyyymm> | season:<yyyy-ss>} (optional)
+- window ∈ {upcoming | now | past | range:YYYY-MM-DD..YYYY-MM-DD} (optional; events-only)
+- force ∈ {y|n} (default n) — write even if derived values are unchanged.
+- notes (optional)
+
+Outputs (lane → caller)
+SUCCESS:
+{
+  "event": "REFRESH-RESULT", "status": "ok",
+  "target": "<family>", "scope": "<scope>", "window": "<window>",
+  "processed": <int>, "updated": <int>, "flagged": <int>
+}
+FAILURE:
+{
+  "event": "REFRESH-RESULT", "status": "error",
+  "reason": "rules_unavailable | read_error | invalid_path",
+  "details": "one-line reason", "timestamp": "ISO-8601"
+}
+
+Guards
+- Paths must remain under /items/...; existing filenames are preserved.
+- Derived fields set per cards-core/ingestion policies; never overwrite operator inputs.
+- America/New_York for time calculations.
