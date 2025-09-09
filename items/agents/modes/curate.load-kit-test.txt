@@ -1,0 +1,39 @@
+MODE: LOAD-KIT-TEST (curate lane). Use local filesystem via proxy. Return ONLY a single JSON object in a fenced code block (```json … ```); no prose.
+
+kit_min_bytes=boot:900,dir_map:900,labels:900,place_core:900; kit_fail_on_under=y
+
+Required files (fetch over HTTPS)
+- https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json               → must contain: policy, dirs
+- https://crt-b1434e13de34.herokuapp.com/items/agents/dir-map.json            → must contain: dirs, path_templates
+- https://crt-b1434e13de34.herokuapp.com/items/agents/labels-rules.json       → must contain: labels (or equivalent map), version
+- https://crt-b1434e13de34.herokuapp.com/items/agents/place-rules.core.json   → must contain: name, version, paths.save_path_template
+- https://crt-b1434e13de34.herokuapp.com/items/agents/venue-rules.json        → must contain: validation, paths (for near_venue resolution)
+
+Return format — SUCCESS
+```json
+{
+  "event":"LOAD-KIT-TEST",
+  "lane":"curate",
+  "status":"ok",
+  "files":[ {"url":"…","status":"ok","size_bytes":1234,"has_keys":{…}}, … ],
+  "errors":[],
+  "timestamp":"ISO-8601"
+}
+```
+
+Return format — FAILURE
+```json
+{
+  "event":"LOAD-KIT-TEST",
+  "lane":"curate",
+  "status":"error",
+  "files":[ {"url":"…","status":"ok|error","size_bytes":null,"has_keys":{}} , …],
+  "errors":["…why…"],
+  "timestamp":"ISO-8601"
+}
+```
+
+Rules
+- Treat non-200, empty, or invalid-JSON as error.
+- Enforce kit_min_bytes when provided.
+- One JSON object only. No prose.
