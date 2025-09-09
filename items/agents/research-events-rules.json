@@ -1,0 +1,47 @@
+{
+  "name": "research-events-rules",
+  "version": "v1.0",
+  "crawl": {
+    "entry_strategy": "use link if provided; else construct from venue/organizer known official links (when available); else use trusted calendars",
+    "depth": 1,
+    "max_pages_per_domain": 5,
+    "respect_robots": true
+  },
+  "extract": {
+    "signals": [
+      "JSON-LD Event.name/startDate/endDate/location",
+      "meta og:title",
+      "h1/h2 containing date tokens",
+      "calendar row selectors on known sites"
+    ],
+    "date_parse": "prefer ISO; else locale strings mapped to ISO; enforce ET"
+  },
+  "match": {
+    "date_window": "event overlaps requested date_range",
+    "geo": "when venue_uid/city_uid/state_uid provided, match by UID or city/state tokens",
+    "keywords": "title contains ALL keywords (case-insensitive) when provided",
+    "ratings": "title or badge contains any ratings_hint tokens when provided"
+  },
+  "rank": [
+    "is_official_source DESC",
+    "date_closeness ASC",
+    "exact_keyword_match DESC",
+    "title_length ASC"
+  ],
+  "projection": [
+    "canonical_name",
+    "url",
+    "start",
+    "end",
+    "venue_uid?",
+    "organizer_uid?",
+    "source_uid",
+    "evidence"
+  ],
+  "snapshot": {
+    "allow_prefix": "items/index/discovery/events/",
+    "content_type": "application/json",
+    "filename_template": "items/index/discovery/events/{state_or_scope}-{yyyymmdd..yyyymmdd}-{slug}.json",
+    "filename_rules": "slugify(filename_hint OR concat(filters))"
+  }
+}
