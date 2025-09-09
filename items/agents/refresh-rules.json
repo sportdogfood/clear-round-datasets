@@ -1,0 +1,47 @@
+{
+  "name": "refresh-rules",
+  "version": "v1.0",
+  "corpus": {
+    "resolve_from": "dir-map.json",
+    "keys": [
+      "events_dir",
+      "venues_dir",
+      "sources_dir",
+      "labels_dir",
+      "airports_dir",
+      "states_dir",
+      "cities_dir",
+      "places_root"
+    ]
+  },
+  "filters": {
+    "scope": {
+      "state": "match card.state_uid",
+      "city": "match card.city_uid",
+      "organizer": "match card.organizer_uid",
+      "season": "match derived season (events)",
+      "month": "match YYYYMM (events)"
+    },
+    "window": {
+      "upcoming": "event_official_start_date > today",
+      "now": "start <= today <= end",
+      "past": "event_official_end_date < today",
+      "range": "overlaps [start..end]"
+    }
+  },
+  "recompute": {
+    "events": {
+      "yyyymm": "YYYYMM from event_official_start_date",
+      "event_duration": "days_between(start, end) when both present (exclusive end)",
+      "event_current_status": "past|now|upcoming vs today (ET)",
+      "days_until_start": "days_between(today, start)",
+      "days_until_end": "days_between(today, end)",
+      "event_estimated_next_start_date": "if annual, roll forward ~1 year"
+    }
+  },
+  "write_policy": {
+    "only_if_changed_or_force": true,
+    "preserve_filename": true,
+    "must_live_under_items": true
+  }
+}
