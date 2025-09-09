@@ -1,0 +1,50 @@
+CURATE LANE — CONTRACT (v1.0)
+
+Responsibility
+- Build curated lists from existing cards (primarily places; can extend to venues/events later) using label filters, proximity to a venue, and simple quality gates.
+- Read-only scan + filter + rank; optional write of curated artifacts under /items/index/curations/…
+- No web fetch. No mutation of source cards.
+
+Inputs (caller → lane)
+- target ∈ {places} (initial scope; extensible)
+- place_type ∈ {hotel, airbnb, rvpark, restaurant, site, park} (required for places)
+- near_venue_uid (optional) — used for distance filter
+- radius_miles (optional; number) — max distance from near_venue_uid
+- include_labels (optional; array of label_uids)
+- exclude_labels (optional; array of label_uids)
+- price_band (optional; string e.g., $, $$, $$$)
+- min_review_score (optional; number 0–5)
+- max_results (optional; default 20)
+- save ∈ {y|n} (optional; default n)
+- filename_hint (optional; string for output filename stem if save=y)
+
+Outputs (lane → caller)
+SUCCESS (no write):
+{
+  "event": "CURATE-RESULT", "status": "ok",
+  "target": "places",
+  "criteria": { …echo of inputs used… },
+  "count": <int>,
+  "content": [ { place_uid, display_name, place_type, city_uid, state_uid, country_uid, labels, distance_miles? } ]
+}
+SUCCESS (with write):
+{
+  "event": "CURATE-RESULT", "status": "ok",
+  "target": "places",
+  "criteria": { … },
+  "count": <int>,
+  "write": { "path": "items/index/curations/places/...json", "bytes": <int>, "content_type": "application/json",
+              "commit": { "status": "ok", "message": "…", "url": "https://…/items/index/curations/places/….json" } }
+}
+FAILURE:
+{
+  "event": "CURATE-RESULT", "status": "error",
+  "reason": "rules_unavailable | invalid_path | needs_normalizer | read_error",
+  "details": "one-line reason", "timestamp": "ISO-8601"
+}
+
+Guards
+- Paths: writes must live under items/index/curations/ and match JSON extension.
+- Read directories from dir-map.json; do not hardcode.
+- Distance requires lat/long on both venue and place; otherwise allow a fallback city/state match when enabled.
+- America/New_York for time, though curate is time-agnostic by default.
