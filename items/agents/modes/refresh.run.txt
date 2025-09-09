@@ -1,0 +1,62 @@
+MODE: REFRESH (refresh lane). Use local filesystem via proxy. Return ONLY a single JSON object in a fenced code block (```json … ```); no prose.
+
+Operator knobs (enforce in this run)
+allow_write=y|n (default n); dry_run=y|n (default y); strict_path=y; require_items_prefix=y
+
+Precondition (kit load)
+- Fetch exactly:
+  • https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+  • https://crt-b1434e13de34.herokuapp.com/items/agents/dir-map.json
+- Both must parse as JSON and contain required keys:
+  • boot.json → policy, dirs
+  • dir-map.json → dirs, path_templates
+- If either fails → return FAILURE with reason="rules_unavailable" (no work).
+
+Inputs (from caller)
+- target ∈ {events, venues, places, labels, sources} (required)
+- scope ∈ {all | state:<uid> | city:<uid> | organizer:<uid> | month:<yyyymm> | season:<yyyy-ss>} (optional)
+- window ∈ {upcoming | now | past | range:YYYY-MM-DD..YYYY-MM-DD} (optional; events-only)
+- force ∈ {y|n} (optional; default n) — if y, recompute even if unchanged.
+- notes (optional string)
+
+What refresh does (examples)
+- Re-read cards and recompute derived fields (e.g., yyyymm, days_until, event_current_status) and lightweight indexes needed by the card itself.
+- DO NOT fetch the web here; this is a local recompute pass. (Web checks belong to a separate verify/enrich lane.)
+- Update last_updated (today, ET) on changed cards.
+
+Procedure
+1) Load kit. If not ok → FAILURE rules_unavailable.
+2) Scan the corpus for the target family using dir-map.dirs.*.
+3) Filter by scope/window (events only for date windows).
+4) For each card:
+   - Compute derived fields per cards-core/ingestion policies (facts-only; no web).
+   - If changes exist OR force=y, mark for write.
+5) If allow_write=y and dry_run=n, write back changed cards with strict path guard (must reside under items/... per dir-map).
+
+Output — SUCCESS
+```json
+{
+  "event": "REFRESH-RESULT",
+  "status": "ok",
+  "target": "events",
+  "scope": "state:ny",
+  "window": "range:2025-08-01..2025-12-31",
+  "processed": 0,
+  "updated": 0,
+  "flagged": 0
+}
+```
+
+Output — FAILURE
+```json
+{
+  "event": "REFRESH-RESULT",
+  "status": "error",
+  "reason": "rules_unavailable | read_error | invalid_path",
+  "details": "short one-line reason",
+  "timestamp": "ISO-8601"
+}
+```
+
+Rules
+- No alternate URLs. No memory. One JSON object only. No prose outside the fenced JSON block.
