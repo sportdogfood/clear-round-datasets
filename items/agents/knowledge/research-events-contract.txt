@@ -1,0 +1,52 @@
+RESEARCH_EVENTS LANE — CONTRACT (v1.0)
+
+Responsibility
+- Discover candidate events from official sites and trusted calendars using operator hints (state/venue/organizer/date range/keywords).
+- Read-only web fetch + parse; return a normalized candidate list. No card writes in this lane.
+- Optional: write a discovery snapshot JSON under /items/index/discovery/events/… for later review.
+
+Inputs (caller → lane)
+- task=research_events (required)
+- link (optional) — preferred official site root or calendar page
+- state_uid | city_uid | venue_uid | organizer_uid (optional filters)
+- date_range=YYYY-MM-DD..YYYY-MM-DD (required)
+- keywords=[...] (optional; terms to match in titles/notes)
+- ratings_hint=[...] (optional; e.g., ["CSI", "Premier", "AA", "WCHR"]) — match tokens
+- domains_hint=[...] (optional; restrict crawl to listed domains)
+- max_pages (optional; default 5 per domain)
+- save=y|n (optional; default n)
+- filename_hint (optional; when save=y)
+
+Outputs (lane → caller)
+SUCCESS (no write):
+{
+  "event":"DISCOVER-RESULT", "status":"ok",
+  "criteria":{ …echo of inputs… },
+  "count": <int>,
+  "candidates": [
+    { "canonical_name":"…", "url":"https://…", "start":"YYYY-MM-DD", "end":"YYYY-MM-DD?", "venue_uid?":"…", "organizer_uid?":"…", "source_uid":"domain-slug", "evidence":"short note" }
+  ],
+  "load_ledger":[ {"url":"…/boot.json","status":"ok"}, {"url":"…/event-rules.core.json","status":"ok"} ],
+  "timestamp":"ISO-8601"
+}
+SUCCESS (with snapshot write):
+{
+  "event":"DISCOVER-RESULT", "status":"ok",
+  "criteria":{…}, "count": <int>,
+  "write": { "path":"items/index/discovery/events/<slug>.json", "bytes": <int>, "content_type":"application/json",
+              "commit": { "status":"ok", "message":"discover(events): <hint> <range>", "url":"https://…/items/index/discovery/events/<slug>.json" } }
+}
+FAILURE:
+{
+  "event":"DISCOVER-RESULT", "status":"error",
+  "reason":"rules_unavailable | needs_source | fetch_failed | parse_failed | no_hits | invalid_range",
+  "details":"one-line reason", "timestamp":"ISO-8601"
+}
+
+Guards
+- Only official/first-party or trusted federation calendars (USEF/FEI/HSO) when domains_hint absent.
+- America/New_York for date comparisons. ISO-8601 outputs.
+- Snapshot path must start with items/index/discovery/events/ and end .json.
+
+Notes
+- This lane never writes event cards. Promotion to add_event happens separately (by selecting a candidate).
