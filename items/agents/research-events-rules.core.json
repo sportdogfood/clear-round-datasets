@@ -1,0 +1,49 @@
+{
+  "name": "research-events-rules.core",
+  "version": "v1.0",
+  "requires": [
+    "boot.json:policy,dirs",
+    "event-rules.core.json:uid_policy,validation"
+  ],
+  "inputs": {
+    "date_range_required": true,
+    "filters": [
+      "state_uid",
+      "city_uid",
+      "venue_uid",
+      "organizer_uid",
+      "keywords",
+      "ratings_hint",
+      "domains_hint"
+    ],
+    "limits": {
+      "max_pages_default": 5,
+      "max_candidates": 200
+    }
+  },
+  "sources": {
+    "allow_first_party": true,
+    "trusted_calendars": [
+      "usef.org",
+      "fei.org",
+      "horseshowsonline.com"
+    ],
+    "deny_social": [
+      "facebook.com",
+      "instagram.com",
+      "twitter.com",
+      "tiktok.com"
+    ],
+    "https_only": true,
+    "max_redirects": 2
+  },
+  "paths": {
+    "snapshot_prefix": "items/index/discovery/events/",
+    "snapshot_regex": "^items/index/discovery/events/[a-z0-9-]+\\.json$"
+  },
+  "validation": {
+    "require_items_prefix": true,
+    "strict_path": true,
+    "timezone": "America/New_York"
+  }
+}
