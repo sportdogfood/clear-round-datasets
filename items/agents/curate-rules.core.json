@@ -1,0 +1,49 @@
+{
+  "name": "curate-rules.core",
+  "version": "v1.0",
+  "families": [
+    "places"
+  ],
+  "inputs": {
+    "place_type_enum": [
+      "hotel",
+      "airbnb",
+      "rvpark",
+      "restaurant",
+      "site",
+      "park"
+    ],
+    "optional_filters": [
+      "near_venue_uid",
+      "radius_miles",
+      "include_labels",
+      "exclude_labels",
+      "price_band",
+      "min_review_score",
+      "max_results",
+      "save",
+      "filename_hint"
+    ]
+  },
+  "kit_requires": [
+    "boot.json:policy,dirs",
+    "dir-map.json:dirs,path_templates",
+    "labels-rules.json:labels,*",
+    "place-rules.core.json:name,version,paths.save_path_template",
+    "venue-rules.json:validation,paths"
+  ],
+  "paths": {
+    "write_prefix": "items/index/curations/places/",
+    "write_regex": "^items/index/curations/places/[a-z0-9-]+\\.json$",
+    "places_root": "items/index",
+    "venues_dir": "items/venues"
+  },
+  "validation": {
+    "require_items_prefix": true,
+    "strict_path": true,
+    "timezone": "America/New_York"
+  },
+  "defaults": {
+    "max_results": 20
+  }
+}
