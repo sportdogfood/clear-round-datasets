@@ -1,0 +1,86 @@
+MODE: INDEX (index lane). Use local filesystem via proxy. Return ONLY a single JSON object in a fenced code block (```json … ```); no prose.
+
+Operator knobs (enforce in this run)
+allow_write=y|n (default n); strict_path=y; require_items_prefix=y; strict_content_type=y
+
+Precondition (kit load)
+- Fetch exactly:
+  • https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+  • https://crt-b1434e13de34.herokuapp.com/items/agents/dir-map.json
+- Both must parse as JSON and contain required keys:
+  • boot.json → policy, dirs
+  • dir-map.json → dirs, path_templates
+- If either fails → return FAILURE with reason="rules_unavailable" (no work).
+
+Inputs (from caller)
+- target ∈ {events, venues, places, airports, states, cities, labels, sources} (required)
+- scope ∈ {all | state:<uid> | city:<uid> | season:<yyyy-ss> | month:<yyyymm> | organizer:<uid>} (optional)
+- window ∈ {upcoming | now | past | range:YYYY-MM-DD..YYYY-MM-DD} (optional; events-only)
+- status → passthrough filter (e.g., active, archived) (optional)
+- write_to (optional):
+    { path: "items/index/...", content_type: "application/json" | "text/plain" }
+
+Procedure
+1) Load kit (boot+dir-map). If not ok → FAILURE rules_unavailable.
+2) Resolve directories from dir-map.dirs.*; no hardcoded paths.
+3) Read the relevant corpus for target (e.g., events_dir for events).
+4) Apply filters:
+   - scope (state/city/season/month/organizer) when applicable to the target family.
+   - window (events only): interpret dates from card; compute now in America/New_York.
+   - status (if present on cards) as exact match.
+5) Produce content:
+   - For JSON output: return lightweight rows with minimally: _uid (or event_uid/venue_uid), display/name, primary dates (for events), and primary relations (*_uid fields).
+   - For text output: one line per row with compact fields (tab or pipe-separated).
+6) If write_to is provided and allow_write=y:
+   - Validate path: require_items_prefix=y → must start with "items/"; strict_path=y → must match the family under items/index/... (use dir-map.path_templates for hints).
+   - Validate content_type: strict_content_type=y → only application/json or text/plain.
+   - Commit file with the provided path and the generated body.
+
+Output — SUCCESS (no write)
+```json
+{
+  "event": "INDEX-RESULT",
+  "status": "ok",
+  "target": "events",
+  "scope": "state:ny",
+  "window": "upcoming",
+  "count": 0,
+  "content": []
+}
+```
+
+Output — SUCCESS (with write)
+```json
+{
+  "event": "INDEX-RESULT",
+  "status": "ok",
+  "target": "events",
+  "scope": "state:ny",
+  "window": "range:2025-09-01..2025-12-31",
+  "count": 0,
+  "write": {
+    "path": "items/index/events/by-state/ny/2025-09_2025-12.json",
+    "bytes": 2,
+    "content_type": "application/json",
+    "commit": {
+      "status": "ok",
+      "message": "chore(index): events ny 2025-09..2025-12",
+      "url": "https://crt-b1434e13de34.herokuapp.com/items/index/events/by-state/ny/2025-09_2025-12.json"
+    }
+  }
+}
+```
+
+Output — FAILURE
+```json
+{
+  "event": "INDEX-RESULT",
+  "status": "error",
+  "reason": "rules_unavailable | invalid_path | invalid_content_type | read_error",
+  "details": "short one-line reason",
+  "timestamp": "ISO-8601"
+}
+```
+
+Rules
+- No alternate URLs. No memory. One JSON object only. No prose outside the fenced JSON block.
