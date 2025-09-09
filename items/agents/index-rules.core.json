@@ -1,0 +1,53 @@
+{
+  "name": "index-rules.core",
+  "version": "v1.0",
+  "inputs": {
+    "target_enum": [
+      "events",
+      "venues",
+      "places",
+      "airports",
+      "states",
+      "cities",
+      "labels",
+      "sources"
+    ],
+    "scope_patterns": [
+      "all",
+      "state:<uid>",
+      "city:<uid>",
+      "season:<yyyy-ss>",
+      "month:<yyyymm>",
+      "organizer:<uid>"
+    ],
+    "window_patterns": [
+      "upcoming",
+      "now",
+      "past",
+      "range:YYYY-MM-DD..YYYY-MM-DD"
+    ]
+  },
+  "paths": {
+    "write_prefix": "items/index/",
+    "family_dirs": {
+      "events": "items/index/events",
+      "venues": "items/index/venues",
+      "places": "items/index/places",
+      "labels": "items/index/labels",
+      "sources": "items/index/sources",
+      "states": "items/index/states",
+      "cities": "items/index/cities",
+      "airports": "items/index/airports"
+    },
+    "allowed_content_types": [
+      "application/json",
+      "text/plain"
+    ]
+  },
+  "validation": {
+    "require_items_prefix": true,
+    "strict_path": true,
+    "strict_content_type": true,
+    "timezone": "America/New_York"
+  }
+}
