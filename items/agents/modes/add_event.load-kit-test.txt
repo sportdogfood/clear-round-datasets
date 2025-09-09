@@ -1,33 +1,66 @@
 MODE: LOAD-KIT-TEST (add_event lane). Use web access. Return no prose.
 
-Required files (fail-closed; do not guess)
-- https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
-- https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
+Purpose
+- Verify the minimal rules kit for this lane before any work. Fail closed if anything is missing, unreadable, or malformed.
 
-What to do
-1) GET both URLs over HTTPS.
-2) Treat success only if each fetch returns non-empty body AND parses (JSON) with mandatory keys:
-   - boot.json: must contain keys: policy, dirs, templates OR tasks
-   - event-rules.core.json: must contain keys: name, version, required_fields, paths.save_path_template
-3) If either file fails load/parse/key-check → STOP and return only this JSON:
+Procedure
+1) Perform HTTPS GET on both URLs:
+   - https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json
+   - https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json
+2) For each response:
+   a) Confirm HTTP status is 200.
+   b) (Optional) Confirm Content-Type is application/json.
+   c) Parse JSON and verify required keys:
+      - boot.json → must contain keys: policy, dirs, and (templates OR tasks)
+      - event-rules.core.json → must contain keys: name, version, required_fields, and paths.save_path_template
+   d) Compute response body size in bytes (size_bytes).
+
+Error handling
+- If HTTP status != 200 → treat as error.
+- If body is empty or invalid JSON → treat as error.
+- If required keys are missing → treat as error and include which keys are missing.
+- Always include size_bytes when available; else null.
+- Populate errors[] with descriptive messages.
+
+File object shape (for each entry in files[])
 {
-  "event":"LOAD-KIT-TEST",
-  "lane":"add_event",
-  "status":"error",
-  "files":[ {"url":"<boot>","status":"error","size_bytes":null,"has_keys":{}}, {"url":"<core>","status":"error","size_bytes":null,"has_keys":{}} ],
-  "errors":["<messages>"],
-  "timestamp":"ISO-8601"
+  "url":"<full https url>",
+  "status":"ok|error",
+  "size_bytes":<int|null>,
+  "has_keys":{
+    // for boot.json
+    "policy":true|false,
+    "dirs":true|false,
+    "templates_or_tasks":true|false,
+    // for *.core.json
+    "name":true|false,
+    "version":true|false,
+    "required_fields":true|false,
+    "paths_template":true|false  // maps to presence of paths.save_path_template
+  }
 }
 
-If ok, return exactly this JSON (no prose):
+Required output format — SUCCESS (return EXACTLY one JSON object)
 {
   "event":"LOAD-KIT-TEST",
   "lane":"add_event",
   "status":"ok",
-  "files":[
-    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/boot.json","status":"ok","size_bytes":<int>,"has_keys":{"policy":true,"dirs":true,"templates_or_tasks":true}},
-    {"url":"https://crt-b1434e13de34.herokuapp.com/items/agents/event-rules.core.json","status":"ok","size_bytes":<int>,"has_keys":{"name":true,"version":true,"required_fields":true,"paths_template":true}}
-  ],
+  "files":[ {…boot file object…}, {…core file object…} ],
   "errors":[],
   "timestamp":"ISO-8601"
 }
+
+Required output format — FAILURE (return EXACTLY one JSON object)
+{
+  "event":"LOAD-KIT-TEST",
+  "lane":"add_event",
+  "status":"error",
+  "files":[ {…boot file object…}, {…core file object…} ],
+  "errors":[ "…descriptive error strings…" ],
+  "timestamp":"ISO-8601"
+}
+
+Rules
+- No alternate URLs. No memory. No summaries. One JSON object only.
+- If either file fails load/parse/key-check → status=error.
+- Use FULL HTTPS URLs as listed above.
