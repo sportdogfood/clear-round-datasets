@@ -1,0 +1,44 @@
+INDEX LANE — CONTRACT (v1.0)
+
+Responsibility
+- Build lightweight indices over existing cards (events, venues, places, airports, states, cities, labels, sources).
+- Read-only scan + filter + project; optional write of index artifacts under /items/index/…
+- No web fetch; no mutation of source cards.
+
+Inputs (caller → lane)
+- target ∈ {events, venues, places, airports, states, cities, labels, sources} (required)
+- scope  ∈ {all | state:<uid> | city:<uid> | season:<yyyy-ss> | month:<yyyymm> | organizer:<uid>} (optional)
+- window ∈ {upcoming | now | past | range:YYYY-MM-DD..YYYY-MM-DD} (optional; events-only)
+- status (optional; passthrough filter such as active|archived)
+- write_to (optional) { path: "items/index/...", content_type: "application/json" | "text/plain" }
+
+Outputs (lane → caller)
+SUCCESS (no write):
+{
+  "event": "INDEX-RESULT", "status": "ok",
+  "target": "<family>", "scope": "<scope>", "window": "<window>",
+  "count": <int>, "content": [ <rows> ]
+}
+SUCCESS (with write):
+{
+  "event": "INDEX-RESULT", "status": "ok",
+  "target": "<family>", "scope": "<scope>", "window": "<window>",
+  "count": <int>,
+  "write": { "path": "items/index/...", "bytes": <int>, "content_type": "application/json|text/plain",
+              "commit": { "status": "ok", "message": "…", "url": "https://…/items/index/…" } }
+}
+FAILURE:
+{
+  "event": "INDEX-RESULT", "status": "error",
+  "reason": "rules_unavailable | invalid_path | invalid_content_type | read_error",
+  "details": "one-line reason", "timestamp": "ISO-8601"
+}
+
+Guards
+- Paths: must begin with items/index/ and match family subdirs (see rules.core paths).
+- Content types: only application/json or text/plain.
+- Read corpus dirs from dir-map.json; do not hardcode.
+- America/New_York for time comparisons.
+
+Notes
+- Row schemas are lightweight (ids, names, primary relations, dates for events). Heavy derivations belong to refresher/indexer enrichment elsewhere.
