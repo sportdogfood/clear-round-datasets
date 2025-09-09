@@ -1,0 +1,50 @@
+{
+  "name": "curate-rules",
+  "version": "v1.0",
+  "selection": {
+    "resolve_corpus_from_dir_map": true,
+    "places_dirs_keys": [
+      "hotels_dir",
+      "airbnbs_dir",
+      "rvparks_dir",
+      "restaurants_dir",
+      "sites_dir",
+      "parks_dir"
+    ],
+    "filter_place_type": "match directory == plural(place_type)"
+  },
+  "filters": {
+    "labels": {
+      "include": "card.label_uids contains ALL include_labels (when provided)",
+      "exclude": "card.label_uids contains NONE of exclude_labels (when provided)"
+    },
+    "price_band": "card.price_band equals requested (when provided)",
+    "review_score": "card.review_score >= min_review_score (when provided)",
+    "distance_miles": "haversine(place.lat,place.long,venue.lat,venue.long) <= radius_miles (when both coords present)"
+  },
+  "distance_fallback": {
+    "enabled": true,
+    "rule": "if coords missing on either end, fallback to city_uid/state_uid equality with near_venue_uid’s city/state"
+  },
+  "ranking": [
+    "desc(review_score)",
+    "asc(distance_miles when present)",
+    "asc(display_name)"
+  ],
+  "projection": [
+    "place_uid",
+    "place_display_name|place_official_name",
+    "place_type",
+    "city_uid",
+    "state_uid",
+    "country_uid",
+    "label_uids",
+    "distance_miles?"
+  ],
+  "write_policy": {
+    "allow_prefix": "items/index/curations/places/",
+    "content_type": "application/json",
+    "filename_template": "items/index/curations/places/{filename_stem}.json",
+    "filename_stem_rule": "slugify(filename_hint OR (place_type + '-' + near_venue_uid + (radius_miles?)))"
+  }
+}
