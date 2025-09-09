@@ -1,0 +1,58 @@
+MODE: LOAD+PREVIEW (research_events lane). Use web access. Return ONLY a single JSON object in a fenced code block (```json … ```); no prose.
+
+Operator knobs
+allow_write=y|n (default n); strict_path=y; require_items_prefix=y; https_only=y
+
+Precondition
+- Perform LOAD-KIT-TEST; if status != "ok" → STOP and return that JSON with status="error" and reason="rules_unavailable".
+
+Inputs (hints)
+- task=research_events
+- link=https://<preferred-official-root-or-calendar> (optional)
+- state_uid|city_uid|venue_uid|organizer_uid (optional filters; any subset)
+- date_range=YYYY-MM-DD..YYYY-MM-DD (required)
+- keywords=["hunter","jumper", … ] (optional)
+- ratings_hint=["CSI","Premier","AA","WCHR"] (optional)
+- domains_hint=["traversecityhorseshows.com","usef.org"] (optional)
+- max_pages=<int> (optional; default 5)
+- save=y|n (optional; default n)
+- filename_hint=<string> (optional when save=y)
+
+Procedure
+1) Load kit (boot, event-rules.core, research-events-rules.core). If not ok → FAILURE rules_unavailable.
+2) Select entry URLs: link (if provided and https, non-social), else official domains for venue/organizer (when known), else trusted calendars (USEF/FEI/HSO).
+3) Fetch up to max_pages per domain; parse for event candidates using JSON-LD and calendar cues.
+4) Normalize: canonical_name, url, start/end (ISO, ET), source_uid (domain slug). Attach venue_uid/organizer_uid if matchable from hints.
+5) Filter: overlap date_range; apply geo filters; match keywords/ratings when present.
+6) Rank candidates; cap at 200.
+7) Output DISCOVER-RESULT (no write). If save=y and allow_write=y, build snapshot path under items/index/discovery/events/ using filename_hint; enforce strict path and prefix; commit JSON.
+
+SUCCESS (no write)
+```json
+{ "event":"DISCOVER-RESULT", "status":"ok",
+  "criteria":{ "state_uid":"fl", "date_range":"2025-12-01..2026-03-31", "keywords":["hunter","jumper"] },
+  "count": 0,
+  "candidates": [],
+  "load_ledger":[ {"url":"…/boot.json","status":"ok"}, {"url":"…/event-rules.core.json","status":"ok"}, {"url":"…/research-events-rules.core.json","status":"ok"} ],
+  "timestamp":"ISO-8601" }
+```
+
+SUCCESS (with snapshot write)
+```json
+{ "event":"DISCOVER-RESULT", "status":"ok",
+  "criteria":{…}, "count": 0,
+  "write":{ "path":"items/index/discovery/events/fl-20251201..20260331-hunter-jumper.json", "bytes":2, "content_type":"application/json",
+             "commit":{ "status":"ok", "message":"discover(events): fl 2025-12..2026-03 hunter/jumper", "url":"https://crt-b1434e13de34.herokuapp.com/items/index/discovery/events/fl-20251201..20260331-hunter-jumper.json" } },
+  "timestamp":"ISO-8601" }
+```
+
+FAILURE
+```json
+{ "event":"DISCOVER-RESULT", "status":"error",
+  "reason":"needs_source | fetch_failed | parse_failed | no_hits | invalid_range | rules_unavailable",
+  "details":"short one-line reason",
+  "timestamp":"ISO-8601" }
+```
+
+Rules
+- HTTPS only; deny social hosts. No event card writes in this lane. One JSON object only.
