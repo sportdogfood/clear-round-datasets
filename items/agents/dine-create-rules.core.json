@@ -1,0 +1,41 @@
+{
+  "version": "v1.0",
+  "lane": "compose_dine",
+  "dirs": {
+    "items_root": "items/dine",
+    "path_template": "items/dine/{hub_uid}/",
+    "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" },
+    "filename_equals_uid": false
+  },
+  "policy": { "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
+  "schemas": {
+    "input": { "hub_uid": "string" },
+    "essentials": { "path": "string" },
+    "outputs": { "section": "string", "seo": "object", "blocks": "object" }
+  },
+  "defaults": {
+    "source": {
+      "essentials_path": "items/dine/{hub_uid}/essentials.json",
+      "curated_path": "items/dine/{hub_uid}/curated.json"
+    },
+    "style": {
+      "persona": "clear_round_travel_owner",
+      "tone": "upbeat_insider",
+      "diction": { "equestrian_terms": true, "travel_terms": true }
+    },
+    "seo": {
+      "slug": "dine-{hub_uid}",
+      "title_tmpl": "Where to Eat — {hub_uid}",
+      "meta_desc_tmpl": "Curated dining near the showgrounds with walkable picks and quick bites."
+    }
+  },
+  "commit": {
+    "stash": {
+      "folder": "items/dine/{hub_uid}/",
+      "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" }
+    },
+    "write": { "enabled": "n", "message_tmpl": "feat(dine): create content {hub_uid}" }
+  },
+  "created": "2025-09-15T00:00:00Z",
+  "last_updated": "2025-09-15T00:00:00Z"
+}
