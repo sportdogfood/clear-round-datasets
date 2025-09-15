@@ -1,0 +1,9 @@
+{
+"version": "v1.0",
+"lane": "route_curate",
+"dirs": { "items_root": "items/routes", "path_template": "items/routes/{hub_uid}/", "filenames": { "route": "route.json" }, "filename_equals_uid": false },
+"policy": { "https_only": true, "idempotent_commits": true },
+"schemas": { "input": { "hub_uid": "string", "origin": "string", "date": "string" }, "output": { "segments": "array", "stops": "array" } },
+"commit": { "stash": { "folder": "items/routes/{hub_uid}/", "filenames": { "route": "route.json" } }, "write": { "enabled": "n", "message_tmpl": "feat(route): {hub_uid}" } },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
