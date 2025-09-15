@@ -1,33 +1,81 @@
 {
   "version": "v1.0",
-  "label": "boot-dine",
-  "lanes": {
-    "research_dine": {
-      "enabled": "y",
-      "rules_core": "/items/agents/dine-rules.core.json",
-      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
-      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+  "lane": "batch_dine",
+  "dirs": {
+    "items_root": "items/places",
+    "path_template": "items/places/{city_uid}/",
+    "filenames": { "curated": "curated_places.json", "review": "places_review_queue.json" },
+    "filename_equals_uid": false
+  },
+  "policy": { "providers": ["google", "yelp", "osm"], "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
+  "schemas": {
+    "input_city": { "city_uid": "string", "venue_uid": "string|null", "center": { "lat": "number", "lng": "number" }, "knobs_override": "object|null" },
+    "input_batch": { "cities": "array", "commit": { "enabled": "string" }, "concurrency": "number" },
+    "output_city": {
+      "city_uid": "string",
+      "rows_curated": "number",
+      "rows_review": "number",
+      "paths": { "curated": "string", "review": "string" },
+      "status": "string",
+      "reason": "string|null"
     },
-    "batch_dine": {
-      "enabled": "y",
-      "rules_core": "/items/agents/dine-batch-rules.core.json",
-      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
-      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-    },
-    "batch_dine_preview": {
-      "enabled": "y",
-      "rules_core": "/items/agents/dine-batch-rules.core.json",
-      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
-      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    "output_batch": {
+      "status": "string",
+      "summary": { "cities_in": "number", "cities_ok": "number", "cities_failed": "number", "rows_curated_total": "number", "rows_review_total": "number" },
+      "cities": "array"
     }
   },
-  "dirs": { "allow": ["items/places"], "deny": ["items/events", "items/stays", "items/organizers"] },
-  "tasks": {
-    "DINE+CURATE": { "lane": "research_dine", "strict_return": "single_json_fenced" },
-    "DINE+BATCH": { "lane": "batch_dine", "strict_return": "single_json_fenced" },
-    "DINE+BATCH-PREVIEW": { "lane": "batch_dine_preview", "strict_return": "single_json_fenced" }
+  "defaults": {
+    "fetch": {
+      "google": {
+        "search_mode": "nearby",
+        "rankPreference": "POPULARITY",
+        "maxResultCount": 20,
+        "includedPrimaryTypes": ["restaurant","italian_restaurant","mexican_restaurant","steak_house","sushi_restaurant","greek_restaurant","thai_restaurant","indian_restaurant","pizza_restaurant","seafood_restaurant","vegan_restaurant"],
+        "includedTypes": ["cafe","bakery","bar"],
+        "field_mask_search": ["id","displayName","primaryType","types","rating","userRatingCount","websiteUri","currentOpeningHours.openNow"],
+        "details_for_place_ids": "y",
+        "field_mask_details": ["id","formattedAddress","nationalPhoneNumber","priceLevel","takeout","delivery","dineIn","reservable","goodForGroups","goodForKids","outdoorSeating"]
+      },
+      "yelp": { "enable": "y", "fields": ["price","categories","rating","review_count","url"] },
+      "osm": { "enable": "y", "tags": ["amenity=restaurant","amenity=cafe","amenity=fast_food","amenity=bar","amenity=pub"], "fields": ["name","cuisine","website","phone"] }
+    },
+    "knobs": {
+      "dedupe": { "by": ["place_id","name"], "name_fuzzy": "y", "same_location_threshold_m": 75 },
+      "filters": { "open_now": null, "min_rating": 4.0, "min_reviews": 50, "include_types": [], "exclude_types": ["fast_food_restaurant"] },
+      "derive": {
+        "cuisine": { "from": ["primaryType","types","yelp.categories","osm.cuisine"], "strip_suffix": "_restaurant", "fallback_tokens": ["cafe","bakery","bar","pizzeria","steak_house","seafood_restaurant","vegan"], "label_case": "title" },
+        "price_tier": { "from": ["priceLevel","yelp.price"], "map_numeric": ["$","$$","$$$","$$$$","$$$$$"] },
+        "bucket": { "strategy": "type_then_cuisine", "special_types": { "Cafe/Bakery": ["cafe","bakery"], "Bar": ["bar"] } }
+      },
+      "distance": { "enable": "y", "center": { "lat": 0, "lng": 0 }, "walkable_m": 800, "short_drive_m": 6000, "output_field": "distance_m", "bucket_field": "distance_bucket" },
+      "scoring": { "formula": "rating_log_reviews", "weights": { "rating": 1.0, "log_reviews": 1.0, "proximity_bonus": 0.3, "flags_bonus": 0.2 }, "round_to": 3 },
+      "confidence": { "signals": { "has_cuisine": true, "has_price": true, "rating_ge": 4.2, "reviews_ge": 100, "has_website": true }, "tiers": { "high_min": 3, "medium_min": 2 } },
+      "split": {
+        "curated_if": { "confidence_in": ["high","medium"], "require_one_of": ["cuisine","website"] },
+        "review_else": true,
+        "review_checklist": [
+          { "when_missing": "price_tier", "action": "add price" },
+          { "when_missing": "cuisine", "action": "confirm cuisine" },
+          { "when_false": "has_website", "action": "add website" }
+        ]
+      },
+      "output": {
+        "format": "arrays",
+        "fields": {
+          "order": ["source_provider","source_place_id","name","cuisine","cuisine_source","price_tier","price_source","rating","userRatingCount","website","open_now","bucket","distance_m","distance_bucket","score","confidence","confidence_reasons","types","primaryType","flags"],
+          "rename": { "source_place_id": "place_id", "userRatingCount": "reviews" },
+          "omit_nulls": true
+        },
+        "deliver": { "curated_key": "curated", "review_key": "review", "include_summary": "y", "include_meta": "y" }
+      }
+    },
+    "batch": { "concurrency": 4, "max_cities": 100, "stop_on_error": "n" }
   },
-  "policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
+  "commit": {
+    "stash": { "folder": "items/places/{city_uid}/", "filenames": { "curated": "curated_places.json", "review": "places_review_queue.json" } },
+    "write": { "enabled": "n", "message_tmpl": "feat(dine): curate {city_uid} — {rows_curated} curated, {rows_review} review" }
+  },
   "created": "2025-09-15T00:00:00Z",
   "last_updated": "2025-09-15T00:00:00Z"
 }
