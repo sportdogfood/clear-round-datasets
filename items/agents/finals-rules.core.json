@@ -1,0 +1,9 @@
+{
+"version": "v1.0",
+"lane": "group_finals",
+"dirs": { "items_root": "items/finals", "path_template": "items/finals/{finals_uid}/", "filenames": { "index": "finals.json", "section": "section.md", "seo": "seo.json" }, "filename_equals_uid": false },
+"policy": { "https_only": true, "idempotent_commits": true },
+"schemas": { "input": { "finals_uid": "string", "hubs": "array", "date_start": "string", "date_end": "string" }, "output": { "finals_uid": "string", "hubs": "array", "dates": "object" } },
+"commit": { "stash": { "folder": "items/finals/{finals_uid}/", "filenames": { "index": "finals.json", "section": "section.md", "seo": "seo.json" } }, "write": { "enabled": "n", "message_tmpl": "feat(finals): group {finals_uid}" } },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
