@@ -1,20 +1,13 @@
 {
   "version": "v1.0",
-  "lane": "research_locales",
+  "lane": "research_locale",
   "dirs": {
-    "items_root": "items/locales",
-    "path_template": "items/locales/{city_uid}/",
-    "filenames": {
-      "curated": "locale.json",
-      "review": "locale_review_queue.json"
-    },
+    "items_root": "items/locale",
+    "path_template": "items/locale/{city_uid}/",
+    "filenames": { "curated": "locale.json", "review": "locale_review_queue.json" },
     "filename_equals_uid": false
   },
-  "policy": {
-    "https_only": true,
-    "idempotent_commits": true,
-    "write_requires_summary": true
-  },
+  "policy": { "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
   "schemas": {
     "input_locale": {
       "city_uid": "string",
@@ -45,24 +38,19 @@
       "brand": "Clear Round Travel",
       "mission": "Locale profiles for equestrian show travel with practical flight and neighborhood intel.",
       "personas": [
-        { "key": "show_mom", "needs": ["parking_for_rigs", "pet_friendly", "breakfast_near_barns"] },
-        { "key": "trainer_team", "needs": ["goodForGroups", "late_hours"] },
-        { "key": "junior_rider", "needs": ["budget_friendly", "safe_walkable"] }
+        { "key": "show_mom", "needs": ["parking_for_rigs","pet_friendly","breakfast_near_barns"] },
+        { "key": "trainer_team", "needs": ["goodForGroups","late_hours"] },
+        { "key": "junior_rider", "needs": ["budget_friendly","safe_walkable"] }
       ]
     },
-    "airports_schema": {
-      "fields": ["code", "name", "is_hub", "distance_km", "notes"]
-    },
+    "airports_schema": { "fields": ["code","name","is_hub","distance_km","notes"] },
     "distance": { "walkable_m": 800, "short_drive_m": 6000 },
     "neighborhoods": [],
     "batch": { "concurrency": 6, "max_cities": 100, "stop_on_error": "n" }
   },
   "commit": {
-    "stash": {
-      "folder": "items/locales/{city_uid}/",
-      "filenames": { "curated": "locale.json", "review": "locale_review_queue.json" }
-    },
-    "write": { "enabled": "n", "message_tmpl": "feat(locales): build {city_uid} locale" }
+    "stash": { "folder": "items/locale/{city_uid}/", "filenames": { "curated": "locale.json", "review": "locale_review_queue.json" } },
+    "write": { "enabled": "n", "message_tmpl": "feat(locale): build {city_uid} locale" }
   },
   "created": "2025-09-15T00:00:00Z",
   "last_updated": "2025-09-15T00:00:00Z"
