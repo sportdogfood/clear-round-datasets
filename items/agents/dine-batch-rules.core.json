@@ -1,0 +1,33 @@
+{
+  "version": "v1.0",
+  "label": "boot-dine",
+  "lanes": {
+    "research_dine": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "batch_dine": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-batch-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "batch_dine_preview": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-batch-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    }
+  },
+  "dirs": { "allow": ["items/places"], "deny": ["items/events", "items/stays", "items/organizers"] },
+  "tasks": {
+    "DINE+CURATE": { "lane": "research_dine", "strict_return": "single_json_fenced" },
+    "DINE+BATCH": { "lane": "batch_dine", "strict_return": "single_json_fenced" },
+    "DINE+BATCH-PREVIEW": { "lane": "batch_dine_preview", "strict_return": "single_json_fenced" }
+  },
+  "policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
+  "created": "2025-09-15T00:00:00Z",
+  "last_updated": "2025-09-15T00:00:00Z"
+}
