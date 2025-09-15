@@ -1,0 +1,53 @@
+{
+  "version": "v1.0",
+  "label": "boot-stay",
+  "lanes": {
+    "research_stay": {
+      "enabled": "y",
+      "rules_core": "/items/agents/stay-rules.core.json",
+      "io": {
+        "web_access": "y",
+        "return": "single_json_fenced",
+        "write_default": "n"
+      },
+      "pre_run": {
+        "load_kit_test": "n",
+        "urls": []
+      }
+    },
+    "batch_stay": {
+      "enabled": "y",
+      "rules_core": "/items/agents/stay-batch-rules.core.json",
+      "io": {
+        "web_access": "y",
+        "return": "single_json_fenced",
+        "write_default": "n"
+      },
+      "pre_run": {
+        "load_kit_test": "n",
+        "urls": []
+      }
+    }
+  },
+  "dirs": {
+    "allow": ["items/stays"],
+    "deny": ["items/events", "items/places", "items/organizers"]
+  },
+  "tasks": {
+    "STAY+CURATE": {
+      "lane": "research_stay",
+      "strict_return": "single_json_fenced"
+    },
+    "STAY+BATCH": {
+      "lane": "batch_stay",
+      "strict_return": "single_json_fenced"
+    }
+  },
+  "policy": {
+    "hints_are_not_truth": true,
+    "https_only": true,
+    "idempotent_commits": true
+  },
+  "created": "2025-09-15T00:00:00Z",
+  "last_updated": "2025-09-15T00:00:00Z"
+}
