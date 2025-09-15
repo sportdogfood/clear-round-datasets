@@ -21,7 +21,7 @@
       "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
     }
   },
-  "dirs": { "allow": ["items/places"], "deny": ["items/events", "items/stays", "items/organizers"] },
+  "dirs": { "allow": ["items/places"], "deny": ["items/events","items/stays","items/organizers"] },
   "tasks": {
     "DINE+CURATE": { "lane": "research_dine", "strict_return": "single_json_fenced" },
     "DINE+BATCH": { "lane": "batch_dine", "strict_return": "single_json_fenced" },
