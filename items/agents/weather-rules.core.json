@@ -1,0 +1,9 @@
+{
+"version": "v1.0",
+"lane": "weather_curate",
+"dirs": { "items_root": "items/weather", "path_template": "items/weather/{hub_uid}/", "filenames": { "weather": "weather.json" }, "filename_equals_uid": false },
+"policy": { "https_only": true, "idempotent_commits": true },
+"schemas": { "input": { "hub_uid": "string", "date_start": "string", "date_end": "string", "timezone": "string" }, "output": { "daily": "array", "summary": "object" } },
+"commit": { "stash": { "folder": "items/weather/{hub_uid}/", "filenames": { "weather": "weather.json" } }, "write": { "enabled": "n", "message_tmpl": "feat(weather): {hub_uid} {date_start}-{date_end}" } },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
