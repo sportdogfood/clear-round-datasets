@@ -1,0 +1,10 @@
+{
+"version": "v1.0",
+"lane": "compose_locale_batch",
+"dirs": { "items_root": "items/locale", "path_template": "items/locale/{locale_uid}/", "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" }, "filename_equals_uid": false },
+"policy": { "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
+"schemas": { "input_batch": { "locales": "array", "commit": { "enabled": "string" }, "concurrency": "number" } },
+"defaults": { "batch": { "concurrency": 6, "max_locales": 100, "stop_on_error": "n" } },
+"commit": { "stash": { "folder": "items/locale/{locale_uid}/", "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" } }, "write": { "enabled": "n", "message_tmpl": "feat(locale): create content {locale_uid}" } },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
