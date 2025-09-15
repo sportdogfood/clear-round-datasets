@@ -1,0 +1,175 @@
+{
+  "version": "v1.0",
+  "lane": "batch_stay",
+  "dirs": {
+    "items_root": "items/stays",
+    "path_template": "items/stays/{city_uid}/",
+    "filenames": {
+      "curated": "curated_stays.json",
+      "review": "stays_review_queue.json"
+    },
+    "filename_equals_uid": false
+  },
+  "policy": {
+    "providers": ["google", "yelp", "osm"],
+    "https_only": true,
+    "idempotent_commits": true,
+    "write_requires_summary": true
+  },
+  "schemas": {
+    "input_city": {
+      "city_uid": "string",
+      "venue_uid": "string|null",
+      "center": { "lat": "number", "lng": "number" },
+      "knobs_override": "object|null"
+    },
+    "input_batch": {
+      "cities": "array",
+      "commit": { "enabled": "string" },
+      "concurrency": "number"
+    },
+    "output_city": {
+      "city_uid": "string",
+      "rows_curated": "number",
+      "rows_review": "number",
+      "paths": {
+        "curated": "string",
+        "review": "string"
+      },
+      "status": "string",
+      "reason": "string|null"
+    },
+    "output_batch": {
+      "status": "string",
+      "summary": {
+        "cities_in": "number",
+        "cities_ok": "number",
+        "cities_failed": "number",
+        "rows_curated_total": "number",
+        "rows_review_total": "number"
+      },
+      "cities": "array"
+    }
+  },
+  "defaults": {
+    "fetch": {
+      "google": {
+        "search_mode": "nearby",
+        "rankPreference": "POPULARITY",
+        "maxResultCount": 20,
+        "includedPrimaryTypes": ["lodging", "hotel", "motel", "campground", "rv_park"],
+        "includedTypes": ["lodging", "campground", "rv_park"],
+        "field_mask_search": ["id", "displayName", "primaryType", "types", "rating", "userRatingCount", "websiteUri", "formattedAddress"],
+        "details_for_place_ids": "y",
+        "field_mask_details": ["id", "formattedAddress", "nationalPhoneNumber", "priceLevel", "reservable", "goodForGroups", "goodForKids"]
+      },
+      "yelp": {
+        "enable": "y",
+        "fields": ["price", "categories", "rating", "review_count", "url"]
+      },
+      "osm": {
+        "enable": "y",
+        "tags": ["tourism=hotel", "tourism=motel", "tourism=apartment", "tourism=guest_house", "tourism=camp_site", "tourism=caravan_site"],
+        "fields": ["name", "website", "phone"]
+      }
+    },
+    "knobs": {
+      "dedupe": { "by": ["place_id", "name"], "name_fuzzy": "y", "same_location_threshold_m": 75 },
+      "filters": { "min_rating": 4.0, "min_reviews": 40, "include_types": [], "exclude_types": [] },
+      "derive": {
+        "property_type": {
+          "from": ["primaryType", "types", "yelp.categories", "osm.tags"],
+          "map_tokens": {
+            "hotel": ["hotel", "lodging"],
+            "motel": ["motel"],
+            "extended_stay": ["apartment", "aparthotel", "suite"],
+            "bnb_guesthouse": ["guest_house", "bed_and_breakfast"],
+            "campground": ["campground", "camp_site"],
+            "rv_park": ["rv_park", "caravan_site"]
+          },
+          "label_case": "lower"
+        },
+        "price_tier": { "from": ["priceLevel", "yelp.price"], "map_numeric": ["$", "$$", "$$$", "$$$$", "$$$$$"] },
+        "bucket": { "strategy": "property_then_distance", "special_types": { "Walkable": [], "<10-min drive": [] } }
+      },
+      "distance": { "enable": "y", "center": { "lat": 0, "lng": 0 }, "walkable_m": 1200, "short_drive_m": 10000, "output_field": "distance_m", "bucket_field": "distance_bucket" },
+      "scoring": {
+        "formula": "rating_log_reviews",
+        "weights": { "rating": 1.0, "log_reviews": 1.0, "proximity_bonus": 0.35, "flags_bonus": 0.4 },
+        "flag_weights": { "parking_for_rigs": 0.4, "pet_friendly": 0.2, "breakfast_included": 0.15, "kitchenette": 0.15 },
+        "round_to": 3
+      },
+      "confidence": {
+        "signals": { "has_property_type": true, "has_price": true, "rating_ge": 4.2, "reviews_ge": 100, "has_website": true },
+        "tiers": { "high_min": 3, "medium_min": 2 }
+      },
+      "split": {
+        "curated_if": { "confidence_in": ["high", "medium"], "require_one_of": ["property_type", "website"] },
+        "review_else": true,
+        "review_checklist": [
+          { "when_missing": "resort_fee", "action": "add resort_fee" },
+          { "when_missing": "cancellation_window_days", "action": "confirm cancellation window" },
+          { "when_missing": "parking_for_rigs", "action": "confirm rig parking" },
+          { "when_missing": "pet_friendly", "action": "confirm pet policy" }
+        ]
+      },
+      "output": {
+        "format": "arrays",
+        "fields": {
+          "order": [
+            "source_provider",
+            "source_place_id",
+            "name",
+            "property_type",
+            "brand",
+            "loyalty_programs",
+            "price_tier",
+            "price_source",
+            "resort_fee",
+            "resort_fee_currency",
+            "cancellation_window_days",
+            "points_eligible",
+            "pet_friendly",
+            "pet_fee",
+            "parking_for_rigs",
+            "parking_notes",
+            "breakfast_included",
+            "kitchenette",
+            "laundry",
+            "connecting_rooms",
+            "pool",
+            "gym",
+            "on_property_dining",
+            "rating",
+            "userRatingCount",
+            "website",
+            "phone",
+            "formattedAddress",
+            "distance_m",
+            "distance_bucket",
+            "bucket",
+            "score",
+            "confidence",
+            "confidence_reasons",
+            "types",
+            "primaryType",
+            "flags"
+          ],
+          "rename": { "source_place_id": "place_id", "userRatingCount": "reviews" },
+          "omit_nulls": true
+        },
+        "deliver": { "curated_key": "curated", "review_key": "review", "include_summary": "y", "include_meta": "y" }
+      }
+    },
+    "batch": { "concurrency": 4, "max_cities": 50, "stop_on_error": "n" }
+  },
+  "commit": {
+    "stash": {
+      "folder": "items/stays/{city_uid}/",
+      "filenames": { "curated": "curated_stays.json", "review": "stays_review_queue.json" }
+    },
+    "write": { "enabled": "n", "message_tmpl": "feat(stays): curate {city_uid} — {rows_curated} curated, {rows_review} review" }
+  },
+  "created": "2025-09-15T00:00:00Z",
+  "last_updated": "2025-09-15T00:00:00Z"
+}
