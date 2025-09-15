@@ -1,33 +1,42 @@
 {
-  "version": "v1.0",
-  "label": "boot-stay",
-  "lanes": {
-    "research_stay": {
-      "enabled": "y",
-      "rules_core": "/items/agents/stay-rules.core.json",
-      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
-      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-    },
-    "batch_stay": {
-      "enabled": "y",
-      "rules_core": "/items/agents/stay-batch-rules.core.json",
-      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
-      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-    },
-    "batch_stay_preview": {
-      "enabled": "y",
-      "rules_core": "/items/agents/stay-batch-rules.core.json",
-      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
-      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-    }
-  },
-  "dirs": { "allow": ["items/stays"], "deny": ["items/events","items/places","items/organizers"] },
-  "tasks": {
-    "STAY+CURATE": { "lane": "research_stay", "strict_return": "single_json_fenced" },
-    "STAY+BATCH": { "lane": "batch_stay", "strict_return": "single_json_fenced" },
-    "STAY+BATCH-PREVIEW": { "lane": "batch_stay_preview", "strict_return": "single_json_fenced" }
-  },
-  "policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
-  "created": "2025-09-15T00:00:00Z",
-  "last_updated": "2025-09-15T00:00:00Z"
+"version": "v1.0",
+"label": "boot-stay",
+"lanes": {
+"research_stay": {
+"enabled": "y",
+"rules_core": "/items/agents/stay-rules.core.json",
+"io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+},
+"batch_stay": {
+"enabled": "y",
+"rules_core": "/items/agents/stay-batch-rules.core.json",
+"io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
+"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+},
+"compose_stay": {
+"enabled": "y",
+"rules_core": "/items/agents/stay-create-rules.core.json",
+"io": { "web_access": "n", "return": "single_json_fenced", "write_default": "n" },
+"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+},
+"compose_stay_batch": {
+"enabled": "y",
+"rules_core": "/items/agents/stay-create-batch-rules.core.json",
+"io": { "web_access": "n", "return": "single_json_fenced", "write_default": "y" },
+"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+}
+},
+"dirs": { "allow": ["items/stay"], "deny": ["items/events","items/dine","items/locale","items/organizers"] },
+"tasks": {
+"STAY+CURATE": { "lane": "research_stay", "strict_return": "single_json_fenced" },
+"STAY+BATCH": { "lane": "batch_stay", "strict_return": "single_json_fenced" },
+"STAY+BATCH+PREVIEW": { "lane": "batch_stay", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" },
+"STAY+CREATE": { "lane": "compose_stay", "strict_return": "single_json_fenced" },
+"STAY+CREATE+BATCH": { "lane": "compose_stay_batch", "strict_return": "single_json_fenced" },
+"STAY+CREATE+BATCH+PREVIEW": { "lane": "compose_stay_batch", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" }
+},
+"policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
+"created": "2025-09-15T00:00:00Z",
+"last_updated": "2025-09-15T00:00:00Z"
 }
