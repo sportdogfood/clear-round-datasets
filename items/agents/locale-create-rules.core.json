@@ -1,0 +1,10 @@
+{
+"version": "v1.0",
+"lane": "compose_locale",
+"dirs": { "items_root": "items/locale", "path_template": "items/locale/{locale_uid}/", "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" }, "filename_equals_uid": false },
+"policy": { "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
+"schemas": { "input": { "locale_uid": "string" }, "outputs": { "section": "string", "seo": "object", "blocks": "object" } },
+"defaults": { "source": { "essentials_path": "items/locale/{locale_uid}/essentials.json" }, "seo": { "slug": "locale-{locale_uid}", "title_tmpl": "Arriving & Getting Around — {locale_uid}", "meta_desc_tmpl": "Airports, drive times, and neighborhoods for show travel." } },
+"commit": { "stash": { "folder": "items/locale/{locale_uid}/", "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" } }, "write": { "enabled": "n", "message_tmpl": "feat(locale): create content {locale_uid}" } },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
