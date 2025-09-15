@@ -1,38 +1,72 @@
 {
-  "version": "v1.0",
-  "label": "boot-agents-load-kit",
-  "kits": {
-    "dine": {
-      "required": [
-        "/items/agents/boot-dine.json",
-        "/items/agents/dine-rules.core.json",
-        "/items/agents/dine-batch-rules.core.json"
-      ]
-    },
-    "stay": {
-      "required": [
-        "/items/agents/boot-stay.json",
-        "/items/agents/stay-rules.core.json",
-        "/items/agents/stay-batch-rules.core.json"
-      ]
-    },
-    "locale": {
-      "required": [
-        "/items/agents/boot-locale.json",
-        "/items/agents/locale-rules.core.json",
-        "/items/agents/locale-batch-rules.core.json"
-      ]
-    }
-  },
-  "checks": {
-    "http_status": 200,
-    "content_types": ["application/json", "text/plain"],
-    "must_have_keys": {
-      "/items/agents/dine-rules.core.json": ["version","lane","defaults","schemas"],
-      "/items/agents/stay-rules.core.json": ["version","lane","defaults","schemas"],
-      "/items/agents/locale-rules.core.json": ["version","lane","defaults","schemas"]
-    }
-  },
-  "created": "2025-09-15T00:00:00Z",
-  "last_updated": "2025-09-15T00:00:00Z"
+"version": "v1.0",
+"label": "boot-agents-load-kit",
+"kits": {
+"dine": {
+"required": [
+"/items/agents/boot-dine.json",
+"/items/agents/dine-rules.core.json",
+"/items/agents/dine-create-rules.core.json",
+"/items/agents/dine-batch-rules.core.json",
+"/items/agents/dine-create-batch-rules.core.json"
+]
+},
+"stay": {
+"required": [
+"/items/agents/boot-stay.json",
+"/items/agents/stay-rules.core.json",
+"/items/agents/stay-create-rules.core.json",
+"/items/agents/stay-batch-rules.core.json",
+"/items/agents/stay-create-batch-rules.core.json"
+]
+},
+"locale": {
+"required": [
+"/items/agents/boot-locale.json",
+"/items/agents/locale-rules.core.json",
+"/items/agents/locale-create-rules.core.json",
+"/items/agents/locale-batch-rules.core.json",
+"/items/agents/locale-create-batch-rules.core.json"
+]
+},
+"finals": {
+"required": [
+"/items/agents/boot-finals.json",
+"/items/agents/finals-rules.core.json"
+]
+},
+"route": {
+"required": [
+"/items/agents/boot-route.json",
+"/items/agents/route-rules.core.json"
+]
+},
+"weather": {
+"required": [
+"/items/agents/boot-weather.json",
+"/items/agents/weather-rules.core.json"
+]
+},
+"events": {
+"required": [
+"/items/agents/boot-events.json",
+"/items/agents/events-rules.core.json"
+]
+}
+},
+"checks": {
+"http_status": 200,
+"content_types": ["application/json", "text/plain"],
+"must_have_keys": {
+"/items/agents/dine-rules.core.json": ["version","lane","defaults","schemas"],
+"/items/agents/stay-rules.core.json": ["version","lane","defaults","schemas"],
+"/items/agents/locale-rules.core.json": ["version","lane","defaults","schemas"],
+"/items/agents/finals-rules.core.json": ["version","lane","defaults","schemas"],
+"/items/agents/route-rules.core.json": ["version","lane","defaults","schemas"],
+"/items/agents/weather-rules.core.json": ["version","lane","defaults","schemas"],
+"/items/agents/events-rules.core.json": ["version","lane","defaults","schemas"]
+}
+},
+"created": "2025-09-15T00:00:00Z",
+"last_updated": "2025-09-15T00:00:00Z"
 }
