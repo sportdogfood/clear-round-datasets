@@ -1,0 +1,10 @@
+{
+"version": "v1.0",
+"lane": "compose_stay",
+"dirs": { "items_root": "items/stay", "path_template": "items/stay/{hub_uid}/", "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" }, "filename_equals_uid": false },
+"policy": { "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
+"schemas": { "input": { "hub_uid": "string" }, "outputs": { "section": "string", "seo": "object", "blocks": "object" } },
+"defaults": { "source": { "essentials_path": "items/stay/{hub_uid}/essentials.json", "curated_path": "items/stay/{hub_uid}/curated.json" }, "seo": { "slug": "stay-{hub_uid}", "title_tmpl": "Where to Stay — {hub_uid}", "meta_desc_tmpl": "Curated stays near the showgrounds with rig parking and pet-friendly picks." } },
+"commit": { "stash": { "folder": "items/stay/{hub_uid}/", "filenames": { "section": "section.md", "seo": "seo.json", "blocks": "blocks.json" } }, "write": { "enabled": "n", "message_tmpl": "feat(stay): create content {hub_uid}" } },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
