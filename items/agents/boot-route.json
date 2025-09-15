@@ -1,0 +1,9 @@
+{
+"version": "v1.0",
+"label": "boot-route",
+"lanes": { "route_curate": { "enabled": "y", "rules_core": "/items/agents/route-rules.core.json", "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" }, "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] } } },
+"dirs": { "allow": ["items/routes"], "deny": ["items/events","items/dine","items/stay","items/locale","items/finals","items/weather"] },
+"tasks": { "ROUTE+CURATE": { "lane": "route_curate", "strict_return": "single_json_fenced" }, "ROUTE+CURATE+PREVIEW": { "lane": "route_curate", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" } },
+"policy": { "https_only": true, "idempotent_commits": true },
+"created": "2025-09-15T00:00:00Z", "last_updated": "2025-09-15T00:00:00Z"
+}
