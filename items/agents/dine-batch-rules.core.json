@@ -7,23 +7,12 @@
     "filenames": { "curated": "curated_places.json", "review": "places_review_queue.json" },
     "filename_equals_uid": false
   },
-  "policy": { "providers": ["google", "yelp", "osm"], "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
+  "policy": { "providers": ["google","yelp","osm"], "https_only": true, "idempotent_commits": true, "write_requires_summary": true },
   "schemas": {
     "input_city": { "city_uid": "string", "venue_uid": "string|null", "center": { "lat": "number", "lng": "number" }, "knobs_override": "object|null" },
     "input_batch": { "cities": "array", "commit": { "enabled": "string" }, "concurrency": "number" },
-    "output_city": {
-      "city_uid": "string",
-      "rows_curated": "number",
-      "rows_review": "number",
-      "paths": { "curated": "string", "review": "string" },
-      "status": "string",
-      "reason": "string|null"
-    },
-    "output_batch": {
-      "status": "string",
-      "summary": { "cities_in": "number", "cities_ok": "number", "cities_failed": "number", "rows_curated_total": "number", "rows_review_total": "number" },
-      "cities": "array"
-    }
+    "output_city": { "city_uid": "string", "rows_curated": "number", "rows_review": "number", "paths": { "curated": "string", "review": "string" }, "status": "string", "reason": "string|null" },
+    "output_batch": { "status": "string", "summary": { "cities_in": "number", "cities_ok": "number", "cities_failed": "number", "rows_curated_total": "number", "rows_review_total": "number" }, "cities": "array" }
   },
   "defaults": {
     "fetch": {
@@ -48,7 +37,7 @@
         "price_tier": { "from": ["priceLevel","yelp.price"], "map_numeric": ["$","$$","$$$","$$$$","$$$$$"] },
         "bucket": { "strategy": "type_then_cuisine", "special_types": { "Cafe/Bakery": ["cafe","bakery"], "Bar": ["bar"] } }
       },
-      "distance": { "enable": "y", "center": { "lat": 0, "lng": 0 }, "walkable_m": 800, "short_drive_m": 6000, "output_field": "distance_m", "bucket_field": "distance_bucket" },
+      "distance": { "enable": "y", "center": {"lat": 0, "lng": 0}, "walkable_m": 800, "short_drive_m": 6000, "output_field": "distance_m", "bucket_field": "distance_bucket" },
       "scoring": { "formula": "rating_log_reviews", "weights": { "rating": 1.0, "log_reviews": 1.0, "proximity_bonus": 0.3, "flags_bonus": 0.2 }, "round_to": 3 },
       "confidence": { "signals": { "has_cuisine": true, "has_price": true, "rating_ge": 4.2, "reviews_ge": 100, "has_website": true }, "tiers": { "high_min": 3, "medium_min": 2 } },
       "split": {
