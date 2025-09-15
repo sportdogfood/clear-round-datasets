@@ -1,0 +1,33 @@
+{
+  "version": "v1.0",
+  "label": "boot-locale",
+  "lanes": {
+    "research_locale": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "batch_locale": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-batch-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "batch_locale_preview": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-batch-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    }
+  },
+  "dirs": { "allow": ["items/locale"], "deny": ["items/events","items/places","items/stays","items/organizers"] },
+  "tasks": {
+    "LOCALE+CURATE": { "lane": "research_locale", "strict_return": "single_json_fenced" },
+    "LOCALE+BATCH": { "lane": "batch_locale", "strict_return": "single_json_fenced" },
+    "LOCALE+BATCH-PREVIEW": { "lane": "batch_locale_preview", "strict_return": "single_json_fenced" }
+  },
+  "policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
+  "created": "2025-09-15T00:00:00Z",
+  "last_updated": "2025-09-15T00:00:00Z"
+}
