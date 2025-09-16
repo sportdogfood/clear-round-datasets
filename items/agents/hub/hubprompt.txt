@@ -1,0 +1,44 @@
+"# Hunter/Jumper/Equitation Events — Hub/Leg Dataset (by Venue → Year → Hub → Legs)
+
+## Scope
+- Disciplines: hunter, jumper, equitation (tag rules apply)
+- Geography: US 48 (exclude AK, HI)
+- Window: 2025-01-01 to 2026-12-31
+- Sources: Official only (text/html, application/pdf, text/plain)
+
+## File layout
+- One hub per JSON at: items/events/by_venue/<venue_uid>/<year>/<hub_uid>.json
+- Per-venue-year manifest at: items/events/by_venue/<venue_uid>/manifest.<year>.json
+- Cross-year index at: items/events/_manifests/by_year/<year>.json
+- Sources CSV at: items/events/_sources/<venue_uid>-<year>.csv
+
+## Hub schema (event_hub_v1)
+- hub_uid, hub_label, hub_start, hub_end (ISO), venue_* fields, organizer_uid
+- legs[]: leg_uid, label, leg_start, leg_end, official_link?
+- sources[]: url, content_type, checked_at, evidence_snippet (≤200 chars)
+- tags[] derived from tag_rules; discipline = [""hunter"",""jumper"",""equitation""]
+
+## Curation rules (enforced)
+- https_only: y
+- official_only: y
+- use_site_restricted_search with terms: [""events"",""calendar"",""schedule"",""show"",""series"",""circuit"",""dates"",""hunter"",""jumper"",""equitation"",""prize list""]
+- require_name_on_page: y
+- require_start_date: y
+- allow_empty_end_date: y (but prefer extracting end)
+- extraction order: json_ld_event → microdata → opengraph → ics → visible_text_dates → pdf_text
+- normalize human dates → ISO
+
+## Dedupe
+- key = (event_official_name_norm, event_official_start_date, venue_domain)
+
+## Workflow
+1) DISCOVER: Run site-restricted search, collect candidates (discard non-official).
+2) EXTRACT: Parse dates (start/end); map to hub + legs (weekly cadence).
+3) BUILD HUB JSON: one hub per file, legs nested.
+4) WRITE: Send NDJSON lines to proxy with {path, json}.
+5) UPDATE MANIFESTS/INDEXES: regenerate after writes.
+6) QA: Random sample leg dates vs. page; status=needs_review if ambiguous.
+
+## Updating
+- When dates shift: bump hub_start/end and affected legs only.
+- Preserve leg_uids; never silently rename; add _meta.change_note if needed."
