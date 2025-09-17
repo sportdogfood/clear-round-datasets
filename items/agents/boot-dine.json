@@ -1,42 +1,42 @@
 {
-"version": "v1.0",
-"label": "boot-dine",
-"lanes": {
-"research_dine": {
-"enabled": "y",
-"rules_core": "/items/agents/dine-rules.core.json",
-"io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-},
-"batch_dine": {
-"enabled": "y",
-"rules_core": "/items/agents/dine-batch-rules.core.json",
-"io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-},
-"compose_dine": {
-"enabled": "y",
-"rules_core": "/items/agents/dine-create-rules.core.json",
-"io": { "web_access": "n", "return": "single_json_fenced", "write_default": "n" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-},
-"compose_dine_batch": {
-"enabled": "y",
-"rules_core": "/items/agents/dine-create-batch-rules.core.json",
-"io": { "web_access": "n", "return": "single_json_fenced", "write_default": "y" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-}
-},
-"dirs": { "allow": ["items/dine"], "deny": ["items/events","items/stay","items/locale","items/organizers"] },
-"tasks": {
-"DINE+CURATE": { "lane": "research_dine", "strict_return": "single_json_fenced" },
-"DINE+BATCH": { "lane": "batch_dine", "strict_return": "single_json_fenced" },
-"DINE+BATCH+PREVIEW": { "lane": "batch_dine", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" },
-"DINE+CREATE": { "lane": "compose_dine", "strict_return": "single_json_fenced" },
-"DINE+CREATE+BATCH": { "lane": "compose_dine_batch", "strict_return": "single_json_fenced" },
-"DINE+CREATE+BATCH+PREVIEW": { "lane": "compose_dine_batch", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" }
-},
-"policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
-"created": "2025-09-15T00:00:00Z",
-"last_updated": "2025-09-15T00:00:00Z"
+  "version": "v1.0",
+  "label": "boot-dine",
+  "lanes": {
+    "research_dine": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "batch_dine": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-batch-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "compose_dine": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-create-rules.core.json",
+      "io": { "web_access": "n", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "compose_dine_batch": {
+      "enabled": "y",
+      "rules_core": "/items/agents/dine-create-batch-rules.core.json",
+      "io": { "web_access": "n", "return": "single_json_fenced", "write_default": "y" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    }
+  },
+  "dirs": { "allow": ["items/dine"], "deny": ["items/events", "items/stay", "items/locale", "items/organizers"] },
+  "tasks": {
+    "DINE+CURATE": { "lane": "research_dine", "strict_return": "single_json_fenced" },
+    "DINE+BATCH": { "lane": "batch_dine", "strict_return": "single_json_fenced" },
+    "DINE+BATCH+PREVIEW": { "lane": "batch_dine", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" },
+    "DINE+CREATE": { "lane": "compose_dine", "strict_return": "single_json_fenced" },
+    "DINE+CREATE+BATCH": { "lane": "compose_dine_batch", "strict_return": "single_json_fenced" },
+    "DINE+CREATE+BATCH+PREVIEW": { "lane": "compose_dine_batch", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" }
+  },
+  "policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
+  "created": "2025-09-17T00:00:00Z",
+  "last_updated": "2025-09-17T00:00:00Z"
 }
