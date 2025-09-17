@@ -1,42 +1,42 @@
 {
-"version": "v1.0",
-"label": "boot-locale",
-"lanes": {
-"research_locale": {
-"enabled": "y",
-"rules_core": "/items/agents/locale-rules.core.json",
-"io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-},
-"batch_locale": {
-"enabled": "y",
-"rules_core": "/items/agents/locale-batch-rules.core.json",
-"io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-},
-"compose_locale": {
-"enabled": "y",
-"rules_core": "/items/agents/locale-create-rules.core.json",
-"io": { "web_access": "n", "return": "single_json_fenced", "write_default": "n" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-},
-"compose_locale_batch": {
-"enabled": "y",
-"rules_core": "/items/agents/locale-create-batch-rules.core.json",
-"io": { "web_access": "n", "return": "single_json_fenced", "write_default": "y" },
-"pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
-}
-},
-"dirs": { "allow": ["items/locale"], "deny": ["items/events","items/dine","items/stay","items/organizers"] },
-"tasks": {
-"LOCALE+CURATE": { "lane": "research_locale", "strict_return": "single_json_fenced" },
-"LOCALE+BATCH": { "lane": "batch_locale", "strict_return": "single_json_fenced" },
-"LOCALE+BATCH+PREVIEW": { "lane": "batch_locale", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" },
-"LOCALE+CREATE": { "lane": "compose_locale", "strict_return": "single_json_fenced" },
-"LOCALE+CREATE+BATCH": { "lane": "compose_locale_batch", "strict_return": "single_json_fenced" },
-"LOCALE+CREATE+BATCH+PREVIEW": { "lane": "compose_locale_batch", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" }
-},
-"policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
-"created": "2025-09-15T00:00:00Z",
-"last_updated": "2025-09-15T00:00:00Z"
+  "version": "v1.0",
+  "label": "boot-locale",
+  "lanes": {
+    "research_locale": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "batch_locale": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-batch-rules.core.json",
+      "io": { "web_access": "y", "return": "single_json_fenced", "write_default": "y" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "compose_locale": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-create-rules.core.json",
+      "io": { "web_access": "n", "return": "single_json_fenced", "write_default": "n" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    },
+    "compose_locale_batch": {
+      "enabled": "y",
+      "rules_core": "/items/agents/locale-create-batch-rules.core.json",
+      "io": { "web_access": "n", "return": "single_json_fenced", "write_default": "y" },
+      "pre_run": { "load_kit_test": "y", "urls": ["/items/agents/boot-agents-load-kit.json"] }
+    }
+  },
+  "dirs": { "allow": ["items/locale"], "deny": ["items/events", "items/dine", "items/stay", "items/organizers"] },
+  "tasks": {
+    "LOCALE+CURATE": { "lane": "research_locale", "strict_return": "single_json_fenced" },
+    "LOCALE+BATCH": { "lane": "batch_locale", "strict_return": "single_json_fenced" },
+    "LOCALE+BATCH+PREVIEW": { "lane": "batch_locale", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" },
+    "LOCALE+CREATE": { "lane": "compose_locale", "strict_return": "single_json_fenced" },
+    "LOCALE+CREATE+BATCH": { "lane": "compose_locale_batch", "strict_return": "single_json_fenced" },
+    "LOCALE+CREATE+BATCH+PREVIEW": { "lane": "compose_locale_batch", "io": { "write_default": "n" }, "strict_return": "single_json_fenced" }
+  },
+  "policy": { "hints_are_not_truth": true, "https_only": true, "idempotent_commits": true },
+  "created": "2025-09-17T00:00:00Z",
+  "last_updated": "2025-09-17T00:00:00Z"
 }
