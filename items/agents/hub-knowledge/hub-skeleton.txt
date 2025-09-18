@@ -1,0 +1,57 @@
+# Clear Round Travel — Hub Knowledge
+# File: hub-skeleton.txt
+# Version: v1.0
+# Last updated: 2025-09-18
+# Purpose: Visual hub skeleton with insider tone prompts; used to draft new hubs row by row.
+
+Page > Hub-Type > Hub
+
+hub_hero
+- Title / Hero line
+- Hero image / postcard
+- Origin/cred line
+
+hub_overview
+- Event basics (name, date range, organizer)
+- Event > Legs (weeks, finals, or specific leg)
+- Event > Venue (name, city, state, placeid, lat/lon)
+- Time normalization (days-til, duration, month, season, year)
+- Location normalization (city, state, country)
+
+hub_body
+hub_section
+
+Stay = “Where to sleep near the show”
+- Hotels, Airbnb, RV Parks
+- Knobs: radius, nightly rate, cancellation, walkability
+- Attributes: dog-friendly, resort fee, points redemption
+- Insider tone: “A 10-minute drive beats ‘walkable’ when rig parking is easy.”
+
+Dine = “Where to eat between rounds”
+- Restaurants, Quick Eats, Cuisine types
+- Knobs: radius, cuisine, price, reviews
+- Attributes: late-night, kid-friendly, outdoor seating
+- Insider tone: “Oli’s is the unofficial rider lounge after a handy round.”
+
+Locale = “What’s around”
+- Towns/Neighborhoods, Attractions
+- Knobs: distance, type
+- Attributes: walkable main street, horse-friendly, upscale
+- Insider tone: “On Mondays, we sneak to Worth Avenue before the next course walk.”
+
+Essentials = “Practical must-haves”
+- Groceries, Pharmacies, Feed/Bedding
+- Knobs: radius, hours (24/7)
+- Attributes: delivery-friendly, bulk order
+- Insider tone: “I lock in bedding deliveries by Tuesday to avoid the scramble.”
+
+Extras = “Day-off options”
+- Leisure, Culture, Family Activities
+- Knobs: radius, half-day vs. full-day
+- Attributes: family-friendly, outdoor, cultural
+- Insider tone: “Trail rides on rest day—it’s the only time I’m not ringside.”
+
+hub_footer
+- CTA
+- Related hubs/events
+- Closing hero/postcard
