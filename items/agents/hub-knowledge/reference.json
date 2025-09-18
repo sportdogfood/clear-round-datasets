@@ -1,0 +1,68 @@
+{
+  "project": "Clear Round Travel",
+  "module": "Hub Knowledge",
+  "version": "v1.0",
+  "last_updated": "2025-09-18",
+  "purpose": "Provide runners with structural, tone, and schema context for building and curating Hubs.",
+
+  "hub_components": {
+    "hub_hero": ["title", "hero image/postcard", "origin/cred line"],
+    "hub_overview": ["event basics", "legs", "venue", "time normalization", "location normalization"],
+    "hub_body": ["stay", "dine", "locale", "essentials", "extras"],
+    "hub_footer": ["cta", "related hubs", "closing hero/postcard"]
+  },
+
+  "entities": {
+    "events": "time-based entity with legs (sub-entities)",
+    "legs": "sub-entity; specific week or segment of an event",
+    "venue": "location-based entity",
+    "organizer": "entity linked to events/venues"
+  },
+
+  "place_categories": {
+    "stay": {
+      "sub_entities": ["hotels", "airbnb", "rv parks"],
+      "knobs": ["radius", "nightly rate", "cancellation window", "walkability"],
+      "attributes": ["dog-friendly", "resort fee", "points redemption", "early check-in"]
+    },
+    "dine": {
+      "sub_entities": ["restaurants", "quick eats", "cuisine types"],
+      "knobs": ["radius", "cuisine", "price", "reviews"],
+      "attributes": ["late-night", "kid-friendly", "outdoor seating", "grab-and-go"]
+    },
+    "locale": {
+      "sub_entities": ["towns/neighborhoods", "attractions"],
+      "knobs": ["distance", "type"],
+      "attributes": ["walkable main street", "horse-friendly", "upscale", "rider hangouts"]
+    },
+    "essentials": {
+      "sub_entities": ["groceries", "pharmacies", "feed/bedding"],
+      "knobs": ["radius", "hours", "delivery available"],
+      "attributes": ["bulk order", "delivery-friendly", "local vs national provider"]
+    },
+    "extras": {
+      "sub_entities": ["leisure", "culture", "family activities"],
+      "knobs": ["radius", "duration", "type"],
+      "attributes": ["family-friendly", "outdoor", "cultural", "rider-preferred"]
+    }
+  },
+
+  "schema_terms": {
+    "normalizers": ["time (year, season, month, days)", "location (state, city, placeid, lat/lon)"],
+    "entities": ["events", "venues", "organizers"],
+    "sub_entities": ["legs", "hotels", "restaurants", "towns", "groceries", "leisure options"],
+    "attributes": "descriptive tags (dog-friendly, resort fee, FEI rating, late-night)",
+    "knobs": "filters/inputs (radius, price, cancellation window, cuisine type)",
+    "container": "hub (binds entities + place categories)",
+    "presentation_layer": "page (where content is rendered)"
+  },
+
+  "tone_rules": {
+    "persona": "Owner of Clear Round Travel, 20+ years in travel, lifelong equestrian, Wellington, FL, mom of A-circuit rider",
+    "style": "First-person, upbeat, authoritative, practical",
+    "equestrian_jargon": ["A-circuit", "handy round", "under saddle", "jog strip", "warm-up ring", "vendor row", "braiding schedule"],
+    "travel_jargon": ["nonstop vs one-stop", "hub/secondary airport", "resort fee", "cancellation window", "parking for rigs"],
+    "structure": ["scene-setter", "getting there", "where to stay", "on-grounds logistics", "what to watch", "local eats", "cta"],
+    "diction": "short paragraphs, specifics > generic, first-hand asides, close with gentle CTA"
+  }
+}
