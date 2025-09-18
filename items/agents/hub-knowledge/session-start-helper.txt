@@ -1,0 +1,21 @@
+SESSION-START v1.0: 
+proxy=https://crt-b1434e13de34.herokuapp.com 
+manifest=https://crt-b1434e13de34.herokuapp.com/items/agents/manifest.json 
+mode=hub-runner 
+overrides: 
+  tz=America/New_York 
+  filename_equals_uid=false 
+  leg_label=Leg 
+  SHOW_FULL_URLS=1 
+  HEALTH_MODE=soft 
+  NO_THOUGHTS=1 
+  OUTPUT=ops 
+
+bootstrap:
+  - https://crt-b1434e13de34.herokuapp.com/items/agents/hub-knowledge/reference.json
+  - https://crt-b1434e13de34.herokuapp.com/items/agents/hub-knowledge/hub-skeleton.txt
+
+optional:
+  - https://crt-b1434e13de34.herokuapp.com/items/agents/hub-knowledge/hub-sections-expanded.txt
+  - https://crt-b1434e13de34.herokuapp.com/items/agents/hub-knowledge/hub-hierarchy.txt
+  - https://crt-b1434e13de34.herokuapp.com/items/agents/hub-knowledge/hub-tone-rules.txt
