@@ -1,0 +1,36 @@
+# Clear Round Travel — Hub Knowledge
+# File: hub-hierarchy.txt
+# Version: v1.0
+# Last updated: 2025-09-18
+# Purpose: Nested hierarchy from Page → Hub → Entities → Place Categories → Sub-Entities; shows schema terms (entities, attributes, knobs).
+
+Page (Presentation Layer)
+└── Hub-Type (Class/Normalizer)
+    └── Hub (Container Entity)
+        ├── hub_hero
+        ├── hub_overview
+        │   ├── Event (Entity)
+        │   │   └── Legs (Sub-entity)
+        │   └── Venue (Entity)
+        │       └── Organizer (Entity)
+        ├── hub_body
+        │   ├── Stay (Place Category)
+        │   │   ├── Hotels (Sub-entity)
+        │   │   ├── Airbnb (Sub-entity)
+        │   │   └── RV Parks (Sub-entity)
+        │   ├── Dine (Place Category)
+        │   │   ├── Restaurants (Sub-entity)
+        │   │   ├── Quick Eats (Sub-entity)
+        │   │   └── Cuisine types (Sub-entity)
+        │   ├── Locale (Place Category)
+        │   │   ├── Towns/Neighborhoods (Sub-entity)
+        │   │   └── Attractions (Sub-entity)
+        │   ├── Essentials (Place Category)
+        │   │   ├── Groceries (Sub-entity)
+        │   │   ├── Pharmacies (Sub-entity)
+        │   │   └── Feed/Bedding (Sub-entity)
+        │   └── Extras (Place Category)
+        │       ├── Leisure (Sub-entity)
+        │       ├── Culture (Sub-entity)
+        │       └── Family Activities (Sub-entity)
+        └── hub_footer
