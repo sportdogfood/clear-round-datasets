@@ -1,0 +1,106 @@
+{
+  "venue_uid": "wef-venue",
+  "city_uid": "wellington",
+  "state_uid": "fl",
+  "links_curated": [
+    {
+      "category": "official",
+      "field": "venue_official_link",
+      "url": "https://wellingtoninternational.com/",
+      "canonical_title": "Wellington International",
+      "meta_description": "Official homepage of Wellington International, home of the Winter Equestrian Festival.",
+      "keywords": ["equestrian venue", "WEF", "Wellington International"],
+      "notes": "Canonical source for all venue context."
+    },
+    {
+      "category": "stay",
+      "field": "venue_link_stay",
+      "url": "https://worldequestriancenter.com/ocala-fl/visit/stay/",
+      "canonical_title": "Stay at World Equestrian Center",
+      "meta_description": "On-site accommodations at World Equestrian Center Ocala, from hotels to rental units.",
+      "keywords": ["Ocala hotels", "equestrian lodging", "on-site stay"],
+      "notes": "On-site lodging resources; may include RV options."
+    },
+    {
+      "category": "dine",
+      "field": "venue_link_dine",
+      "url": "https://worldequestriancenter.com/ocala-fl/visit/dining/",
+      "canonical_title": "Dining at WEC Ocala",
+      "meta_description": "Explore dining options at World Equestrian Center, from casual cafés to fine dining.",
+      "keywords": ["WEC dining", "restaurants Ocala horse show"],
+      "notes": "Curates official dining page."
+    },
+    {
+      "category": "locale",
+      "field": "venue_link_locale",
+      "url": "https://worldequestriancenter.com/ocala-fl/visit/things-to-do-in-ocala-fl/",
+      "canonical_title": "Things to Do in Ocala",
+      "meta_description": "Local attractions, culture, and leisure around World Equestrian Center.",
+      "keywords": ["Ocala attractions", "things to do near WEC"],
+      "notes": "Venue-provided locale guide."
+    },
+    {
+      "category": "events",
+      "field": "venue_link_events",
+      "url": "https://wellingtoninternational.com/events/",
+      "canonical_title": "Wellington International Events",
+      "meta_description": "Official schedule of upcoming shows and competitions at Wellington International.",
+      "keywords": ["WEF events", "Wellington horse shows"],
+      "notes": "Use this as the authoritative event calendar."
+    },
+    {
+      "category": "rvparks",
+      "field": "venue_link_rvparks",
+      "url": "https://example.com/rvparks",
+      "canonical_title": "RV Parking at WEF",
+      "meta_description": "RV hookups and parking for competitors and families at Wellington International.",
+      "keywords": ["RV parking WEF", "equestrian RV hookups"],
+      "notes": "If no official RV page, fallback to venue_reference_link."
+    },
+    {
+      "category": "vendors",
+      "field": "venue_link_vendors",
+      "url": "https://wellingtoninternational.com/venue/vendors/",
+      "canonical_title": "Vendor Row",
+      "meta_description": "Explore vendors and exhibitors at Wellington International.",
+      "keywords": ["Vendor Row", "WEF shopping", "horse show vendors"],
+      "notes": "Typically an exhibitor list."
+    },
+    {
+      "category": "essentials",
+      "field": "venue_link_essentials",
+      "url": "https://example.com/essentials",
+      "canonical_title": "Essentials for Riders",
+      "meta_description": "Nearby services: groceries, pharmacy, tack, and feed for equestrians.",
+      "keywords": ["WEF essentials", "tack shop Wellington"],
+      "notes": "Practical local services."
+    },
+    {
+      "category": "riders",
+      "field": "venue_link_riders",
+      "url": "https://example.com/riderservices",
+      "canonical_title": "Rider Services",
+      "meta_description": "Braiding, farrier, veterinary, and competitor services available at WEF.",
+      "keywords": ["rider services", "stabling WEF", "braiders Wellington"],
+      "notes": "Direct competitor services."
+    },
+    {
+      "category": "carts",
+      "field": "venue_link_carts",
+      "url": "https://www.wecgolfcarts.com/",
+      "canonical_title": "Golf Cart Rentals",
+      "meta_description": "Golf cart rentals for competitors and families at World Equestrian Center.",
+      "keywords": ["golf carts WEC", "showgrounds rentals"],
+      "notes": "Often external partner site."
+    },
+    {
+      "category": "cars",
+      "field": "venue_link_cars",
+      "url": "https://example.com/car-rental",
+      "canonical_title": "Car Rentals",
+      "meta_description": "Car rentals and transport services around Wellington International.",
+      "keywords": ["WEF car rental", "transport Wellington"],
+      "notes": "If no official link, fallback to essentials or external partner."
+    }
+  ]
+}
