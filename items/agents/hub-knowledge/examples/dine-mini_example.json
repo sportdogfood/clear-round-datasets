@@ -1,71 +1,61 @@
 {
-  "esse_uid": "wef-venue-esse-mini",
-  "section_type": "esse-mini",
-  "section_title": "Essentials Around WEF",
-  "section_overview": "Everything you may need during show weeks: groceries, pharmacies, feed and tack, and even rentals. These stops keep barn life running smoothly during long circuits.",
-  "section_spotlight": "Know your essentials before the week starts — nothing stalls a schedule like a last-minute run.",
-  "section_cta_text": "Map your essentials in advance — grocery, pharmacy, feed, tack, golf carts, and car rentals.",
+  "dine_uid": "wef-venue-dine-mini",
+  "section_type": "dine-mini",
+  "section_title": "Where to Eat During WEF",
+  "section_overview": "Fuel up between classes with quick meals close to the showgrounds. Options focus on riders and crews with tight schedules, limited transportation, and no time for delays.",
+  "section_spotlight": "Quick-service and reliable takeout are the lifelines of long show days.",
+  "section_cta_text": "Plan meals around your ride times — know your go-to spots before the week starts.",
   "section_keywords": [
-    "WEF essentials",
-    "Wellington groceries",
-    "horse show tack stores",
-    "pharmacies near WEF",
-    "feed bedding tack Wellington"
+    "Wellington horse show restaurants",
+    "WEF dining",
+    "equestrian quick meals",
+    "Palm Beach food near WEF"
   ],
   "bucket_definitions": {
-    "grocery": "Markets for barn meal prep and rider snacks.",
-    "pharmacy": "24-hour or late-close for meds and supplies.",
-    "feed_tack_bedding": "Equestrian-specific supplies near venue.",
-    "car_rental": "Standard car rentals for barns and families.",
-    "golfcart_rental": "On-site or near-site golf cart rentals."
+    "breakfast": "Early open, grab-and-go for hunter mornings.",
+    "lunch": "Quick turnarounds between classes, portable meals.",
+    "dinner": "Family-friendly or team dinners after classes.",
+    "post_show": "Late-night dining after Grand Prix or night check."
   },
   "bucket_items": {
-    "grocery": [
+    "breakfast": [
       {
-        "name": "Village Market",
-        "approx_drive_min": "8",
-        "notes": "Full groceries plus quick-prep meals.",
-        "esse_link": "https://example.com/villagemarket"
-      }
-    ],
-    "pharmacy": [
-      {
-        "name": "24-Hour Pharmacy",
-        "approx_drive_min": "10",
-        "notes": "Late-close, drive-through, rider supply musts.",
-        "esse_link": "https://example.com/24hrpharmacy"
-      }
-    ],
-    "feed_tack_bedding": [
-      {
-        "name": "Horse Supply Depot",
-        "approx_drive_min": "15",
-        "notes": "Shavings, feed, supplements, grooming gear.",
-        "esse_link": "https://example.com/horsesupply"
-      }
-    ],
-    "car_rental": [
-      {
-        "name": "Palm Beach Car Rentals",
-        "approx_drive_min": "20",
-        "notes": "SUVs and vans for barn crews.",
-        "esse_link": "https://example.com/pbcarrental"
-      }
-    ],
-    "golfcart_rental": [
-      {
-        "name": "WEF Cart Co.",
+        "name": "Showgrounds Cafe",
         "approx_drive_min": "2",
-        "notes": "On-site vendor, service during show season.",
-        "esse_link": "https://example.com/wefcarts"
+        "notes": "Coffee, bagels, protein bowls; opens 6:00 a.m.",
+        "dine_link": "https://example.com/showgroundscafe"
+      }
+    ],
+    "lunch": [
+      {
+        "name": "Vendor Row Wraps",
+        "approx_drive_min": "0 (on-site)",
+        "notes": "Portable wraps and salads between jog strip and warm-up ring.",
+        "dine_link": "https://example.com/vendorwraps"
+      }
+    ],
+    "dinner": [
+      {
+        "name": "Equestrian Grill",
+        "approx_drive_min": "10",
+        "notes": "Family seating, reliable service, hearty meals for teams.",
+        "dine_link": "https://example.com/equestriangrill"
+      }
+    ],
+    "post_show": [
+      {
+        "name": "Late Stir Fry",
+        "approx_drive_min": "12",
+        "notes": "Open until midnight; good for late GP nights.",
+        "dine_link": "https://example.com/latestirfry"
       }
     ]
   },
-  "section_meta_description": "Groceries, pharmacies, tack shops, car rentals, and golf cart rentals near WEF in Wellington.",
-  "section_open_graph_title": "Essentials for WEF | Wellington International",
-  "section_open_graph_description": "Find groceries, pharmacies, feed, tack, car rentals, and golf carts to keep your show weeks running smoothly.",
-  "section_search_title": "Wellington WEF Essentials",
-  "section_search_description": "Your must-have essentials during the Winter Equestrian Festival in Wellington.",
-  "section_img": "https://example.com/images/esse-mini.jpg",
-  "section_img_alt": "Essentials like groceries and tack stores near WEF"
+  "section_meta_description": "Wellington dining options near WEF — breakfast, lunch, dinner, and late-night meals for equestrian schedules.",
+  "section_open_graph_title": "Dining Near WEF | Wellington International",
+  "section_open_graph_description": "Rider-tested food spots for quick turnarounds and late dinners near Wellington International.",
+  "section_search_title": "Wellington WEF Dining",
+  "section_search_description": "Best food spots for equestrians during the Winter Equestrian Festival.",
+  "section_img": "https://example.com/images/dine-mini.jpg",
+  "section_img_alt": "Restaurants and food near Wellington International"
 }
