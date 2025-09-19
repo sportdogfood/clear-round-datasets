@@ -7,72 +7,117 @@
     "lon": "-80.2684",
     "lat": "26.6618",
     "placeid": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+    "timezone": "America/New_York",
     "venue_link_rvparks": "",
-    "venue_reference_link1": "",
-    "venue_reference_link2": ""
+    "venue_reference_link1": "https://wellingtoninternational.com/venue/vendors/",
+    "venue_reference_link2": "https://wellingtoninternational.com/venue/facility-map/"
   },
 
-  "curator_overview": "Options for RV parks and trailer parking near the showgrounds, with practical details for rigs, hookups, and horse show life.",
-  "curator_cta_text": "Reserve early if you’re hauling down—spaces with hookups go quickly during peak weeks.",
+  "curator_overview": "RV and trailer parking options near Wellington International for riders and families hauling in. Focused on practical details like hookups, late-night arrivals, and proximity to the showgrounds.",
+  "curator_cta_text": "Reserve RV space early—hookups sell out quickly for WEF season.",
   "curator_keywords": [
-    "Wellington RV parks",
-    "horse trailer parking Wellington",
+    "Wellington RV parking",
+    "WEF horse trailer hookups",
     "equestrian RV camping",
-    "Winter Equestrian Festival RV",
-    "Florida horse show trailer hookups"
+    "Florida horse show RV",
+    "Wellington rig space"
   ],
   "curator_insider_phrases": [
     "hookups",
-    "trailer parking",
     "late-night check-in",
-    "dog run",
+    "stall-to-rig walk",
     "rig space",
-    "stall-to-rig walk"
+    "dog run",
+    "quiet hours"
   ],
 
   "rvpark_buckets": {
     "on_site": {
-      "description": "RV spaces or hookups offered directly by the venue.",
-      "spots": []
+      "description": "RV spaces or hookups offered directly on venue grounds.",
+      "spots": [
+        {
+          "rvpark_name": "Wellington International RV Lot",
+          "rvpark_display_name": "On-Site RV Lot",
+          "formatted_address": "13500 South Shore Blvd, Wellington, FL 33414",
+          "rvpark_official_link": "https://wellingtoninternational.com/venue/facility-map/",
+          "rvpark_phone": "561-123-4567",
+          "rvpark_email": "info@wef-rvparking.com",
+          "rvpark_hours_note": "Check-in after 12 p.m., late-night arrival allowed with gate code",
+          "rvpark_overview": "Limited hookups directly on the showgrounds for trainers, riders, and support staff needing the shortest commute.",
+          "rvpark_spotlight": "Closest possible RV option—walkable to stabling, vendor row, and jog strip.",
+          "rvpark_cta_text": "Book directly through the show office to secure one of the limited hookups.",
+          "rvpark_keywords": ["on-site", "hookups", "walkable", "groom-friendly"],
+          "rvpark_geo_lat": "26.6618",
+          "rvpark_geo_lon": "-80.2684",
+          "rvpark_placeid": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+          "rvpark_state": "FL",
+          "rvpark_zip": "33414",
+          "rvpark_timezone": "America/New_York",
+          "amenities": ["30/50 amp hookups", "water/sewer", "Wi-Fi", "gated access"],
+          "pro_tips": [
+            "Confirm gate code before late-night arrival after shipping horses.",
+            "Book months ahead—spaces are gone before January."
+          ]
+        }
+      ]
     },
     "nearby_short_drive": {
       "description": "Private or public RV parks within 15 minutes of the venue.",
-      "spots": []
+      "spots": [
+        {
+          "rvpark_name": "Palm Beach RV Resort",
+          "rvpark_display_name": "Palm Beach RV",
+          "formatted_address": "12345 Southern Blvd, Loxahatchee, FL 33470",
+          "rvpark_official_link": "https://palmbeachrvresort.com",
+          "rvpark_phone": "561-555-9876",
+          "rvpark_email": "",
+          "rvpark_hours_note": "Quiet hours 10 p.m.–6 a.m.",
+          "rvpark_overview": "Family-friendly park with shaded pull-through sites and easy highway access.",
+          "rvpark_spotlight": "Good balance of commute time and amenities for week-to-week stays.",
+          "rvpark_cta_text": "Check availability early—fills fast during WEF.",
+          "rvpark_keywords": ["family-friendly", "pull-through", "budget option"],
+          "rvpark_geo_lat": "26.6870",
+          "rvpark_geo_lon": "-80.3200",
+          "rvpark_placeid": "ChIJy5qhgDSz2IgRMhL9d9N_EjA",
+          "rvpark_state": "FL",
+          "rvpark_zip": "33470",
+          "rvpark_timezone": "America/New_York",
+          "amenities": ["50 amp hookups", "laundry", "dog park", "Wi-Fi"],
+          "pro_tips": [
+            "Check if they allow horse trailers—some parks restrict commercial rigs.",
+            "Bring a surge protector for hookups; older systems can spike."
+          ]
+        }
+      ]
     },
     "wider_area": {
-      "description": "Options within 30–45 minutes, better for long-term stays or budget-conscious rigs.",
-      "spots": []
+      "description": "Options within 30–45 minutes for longer stays or budget-conscious rigs.",
+      "spots": [
+        {
+          "rvpark_name": "Lion Country Safari KOA",
+          "rvpark_display_name": "KOA Lion Country Safari",
+          "formatted_address": "2000 Lion Country Safari Rd, Loxahatchee, FL 33470",
+          "rvpark_official_link": "https://koa.com/campgrounds/lion-country/",
+          "rvpark_phone": "561-793-1084",
+          "rvpark_email": "",
+          "rvpark_hours_note": "Office closes at 6 p.m., call ahead for late arrival instructions.",
+          "rvpark_overview": "Large KOA with family activities and full amenities, about 30 minutes from the showgrounds.",
+          "rvpark_spotlight": "Better availability during peak WEF weeks, great for long-term stays.",
+          "rvpark_cta_text": "Reserve weekly or monthly for best pricing.",
+          "rvpark_keywords": ["KOA", "family", "long-term"],
+          "rvpark_geo_lat": "26.6825",
+          "rvpark_geo_lon": "-80.3150",
+          "rvpark_placeid": "ChIJ-Ri4K_jb2IgRGI6dGxxc8Ac",
+          "rvpark_state": "FL",
+          "rvpark_zip": "33470",
+          "rvpark_timezone": "America/New_York",
+          "amenities": ["30/50 amp hookups", "pool", "showers", "Wi-Fi", "pet area"],
+          "pro_tips": [
+            "Expect longer commutes—plan buffer time for morning schooling trips.",
+            "Use the park’s laundry facilities for show coats and saddle pads."
+          ]
+        }
+      ]
     }
-  },
-
-  "spot_template": {
-    "rvpark_name": "",
-    "rvpark_display_name": "",
-    "formatted_address": "",
-    "rvpark_official_link": "",
-    "rvpark_phone": "",
-    "rvpark_email": "",
-    "rvpark_hours_note": "",
-    "rvpark_overview": "",
-    "rvpark_spotlight": "",
-    "rvpark_cta_text": "",
-    "rvpark_keywords": [],
-    "rvpark_geo_lat": "",
-    "rvpark_geo_lon": "",
-    "rvpark_placeid": "",
-    "rvpark_state": "",
-    "rvpark_zip": "",
-    "rvpark_timezone": "",
-    "amenities": [
-      "30/50 amp hookups",
-      "water/sewer",
-      "Wi-Fi",
-      "laundry",
-      "dog run"
-    ],
-    "pro_tips": [
-      "Confirm gate code for late-night arrival after shipping horses.",
-      "Check clearance on access roads for tall rigs."
-    ]
   }
 }
