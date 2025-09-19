@@ -1,89 +1,79 @@
 {
-  "section_uid": "wef-venue-dine-sec",
-  "section_type": "dine-curator",
-  "venue_uid": "wef-venue",
-  "city_uid": "wellington",
-  "state_uid": "fl",
-  "geo_context": {
-    "lat": 26.656,
-    "lon": -80.268,
-    "placeId": "ChIJwefVenueXYZ"
+  "_meta": {
+    "example": "restaurant-curator",
+    "version": "v1.0",
+    "last_updated": "2025-09-18"
   },
 
-  "meal_buckets": {
-    "am": [
-      {
-        "dine_uid": "perks-coffee",
-        "dine_name": "Perk’s Coffee & Bagels",
-        "formatted_address": "123 Main St, Wellington, FL",
-        "placeId": "place123",
-        "lat": 26.657,
-        "lon": -80.270,
-        "price_level": "$",
-        "cuisine_tags": ["coffee", "bagels", "grab-and-go"],
-        "insider_fit": "Opens 5am, ideal for riders heading to warm-up ring.",
-        "notes": "Easy in/out parking for sprinter vans."
-      }
-    ],
+  "section_uid": "example-venue-dine-sec",
+  "section_type": "dine",
+  "section_title": "Where to Eat Near the Showgrounds",
+  "section_overview": "Curated dining options close to the venue, organized by time of day. Practical picks for competitive riders and families who need quick, reliable meals between classes.",
+  "section_keywords": [
+    "horse show dining",
+    "equestrian restaurants",
+    "Wellington food near WEF",
+    "ringside lunch",
+    "post-class dinner"
+  ],
+  "section_cta_text": "Plan your meals around your ride times—choose dining that works with your show schedule.",
+  "section_spotlight": [
+    "Highlight one or two trusted dining spots with equestrian relevance, rider-friendly hours, or proximity to the venue."
+  ],
 
-    "lunch": [
-      {
-        "dine_uid": "greens-deli",
-        "dine_name": "Greens Deli",
-        "formatted_address": "456 Village Rd, Wellington, FL",
-        "placeId": "place456",
-        "lat": 26.660,
-        "lon": -80.265,
-        "price_level": "$$",
-        "cuisine_tags": ["sandwiches", "salads"],
-        "insider_fit": "Fast carry-out for grooms between trips to vendor row.",
-        "notes": "Reliable online ordering avoids long waits."
-      }
-    ],
+  "section_meta_description": "Find curated restaurants near the showgrounds, organized by time of day. Quick breakfasts, easy lunches, post-class dinners, and late-night rider hangouts.",
+  "section_open_graph_title": "Dining Near the Showgrounds",
+  "section_open_graph_description": "Curated dining options for competitive equestrians: coffee stops, lunches between classes, family dinners, and late-night meetups.",
+  "section_search_title": "Horse Show Dining Guide",
+  "section_search_description": "Discover curated dining near the venue, organized into breakfast, lunch, dinner, and late-night options tailored for equestrians.",
 
-    "dinner": [
-      {
-        "dine_uid": "grill-house",
-        "dine_name": "Grill House",
-        "formatted_address": "789 Polo Rd, Wellington, FL",
-        "placeId": "place789",
-        "lat": 26.662,
-        "lon": -80.260,
-        "price_level": "$$$",
-        "cuisine_tags": ["steakhouse", "american"],
-        "insider_fit": "Barn dinner spot after early hunter rounds.",
-        "notes": "Tables for groups, quick turn times if booked."
-      }
-    ],
+  "am": [
+    {
+      "name": "Example Coffee Spot",
+      "address": "123 Main St, Wellington, FL",
+      "notes": "Quick grab-and-go breakfast before schooling.",
+      "price_range": "$",
+      "cuisine": "Coffee, Pastries"
+    }
+  ],
 
-    "dinner-after": [
-      {
-        "dine_uid": "taco-stand",
-        "dine_name": "Late Taco Stand",
-        "formatted_address": "321 Fairgrounds Ave, Wellington, FL",
-        "placeId": "place321",
-        "lat": 26.659,
-        "lon": -80.263,
-        "price_level": "$",
-        "cuisine_tags": ["mexican", "casual"],
-        "insider_fit": "Kitchen open until 10pm; clutch after Grand Prix.",
-        "notes": "Counter service, quick bites."
-      }
-    ],
+  "lunch": [
+    {
+      "name": "Example Deli",
+      "address": "456 Showgrounds Rd, Wellington, FL",
+      "notes": "Casual, fast service—ideal for quick lunches between classes.",
+      "price_range": "$$",
+      "cuisine": "Sandwiches, Salads"
+    }
+  ],
 
-    "late-night": [
-      {
-        "dine_uid": "diner-24",
-        "dine_name": "Showgrounds Diner",
-        "formatted_address": "654 Ring Rd, Wellington, FL",
-        "placeId": "place654",
-        "lat": 26.664,
-        "lon": -80.267,
-        "price_level": "$$",
-        "cuisine_tags": ["diner", "comfort food"],
-        "insider_fit": "Open until midnight, popular with braiders and night-check crews.",
-        "notes": "Large parking lot, good for late arrivals."
-      }
-    ]
-  }
+  "dinner": [
+    {
+      "name": "Example Italian Kitchen",
+      "address": "789 Barn Rd, Wellington, FL",
+      "notes": "Family-friendly dinners, big portions for post-ring appetites.",
+      "price_range": "$$",
+      "cuisine": "Italian"
+    }
+  ],
+
+  "dinner_after": [
+    {
+      "name": "Example Steakhouse",
+      "address": "101 Grand Prix Blvd, Wellington, FL",
+      "notes": "Late dinners for owners, sponsors, and riders after evening classes.",
+      "price_range": "$$$",
+      "cuisine": "Steakhouse"
+    }
+  ],
+
+  "late_night": [
+    {
+      "name": "Example Pub",
+      "address": "202 Vendor Row Dr, Wellington, FL",
+      "notes": "Rider hangout for late-night bites and socializing.",
+      "price_range": "$$",
+      "cuisine": "Pub Food"
+    }
+  ]
 }
