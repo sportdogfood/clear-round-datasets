@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "example": "extras-content",
+    "version": "v1.1",
+    "venue_uid": "wef-venue",
+    "city_uid": "wellington",
+    "state_uid": "fl",
+    "hub_uid": "wef-week_hb",
+    "event_uid": "wef-week_ev",
+    "leg_uid": "",
+    "date_range": {
+      "start": "2026-01-07",
+      "end": "2026-03-22"
+    }
+  },
+
+  "section_uid": "wef-extras",
+  "section_type": "extras",
+  "section_title": "Extras for Riders, Families, and Spectators",
+  "section_overview": "Supporting content for riders, spectators, and families during the event. Includes persona-specific extras and seasonal weather context.",
+
+  "seasonal_pattern": {
+    "summary": "Wellington’s winter season (Jan–Mar) is warm, mostly dry, with highs in the upper 70s and lows in the 60s. Afternoon showers are common but brief.",
+    "use_in_content": "Guide packing tips, scheduling advice, and family activity timing."
+  },
+
+  "persona_buckets": {
+    "rider": {
+      "overview": "For riders focused on barn life and the show schedule.",
+      "list": [
+        {"item": "Pack lightweight rain sheets — afternoon showers can pop up quickly."},
+        {"item": "Morning hacks are best before humidity rises mid-day."},
+        {"item": "Bring extra towels for damp tack and gear after showers."}
+      ]
+    },
+    "spectator": {
+      "overview": "For spectators making the most of their time at WEF.",
+      "list": [
+        {"item": "Sunscreen and hats are a must for mid-day hunter rounds."},
+        {"item": "Late GP nights can get cool — bring layers."}
+      ]
+    },
+    "family": {
+      "overview": "Kid-friendly activities and casual outings.",
+      "list": [
+        {"item": "Plan beach trips early in the day to avoid afternoon rain."},
+        {"item": "Keep indoor options (science center, mall) for rainy afternoons."}
+      ]
+    },
+    "owner_trainer": {
+      "overview": "Extras for owners, sponsors, and trainers.",
+      "list": [
+        {"item": "Book dinners later in the evening to account for weather delays."},
+        {"item": "Quiet meeting spaces indoors are useful when showers move classes."}
+      ]
+    }
+  }
+}
