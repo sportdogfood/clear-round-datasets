@@ -1,0 +1,93 @@
+{
+  "_meta": {
+    "example": "locale-content",
+    "version": "v1.0",
+    "last_updated": "2025-09-18",
+    "venue_uid": "wef-venue",
+    "city_uid": "wellington",
+    "state_uid": "fl",
+    "hub_uid": "wef-week_hb",
+    "event_uid": "wef-week_ev",
+    "leg_uid": "",
+    "date_range": {
+      "start": "2026-01-07",
+      "end": "2026-03-22"
+    }
+  },
+
+  "section_uid": "wef-venue-locale",
+  "section_type": "locale",
+  "section_title": "Local Highlights During WEF",
+  "section_overview": "Contextual activities and highlights near Wellington International that matter during this hub’s date range. Curated for competitive hunter/jumper riders and their families.",
+
+  "section_keywords": [
+    "Wellington local activities",
+    "Palm Beach equestrian leisure",
+    "things to do during WEF"
+  ],
+
+  "section_cta_text": "Mix in a little downtime between classes — here’s what’s happening nearby this season.",
+
+  "locale_blocks": {
+    "leisure": {
+      "overview": "Casual downtime options between classes or on rest days.",
+      "highlights": [
+        {
+          "title": "Equestrian Trails",
+          "description": "Miles of public bridle paths and greenways, best for morning hacks or a quiet afternoon ride.",
+          "timing": "Best in cooler mornings before classes."
+        },
+        {
+          "title": "Palm Beach Beaches",
+          "description": "Drive east ~25 minutes for a quick beach break on off-days.",
+          "timing": "Plan early or late to avoid traffic."
+        }
+      ]
+    },
+    "culture": {
+      "overview": "Seasonal cultural and arts highlights during the hub dates.",
+      "highlights": [
+        {
+          "title": "Palm Beach International Polo",
+          "description": "Sunday polo matches in season, a spectator tradition during WEF.",
+          "timing": "Sunday afternoons, Jan–Apr."
+        },
+        {
+          "title": "Norton Museum of Art",
+          "description": "Modern and contemporary collections, easy day trip.",
+          "timing": "Closed Mondays."
+        }
+      ]
+    },
+    "family_active": {
+      "overview": "Kid-friendly and family-oriented activities during WEF season.",
+      "highlights": [
+        {
+          "title": "Lion Country Safari",
+          "description": "Drive-through safari park with over 1,000 animals; fun rest-day outing.",
+          "timing": "Open daily."
+        },
+        {
+          "title": "South Florida Science Center",
+          "description": "Hands-on science and aquarium exhibits ~20 min from venue.",
+          "timing": "Indoor option for rainy afternoons."
+        }
+      ]
+    },
+    "attractions": {
+      "overview": "Broader local draws tied to the hub season.",
+      "highlights": [
+        {
+          "title": "Clematis Street, West Palm Beach",
+          "description": "Restaurants and nightlife popular with riders and owners after classes.",
+          "timing": "Evenings."
+        },
+        {
+          "title": "Worth Avenue",
+          "description": "Palm Beach shopping and dining district, known for equestrian season gatherings.",
+          "timing": "Afternoons and early evenings."
+        }
+      ]
+    }
+  }
+}
