@@ -1,21 +1,71 @@
 {
-  "esse_uid": "wef-week-essentials",
+  "esse_uid": "wef-venue-esse-mini",
   "section_type": "esse-mini",
-  "section_title": "Essentials",
-  "section_overview": "Curated essentials around Wellington International: groceries, pharmacies, tack, rentals.",
-  "section_cta_text": "Stock up and stay ready for long weeks at WEF.",
-  "section_keywords": ["Wellington groceries", "WEF pharmacy", "tack shops", "golf cart rental"],
-  "section_meta_description": "Find essential services near Wellington International: groceries, pharmacies, tack stores, and rental options.",
-  "section_open_graph_title": "Essentials for WEF",
-  "section_open_graph_description": "Grocery, pharmacy, tack, and rental essentials near Wellington International.",
-  "section_search_title": "WEF Essentials",
-  "section_search_description": "Groceries, pharmacies, tack shops, and rentals near WEF.",
-  "curated_buckets": {
-    "grocery": "essentials-curator_example.json",
-    "pharmacy": "essentials-curator_example.json",
-    "feed_tack_bedding": "essentials-curator_example.json",
-    "car_rental": "essentials-curator_example.json",
-    "golf_cart_rental": "essentials-curator_example.json"
+  "section_title": "Essentials Around WEF",
+  "section_overview": "Everything you may need during show weeks: groceries, pharmacies, feed and tack, and even rentals. These stops keep barn life running smoothly during long circuits.",
+  "section_spotlight": "Know your essentials before the week starts — nothing stalls a schedule like a last-minute run.",
+  "section_cta_text": "Map your essentials in advance — grocery, pharmacy, feed, tack, golf carts, and car rentals.",
+  "section_keywords": [
+    "WEF essentials",
+    "Wellington groceries",
+    "horse show tack stores",
+    "pharmacies near WEF",
+    "feed bedding tack Wellington"
+  ],
+  "bucket_definitions": {
+    "grocery": "Markets for barn meal prep and rider snacks.",
+    "pharmacy": "24-hour or late-close for meds and supplies.",
+    "feed_tack_bedding": "Equestrian-specific supplies near venue.",
+    "car_rental": "Standard car rentals for barns and families.",
+    "golfcart_rental": "On-site or near-site golf cart rentals."
   },
-  "section_spotlight": "Everything you need to keep barn life running smoothly."
+  "bucket_items": {
+    "grocery": [
+      {
+        "name": "Village Market",
+        "approx_drive_min": "8",
+        "notes": "Full groceries plus quick-prep meals.",
+        "esse_link": "https://example.com/villagemarket"
+      }
+    ],
+    "pharmacy": [
+      {
+        "name": "24-Hour Pharmacy",
+        "approx_drive_min": "10",
+        "notes": "Late-close, drive-through, rider supply musts.",
+        "esse_link": "https://example.com/24hrpharmacy"
+      }
+    ],
+    "feed_tack_bedding": [
+      {
+        "name": "Horse Supply Depot",
+        "approx_drive_min": "15",
+        "notes": "Shavings, feed, supplements, grooming gear.",
+        "esse_link": "https://example.com/horsesupply"
+      }
+    ],
+    "car_rental": [
+      {
+        "name": "Palm Beach Car Rentals",
+        "approx_drive_min": "20",
+        "notes": "SUVs and vans for barn crews.",
+        "esse_link": "https://example.com/pbcarrental"
+      }
+    ],
+    "golfcart_rental": [
+      {
+        "name": "WEF Cart Co.",
+        "approx_drive_min": "2",
+        "notes": "On-site vendor, service during show season.",
+        "esse_link": "https://example.com/wefcarts"
+      }
+    ]
+  },
+  "section_meta_description": "Groceries, pharmacies, tack shops, car rentals, and golf cart rentals near WEF in Wellington.",
+  "section_open_graph_title": "Essentials for WEF | Wellington International",
+  "section_open_graph_description": "Find groceries, pharmacies, feed, tack, car rentals, and golf carts to keep your show weeks running smoothly.",
+  "section_search_title": "Wellington WEF Essentials",
+  "section_search_description": "Your must-have essentials during the Winter Equestrian Festival in Wellington.",
+  "section_img": "https://example.com/images/esse-mini.jpg",
+  "section_img_alt": "Essentials like groceries and tack stores near WEF"
 }
