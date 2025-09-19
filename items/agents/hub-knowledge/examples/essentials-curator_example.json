@@ -1,0 +1,121 @@
+{
+  "_meta": {
+    "curator_type": "essentials",
+    "venue_uid": "wef-venue",
+    "city_uid": "wellington",
+    "state_uid": "fl",
+    "lon": "-80.2684",
+    "lat": "26.6618",
+    "placeid": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+    "timezone": "America/New_York",
+    "venue_link_essentials": "",
+    "venue_reference_link1": "https://wellingtoninternational.com/venue/vendors/",
+    "venue_reference_link2": "https://wellingtoninternational.com/venue/facility-map/"
+  },
+
+  "curator_overview": "Essential services around Wellington International so you can handle errands and logistics without losing ring time. Focus on quick stops, reliable deliveries, and show-season rentals.",
+  "curator_cta_text": "Plan essentials early — delivery slots, tack drops, and golf cart rentals sell out fast during WEF.",
+  "curator_keywords": [
+    "Wellington grocery delivery",
+    "WEF pharmacy",
+    "feed bedding tack Wellington",
+    "Palm Beach car rental",
+    "WEF golf cart rental"
+  ],
+  "curator_insider_phrases": [
+    "delivery window",
+    "feed drop",
+    "late-night pickup",
+    "golf cart zone",
+    "day stall run",
+    "after-class errand"
+  ],
+
+  "essentials_buckets": {
+    "grocery": {
+      "description": "Closest and most reliable grocery stores for quick stops and Instacart delivery.",
+      "spots": [
+        {
+          "name": "Publix Super Market",
+          "formatted_address": "13880 Wellington Trace, Wellington, FL 33414",
+          "official_link": "https://www.publix.com/",
+          "notes": "Most barns order Instacart from here — reliable same-day delivery."
+        },
+        {
+          "name": "Whole Foods Market",
+          "formatted_address": "2635 S State Rd 7, Wellington, FL 33414",
+          "official_link": "https://www.wholefoodsmarket.com/",
+          "notes": "Good for prepared meals and organic staples between classes."
+        }
+      ]
+    },
+    "pharmacy": {
+      "description": "Pharmacies with extended hours and reliable prescription refills.",
+      "spots": [
+        {
+          "name": "CVS Pharmacy",
+          "formatted_address": "1200 Wellington Trace, Wellington, FL 33414",
+          "official_link": "https://www.cvs.com/",
+          "notes": "24-hour drive-thru pharmacy; handy for late-night barn emergencies."
+        },
+        {
+          "name": "Walgreens",
+          "formatted_address": "9915 Lake Worth Rd, Lake Worth, FL 33467",
+          "official_link": "https://www.walgreens.com/",
+          "notes": "Reliable for quick pickups; ~10 minutes from showgrounds."
+        }
+      ]
+    },
+    "feed_tack_bedding": {
+      "description": "Equestrian supply outlets that deliver directly to stalls.",
+      "spots": [
+        {
+          "name": "Trilogy Equine Supply",
+          "formatted_address": "Wellington, FL",
+          "official_link": "https://trilogyequine.com/",
+          "notes": "Show-season specialist — bedding, shavings, and tack trunk deliveries."
+        },
+        {
+          "name": "Dover Saddlery",
+          "formatted_address": "11120 South Crown Way, Wellington, FL 33414",
+          "official_link": "https://www.doversaddlery.com/",
+          "notes": "National chain with full tack and equipment inventory; quick turnaround for in-barn delivery."
+        }
+      ]
+    },
+    "car_rental": {
+      "description": "Agencies offering quick pickup near venue or airport.",
+      "spots": [
+        {
+          "name": "Enterprise Rent-A-Car",
+          "formatted_address": "2105 S State Rd 7, Wellington, FL 33414",
+          "official_link": "https://www.enterprise.com/",
+          "notes": "Close to venue; good for weeklong SUV rentals."
+        },
+        {
+          "name": "Palm Beach International Airport Car Rentals",
+          "formatted_address": "1000 James L Turnage Blvd, West Palm Beach, FL 33415",
+          "official_link": "https://www.pbia.org/",
+          "notes": "Best option if flying in trainers/owners for short stays."
+        }
+      ]
+    },
+    "golf_cart_rental": {
+      "description": "Local providers renting golf carts for use around the showgrounds and nearby housing.",
+      "spots": [
+        {
+          "name": "WEC Golf Carts",
+          "formatted_address": "123 Golf Cart Lane, Wellington, FL 33414",
+          "official_link": "https://www.wecgolfcarts.com/",
+          "notes": "Standard provider during WEF; reserve well in advance."
+        },
+        {
+          "name": "Dever Golf Car Sales & Rentals",
+          "formatted_address": "Wellington, FL",
+          "official_link": "https://www.deverinc.com/",
+          "notes": "Offers barn packages and on-site support for breakdowns."
+        }
+      ]
+    }
+  }
+}
