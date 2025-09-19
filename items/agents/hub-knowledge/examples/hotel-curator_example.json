@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "example": "hotel-curator",
+    "version": "v1.0-populated",
+    "last_updated": "2025-09-18"
+  },
+
+  "venue_uid": "wef-venue",
+  "city_uid": "wellington",
+  "state_uid": "fl",
+  "lon": "-80.268",
+  "lat": "26.656",
+  "placeid": "ChIJxxxxxxxxx",
+  "timezone": "America/New_York",
+
+  "params": {
+    "radius": "10000",
+    "price_bucket": "$$"
+  },
+
+  "bucket": "$$",
+
+  "results": [
+    {
+      "name": "Hampton Inn Wellington",
+      "address": "200 Wellington Green Dr, Wellington, FL 33414",
+      "notes": "Popular with junior families and grooms; includes breakfast before early schooling.",
+      "price_bucket": "$$",
+      "url": "https://hamptoninn.com/wellington",
+      "phone": "(561) 555-4567",
+      "distance_min": "12 min",
+      "aka": "Hampton by Hilton Wellington"
+    },
+    {
+      "name": "Courtyard by Marriott Palm Beach",
+      "address": "1175 Lake Victoria Gardens, Palm Beach Gardens, FL 33410",
+      "notes": "Quieter option with larger rooms; further drive but good for teams needing space.",
+      "price_bucket": "$$",
+      "url": "https://marriott.com/courtyard-pbg",
+      "phone": "(561) 555-9876",
+      "distance_min": "20 min",
+      "aka": "Palm Beach Gardens Marriott Courtyard"
+    }
+  ]
+}
