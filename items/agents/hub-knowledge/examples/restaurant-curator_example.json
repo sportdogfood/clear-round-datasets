@@ -1,79 +1,49 @@
 {
   "_meta": {
     "example": "restaurant-curator",
-    "version": "v1.0",
+    "version": "v1.1-populated",
     "last_updated": "2025-09-18"
   },
 
-  "section_uid": "example-venue-dine-sec",
-  "section_type": "dine",
-  "section_title": "Where to Eat Near the Showgrounds",
-  "section_overview": "Curated dining options close to the venue, organized by time of day. Practical picks for competitive riders and families who need quick, reliable meals between classes.",
-  "section_keywords": [
-    "horse show dining",
-    "equestrian restaurants",
-    "Wellington food near WEF",
-    "ringside lunch",
-    "post-class dinner"
-  ],
-  "section_cta_text": "Plan your meals around your ride times—choose dining that works with your show schedule.",
-  "section_spotlight": [
-    "Highlight one or two trusted dining spots with equestrian relevance, rider-friendly hours, or proximity to the venue."
-  ],
+  "venue_uid": "wef-venue",
+  "city_uid": "wellington",
+  "state_uid": "fl",
+  "lon": "-80.268",
+  "lat": "26.656",
+  "placeid": "ChIJxxxxxxxxx",
 
-  "section_meta_description": "Find curated restaurants near the showgrounds, organized by time of day. Quick breakfasts, easy lunches, post-class dinners, and late-night rider hangouts.",
-  "section_open_graph_title": "Dining Near the Showgrounds",
-  "section_open_graph_description": "Curated dining options for competitive equestrians: coffee stops, lunches between classes, family dinners, and late-night meetups.",
-  "section_search_title": "Horse Show Dining Guide",
-  "section_search_description": "Discover curated dining near the venue, organized into breakfast, lunch, dinner, and late-night options tailored for equestrians.",
+  "params": {
+    "radius": "5000",
+    "price_range": "$$",
+    "cuisine": ["American", "Cafe", "Deli"]
+  },
 
-  "am": [
+  "bucket": "lunch",
+
+  "results": [
     {
-      "name": "Example Coffee Spot",
-      "address": "123 Main St, Wellington, FL",
-      "notes": "Quick grab-and-go breakfast before schooling.",
+      "name": "The Tack Room Deli",
+      "address": "123 Main St, Wellington, FL 33414",
+      "notes": "Quick sandwiches and salads between classes; rider hangout for fast service.",
+      "price_range": "$$",
+      "cuisine": ["American", "Deli"],
+      "url": "https://thetackroomdeli.com",
+      "phone": "(561) 555-1234",
+      "hours_note": "Opens early, closes mid-afternoon.",
+      "distance_min": "7 min",
+      "aka": "Tack Room Café"
+    },
+    {
+      "name": "Vendor Village Café",
+      "address": "On-site at Wellington International",
+      "notes": "Convenient walk from stabling and vendor row; reliable for coffee and wraps.",
       "price_range": "$",
-      "cuisine": "Coffee, Pastries"
-    }
-  ],
-
-  "lunch": [
-    {
-      "name": "Example Deli",
-      "address": "456 Showgrounds Rd, Wellington, FL",
-      "notes": "Casual, fast service—ideal for quick lunches between classes.",
-      "price_range": "$$",
-      "cuisine": "Sandwiches, Salads"
-    }
-  ],
-
-  "dinner": [
-    {
-      "name": "Example Italian Kitchen",
-      "address": "789 Barn Rd, Wellington, FL",
-      "notes": "Family-friendly dinners, big portions for post-ring appetites.",
-      "price_range": "$$",
-      "cuisine": "Italian"
-    }
-  ],
-
-  "dinner_after": [
-    {
-      "name": "Example Steakhouse",
-      "address": "101 Grand Prix Blvd, Wellington, FL",
-      "notes": "Late dinners for owners, sponsors, and riders after evening classes.",
-      "price_range": "$$$",
-      "cuisine": "Steakhouse"
-    }
-  ],
-
-  "late_night": [
-    {
-      "name": "Example Pub",
-      "address": "202 Vendor Row Dr, Wellington, FL",
-      "notes": "Rider hangout for late-night bites and socializing.",
-      "price_range": "$$",
-      "cuisine": "Pub Food"
+      "cuisine": ["Cafe", "American"],
+      "url": "https://wellingtoninternational.com/venue/vendors/",
+      "phone": "",
+      "hours_note": "Show hours only.",
+      "distance_min": "Walkable",
+      "aka": ""
     }
   ]
 }
