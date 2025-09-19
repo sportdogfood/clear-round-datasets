@@ -1,19 +1,66 @@
 {
-  "stay_uid": "wef-week-stay",
+  "stay_uid": "wef-venue-stay-mini",
   "section_type": "stay-mini",
-  "section_title": "Where to Stay",
-  "section_overview": "Options for hotels, rentals, and RV parks convenient to Wellington International during WEF season.",
-  "section_cta_text": "Book early to secure your stay close to the jog strip.",
-  "section_keywords": ["Wellington hotels", "WEF rentals", "horse show RV parks"],
-  "section_meta_description": "Stay near Wellington International during WEF season with curated options for hotels, rentals, and RV parks.",
-  "section_open_graph_title": "Stay Options for WEF",
-  "section_open_graph_description": "Find curated hotels, rentals, and RV parks near Wellington International.",
-  "section_search_title": "Wellington International Stay Options",
-  "section_search_description": "Hotels, rentals, and RV parks near WEF.",
-  "curated_buckets": {
-    "hotels": "hotel-curator_example.json",
-    "rvparks": "rvpark-curator_example.json",
-    "airbnb": "airbnb-curator_example.json"
+  "section_title": "Where to Stay During WEF",
+  "section_overview": "Stay close to Wellington International with options that match your ring schedule and barn life. Whether you need an early-morning walk to the jog strip, an RV spot near stabling, or a short-drive rental with a kitchen, there’s a setup to fit.",
+  "section_spotlight": "Barn-friendly rentals with kitchens and washers are in highest demand — book early.",
+  "section_cta_text": "Secure your WEF lodging before stalls are full — pick the stay that matches your ride times.",
+  "section_keywords": [
+    "Wellington horse show hotels",
+    "WEF rentals",
+    "RV parks Wellington International",
+    "Airbnb equestrian lodging"
+  ],
+  "bucket_definitions": {
+    "hotels": {
+      "$": "Budget, practical hotel rooms within 15 minutes",
+      "$$": "Mid-range with breakfast and late checkout",
+      "$$$": "Upscale hotels or resorts within 30 minutes"
+    },
+    "rvparks": {
+      "on_site": "RV parking directly on or adjacent to venue",
+      "nearby": "RV sites within 10–20 minutes drive"
+    },
+    "airbnb": {
+      "entire_home": "Full rental homes, kitchens, laundry",
+      "private_room": "Room in shared home, budget-friendly",
+      "luxury": "Large estates or premium properties"
+    }
   },
-  "section_spotlight": "Convenient lodging for barns, families, and spectators."
+  "bucket_items": {
+    "hotels": [
+      {
+        "name": "Palm Court Inn",
+        "price_range": "$$",
+        "approx_drive_min": "12",
+        "notes": "Early breakfast, quiet floors, SUV parking.",
+        "stay_link": "https://example.com/palmcourt"
+      }
+    ],
+    "rvparks": [
+      {
+        "name": "Wellington Equestrian RV Park",
+        "category": "on_site",
+        "approx_drive_min": "2",
+        "notes": "Full hookups, direct golf cart path to vendor row.",
+        "stay_link": "https://example.com/wellingtonrv"
+      }
+    ],
+    "airbnb": [
+      {
+        "name": "Wellington Barnhouse",
+        "category": "entire_home",
+        "approx_drive_min": "8",
+        "notes": "3BR, washer/dryer, tack trunk storage in garage.",
+        "stay_link": "https://example.com/wellingtonbarnhouse"
+      }
+    ]
+  },
+  "section_meta_description": "Plan your Wellington International stay with hotels, RV parks, and rentals tailored to equestrian life at WEF.",
+  "section_open_graph_title": "Stay Options for WEF | Wellington International",
+  "section_open_graph_description": "Hotels, RVs, and rentals to fit every barn schedule during the Winter Equestrian Festival.",
+  "section_search_title": "Wellington WEF Lodging",
+  "section_search_description": "Hotels, RV parks, and Airbnbs near Wellington International for the Winter Equestrian Festival.",
+  "section_img": "https://example.com/images/stay-mini.jpg",
+  "section_img_alt": "Rental homes and hotels near Wellington International"
 }
