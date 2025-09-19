@@ -1,45 +1,62 @@
 {
   "_meta": {
-    "example": "hotel-curator",
-    "version": "v1.0-populated",
-    "last_updated": "2025-09-18"
+    "venue_uid": "wef-venue",
+    "city_uid": "wellington",
+    "state_uid": "fl",
+    "lat": 26.633496,
+    "lon": -80.272184,
+    "radius_miles": 20,
+    "reference_links": [
+      "https://wellingtoninternational.com/venue/stay/",
+      "https://worldequestriancenter.com/ocala-fl/visit/stay/"
+    ]
   },
-
-  "venue_uid": "wef-venue",
-  "city_uid": "wellington",
-  "state_uid": "fl",
-  "lon": "-80.268",
-  "lat": "26.656",
-  "placeid": "ChIJxxxxxxxxx",
-  "timezone": "America/New_York",
-
-  "params": {
-    "radius": "10000",
-    "price_bucket": "$$"
+  "buckets": {
+    "$$-$$$": [
+      {
+        "name": "Hilton Garden Inn Palm Beach Gardens",
+        "approx_drive": "15 min",
+        "chain": "Hilton",
+        "amenities": ["early breakfast", "guest laundry", "self-parking"],
+        "safety_notes": "Located in business corridor; reliable chain, safe area.",
+        "url": "https://www.hilton.com/hilton-garden-inn-pbg/"
+      },
+      {
+        "name": "Courtyard by Marriott Wellington",
+        "approx_drive": "10 min",
+        "chain": "Marriott",
+        "amenities": ["kitchenette", "Wi-Fi", "fitness center"],
+        "safety_notes": "Venue-adjacent; popular with barns and junior families.",
+        "url": "https://www.marriott.com/courtyard-wellington/"
+      }
+    ],
+    "$$$$": [
+      {
+        "name": "The Breakers Palm Beach",
+        "approx_drive": "25 min",
+        "chain": "Independent luxury",
+        "amenities": ["resort dining", "spa", "valet parking"],
+        "safety_notes": "Historic luxury; preferred by VIP owners and sponsors.",
+        "url": "https://www.thebreakers.com/"
+      }
+    ]
   },
-
-  "bucket": "$$",
-
-  "results": [
-    {
-      "name": "Hampton Inn Wellington",
-      "address": "200 Wellington Green Dr, Wellington, FL 33414",
-      "notes": "Popular with junior families and grooms; includes breakfast before early schooling.",
-      "price_bucket": "$$",
-      "url": "https://hamptoninn.com/wellington",
-      "phone": "(561) 555-4567",
-      "distance_min": "12 min",
-      "aka": "Hampton by Hilton Wellington"
-    },
-    {
-      "name": "Courtyard by Marriott Palm Beach",
-      "address": "1175 Lake Victoria Gardens, Palm Beach Gardens, FL 33410",
-      "notes": "Quieter option with larger rooms; further drive but good for teams needing space.",
-      "price_bucket": "$$",
-      "url": "https://marriott.com/courtyard-pbg",
-      "phone": "(561) 555-9876",
-      "distance_min": "20 min",
-      "aka": "Palm Beach Gardens Marriott Courtyard"
-    }
-  ]
+  "flagged_chains": [
+    "Motel 6",
+    "Red Roof Inn",
+    "Econo Lodge",
+    "Super 8",
+    "Rodeway Inn"
+  ],
+  "guidance": {
+    "avoid": [
+      "Motels in high-crime or visibly distressed neighborhoods.",
+      "Budget hotels near highway truck stops."
+    ],
+    "prefer": [
+      "Business districts with Marriott/Hilton brands.",
+      "Resort corridors with gated entry.",
+      "Venue-adjacent suburbs with barn housing overlap."
+    ]
+  }
 }
