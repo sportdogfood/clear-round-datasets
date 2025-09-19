@@ -1,0 +1,89 @@
+{
+  "section_uid": "wef-venue-dine-sec",
+  "section_type": "dine-curator",
+  "venue_uid": "wef-venue",
+  "city_uid": "wellington",
+  "state_uid": "fl",
+  "geo_context": {
+    "lat": 26.656,
+    "lon": -80.268,
+    "placeId": "ChIJwefVenueXYZ"
+  },
+
+  "meal_buckets": {
+    "am": [
+      {
+        "dine_uid": "perks-coffee",
+        "dine_name": "Perk’s Coffee & Bagels",
+        "formatted_address": "123 Main St, Wellington, FL",
+        "placeId": "place123",
+        "lat": 26.657,
+        "lon": -80.270,
+        "price_level": "$",
+        "cuisine_tags": ["coffee", "bagels", "grab-and-go"],
+        "insider_fit": "Opens 5am, ideal for riders heading to warm-up ring.",
+        "notes": "Easy in/out parking for sprinter vans."
+      }
+    ],
+
+    "lunch": [
+      {
+        "dine_uid": "greens-deli",
+        "dine_name": "Greens Deli",
+        "formatted_address": "456 Village Rd, Wellington, FL",
+        "placeId": "place456",
+        "lat": 26.660,
+        "lon": -80.265,
+        "price_level": "$$",
+        "cuisine_tags": ["sandwiches", "salads"],
+        "insider_fit": "Fast carry-out for grooms between trips to vendor row.",
+        "notes": "Reliable online ordering avoids long waits."
+      }
+    ],
+
+    "dinner": [
+      {
+        "dine_uid": "grill-house",
+        "dine_name": "Grill House",
+        "formatted_address": "789 Polo Rd, Wellington, FL",
+        "placeId": "place789",
+        "lat": 26.662,
+        "lon": -80.260,
+        "price_level": "$$$",
+        "cuisine_tags": ["steakhouse", "american"],
+        "insider_fit": "Barn dinner spot after early hunter rounds.",
+        "notes": "Tables for groups, quick turn times if booked."
+      }
+    ],
+
+    "dinner-after": [
+      {
+        "dine_uid": "taco-stand",
+        "dine_name": "Late Taco Stand",
+        "formatted_address": "321 Fairgrounds Ave, Wellington, FL",
+        "placeId": "place321",
+        "lat": 26.659,
+        "lon": -80.263,
+        "price_level": "$",
+        "cuisine_tags": ["mexican", "casual"],
+        "insider_fit": "Kitchen open until 10pm; clutch after Grand Prix.",
+        "notes": "Counter service, quick bites."
+      }
+    ],
+
+    "late-night": [
+      {
+        "dine_uid": "diner-24",
+        "dine_name": "Showgrounds Diner",
+        "formatted_address": "654 Ring Rd, Wellington, FL",
+        "placeId": "place654",
+        "lat": 26.664,
+        "lon": -80.267,
+        "price_level": "$$",
+        "cuisine_tags": ["diner", "comfort food"],
+        "insider_fit": "Open until midnight, popular with braiders and night-check crews.",
+        "notes": "Large parking lot, good for late arrivals."
+      }
+    ]
+  }
+}
