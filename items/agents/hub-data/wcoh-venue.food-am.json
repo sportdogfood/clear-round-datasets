@@ -1,0 +1,36 @@
+{
+  "venue_uid": "wcoh-venue",
+  "bucket": "am",
+  "params": {
+    "radius_m": 5000,
+    "price_range": "$$",
+    "cuisine": ["American", "Cafe", "Italian"],
+    "reference_priority": [
+      "https://worldequestriancenter.com/wilmington-oh/facilities/amenities/dining/",
+      "https://worldequestriancenter.com/wilmington-oh/facilities/amenities/shopping/"
+    ],
+    "notes": "Prioritized on-grounds spots that open before first trips so riders can fuel up without leaving stabling."
+  },
+  "results": [
+    {
+      "name": "Dark Horse Coffee Co.",
+      "on_venue": true,
+      "style": "Coffee bar & bakery window (counter-service)",
+      "best_for": ["first-cup caffeine before the warm-up ring", "grab-and-go pastries"],
+      "opens": "Daily 6:30 AM (per venue)",
+      "quick_order": "Drip or latte + muffin/scone; in/out before schooling.",
+      "insider_tips": "Hit this on the walk from stabling; lines move fast between jog strip and early trips.",
+      "url": "https://worldequestriancenter.com/wilmington-oh/facilities/amenities/dining/"
+    },
+    {
+      "name": "The International Grille & Café",
+      "on_venue": true,
+      "style": "Hot breakfast café (counter + dine-in)",
+      "best_for": ["eggs/protein plate", "breakfast sandwiches", "sit 10–15 minutes between rides"],
+      "opens": "Show days ~7:00 AM (per venue)",
+      "quick_order": "Egg sandwich + fruit cup; back to the warm-up in one coffee.",
+      "insider_tips": "Go just after course walk to miss the rush; easy access from vendor row side.",
+      "url": "https://worldequestriancenter.com/wilmington-oh/facilities/amenities/dining/"
+    }
+  ]
+}
