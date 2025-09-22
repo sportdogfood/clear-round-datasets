@@ -1,0 +1,83 @@
+{
+  "_meta": {
+    "hub_uid": "wef-week_hb",
+    "event_uid": "wef-week_ev",
+    "venue_uid": "wef-venue",
+    "organizer_uid": "esp-org",
+    "city_uid": "wellington",
+    "state_uid": "fl",
+    "event_dates": { "start": "2026-01-07", "end": "2026-03-22" },
+    "_schema_ref": "https://crt-b1434e13de34.herokuapp.com/items/agents/hub-knowledge/examples/hub_runner_example.json"
+  },
+
+  "hub_profile": {
+    "hub_title": "Winter Equestrian Festival – Wellington, FL",
+    "hub_origin_line": "I started Clear Round Travel after learning first-hand how tricky horse-show travel can be—and how a little extra planning makes the week far more enjoyable.",
+    "hub_overview": "The Winter Equestrian Festival in Wellington runs January through March, anchoring the A-circuit calendar. With weeks of hunter, jumper, and equitation competition, the hub brings riders, trainers, and families together around Wellington International’s showgrounds.",
+    "hub_keywords": [
+      "WEF Wellington horse show",
+      "Winter Equestrian Festival",
+      "A-circuit hunter jumper",
+      "Florida equestrian travel"
+    ],
+    "hub_insider_phrases": [
+      "warm-up ring",
+      "jog strip",
+      "vendor row",
+      "stabling",
+      "time allowed"
+    ],
+    "hub_meta_description": "Plan your Winter Equestrian Festival stay in Wellington, FL. Insider guidance on events, venues, and where to stay, dine, and prepare.",
+    "hub_title_tag": "Winter Equestrian Festival Hub | Wellington, FL",
+    "hub_search_title": "WEF Wellington Hub",
+    "hub_search_description": "Hub for Winter Equestrian Festival with event schedule, venue info, and travel tips.",
+    "hub_open_graph_title": "Winter Equestrian Festival Hub – Wellington International",
+    "hub_open_graph_description": "Your insider guide to WEF in Wellington: events, venue, and essentials for riders and families.",
+    "hub_page_canonical_url": "https://clearround.travel/hubs/wef-week"
+  },
+
+  "event_section": {
+    "event_overview": "WEF runs for 12+ weeks, showcasing hunters, jumpers, equitation, and feature classes like derbies and grands prix.",
+    "before_you_go": [
+      "Prize list and schedule bookmarked.",
+      "Trainer splits organized in entry system.",
+      "Health paperwork (Coggins, certificate) updated."
+    ],
+    "entries_and_splits": {
+      "adds_scratches": "Submit changes by posted deadlines to avoid fees.",
+      "awards": "Ribbons and prizes typically picked up same-day at show office."
+    },
+    "special_highlights": [
+      "USHJA International Hunter Derby week.",
+      "Saturday Night Lights grands prix.",
+      "WCHR week for hunters."
+    ]
+  },
+
+  "venue_section": {
+    "venue_name": "Wellington International",
+    "venue_city": "Wellington, FL",
+    "organizer": "Equestrian Sport Productions (ESP)",
+    "geo": {
+      "lat": 26.633496,
+      "lon": -80.272184,
+      "placeid": "ChIJL0qGR7nH2IgR6Xe4xfyAC5k",
+      "timezone": "America/New_York"
+    },
+    "venue_overview": "Wellington International hosts WEF with multiple show rings, vendor row, and extensive stabling. Managed by ESP, the venue is the epicenter of winter competition.",
+    "venue_reference_links": {
+      "stay": "https://wellingtoninternational.com/venue/stay/",
+      "dine": "https://wellingtoninternational.com/venue/dining/",
+      "vendors": "https://wellingtoninternational.com/venue/vendors/",
+      "events": "https://wellingtoninternational.com/events/"
+    }
+  },
+
+  "leg_sections": [
+    {
+      "leg_uid": "wef-week-1",
+      "status": "placeholder",
+      "notes": "Leg sections can be enriched later with arrival flow, stabling ops, weather notes, and daily routines."
+    }
+  ]
+}
