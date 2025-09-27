@@ -1,0 +1,88 @@
+{
+  "venue_uid": "capc-venue",
+  "venue_name": "Prince George Equestrian Center",
+  "location": {
+    "city": "Upper Marlboro",
+    "state": "MD",
+    "geo": "lat=38.8108793, lon=-76.7493977, placeid=EjoxNDkwMC..."
+  },
+  "audience": "Competitive hunter/jumper riders on the A-circuit (trainers, grooms, show parents).",
+  "tone": "Practical, insider, authoritative. Use real A-circuit phrasing (warm-up ring, jog strip, vendor row, stabling, drags, splits). No fluff.",
+  "schemas": {
+    "hotels": {
+      "type": "object",
+      "required_fields": ["venue_uid", "results"],
+      "results_shape": {
+        "–$$$": [
+          {
+            "name": "String",
+            "hotel_name": "String",
+            "name2": "String",
+            "approx_drive": "String (e.g. '20–25 min')",
+            "chain": "String",
+            "chain2": "String",
+            "amenities": ["Array of concise rider-relevant amenities"],
+            "safety_notes": "One sentence",
+            "url": "String (valid URL)"
+          }
+        ],
+        "$$$$": []
+      },
+      "acceptance_criteria": {
+        "min_total": 6,
+        "max_total": 12,
+        "min_per_bucket": 2
+      }
+    },
+    "dine-am": {
+      "type": "object",
+      "constraints": {
+        "reject_if_opens_after": "10:30",
+        "max_distance_m": 5000
+      },
+      "required_fields": [
+        "venue_uid","bucket","params","results",
+        "name","address","link","distance_m",
+        "opens_at_local","closes_at_local",
+        "notes","services","safety_notes","cuisine","menu_items"
+      ]
+    },
+    "dine-lunch": {
+      "type": "object",
+      "constraints": {
+        "reject_if_opens_after": "12:00",
+        "reject_if_closes_before": "13:30",
+        "max_distance_m": 8000
+      },
+      "required_fields": [
+        "venue_uid","bucket","params","results",
+        "name","address","link","distance_m",
+        "opens_at_local","closes_at_local",
+        "notes","services","safety_notes","cuisine","menu_items"
+      ]
+    },
+    "dine-pm": {
+      "type": "object",
+      "constraints": {
+        "reject_if_opens_after": "18:00",
+        "reject_if_closes_before": "20:00",
+        "max_distance_m": 15000
+      },
+      "required_fields": [
+        "venue_uid","bucket","params","results",
+        "name","address","link","distance_m",
+        "opens_at_local","closes_at_local",
+        "notes","services","safety_notes","cuisine","menu_items"
+      ]
+    },
+    "section": {
+      "type": "object",
+      "required_fields": [
+        "section_uid","section_type","section_title","section_overview","section_keywords",
+        "section_cta_text","section_img","section_img_alt","section_link",
+        "section_meta_description","section_open_graph_title","section_open_graph_description",
+        "section_search_title","section_search_description","section_spotlight"
+      ]
+    }
+  }
+}
