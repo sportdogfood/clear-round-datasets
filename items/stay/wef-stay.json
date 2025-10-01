@@ -4,19 +4,19 @@
   "stay_recordId": "recYX8blXakmpMPbS",
   "last_modified": "10/1/2025 2:43am",
   "created": "9/30/2025",
-  "blurbs": "",
+  "blurb": "",
   "venue_uid": "wef-venue",
   "stay_uuid": "wef-stay",
   "venue_uuid": "wef-venue",
-  "zones": "wef-zone",
+  "zone_uid": "wef-zone",
   "dirs": "stay",
-  "hotel_preview-standard_uids": [
+  "hotel_preview_standard_uids": [
     "fairfield-inn-and-suites-standard-wef",
     "holiday-inn-express-and-s-standard-wef",
     "courtyard-palm-beach-well-standard-wef",
     "hampton-inn-west-palm-bea-standard-wef"
   ],
-  "hotel_preview-premium_uids": [
+  "hotel_preview_premium_uids": [
     "the-ben-autograph-collect-premium-wef",
     "hilton-west-palm-beach-premium-wef"
   ],
@@ -24,8 +24,14 @@
   "stay_json": "wef-stay.json",
   "table_name": "stay/",
   "full_path": "https://crt-b1434e13de34.herokuapp.com/items/stay/wef-stay.json",
-  "hotel_preview-standard_full_path": "https://crt-b1434e13de34.herokuapp.com/items/hotels/fairfield-inn-and-suites-standard-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/holiday-inn-express-and-s-standard-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/courtyard-palm-beach-well-standard-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hampton-inn-west-palm-bea-standard-wef.json",
-  "hotels-premium_full_parh": "https://crt-b1434e13de34.herokuapp.com/items/hotels/the-ben-autograph-collect-premium-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hilton-west-palm-beach-premium-wef.json",
-  "standard_count": "4",
-  "premium_count": "2"
+  "hotel_preview_standard_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/fairfield-inn-and-suites-standard-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/holiday-inn-express-and-s-standard-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/courtyard-palm-beach-well-standard-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hampton-inn-west-palm-bea-standard-wef.json",
+  "hotel-premium_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/the-ben-autograph-collect-premium-wef.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hilton-west-palm-beach-premium-wef.json",
+  "output_uids": [],
+  "hotel_preview_standard_count": "4",
+  "hotel_preview_premium_count": "2",
+  "cta_text": "",
+  "curator": "",
+  "blurb_uid": "",
+  "stay_image_alt": "",
+  "hotel_preview_total": "6"
 }
