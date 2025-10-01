@@ -4,17 +4,17 @@
   "stay_recordId": "rec4IApAv93hufrNi",
   "last_modified": "10/1/2025 2:43am",
   "created": "9/30/2025",
-  "blurbs": "",
+  "blurb": "",
   "venue_uid": "osf-venue",
   "stay_uuid": "osf-stay",
   "venue_uuid": "osf-venue",
-  "zones": "osf-zone",
+  "zone_uid": "osf-zone",
   "dirs": "stay",
-  "hotel_preview-standard_uids": [
+  "hotel_preview_standard_uids": [
     "courtyard-danbury-standard-osf",
     "springhill-suites-danbury-standard-osf"
   ],
-  "hotel_preview-premium_uids": [
+  "hotel_preview_premium_uids": [
     "the-west-lane-inn-premium-osf",
     "hotel-zero-degrees-danbur-premium-osf",
     "bedford-post-inn-premium-osf"
@@ -23,8 +23,14 @@
   "stay_json": "osf-stay.json",
   "table_name": "stay/",
   "full_path": "https://crt-b1434e13de34.herokuapp.com/items/stay/osf-stay.json",
-  "hotel_preview-standard_full_path": "https://crt-b1434e13de34.herokuapp.com/items/hotels/courtyard-danbury-standard-osf.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/springhill-suites-danbury-standard-osf.json",
-  "hotels-premium_full_parh": "https://crt-b1434e13de34.herokuapp.com/items/hotels/the-west-lane-inn-premium-osf.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hotel-zero-degrees-danbur-premium-osf.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/bedford-post-inn-premium-osf.json",
-  "standard_count": "2",
-  "premium_count": "3"
+  "hotel_preview_standard_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/courtyard-danbury-standard-osf.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/springhill-suites-danbury-standard-osf.json",
+  "hotel-premium_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/the-west-lane-inn-premium-osf.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hotel-zero-degrees-danbur-premium-osf.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/bedford-post-inn-premium-osf.json",
+  "output_uids": [],
+  "hotel_preview_standard_count": "2",
+  "hotel_preview_premium_count": "3",
+  "cta_text": "",
+  "curator": "",
+  "blurb_uid": "",
+  "stay_image_alt": "",
+  "hotel_preview_total": "5"
 }
