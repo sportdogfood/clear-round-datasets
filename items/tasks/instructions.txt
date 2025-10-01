@@ -1,0 +1,15 @@
+Inputs: this task JSON. Required keys: event_*, venue_*, start_date, end_date, event_official_link, venue_link, geo_link, audiences_link, founder_link, insider_link, keywords_link, stay_link, dine_link, essentials_link.
+
+Modes: research_mode=true; ratings disabled for content runner.
+
+Fetch order: founder → audiences → event_official → venue → geo → keywords → insiders → stay/dine/essentials.
+
+Intro policy: cover event+dates, season/month, venue feel, city feel, seasonal temperature. Use ≥3 keywords, ≥2 insiders. One insider term max per sentence. Close with founder template.
+
+Sections: Stay paragraph; Dine AM+Dinner paragraphs; Locale paragraph; Essentials paragraph; CTAs per library.
+
+No logistics lists. No tickets/parking. No hotel price claims.
+
+Output: hello.intro, stay, dine, locale, essentials, hello.outro, brand_usage, source_trace, validation.
+
+Fail rules: founder/audiences 4xx → fail. Any required link 4xx → fail.
