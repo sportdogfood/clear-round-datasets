@@ -1,7 +1,7 @@
 {
   "task_uid": "hchs-task",
   "run_id": "hchs-test-2025-09-30-01",
-  "TIMESTAMP": "2025-09-29",
+  "TIMESTAMP": "2025-09-30 16:50",
   "run_uuid": "hchs-task-2025-09-30",
   "source": "manual",
   "version": "1.0.0",
@@ -14,7 +14,7 @@
   "stay_uid": "hchs-stay",
   "stay_link": "https://crt-b1434e13de34.herokuapp.com/items/stay/hchs-stay.json",
   "venue_uid": "hchs-venue",
-  "blog_uud": "hchs-blog",
+  "blog_uuid": "hchs-blog",
   "geometry_uid": "hchs-geo",
   "event_uid": "hchs-classic-ev",
   "section_uid": "hcsh-section",
@@ -41,11 +41,13 @@
   "essentials_link": "https://crt-b1434e13de34.herokuapp.com/items/essentials/hchs-essentials.json",
   "task_record_id": "recaCNVoFuwiDHg0l",
   "created": "9/29/2025",
-  "last_modified": "10/1/2025 7:28pm",
+  "last_modified": "2025-10-01 3:57pm",
   "table_name": "tasks/",
   "dirs": "tasks",
   "blog_json": "hchs-task.json",
   "task_link": "https://crt-b1434e13de34.herokuapp.com/items/tasks/hchs-task.json",
   "lane": "blog",
-  "task_uuid": "hchs-task"
+  "task_uuid": "hchs-task",
+  "research_mode": "true",
+  "strict_rating_check": "true"
 }
