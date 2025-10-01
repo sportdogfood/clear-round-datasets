@@ -1,0 +1,114 @@
+{
+  "version": "1.0.0",
+  "sources": [
+    {
+      "id": "csv_override",
+      "url": "",
+      "role": "csv_override",
+      "priority": 0,
+      "match_rule": "^{{event_uid}}$",
+      "rating_tokens": [],
+      "numeric_score_field": "score",
+      "notes": "CSV rows map by event_uid and override other sources. Provide event_uid, tier, sanctions, score, confidence in CSV."
+    },
+    {
+      "id": "event_official",
+      "url": "{event_official_url}",
+      "role": "official",
+      "priority": 1,
+      "match_rule": "hostname_match",
+      "rating_tokens": [
+        "FEI",
+        "CSI",
+        "A-circuit",
+        "A-rated",
+        "Grand Prix",
+        "USEF",
+        "USHJA"
+      ],
+      "numeric_score_field": null,
+      "notes": "Primary authoritative signal. Extract explicit labels or badges. Runner must HEAD/GET and only accept tokens present on page."
+    },
+    {
+      "id": "venue_json",
+      "url": "https://crt-b1434e13de34.herokuapp.com/items/venues/{venue_uid}.json",
+      "role": "internal",
+      "priority": 1,
+      "match_rule": "path_contains_venues",
+      "rating_tokens": [
+        "hotel_preview_uids_count",
+        "venue_tags",
+        "a-circuit"
+      ],
+      "numeric_score_field": null,
+      "notes": "Internal venue JSON. Use only explicit rating tags or counts as signals; do not infer tier solely from hotel count."
+    },
+    {
+      "id": "geometry_json",
+      "url": "https://crt-b1434e13de34.herokuapp.com/items/geometry/{geo_uid}.json",
+      "role": "internal",
+      "priority": 1,
+      "match_rule": "path_contains_geometry",
+      "rating_tokens": ["lat", "lon", "place_id"],
+      "numeric_score_field": null,
+      "notes": "Geometry is used for geolocation and context. Not a rating source but required for confidence rules when combined with other tokens."
+    },
+    {
+      "id": "fei_registry",
+      "url": "https://www.fei.org/",
+      "role": "registry",
+      "priority": 2,
+      "match_rule": "fei|fei.org",
+      "rating_tokens": ["FEI", "CSI", "World Cup", "FEI-designated"],
+      "numeric_score_field": null,
+      "notes": "Query FEI calendar/listings for event matches. High-confidence token if found."
+    },
+    {
+      "id": "usef_ushja_registry",
+      "url": "https://www.usef.org/ or https://www.ushja.org/",
+      "role": "registry",
+      "priority": 2,
+      "match_rule": "usef|ushja",
+      "rating_tokens": ["USEF", "USHJA", "A-circuit", "national"],
+      "numeric_score_field": null,
+      "notes": "Check national registries and sanctioning lists."
+    },
+    {
+      "id": "equestrian_press",
+      "url": "https://www.chronofhorse.com/",
+      "role": "press",
+      "priority": 3,
+      "match_rule": "chronofhorse|localnews|press",
+      "rating_tokens": ["Grand Prix", "major class", "finals", "featured"],
+      "numeric_score_field": null,
+      "notes": "Used to corroborate event prominence and extracted tokens only when explicit."
+    }
+  ],
+  "behavior": {
+    "priority_order": "ascending (0 = highest)",
+    "detection_rules": [
+      "Exact CSV match by event_uid wins (priority 0).",
+      "If official page contains explicit tokens (FEI, A-circuit, CSI, USEF, USHJA) set tier accordingly with confidence=high.",
+      "If only registry press tokens found set confidence=medium.",
+      "If no tokens found set tier='unknown' and confidence='low'."
+    ],
+    "token_mapping": {
+      "FEI": {"tier": "fei", "confidence": "high"},
+      "CSI": {"tier": "fei", "confidence": "high"},
+      "A-circuit": {"tier": "a-circuit", "confidence": "high"},
+      "A-rated": {"tier": "a-circuit", "confidence": "high"},
+      "USEF": {"sanctions": ["USEF"], "confidence": "medium"},
+      "USHJA": {"sanctions": ["USHJA"], "confidence": "medium"},
+      "Grand Prix": {"signal": "major_class", "confidence": "medium"}
+    }
+  },
+  "output_fields": [
+    "event.rating.tier",
+    "event.rating.sanctions[]",
+    "event.rating.score",
+    "event.rating.reviews_count",
+    "event.rating.confidence",
+    "event.rating.source"
+  ],
+  "notes": "Drop this file to /ratings/ratings_sources.json. Update CSV overrides and add registry URLs as needed. Runner must record source_trace entries for each attempted source with url, http_status, extracted_tokens, and rating_signal."
+}
