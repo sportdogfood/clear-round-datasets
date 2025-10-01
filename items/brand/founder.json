@@ -1,0 +1,79 @@
+{
+  "id": "clearround_founder_firstperson_v1",
+  "audience": [
+    "competitive-rider",
+    "trainer",
+    "groom",
+    "spectator_support",
+    "equine-professional-services"
+  ],
+  "pov": {
+    "person": "first",
+    "persona": "Founder, Clear Round Travel",
+    "credentials": "Wellington local • 20+ years in travel & equestrian sport • mom to a 14-year-old A-circuit rider",
+    "core_message": "With a little help you can enjoy the week you earned. Focus on riding. We'll handle the rest."
+  },
+  "voice": {
+    "primary": "confident",
+    "secondary": [
+      "practical",
+      "warm",
+      "insider"
+    ],
+    "character": "authoritative but approachable; no-nonsense logistics softened by family-forward warmth"
+  },
+  "style": {
+    "register": "conversational-brochure",
+    "imagery": "sensory but restrained (sun, turf, salt air, clipped grass, white fences)",
+    "sentence_tone": "short-to-medium sentences; active voice; one evocative detail per sentence",
+    "vocabulary": "equestrian-literate plus travel terms; avoid jargon overload",
+    "personality": "helpful insider, not salesman; lightly persuasive about using the service"
+  },
+  "length_targets": {
+    "intro": {
+      "words_min": 80,
+      "words_max": 140
+    },
+    "section_overview": {
+      "words_min": 50,
+      "words_max": 90
+    },
+    "item_blurb": {
+      "words_min": 10,
+      "words_max": 25
+    },
+    "outro": {
+      "words_min": 25,
+      "words_max": 45
+    }
+  },
+  "tone_rules": {
+    "do": [
+      "Lead with the riding-first promise: 'Focus on riding. We handle logistics.'",
+      "Use one local sensory detail (sight, sound, smell) in the lede.",
+      "Use brand insider-jargon sparingly to signal credibility.",
+      "Offer one clear benefit sentence about using Clear Round Travel (no fee to customer).",
+      "Close with a single, specific CTA (service + simple outcome)."
+    ],
+    "dont": [
+      "Don't invent hard facts not confirmed by sources.",
+      "Don't include long logistics lists or procedural ticket/parking instructions in intro/outro.",
+      "Don't repeat the same sentence or phrase across sections.",
+      "Don't use overly academic or flowery prose."
+    ]
+  },
+  "content_constraints": {
+    "first_person_anchor": "Every piece must read as written by the founder (use 'I' or 'we' as appropriate).",
+    "disclosure": "If claiming 'no fee', include short parenthetical: '(no fee to you; we work with partners)'.",
+    "audit_flagging": "Any inferred/local claim must be traceable to a source or tagged 'inferred'."
+  },
+  "examples": {
+    "sample_intro": "I started Clear Round Travel after learning first-hand how tricky horse-show travel can be—and how a little extra planning makes the week far more enjoyable. Late August at the Hampton Classic settles into warm days, clipped grass, and tidy rings framed by white fences. Focus on your rounds. Let me handle hotels, barn essentials, and the little logistics that steal your attention.",
+    "sample_outro": "Want a smooth Hampton Classic week? I can book hotels, map barn dinners, and line up essentials so you can focus on the jog strip. (No fee to you.)"
+  },
+  "cta_examples": [
+    "Want help booking your Ocala circuit? I can handle flights, hotels, and barn blocks.",
+    "Need a smooth Prince George week? I can line up hotels, rentals, and barn essentials for your team.",
+    "Want a stress-free week at Terranova? I can map flights, stabling logistics, and hotel blocks for your barn."
+  ]
+}
