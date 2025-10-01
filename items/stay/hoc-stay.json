@@ -4,17 +4,17 @@
   "stay_recordId": "recMa3GLdOiLF4CqX",
   "last_modified": "10/1/2025 2:43am",
   "created": "9/30/2025",
-  "blurbs": "",
+  "blurb": "",
   "venue_uid": "hoc-venue",
   "stay_uuid": "hoc-stay",
   "venue_uuid": "hoc-venue",
-  "zones": "hoc-zone",
+  "zone_uid": "hoc-zone",
   "dirs": "stay",
-  "hotel_preview-standard_uids": [
+  "hotel_preview_standard_uids": [
     "comfort-suites-ocala-nort-standard-hoc",
     "best-western-ocala-park-c-standard-hoc"
   ],
-  "hotel_preview-premium_uids": [
+  "hotel_preview_premium_uids": [
     "residence-inn-ocala-premium-hoc",
     "equus-inn-ocala-premium-hoc"
   ],
@@ -22,8 +22,14 @@
   "stay_json": "hoc-stay.json",
   "table_name": "stay/",
   "full_path": "https://crt-b1434e13de34.herokuapp.com/items/stay/hoc-stay.json",
-  "hotel_preview-standard_full_path": "https://crt-b1434e13de34.herokuapp.com/items/hotels/comfort-suites-ocala-nort-standard-hoc.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/best-western-ocala-park-c-standard-hoc.json",
-  "hotels-premium_full_parh": "https://crt-b1434e13de34.herokuapp.com/items/hotels/residence-inn-ocala-premium-hoc.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/equus-inn-ocala-premium-hoc.json",
-  "standard_count": "2",
-  "premium_count": "2"
+  "hotel_preview_standard_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/comfort-suites-ocala-nort-standard-hoc.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/best-western-ocala-park-c-standard-hoc.json",
+  "hotel-premium_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/residence-inn-ocala-premium-hoc.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/equus-inn-ocala-premium-hoc.json",
+  "output_uids": [],
+  "hotel_preview_standard_count": "2",
+  "hotel_preview_premium_count": "2",
+  "cta_text": "",
+  "curator": "",
+  "blurb_uid": "",
+  "stay_image_alt": "",
+  "hotel_preview_total": "4"
 }
