@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "run_id": "ratings-job-hchs-2025-10-01-01",
+    "timestamp_iso": "2025-10-01T13:07:00-04:00",
+    "runner_version": "ratings-runner-1.0"
+  },
+  "event_uid": "hchs-classic-ev",
+  "event": {
+    "rating": {
+      "tier": "fei",
+      "sanctions": [
+        "FEI"
+      ],
+      "score": null,
+      "reviews_count": null,
+      "confidence": "high",
+      "source": [
+        "https://www.hamptonclassic.com/",
+        "https://www.fei.org/"
+      ]
+    }
+  },
+  "source_trace": [
+    {
+      "url": "https://www.hamptonclassic.com/",
+      "http_status": 200,
+      "extracted_tokens": [
+        "FEI",
+        "CSI5*",
+        "CSI2*",
+        "Grand Prix"
+      ],
+      "timestamp_iso": "2025-10-01T13:05:01-04:00",
+      "notes": "Official site contains explicit FEI/CSI tokens; first definitive match."
+    },
+    {
+      "url": "https://www.fei.org/",
+      "http_status": 200,
+      "extracted_tokens": [
+        "CSI5*",
+        "CSI2*"
+      ],
+      "timestamp_iso": "2025-10-01T13:05:04-04:00",
+      "notes": "FEI calendar entry confirms CSI5*/CSI2* classification."
+    }
+  ]
+}
