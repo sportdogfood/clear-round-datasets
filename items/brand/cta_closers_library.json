@@ -1,0 +1,51 @@
+{
+  "name": "cta_closers_library",
+  "version": "1.0.0",
+  "categories": {
+    "generic": [
+      "Want it handled? I’ll line it up so you stay ring-focused.",
+      "Ride first. I’ll manage the rest and keep your week quiet.",
+      "You ride the plan; I’ll keep logistics invisible.",
+      "Keep eyes up. I’ll run the checklist in the background.",
+      "One job: ride well. I’ll cover the rest.",
+      "Need a calm week? I’ll set beds, bites, and basics.",
+      "Show up ready, not rushed. I’ll arrange the moving parts.",
+      "Less scramble, more stride. I’ll keep the plan tight.",
+      "Keep energy for the ring. I’ll handle logistics.",
+      "I’ll set the week so you arrive settled and sharp."
+    ],
+    "stay": [
+      "Want it handled? I’ll lock rooms and sync confirmations to your schedule.",
+      "I’ll book close-in rooms so mornings stay simple.",
+      "Beds sorted. You focus on the track and the clock.",
+      "I’ll place you near the rings with easy parking.",
+      "I’ll secure lodging that matches your class times."
+    ],
+    "dine": [
+      "I’ll map a barn-friendly dinner loop with quick reservations.",
+      "Two solid dinner options, pre-booked. You just walk in.",
+      "I’ll set post-round tables and keep them flexible.",
+      "I’ll line up quick eats near the venue.",
+      "Menus handled. You reset while I keep tables on time."
+    ],
+    "essentials": [
+      "I’ll pack a lean kit so nothing slows your rounds.",
+      "Basics stocked and labeled. You stay on rhythm.",
+      "I’ll stage water, layers, and ring bag essentials.",
+      "I’ll prep a no-fuss checklist matched to the forecast.",
+      "I’ll keep the barn stash topped so you keep pace."
+    ],
+    "benefit_variants": [
+      "No planning fee. I set the week; you ride.",
+      "No extra cost to you—just clean logistics.",
+      "Included service: I handle bookings and confirmations."
+    ]
+  },
+  "usage": {
+    "placement": "End of section or intro",
+    "length_words_max": 16,
+    "rotation": "sequential",
+    "variables": ["{event_name}", "{venue_name}", "{city}", "{state}"],
+    "notes": "Use one closer per section. Keep insider terms minimal."
+  }
+}
