@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "run_id": "ratings-job-hchs-2025-10-01-01",
+    "timestamp_iso": "2025-10-01T13:00:00-04:00",
+    "initiated_by": "philip.p"
+  },
+  "hub": {
+    "core": {
+      "event": {
+        "uid": "hchs-classic-ev",
+        "name": "Hampton Classic Horse Show",
+        "official_url": "https://www.hamptonclassic.com/horse-show"
+      },
+      "venue": {
+        "uid": "hchs-venue",
+        "official_url": "https://crt-b1434e13de34.herokuapp.com/items/venues/hchs-venue.json",
+        "geometry_url": "https://crt-b1434e13de34.herokuapp.com/items/geometry/hchs-geo.json"
+      }
+    }
+  },
+  "runner_config_ref": "/ratings/ratings_sources.json",
+  "run_options": {
+    "dry_run": false,
+    "follow_redirects": true,
+    "record_response_bodies": false
+  }
+}
