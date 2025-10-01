@@ -4,17 +4,17 @@
   "stay_recordId": "recHmvUHhINMb7GpY",
   "last_modified": "10/1/2025 2:43am",
   "created": "9/30/2025",
-  "blurbs": "",
+  "blurb": "",
   "venue_uid": "hvt-venue",
   "stay_uuid": "hvt-stay",
   "venue_uuid": "hvt-venue",
-  "zones": "hvt-zone",
+  "zone_uid": "hvt-zone",
   "dirs": "stay",
-  "hotel_preview-standard_uids": [
+  "hotel_preview_standard_uids": [
     "the-palmer-house-resort-a-standard-hvt",
     "the-manchester-view-standard-hvt"
   ],
-  "hotel_preview-premium_uids": [
+  "hotel_preview_premium_uids": [
     "inn-at-ormsby-hill-premium-hvt",
     "reluctant-panther-inn-and-premium-hvt",
     "kimpton-taconic-hotel-premium-hvt"
@@ -23,8 +23,14 @@
   "stay_json": "hvt-stay.json",
   "table_name": "stay/",
   "full_path": "https://crt-b1434e13de34.herokuapp.com/items/stay/hvt-stay.json",
-  "hotel_preview-standard_full_path": "https://crt-b1434e13de34.herokuapp.com/items/hotels/the-palmer-house-resort-a-standard-hvt.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/the-manchester-view-standard-hvt.json",
-  "hotels-premium_full_parh": "https://crt-b1434e13de34.herokuapp.com/items/hotels/inn-at-ormsby-hill-premium-hvt.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/reluctant-panther-inn-and-premium-hvt.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/kimpton-taconic-hotel-premium-hvt.json",
-  "standard_count": "2",
-  "premium_count": "3"
+  "hotel_preview_standard_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/the-palmer-house-resort-a-standard-hvt.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/the-manchester-view-standard-hvt.json",
+  "hotel-premium_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/inn-at-ormsby-hill-premium-hvt.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/reluctant-panther-inn-and-premium-hvt.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/kimpton-taconic-hotel-premium-hvt.json",
+  "output_uids": [],
+  "hotel_preview_standard_count": "2",
+  "hotel_preview_premium_count": "3",
+  "cta_text": "",
+  "curator": "",
+  "blurb_uid": "",
+  "stay_image_alt": "",
+  "hotel_preview_total": "5"
 }
