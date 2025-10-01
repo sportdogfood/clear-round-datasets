@@ -4,16 +4,16 @@
   "stay_recordId": "recZnMjsnz8LulBEM",
   "last_modified": "10/1/2025 2:43am",
   "created": "9/30/2025",
-  "blurbs": "",
+  "blurb": "",
   "venue_uid": "hll-venue",
   "stay_uuid": "hll-stay",
   "venue_uuid": "hll-venue",
-  "zones": "hll-zone",
+  "zone_uid": "hll-zone",
   "dirs": "stay",
-  "hotel_preview-standard_uids": [
+  "hotel_preview_standard_uids": [
     "hampton-inn-and-suites-ch-standard-hll"
   ],
-  "hotel_preview-premium_uids": [
+  "hotel_preview_premium_uids": [
     "hotel-arista-naperville-premium-hll",
     "chicago-marriott-napervil-premium-hll",
     "hotel-baker-st-charles-premium-hll",
@@ -23,8 +23,14 @@
   "stay_json": "hll-stay.json",
   "table_name": "stay/",
   "full_path": "https://crt-b1434e13de34.herokuapp.com/items/stay/hll-stay.json",
-  "hotel_preview-standard_full_path": "https://crt-b1434e13de34.herokuapp.com/items/hotels/hampton-inn-and-suites-ch-standard-hll.json",
-  "hotels-premium_full_parh": "https://crt-b1434e13de34.herokuapp.com/items/hotels/hotel-arista-naperville-premium-hll.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/chicago-marriott-napervil-premium-hll.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hotel-baker-st-charles-premium-hll.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hilton-chicago-oak-brook-premium-hll.json",
-  "standard_count": "1",
-  "premium_count": "4"
+  "hotel_preview_standard_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/hampton-inn-and-suites-ch-standard-hll.json",
+  "hotel-premium_links": "https://crt-b1434e13de34.herokuapp.com/items/hotels/hotel-arista-naperville-premium-hll.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/chicago-marriott-napervil-premium-hll.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hotel-baker-st-charles-premium-hll.json, https://crt-b1434e13de34.herokuapp.com/items/hotels/hilton-chicago-oak-brook-premium-hll.json",
+  "output_uids": [],
+  "hotel_preview_standard_count": "1",
+  "hotel_preview_premium_count": "4",
+  "cta_text": "",
+  "curator": "",
+  "blurb_uid": "",
+  "stay_image_alt": "",
+  "hotel_preview_total": "5"
 }
