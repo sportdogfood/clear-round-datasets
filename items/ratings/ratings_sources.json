@@ -1,33 +1,15 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "tiers_allowed": ["fei", "a-circuit", "regional", "local", "unknown"],
   "sources": [
-    {
-      "id": "csv_override",
-      "url": "",
-      "role": "csv_override",
-      "priority": 0,
-      "match_rule": "^{{event_uid}}$",
-      "rating_tokens": [],
-      "notes": "CSV rows map by event_uid and override other sources. Provide event_uid and tier (one of tiers_allowed) and confidence."
-    },
     {
       "id": "event_official",
       "url": "{event_official_url}",
       "role": "official",
       "priority": 1,
       "match_rule": "hostname_match",
-      "rating_tokens": ["FEI", "CSI", "A-circuit", "A-rated", "Grand Prix", "USEF", "USHJA"],
-      "notes": "Primary authoritative signal. Accept tokens only if verbatim present on page."
-    },
-    {
-      "id": "venue_json",
-      "url": "https://crt-b1434e13de34.herokuapp.com/items/venues/{venue_uid}.json",
-      "role": "internal",
-      "priority": 1,
-      "match_rule": "path_contains_venues",
-      "rating_tokens": ["a-circuit", "priority_tag", "venue_rating_tag"],
-      "notes": "Internal venue JSON may carry explicit rating tags. Do not infer tier from unrelated counts."
+      "rating_tokens": ["FEI", "CSI", "A-circuit", "A-rated", "USEF", "USHJA", "Grand Prix"],
+      "notes": "Primary: check event.official_url. Accept only explicit tokens present on the page."
     },
     {
       "id": "fei_registry",
@@ -36,25 +18,25 @@
       "priority": 2,
       "match_rule": "fei|fei.org",
       "rating_tokens": ["FEI", "CSI"],
-      "notes": "High-confidence FEI signals."
+      "notes": "Check FEI calendar/listings for explicit FEI/CSI labels."
     },
     {
-      "id": "usef_ushja_registry",
-      "url": "https://www.usef.org/ or https://www.ushja.org/",
+      "id": "usef_registry",
+      "url": "https://www.usef.org/",
       "role": "registry",
-      "priority": 2,
-      "match_rule": "usef|ushja",
-      "rating_tokens": ["USEF", "USHJA", "A-circuit", "national"],
-      "notes": "National registry signals mapped to a-circuit when explicit."
+      "priority": 3,
+      "match_rule": "usef|usef.org",
+      "rating_tokens": ["USEF", "A-circuit", "A-rated"],
+      "notes": "Check USEF listings for explicit national sanction labels."
     },
     {
-      "id": "equestrian_press",
-      "url": "https://www.chronofhorse.com/",
-      "role": "press",
-      "priority": 3,
-      "match_rule": "chronofhorse|localnews|press",
-      "rating_tokens": ["Grand Prix", "major class", "finals", "featured"],
-      "notes": "Corroborate prominence. Use only explicit mentions."
+      "id": "ushja_registry",
+      "url": "https://www.ushja.org/",
+      "role": "registry",
+      "priority": 4,
+      "match_rule": "ushja|ushja.org",
+      "rating_tokens": ["USHJA", "A-circuit"],
+      "notes": "Check USHJA listings as final registry fallback."
     }
   ],
   "token_mapping": {
@@ -64,18 +46,15 @@
     "A-rated": { "tier": "a-circuit", "confidence": "high" },
     "USEF": { "tier": "a-circuit", "confidence": "medium", "sanctions": ["USEF"] },
     "USHJA": { "tier": "a-circuit", "confidence": "medium", "sanctions": ["USHJA"] },
-    "Grand Prix": { "tier": "a-circuit", "confidence": "medium", "signal": "major_class" },
-    "major class": { "tier": "regional", "confidence": "low" },
-    "featured": { "tier": "regional", "confidence": "low" }
+    "Grand Prix": { "tier": "a-circuit", "confidence": "medium", "signal": "major_class" }
   },
   "behavior": {
-    "priority_order": "ascending (0 = highest)",
+    "priority_order": "ascending (1 = first)",
     "rules": [
-      "CSV override (priority 0) wins and must use only tiers in tiers_allowed.",
-      "Check priority-1 sources next. Only accept explicit tokens found on page/JSON.",
-      "Registries (priority 2) supply high-confidence matches for FEI/CSI or A-circuit labels.",
-      "Press (priority 3) used for corroboration only; do not elevate tier unless paired with registry/official signals.",
-      "If no explicit token found set tier='unknown' and confidence='low'."
+      "Check each source in order. For each source perform HEAD/GET and record source_trace entry with url, http_status, extracted_tokens.",
+      "Accept only explicit rating tokens found on the source. Map token via token_mapping.",
+      "Stop on first definitive token match and set event.rating accordingly.",
+      "If no tokens found after all 4 sources set event.rating = null and event.rating.confidence = 'low'. Emit validation.warning stating all four sources were checked."
     ]
   },
   "output_fields": [
@@ -86,5 +65,5 @@
     "event.rating.confidence",
     "event.rating.source"
   ],
-  "notes": "This file restricts detection to the specified tiers. Update CSV overrides for deterministic overrides. Runner must emit source_trace entries for every attempted source with url, http_status, extracted_tokens, and mapped rating_signal."
+  "notes": "Drop to /ratings/ratings_sources.json. No CSV overrides. Runner must not infer beyond explicit tokens and must produce full source_trace for audit."
 }
