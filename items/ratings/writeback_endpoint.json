@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "run_id": "{{run_id}}",
+    "timestamp_iso": "{{ISO8601}}",
+    "runner_version": "ratings-runner-1.0"
+  },
+  "event_uid": "{{event.uid}}",
+  "event": {
+    "rating": {
+      "tier": "{{fei|a-circuit|regional|local|null}}",
+      "sanctions": ["{{USEF|USHJA|FEI}}"],
+      "score": {{numeric|null}},
+      "reviews_count": {{int|null}},
+      "confidence": "{{high|medium|low}}",
+      "source": ["{{url1}}","{{url2}}"]
+    }
+  },
+  "source_trace": [
+    {
+      "url": "{{checked_url}}",
+      "http_status": {{int}},
+      "extracted_tokens": ["{{token1}}","{{token2}}"],
+      "timestamp_iso": "{{ISO8601}}",
+      "notes": "{{brief note about extraction}}"
+    }
+  ]
+}
