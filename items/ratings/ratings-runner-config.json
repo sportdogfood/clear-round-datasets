@@ -1,0 +1,87 @@
+{
+  "runner_name": "ratings-runner",
+  "version": "1.0.0",
+  "description": "Standalone job to detect event rating tier. Checks only: official -> FEI -> USEF -> USHJA. Writes event.rating and source_trace.",
+  "sources_ordered": [
+    {
+      "id": "official",
+      "role": "official",
+      "priority": 1,
+      "url_template": "{event_official_url}",
+      "allowed_tokens": ["FEI", "CSI", "A-circuit", "A-rated", "USEF", "USHJA", "CSI5*", "CSI2*"]
+    },
+    {
+      "id": "fei",
+      "role": "registry",
+      "priority": 2,
+      "url": "https://www.fei.org/",
+      "match_rules": ["fei.org", "data.fei.org"],
+      "allowed_tokens": ["FEI", "CSI", "CSI5*", "CSI2*"]
+    },
+    {
+      "id": "usef",
+      "role": "registry",
+      "priority": 3,
+      "url": "https://www.usef.org/",
+      "match_rules": ["usef.org"],
+      "allowed_tokens": ["USEF", "A-circuit", "A-rated"]
+    },
+    {
+      "id": "ushja",
+      "role": "registry",
+      "priority": 4,
+      "url": "https://www.ushja.org/",
+      "match_rules": ["ushja.org"],
+      "allowed_tokens": ["USHJA", "A-circuit"]
+    }
+  ],
+  "token_mapping": {
+    "FEI": {"tier": "fei", "confidence": "high"},
+    "CSI": {"tier": "fei", "confidence": "high"},
+    "CSI5*": {"tier": "fei", "confidence": "high"},
+    "CSI2*": {"tier": "fei", "confidence": "high"},
+    "A-circuit": {"tier": "a-circuit", "confidence": "high"},
+    "A-rated": {"tier": "a-circuit", "confidence": "high"},
+    "USEF": {"tier": "a-circuit", "confidence": "medium"},
+    "USHJA": {"tier": "a-circuit", "confidence": "medium"}
+  },
+  "behavior": {
+    "stop_on_first_match": true,
+    "only_explicit_tokens": true,
+    "no_inference": true,
+    "on_no_match": {
+      "result": null,
+      "confidence": "low",
+      "validation_warning": "No explicit rating token found on official, FEI, USEF, or USHJA."
+    }
+  },
+  "fetch_options": {
+    "http_method": "HEAD_then_GET",
+    "timeout_seconds": 12,
+    "retries": 1,
+    "user_agent": "crt-ratings-runner/1.0"
+  },
+  "output": {
+    "writeback_endpoint": "{commit_endpoint}", 
+    "writeback_payload_template": {
+      "event_uid": "{event.uid}",
+      "event.rating": "{detected_rating_object}",
+      "source_trace": "{source_trace_array}"
+    },
+    "output_path_fallback": "/ratings/overrides/{event.uid}.json"
+  },
+  "validation": {
+    "mode": "strict",
+    "required_inputs": ["meta.timestamp_iso","hub.core.event.uid","hub.core.event.official_url"],
+    "emit_on_fail": ["meta","validation","source_trace"]
+  },
+  "security": {
+    "auth_method": "bearer",
+    "auth_token_env": "RATINGS_RUNNER_TOKEN"
+  },
+  "logging": {
+    "level": "info",
+    "store_trace": true
+  },
+  "notes": "This runner must be triggered separately from the content runner. No CSV overrides in this config. To use CSV overrides add a priority-0 source entry."
+}
