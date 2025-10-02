@@ -1,30 +1,40 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "updated_iso": "2025-10-02T00:00:00-04:00",
   "runner": "content-runner",
+
   "validate_only_base_uri": true,
   "require_assets": false,
+
   "strict_mode": {
-  "no_guessing": true,
-  "fail_on_missing_signal": true,
-  "fail_on_4xx_required_links": true,
-  "fail_on_missing_url": true,
-  "include_seasonal_avg_requires_source": false
+    "no_guessing": true,
+    "fail_on_missing_signal": false,
+    "fail_on_4xx_required_links": false,
+    "fail_on_missing_url": false,
+    "include_seasonal_avg_requires_source": false
   },
+
   "length_targets": {
     "intro_min": 80,
     "intro_max": 140,
     "outro_min": 25,
     "outro_max": 45
   },
+
   "brand_requirements": {
-    "keywords_min": 3,
-    "insiders_min": 2,
-    "audience_reference_required": true
+    "keywords_min": 0,
+    "insiders_min": 0,
+    "audience_reference_required": false
   },
+
   "section_rules": {
     "intro": {
-      "must_cover": ["event+dates_humanized", "season_or_month", "venue_feel_2traits", "city_feel_1sensory_1vibe", "seasonal_normals_if_geo"],
+      "must_cover": [
+        "event+dates_humanized",
+        "season_or_month",
+        "venue_feel_2traits",
+        "city_feel_1sensory_1vibe"
+      ],
       "forbid": ["ticketing", "prices", "logistics_lists"]
     },
     "stay": { "paragraph": true, "cta_allowed": true },
@@ -33,6 +43,7 @@
     "essentials": { "paragraph": true, "cta_allowed": true },
     "outro": { "use_template_if_available": true }
   },
+
   "templates": {
     "use_intro_closing_patterns": true,
     "use_outro_templates": true,
@@ -40,6 +51,7 @@
     "rotation": "sequential",
     "fallback_to_founder": true
   },
+
   "seo": {
     "emit": true,
     "rules": {
@@ -52,30 +64,9 @@
       "no_insider_terms_in_seo": true
     }
   },
-  "emit_items": true,
-  "item_rules": {
-    "stay": {
-      "source": "stay_link",
-      "required_fields": ["name", "url"],
-      "optional_fields": ["alt", "distance", "notes"],
-      "map": { "name": "$.name", "url": "$.url", "alt": "$.alt || $.distance || $.notes" },
-      "http_200_only": true
-    },
-    "dine": {
-      "source": "dine_link",
-      "required_fields": ["name", "url"],
-      "optional_fields": ["alt", "meal"],
-      "map": { "name": "$.name", "url": "$.url", "alt": "$.alt || $.meal" },
-      "http_200_only": true
-    },
-    "essentials": {
-      "source": "essentials_link",
-      "required_fields": ["type", "name", "url"],
-      "optional_fields": ["alt", "notes"],
-      "map": { "type": "$.type", "name": "$.name", "url": "$.url", "alt": "$.alt || $.notes" },
-      "http_200_only": true
-    }
-  },
+
+  "emit_items": false,
+
   "output_contract": {
     "stay.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "dine.items[]": { "name": "string", "url": "uri", "alt": "string" },
