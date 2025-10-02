@@ -1,10 +1,92 @@
 {
-  "hello":{"intro":"...", "outro":"..."},
-  "stay":{"paragraph":"..."},
-  "dine":{"am":"...","dinner":"..."},
-  "locale":{"paragraph":"..."},
-  "essentials":{"paragraph":"..."},
-  "brand_usage":{"keywords_used":[],"insiders_used":[],"audience_trait":""},
-  "source_trace":[],
-  "validation":{"status":"pass"}
+  "meta": {
+    "run_id": "",
+    "timestamp_iso": "",
+    "task_uri": "",
+    "policy_version": "1.0"
+  },
+  "hello": {
+    "intro": "",
+    "outro": ""
+  },
+  "stay": {
+    "title": "",
+    "paragraph": "",
+    "cta": ""
+  },
+  "dine": {
+    "title": "",
+    "am": "",
+    "dinner": "",
+    "cta": ""
+  },
+  "locale": {
+    "title": "",
+    "paragraph": ""
+  },
+  "essentials": {
+    "title": "",
+    "paragraph": "",
+    "cta": ""
+  },
+  "seo": {
+    "section_title": "",
+    "meta_description": "",
+    "open_graph_title": "",
+    "open_graph_description": "",
+    "search_title": "",
+    "search_description": ""
+  },
+  "brand_usage": {
+    "keywords_used": [],
+    "insiders_used": [],
+    "audience_trait": "",
+    "intro_template_id": "",
+    "outro_template_id": "",
+    "cta_closers": { "stay": "", "dine": "", "essentials": "" }
+  },
+  "word_counts": {
+    "intro": 0,
+    "outro": 0,
+    "stay": 0,
+    "dine_am": 0,
+    "dine_dinner": 0,
+    "locale": 0,
+    "essentials": 0
+  },
+  "limits": {
+    "intro_min": 80,
+    "intro_max": 140,
+    "outro_min": 25,
+    "outro_max": 45
+  },
+  "templates_used": {
+    "intro": "",
+    "outro": "",
+    "cta": { "stay": "", "dine": "", "essentials": "" }
+  },
+  "inputs_echo": {
+    "founder_link": "",
+    "audiences_link": "",
+    "keywords_link": "",
+    "insiders_link": "",
+    "stay_link": "",
+    "dine_link": "",
+    "essentials_link": "",
+    "venue_link": "",
+    "geo_link": "",
+    "event_official_url": ""
+  },
+  "source_trace": [
+    { "url": "", "http_status": 200, "signals": [], "timestamp_iso": "" }
+  ],
+  "checked_sources": [
+    { "url": "", "http_status": 200 }
+  ],
+  "dedupe": { "content_sha256": "" },
+  "validation": {
+    "status": "pass",
+    "warnings": [],
+    "errors": []
+  }
 }
