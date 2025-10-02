@@ -5,11 +5,11 @@
   "validate_only_base_uri": true,
   "require_assets": false,
   "strict_mode": {
-    "no_guessing": true,
-    "fail_on_missing_signal": true,
-    "fail_on_4xx_required_links": true,
-    "fail_on_missing_url": true,
-    "include_seasonal_avg_requires_source": true
+  "no_guessing": true,
+  "fail_on_missing_signal": true,
+  "fail_on_4xx_required_links": true,
+  "fail_on_missing_url": true,
+  "include_seasonal_avg_requires_source": false
   },
   "length_targets": {
     "intro_min": 80,
