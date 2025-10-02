@@ -111,3 +111,12 @@ no_guessing: true
 fail_on_missing_signal: true
 fail_on_4xx_required_links: true
 if include_seasonal_avg=true and climate normals cannot be fetched from allowlisted domains → fail
+
+FIELD_MAP
+schema_enforced: false
+alias:
+  insiders_link: insider_link
+  event_official_url: event_official_link
+  schema: schema_link
+  gold: gold_link
+
