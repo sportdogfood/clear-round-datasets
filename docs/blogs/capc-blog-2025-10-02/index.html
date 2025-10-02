@@ -3,19 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="canonical" id="canonical">
+<link rel="canonical" id="canonical" href="">
 <title id="title">Insider Guide</title>
 <meta name="description" id="meta-desc" content="">
+<meta property="og:type" content="article">
 <meta property="og:title" id="og-title" content="">
 <meta property="og:description" id="og-desc" content="">
 <meta property="og:image" id="og-image" content="">
-<meta property="og:type" content="article">
+<meta property="og:url" id="og-url" content="">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" id="tw-title" content="">
+<meta name="twitter:description" id="tw-desc" content="">
+<meta name="twitter:image" id="tw-image" content="">
 <style>
+  :root{--maxw:820px}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;margin:0;padding:0 16px 48px;color:#111}
-  header,section{max-width:820px;margin:24px auto}
+  header,section{max-width:var(--maxw);margin:24px auto}
   h1{font-size:1.8rem;margin:24px 0 8px}
   h2{font-size:1.3rem;margin:20px 0 8px}
-  .hero{margin-top:16px}
+  .media{margin-top:16px}
+  .media img{display:block;max-width:100%;height:auto;border-radius:6px;background:#e9ecef}
   .cta{font-weight:600;margin-top:8px}
   .muted{color:#555}
   ul{padding-left:18px}
@@ -25,13 +32,14 @@
 <body>
 <header>
   <h1 id="h1">Insider Guide</h1>
-  <img id="hero" class="hero" alt="">
+  <figure class="media"><img id="hero" alt="Event hero image" width="1600" height="900"></figure>
 </header>
 
 <section id="intro"></section>
 
 <section id="stay">
   <h2>Where to Stay</h2>
+  <figure class="media"><img id="stay-img" alt="Stay section image" width="1200" height="675"></figure>
   <p id="stay-p"></p>
   <ul id="stay-list"></ul>
   <p id="stay-cta" class="cta"></p>
@@ -39,6 +47,7 @@
 
 <section id="dine">
   <h2>Dine</h2>
+  <figure class="media"><img id="dine-img" alt="Dine section image" width="1200" height="675"></figure>
   <p><strong>AM:</strong> <span id="dine-am"></span></p>
   <p><strong>Dinner:</strong> <span id="dine-dinner"></span></p>
   <p id="dine-cta" class="cta"></p>
@@ -72,22 +81,40 @@
     fetch(assetsUrl).then(r=>r.json())
   ]);
 
-  // SEO + head
+  // Absolute canonical + og:url
+  const canonical = location.origin + base + '/';
+  document.getElementById('canonical').setAttribute('href', canonical);
+  document.getElementById('og-url').setAttribute('content', canonical);
+
+  // SEO head
   const seo = content.seo || {};
-  document.getElementById('title').textContent = seo.search_title || 'Insider Guide';
-  document.getElementById('meta-desc').setAttribute('content', seo.meta_description || '');
-  document.getElementById('og-title').setAttribute('content', seo.open_graph_title || seo.search_title || '');
-  document.getElementById('og-desc').setAttribute('content', seo.open_graph_description || seo.meta_description || '');
-  document.getElementById('canonical').setAttribute('href', location.href.replace(/index\.html?$/,''));
-  document.getElementById('og-image').setAttribute('content', (assets.hero && assets.hero.src) || '');
+  const title = seo.search_title || 'Insider Guide';
+  const desc  = seo.meta_description || '';
+  const ogt   = seo.open_graph_title || title;
+  const ogd   = seo.open_graph_description || desc;
+  const heroSrc = (assets.hero && assets.hero.src) || '';
 
-  // Hero
-  const hero = document.getElementById('hero');
-  hero.src = (assets.hero && assets.hero.src) || '';
-  hero.alt = (assets.hero && assets.hero.alt) || 'Hero image';
+  document.getElementById('title').textContent = title;
+  document.getElementById('meta-desc').setAttribute('content', desc);
+  document.getElementById('og-title').setAttribute('content', ogt);
+  document.getElementById('og-desc').setAttribute('content', ogd);
+  document.getElementById('og-image').setAttribute('content', heroSrc);
+  document.getElementById('tw-title').setAttribute('content', ogt);
+  document.getElementById('tw-desc').setAttribute('content', ogd);
+  document.getElementById('tw-image').setAttribute('content', heroSrc);
 
-  // Title H1
-  const eventName = (content.meta && content.meta.event_name) || (seo.open_graph_title || 'Insider Guide');
+  // Hero + section images (hide if missing or error)
+  const safeImg = (el, src, alt) => {
+    if(!src){ el.parentElement.remove(); return; }
+    el.src = src; el.alt = alt || el.alt || '';
+    el.addEventListener('error', ()=>{ el.parentElement.remove(); });
+  };
+  safeImg(document.getElementById('hero'), heroSrc, assets.hero && assets.hero.alt);
+  safeImg(document.getElementById('stay-img'), assets.stay && assets.stay.src, assets.stay && assets.stay.alt);
+  safeImg(document.getElementById('dine-img'), assets.dine && assets.dine.src, assets.dine && assets.dine.alt);
+
+  // Title H1 prefer SEO title, fallback event_name
+  const eventName = title || (content.meta && content.meta.event_name) || 'Insider Guide';
   document.getElementById('h1').textContent = eventName;
 
   // Intro/Outro
@@ -98,8 +125,9 @@
   document.getElementById('stay-p').textContent = content.stay?.paragraph || '';
   (content.stay?.items || []).forEach(it=>{
     const li=document.createElement('li');
-    if(it.url){ li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':''); }
-    else { li.textContent = it.name || ''; }
+    if(it.url){
+      li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':'');
+    } else { li.textContent = it.name || ''; }
     document.getElementById('stay-list').appendChild(li);
   });
   document.getElementById('stay-cta').textContent = content.stay?.cta || '';
@@ -109,17 +137,36 @@
   document.getElementById('dine-dinner').textContent = content.dine?.dinner || '';
   document.getElementById('dine-cta').textContent = content.dine?.cta || '';
 
+  // Locale
+  document.getElementById('locale-p').textContent = content.locale?.paragraph || '';
+
   // Essentials
   document.getElementById('essentials-p').textContent = content.essentials?.paragraph || '';
   (content.essentials?.items || []).forEach(it=>{
     const li=document.createElement('li');
-    if(it.url){ li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':''); }
-    else { li.textContent = it.name || ''; }
+    if(it.url){
+      li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':'');
+    } else { li.textContent = it.name || ''; }
     document.getElementById('essentials-list').appendChild(li);
   });
   document.getElementById('essentials-cta').textContent = content.essentials?.cta || '';
+
+  // JSON-LD Article
+  const ld = {
+    "@context":"https://schema.org",
+    "@type":"Article",
+    "headline": ogt,
+    "description": desc,
+    "image": heroSrc ? [heroSrc] : [],
+    "mainEntityOfPage": canonical,
+    "datePublished": (content.meta && content.meta.timestamp_iso) || "",
+    "author": { "@type":"Organization", "name":"Clear Round Travel" }
+  };
+  const s = document.createElement('script');
+  s.type = 'application/ld+json';
+  s.textContent = JSON.stringify(ld);
+  document.head.appendChild(s);
 })();
 </script>
 </body>
 </html>
-
