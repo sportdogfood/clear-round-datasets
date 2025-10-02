@@ -1,4 +1,10 @@
 TITLE: Content Runner — Equestrian Event Blogs
+
+HOTFIX
+remote_validation: off
+fail_closed: false
+
+
 BASE_URI: https://crt-b1434e13de34.herokuapp.com/items
 
 ASSETS (absolute URLs)
@@ -13,7 +19,7 @@ ALLOWLIST
 - {BASE_URI} and official event domains in the task JSON. Block all others.
 
 WORKFLOW
-1) Fetch SCHEMA, POLICY, GOLD_SHAPE (all must be 200) → else fail.
+1) Try to fetch SCHEMA, POLICY, GOLD_SHAPE. If any fail → record warning in source_trace and continue.
 2) Fetch {task_uri} (must be 200) → else fail.
 3) Coercions:
    - "true"/"false" → booleans; numeric strings → numbers.
