@@ -1,175 +1,61 @@
 {
+  "version": "1.0.0",
+  "updated_iso": "2025-10-01T21:30:00-04:00",
   "audiences": [
     {
       "id": "competitive-rider",
       "role": "Competitor / Rider",
       "description": "A-circuit hunter/jumper rider focused on rounds, placings, and horse prep. Travels with trainer, groom, and support crew for multi-day rated events.",
-      "priorities": [
-        "schedule & ring times",
-        "warm-up routine",
-        "stabling proximity",
-        "horse fitness & tack"
-      ],
-      "pain_points": [
-        "late schedule changes",
-        "long walks from parking",
-        "unreliable footing",
-        "missing tack/supplies"
-      ],
-      "travel_requirements": [
-        "truck/trailer parking",
-        "close stabling",
-        "early access to warm-up",
-        "nearby basic services (vet/farrier)"
-      ],
-      "content_preferences": [
-        "concise logistics",
-        "packing checklist",
-        "ring-flow notes",
-        "short local venue flavor for downtime"
-      ],
+      "priorities": ["schedule & ring times","warm-up routine","stabling proximity","horse fitness & tack"],
+      "pain_points": ["late schedule changes","long walks from parking","unreliable footing","missing tack/supplies"],
+      "travel_requirements": ["truck/trailer parking","close stabling","early access to warm-up","nearby basic services (vet/farrier)"],
+      "content_preferences": ["concise logistics","packing checklist","ring-flow notes","short local venue flavor for downtime"],
       "tone": "direct, authoritative, practical",
-      "sample_keywords": [
-        "a-circuit",
-        "grand-prix",
-        "jog-strip",
-        "warm-up-ring",
-        "stabling-flow"
-      ]
+      "sample_keywords": ["a-circuit","grand-prix","jog-strip","warm-up-ring","stabling-flow"]
     },
     {
       "id": "trainer",
       "role": "Trainer / Coach",
       "description": "Professional responsible for multiple mounts and clients. Manages entries, warm-up sequencing, and on-site strategy.",
-      "priorities": [
-        "orders-of-go",
-        "warm-up windows",
-        "trainer-tent logistics",
-        "stabling layout"
-      ],
-      "pain_points": [
-        "split calls",
-        "tight warm-up windows",
-        "limited groom help",
-        "transport delays"
-      ],
-      "travel_requirements": [
-        "adequate rig parking",
-        "nearby lodging for clients",
-        "reliable vendor access for supplies"
-      ],
-      "content_preferences": [
-        "detailed ring schedules",
-        "vendor and local service pointers",
-        "quick action checklists"
-      ],
+      "priorities": ["orders-of-go","warm-up windows","trainer-tent logistics","stabling layout"],
+      "pain_points": ["split calls","tight warm-up windows","limited groom help","transport delays"],
+      "travel_requirements": ["adequate rig parking","nearby lodging for clients","reliable vendor access for supplies"],
+      "content_preferences": ["detailed ring schedules","vendor and local service pointers","quick action checklists"],
       "tone": "businesslike, concise, tactical",
-      "sample_keywords": [
-        "trainer",
-        "orders-of-go",
-        "ring-flow",
-        "trainer-tent"
-      ]
+      "sample_keywords": ["trainer","orders-of-go","ring-flow","trainer-tent"]
     },
     {
       "id": "groom",
       "role": "Groom / Stable Staff",
       "description": "Hands-on support for horse care and tack. Focused on barn routine, turnout, and rapid response to horse needs.",
-      "priorities": [
-        "feed & bedding delivery",
-        "night-watch coordination",
-        "grooming station setup",
-        "tack security"
-      ],
-      "pain_points": [
-        "late-night duties",
-        "supply shortfalls",
-        "limited stall space",
-        "transport handling"
-      ],
-      "travel_requirements": [
-        "practical nearby lodging or RV/camper spots",
-        "reliable feed/bedding vendors",
-        "water access"
-      ],
-      "content_preferences": [
-        "concise supply lists",
-        "where-to-buy/ship info",
-        "barn-layout notes"
-      ],
+      "priorities": ["feed & bedding delivery","night-watch coordination","grooming station setup","tack security"],
+      "pain_points": ["late-night duties","supply shortfalls","limited stall space","transport handling"],
+      "travel_requirements": ["nearby practical lodging or RV/camper spots","reliable feed/bedding vendors","water access"],
+      "content_preferences": ["concise supply lists","where-to-buy/ship info","barn-layout notes"],
       "tone": "practical, no-nonsense",
-      "sample_keywords": [
-        "groom",
-        "feed-and-bedding",
-        "groom-box",
-        "night-watch"
-      ]
+      "sample_keywords": ["groom","feed-and-bedding","groom-box","night-watch"]
     },
     {
-      "id": "spectator_support",
+      "id": "spectator-support",
       "role": "Spectator / Supporter (family, friends, patrons)",
       "description": "Non-riding attendees who follow competitors. Values convenience, viewing spots, and local leisure options.",
-      "priorities": [
-        "seating/viewing",
-        "nearby dining",
-        "easy parking",
-        "family-friendly activities"
-      ],
-      "pain_points": [
-        "late seating fills",
-        "long walks",
-        "limited dining options at peak times"
-      ],
-      "travel_requirements": [
-        "short-distance lodging",
-        "accessible parking",
-        "local dining picks"
-      ],
-      "content_preferences": [
-        "brochure-style venue feel",
-        "what-to-expect tips",
-        "shortlists for dining/relaxation"
-      ],
+      "priorities": ["seating/viewing","nearby dining","easy parking","family-friendly activities"],
+      "pain_points": ["late seating fills","long walks","limited dining options at peak times"],
+      "travel_requirements": ["short-distance lodging","accessible parking","local dining picks"],
+      "content_preferences": ["brochure-style venue feel","what-to-expect tips","shortlists for dining/relaxation"],
       "tone": "friendly, evocative, travel-brochure",
-      "sample_keywords": [
-        "vendor-village",
-        "main-ring",
-        "beaches",
-        "dine"
-      ]
+      "sample_keywords": ["vendor-village","main-ring","beaches","dine"]
     },
     {
       "id": "equine-professional-services",
       "role": "Professional Services (farrier, vet, chiro, hauler)",
       "description": "Service providers traveling to support horses at rated events. Values clear access, scheduling, and client visibility.",
-      "priorities": [
-        "service-staging area",
-        "client contact info",
-        "stall access times",
-        "waste/disposal logistics"
-      ],
-      "pain_points": [
-        "unclear service access",
-        "limited waste disposal",
-        "late client calls"
-      ],
-      "travel_requirements": [
-        "designated service lanes",
-        "clear contact points",
-        "nearby overnight parking for service rigs"
-      ],
-      "content_preferences": [
-        "where-to-load/unload",
-        "service-access rules",
-        "local supplier contacts"
-      ],
+      "priorities": ["service-staging area","client contact info","stall access times","waste/disposal logistics"],
+      "pain_points": ["unclear service access","limited waste disposal","late client calls"],
+      "travel_requirements": ["designated service lanes","clear contact points","nearby overnight parking for service rigs"],
+      "content_preferences": ["where-to-load/unload","service-access rules","local supplier contacts"],
       "tone": "professional, precise",
-      "sample_keywords": [
-        "vets",
-        "farrier",
-        "hauler",
-        "service-lane"
-      ]
+      "sample_keywords": ["vets","farrier","hauler","service-lane"]
     }
   ]
 }
