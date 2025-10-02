@@ -1,15 +1,32 @@
-Inputs: this task JSON. Required keys: event_*, venue_*, start_date, end_date, event_official_link, venue_link, geo_link, audiences_link, founder_link, insider_link, keywords_link, stay_link, dine_link, essentials_link.
+# instructions.txt (skeleton)
 
-Modes: research_mode=true; ratings disabled for content runner.
+Purpose: Generate Intro, Stay, Dine, Locale, Essentials, Outro for a single event using supplied cards. Ratings are out-of-scope.
 
-Fetch order: founder → audiences → event_official → venue → geo → keywords → insiders → stay/dine/essentials.
+Inputs:
+- Task JSON (normalized) with hub.core.event, hub.core.venue, links.*, flags.research_mode=true.
+- Founder, Audiences, Keywords, Insiders, Stay, Dine, Essentials cards (HTTP 200 required).
 
-Intro policy: cover event+dates, season/month, venue feel, city feel, seasonal temperature. Use ≥3 keywords, ≥2 insiders. One insider term max per sentence. Close with founder template.
+Fetch order (hard):
+1) founder_link  2) audiences_link  3) event_official_url  4) venue_link
+5) geo_link  6) keywords_link  7) insiders_link  8) stay_link  9) dine_link  10) essentials_link
 
-Sections: Stay paragraph; Dine AM+Dinner paragraphs; Locale paragraph; Essentials paragraph; CTAs per library.
+Intro policy (80–140 words):
+- Cover: event+date (humanized), season/month, venue feel (2 traits), city feel (1 sensory + 1 vibe), seasonal temperature (normals).
+- Brand injections: ≥3 keywords, ≥2 insiders, reference audience implicitly, close with founder template.
+- No logistics lists. No prices. No hotel names in intro.
 
-No logistics lists. No tickets/parking. No hotel price claims.
+Sections:
+- Stay: one paragraph featuring 3–4 hotels from stay_link. Premium first. Add one-line stay CTA.
+- Dine: AM paragraph + Dinner paragraph from dine_link. One dinner CTA.
+- Locale: 1 paragraph “off-barn” resets (no attractions lists).
+- Essentials: 1 paragraph; include grocery, pharmacy, feed, car rental, golf-cart. One essentials CTA.
+- Outro: 25–45 words. Founder template.
 
-Output: hello.intro, stay, dine, locale, essentials, hello.outro, brand_usage, source_trace, validation.
+Validation (fail if):
+- founder_link or audiences_link not 200.
+- event_official_url or venue_link not 200.
+- Any required section card link not 200.
+Emit: source_trace, validation, brand_usage.
 
-Fail rules: founder/audiences 4xx → fail. Any required link 4xx → fail.
+Output keys:
+hello.intro, stay.paragraph, dine.am, dine.dinner, locale.paragraph, essentials.paragraph, hello.outro, ctas[], brand_usage, source_trace, validation.
