@@ -5,6 +5,10 @@
 
   "validate_only_base_uri": true,
   "require_assets": false,
+"content_type": {
+  "enforce": false,
+  "treat_text_plain_as_json": true
+},
 
   "strict_mode": {
     "no_guessing": true,
