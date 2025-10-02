@@ -75,7 +75,7 @@ fail_on_missing_url: true
 
 OUTPUT (JSON only)
 {
-  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"1.0"},
+  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"1.0","policy_uri":"{BASE_URI}/policy/policy.json"},
   "hello":{"intro":"","outro":""},
   "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
   "dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
