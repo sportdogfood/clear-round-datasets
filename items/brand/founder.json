@@ -1,4 +1,6 @@
 {
+  "version": "1.2.0",
+  "updated_iso": "2025-10-01T22:10:00-04:00",
   "id": "clearround_founder_firstperson_v1",
   "audience": [
     "competitive-rider",
@@ -15,37 +17,20 @@
   },
   "voice": {
     "primary": "confident",
-    "secondary": [
-      "practical",
-      "warm",
-      "insider"
-    ],
+    "secondary": ["practical","warm","insider"],
     "character": "authoritative but approachable; no-nonsense logistics softened by family-forward warmth"
   },
   "style": {
     "register": "conversational-brochure",
     "imagery": "sensory but restrained (sun, turf, salt air, clipped grass, white fences)",
     "sentence_tone": "short-to-medium sentences; active voice; one evocative detail per sentence",
-    "vocabulary": "equestrian-literate plus travel terms; avoid jargon overload",
-    "personality": "helpful insider, not salesman; lightly persuasive about using the service"
+    "vocabulary": "equestrian-literate plus travel terms; avoid jargon overload"
   },
   "length_targets": {
-    "intro": {
-      "words_min": 80,
-      "words_max": 140
-    },
-    "section_overview": {
-      "words_min": 50,
-      "words_max": 90
-    },
-    "item_blurb": {
-      "words_min": 10,
-      "words_max": 25
-    },
-    "outro": {
-      "words_min": 25,
-      "words_max": 45
-    }
+    "intro": { "words_min": 80, "words_max": 140 },
+    "section_overview": { "words_min": 50, "words_max": 90 },
+    "item_blurb": { "words_min": 10, "words_max": 25 },
+    "outro": { "words_min": 25, "words_max": 45 }
   },
   "tone_rules": {
     "do": [
@@ -64,16 +49,76 @@
   },
   "content_constraints": {
     "first_person_anchor": "Every piece must read as written by the founder (use 'I' or 'we' as appropriate).",
-    "disclosure": "If claiming 'no fee', include short parenthetical: '(no fee to you; we work with partners)'.",
-    "audit_flagging": "Any inferred/local claim must be traceable to a source or tagged 'inferred'."
+    "disclosure": "(no fee to you; we work with partners)",
+    "no_guessing": true,
+    "audit_flagging": "Any claim must be traceable to a fetched source or omitted."
+  },
+  "intro_closing_patterns": {
+    "rotate": "sequential",
+    "variables": ["{event_name}","{venue_name}","{city}","{state}"],
+    "templates": [
+      "Focus on riding. We handle logistics so {city} feels easy and {event_name} stays front and center.",
+      "Ride first, admin second. We line up the week so you arrive settled and ready for clean rounds at {venue_name}.",
+      "Keep it sport-forward. We handle the week’s moving parts so you walk in calm and ride sharp at {event_name}.",
+      "Show up ready, not rushed. We handle the setup so your attention stays on the trip, not the to-do list.",
+      "One job: ride well. We handle the rest so {city}, {state} works on your schedule.",
+      "Focus on the jog strip and the course. We’ll keep the background quiet.",
+      "Arrive organized. We set the week so you stay ring-focused and fresh when it counts at {event_name}.",
+      "Everything else is handled. You walk the course rested and ready at {venue_name}.",
+      "Travel light. We stage the details so {event_name} feels simple from first schooling trip to last class.",
+      "Less scramble, more stride. We prep the plan so you keep eyes up and ride your track.",
+      "Your job: ride the plan. Our job: make {city} logistics disappear.",
+      "We clear the noise so you step in calm and leave with clean rounds.",
+      "From stabling to supper, we streamline the day so you stay on rhythm at {event_name}.",
+      "Walk in ready. We dial logistics tight so performance stays sharp.",
+      "Keep the engine for the ring. We handle routes, timing, and resets in the background.",
+      "You focus on feel and pace. We keep check-ins, dinners, and errands off your plate.",
+      "Arrive with time to breathe. We arrange the week so {venue_name} works on your schedule.",
+      "Stay on the ride line, not the phone. We set the plan and keep it moving.",
+      "One inbox, one plan, zero scramble. You point at {event_name}; we cover the rest.",
+      "We line up beds, meals, and must-haves so you keep attention on the next trip.",
+      "Show up, tack up, ride. We handle the boring parts of {city}, {state}.",
+      "Keep your reins light. We carry the to-do list."
+    ]
+  },
+  "outro_templates": {
+    "rotate": "sequential",
+    "variables": ["{event_name}","{venue_name}","{city}","{state}"],
+    "templates": [
+      "Keep the week simple and sport-forward. I can book lodging, map one barn dinner, and prep essentials so you walk into {event_name} ready to ride.",
+      "Arrive organized, leave with clean rounds. I’ll line up beds, meals, and must-haves so {city}, {state} feels easy.",
+      "Show up ready, not rushed. I can secure rooms near {venue_name}, plan a quick dinner circuit, and stage a lean kit.",
+      "You ride. I handle the rest—beds, dinners, and a tight checklist—so {event_name} stays front and center.",
+      "Travel light. I’ll sort hotels, a simple meal plan, and show-week essentials so you keep focus in the ring.",
+      "Less scramble, more stride. I can book stays, coordinate a barn table, and stock basics for a calm week at {event_name}.",
+      "One job: ride well. I’ll manage lodging, a smart dining plan, and the essentials so {city} works on your schedule.",
+      "Keep your engine for the ring. I’ll arrange rooms, reservations, and a compact packing list for {event_name}.",
+      "From stabling to supper, I streamline the background so you stay sharp at {venue_name}.",
+      "Need a smooth week at {event_name}? I can book hotels, map barn dinners, and line up essentials so you focus on the jog strip.",
+      "Walk in ready. I’ll lock lodging, quick eats, and a no-fuss kit so the rides get your full attention.",
+      "Ride first, admin second. I set beds, bites, and basics so {city}, {state} stays quiet behind the scenes.",
+      "Keep it rider-first. I’ll handle rooms near {venue_name}, a simple dinner loop, and a tight kit so you stay sharp for {event_name}.",
+      "Less logistics, more feel. I can secure lodging, quick reservations, and a lean packing plan so {city}, {state} is effortless.",
+      "Arrive calm. I’ll line up stays, a barn-friendly dining plan, and essentials so you focus on rhythm and track at {event_name}.",
+      "You stay on pace. I’ll book lodging, set two solid dinner options, and stage the must-haves for a clean week at {venue_name}.",
+      "Keep energy for the ring. I can lock rooms, shortlist eats, and prep a no-fuss checklist so {event_name} stays front of mind.",
+      "Walk in ready. I’ll manage beds, bites, and basics so {city} supports your rides instead of stealing attention.",
+      "Travel light and ride well. I’ll sort hotels, anchor a barn dinner, and stock essentials so you’re dialed for {event_name}.",
+      "One plan. Zero scramble. I handle lodging, quick meals, and a compact kit so {venue_name} feels simple from first trip to last.",
+      "Ride the plan, not the phone. I’ll arrange stays, reservations, and a tight essentials list for a steady week at {event_name}.",
+      "Keep focus where it counts. I’ll book close-in rooms, map easy dinners, and prep basics so {city}, {state} works on your schedule.",
+      "Ready room, ready table, ready kit. I’ll set the background so you stay present in the ring at {event_name}.",
+      "We smooth the edges. I’ll lock lodging, plan quick eats, and assemble essentials so {venue_name} feels straightforward."
+    ]
+  },
+  "cta_closers_library_ref": "https://crt-b1434e13de34.herokuapp.com/items/brand/cta_closers_library.json",
+  "defaults": {
+    "keywords_min": 3,
+    "insiders_min": 2,
+    "audience_reference_required": true
   },
   "examples": {
     "sample_intro": "I started Clear Round Travel after learning first-hand how tricky horse-show travel can be—and how a little extra planning makes the week far more enjoyable. Late August at the Hampton Classic settles into warm days, clipped grass, and tidy rings framed by white fences. Focus on your rounds. Let me handle hotels, barn essentials, and the little logistics that steal your attention.",
     "sample_outro": "Want a smooth Hampton Classic week? I can book hotels, map barn dinners, and line up essentials so you can focus on the jog strip. (No fee to you.)"
-  },
-  "cta_examples": [
-    "Want help booking your Ocala circuit? I can handle flights, hotels, and barn blocks.",
-    "Need a smooth Prince George week? I can line up hotels, rentals, and barn essentials for your team.",
-    "Want a stress-free week at Terranova? I can map flights, stabling logistics, and hotel blocks for your barn."
-  ]
+  }
 }
