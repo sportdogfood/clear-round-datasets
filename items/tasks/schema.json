@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "task.schema.json",
+  "type": "object",
+  "required": ["task_uid","timestamp_iso","hub","links","flags"],
+  "properties": {
+    "task_uid": {"type":"string"},
+    "timestamp_iso": {"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[-+]\\d{2}:\\d{2}$"},
+    "hub": {
+      "type":"object",
+      "required":["core"],
+      "properties":{
+        "core":{
+          "type":"object",
+          "required":["event","venue"],
+          "properties":{
+            "event":{
+              "type":"object",
+              "required":["uid","name","start_date","end_date","official_url","venue_uid"],
+              "properties":{
+                "uid":{"type":"string"},
+                "name":{"type":"string"},
+                "start_date":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},
+                "end_date":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},
+                "official_url":{"type":"string","format":"uri"},
+                "venue_uid":{"type":"string"}
+              }
+            },
+            "venue":{
+              "type":"object",
+              "required":["uid","name","official_url","geometry_url"],
+              "properties":{
+                "uid":{"type":"string"},
+                "name":{"type":"string"},
+                "official_url":{"type":"string","format":"uri"},
+                "geometry_url":{"type":"string","format":"uri"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "links": {
+      "type":"object",
+      "required":["venue_link","geo_link","audiences_link","founder_link","keywords_link","insiders_link","stay_link","dine_link","essentials_link","task_link"],
+      "properties":{
+        "events_link":{"type":"string","format":"uri"},
+        "venue_link":{"type":"string","format":"uri"},
+        "geo_link":{"type":"string","format":"uri"},
+        "stay_link":{"type":"string","format":"uri"},
+        "dine_link":{"type":"string","format":"uri"},
+        "essentials_link":{"type":"string","format":"uri"},
+        "insiders_link":{"type":"string","format":"uri"},
+        "audiences_link":{"type":"string","format":"uri"},
+        "founder_link":{"type":"string","format":"uri"},
+        "keywords_link":{"type":"string","format":"uri"},
+        "ratings_sources_link":{"type":"string","format":"uri"},
+        "task_link":{"type":"string","format":"uri"}
+      }
+    },
+    "flags": {
+      "type":"object",
+      "required":["research_mode","ratings_enabled","strict_rating_check","include_seasonal_avg"],
+      "properties":{
+        "research_mode":{"type":"boolean"},
+        "ratings_enabled":{"type":"boolean"},
+        "strict_rating_check":{"type":"boolean"},
+        "include_seasonal_avg":{"type":"boolean"}
+      }
+    }
+  }
+}
