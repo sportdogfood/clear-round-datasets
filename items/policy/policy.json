@@ -3,6 +3,7 @@
   "updated_iso": "2025-10-02T00:00:00-04:00",
   "runner": "content-runner",
   "validate_only_base_uri": true,
+  "require_assets": false,
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": true,
