@@ -1,0 +1,7 @@
+Input: task_uri JSON. Required: hub.core.event, hub.core.venue, links.*. Research ON. Ratings OFF.
+Fetch order: founder → audiences → event_official → venue → geo → keywords → insiders → stay → dine → essentials.
+Generate: Intro (80–140), Stay (1 para), Dine (AM + Dinner), Locale (1 para), Essentials (1 para), Outro (25–45).
+Brand: use ≥3 keywords, ≥2 insiders, reference audience implicitly, close with founder template.
+No logistics lists, prices, or ticketing.
+Emit: hello.intro, stay.paragraph, dine.am, dine.dinner, locale.paragraph, essentials.paragraph, hello.outro, brand_usage, source_trace, validation.
+Fail if founder/audiences/venue/geo 4xx or missing required links.
