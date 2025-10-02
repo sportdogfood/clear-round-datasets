@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "updated_iso": "2025-10-01T22:40:00-04:00",
+  "id": "outro_templates_v1",
+  "rotate": "sequential",
+  "variables": ["{event_name}", "{venue_name}", "{city}", "{state}"],
+  "templates": [
+    {"id":"outro_001","template":"Keep the week simple and sport-forward. I can book lodging, map one barn dinner, and prep essentials so you walk into {event_name} ready to ride."},
+    {"id":"outro_002","template":"Arrive organized, leave with clean rounds. I’ll line up beds, meals, and must-haves so {city}, {state} feels easy."},
+    {"id":"outro_003","template":"Show up ready, not rushed. I can secure rooms near {venue_name}, plan a quick dinner circuit, and stage a lean kit."},
+    {"id":"outro_004","template":"You ride. I handle the rest—beds, dinners, and a tight checklist—so {event_name} stays front and center."},
+    {"id":"outro_005","template":"Travel light. I’ll sort hotels, a simple meal plan, and show-week essentials so you keep focus in the ring."},
+    {"id":"outro_006","template":"Less scramble, more stride. I can book stays, coordinate a barn table, and stock basics for a calm week at {event_name}."},
+    {"id":"outro_007","template":"One job: ride well. I’ll manage lodging, a smart dining plan, and the essentials so {city} works on your schedule."},
+    {"id":"outro_008","template":"Keep your engine for the ring. I’ll arrange rooms, reservations, and a compact packing list for {event_name}."},
+    {"id":"outro_009","template":"From stabling to supper, I streamline the background so you stay sharp at {venue_name}."},
+    {"id":"outro_010","template":"Need a smooth week at {event_name}? I can book hotels, map barn dinners, and line up essentials so you focus on the jog strip."},
+    {"id":"outro_011","template":"Walk in ready. I’ll lock lodging, quick eats, and a no-fuss kit so the rides get your full attention."},
+    {"id":"outro_012","template":"Ride first, admin second. I set beds, bites, and basics so {city}, {state} stays quiet behind the scenes."}
+  ]
+}
