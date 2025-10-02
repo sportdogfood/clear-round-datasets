@@ -42,25 +42,25 @@
     "links": {
       "type": "object",
       "required": [
-        "event_official_url",
         "venue_link",
         "geo_link",
         "stay_link",
         "dine_link",
         "essentials_link",
-        "insiders_link",
         "audiences_link",
         "founder_link",
         "keywords_link"
       ],
       "properties": {
         "event_official_url":   { "type": "string", "format": "uri" },
+        "event_official_link":  { "type": "string", "format": "uri" },
         "venue_link":           { "type": "string", "format": "uri" },
         "geo_link":             { "type": "string", "format": "uri" },
         "stay_link":            { "type": "string", "format": "uri" },
         "dine_link":            { "type": "string", "format": "uri" },
         "essentials_link":      { "type": "string", "format": "uri" },
         "insiders_link":        { "type": "string", "format": "uri" },
+        "insider_link":         { "type": "string", "format": "uri" },
         "audiences_link":       { "type": "string", "format": "uri" },
         "founder_link":         { "type": "string", "format": "uri" },
         "keywords_link":        { "type": "string", "format": "uri" },
@@ -68,6 +68,16 @@
         "outro_templates_link": { "type": "string", "format": "uri" },
         "cta_closers_link":     { "type": "string", "format": "uri" }
       },
+      "allOf": [
+        { "anyOf": [
+          { "required": ["event_official_url"] },
+          { "required": ["event_official_link"] }
+        ]},
+        { "anyOf": [
+          { "required": ["insiders_link"] },
+          { "required": ["insider_link"] }
+        ]}
+      ],
       "additionalProperties": true
     }
   },
