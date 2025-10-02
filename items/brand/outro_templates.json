@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "updated_iso": "2025-10-01T22:40:00-04:00",
-  "id": "outro_templates_v1",
+  "version": "1.1.0",
+  "updated_iso": "2025-10-02T00:30:00-04:00",
+  "id": "outro_templates_merged_v1",
   "rotate": "sequential",
   "variables": ["{event_name}", "{venue_name}", "{city}", "{state}"],
   "templates": [
@@ -16,6 +16,30 @@
     {"id":"outro_009","template":"From stabling to supper, I streamline the background so you stay sharp at {venue_name}."},
     {"id":"outro_010","template":"Need a smooth week at {event_name}? I can book hotels, map barn dinners, and line up essentials so you focus on the jog strip."},
     {"id":"outro_011","template":"Walk in ready. I’ll lock lodging, quick eats, and a no-fuss kit so the rides get your full attention."},
-    {"id":"outro_012","template":"Ride first, admin second. I set beds, bites, and basics so {city}, {state} stays quiet behind the scenes."}
+    {"id":"outro_012","template":"Ride first, admin second. I set beds, bites, and basics so {city}, {state} stays quiet behind the scenes."},
+    {"id":"outro_a01","template":"Keep it rider-first. I’ll handle rooms near {venue_name}, a simple dinner loop, and a tight kit so you stay sharp for {event_name}."},
+    {"id":"outro_a02","template":"Less logistics, more feel. I can secure lodging, quick reservations, and a lean packing plan so {city}, {state} is effortless."},
+    {"id":"outro_a03","template":"Arrive calm. I’ll line up stays, a barn-friendly dining plan, and essentials so you focus on rhythm and track at {event_name}."},
+    {"id":"outro_a04","template":"You stay on pace. I’ll book lodging, set two solid dinner options, and stage the must-haves for a clean week at {venue_name}."},
+    {"id":"outro_a05","template":"Keep energy for the ring. I can lock rooms, shortlist eats, and prep a no-fuss checklist so {event_name} stays front of mind."},
+    {"id":"outro_a06","template":"Walk in ready. I’ll manage beds, bites, and basics so {city} supports your rides instead of stealing attention."},
+    {"id":"outro_a07","template":"Travel light and ride well. I’ll sort hotels, anchor a barn dinner, and stock essentials so you’re dialed for {event_name}."},
+    {"id":"outro_a08","template":"One plan. Zero scramble. I handle lodging, quick meals, and a compact kit so {venue_name} feels simple from first trip to last."},
+    {"id":"outro_a09","template":"Ride the plan, not the phone. I’ll arrange stays, reservations, and a tight essentials list for a steady week at {event_name}."},
+    {"id":"outro_a10","template":"Keep focus where it counts. I’ll book close-in rooms, map easy dinners, and prep basics so {city}, {state} works on your schedule."},
+    {"id":"outro_a11","template":"Ready room, ready table, ready kit. I’ll set the background so you stay present in the ring at {event_name}."},
+    {"id":"outro_a12","template":"We smooth the edges. I’ll lock lodging, plan quick eats, and assemble essentials so {venue_name} feels straightforward."},
+    {"id":"outro_a13","template":"Short week, sharp rides. I’ll keep beds, dinners, and essentials aligned to the order of go at {event_name}."},
+    {"id":"outro_a14","template":"Less shuffle, more stride. I’ll set rooms, table slots, and a lean kit so you hit your marks at {venue_name}."},
+    {"id":"outro_a15","template":"I’ll run logistics in the background—lodging, meals, essentials—so {event_name} stays front and center."},
+    {"id":"outro_a16","template":"No fee to you. I’ll arrange stays, dinners, and a compact checklist so {city} feels easy and rides stay sharp."},
+    {"id":"outro_a17","template":"From stabling to supper, I coordinate the week so you roll straight into clean trips at {event_name}."},
+    {"id":"outro_a18","template":"Arrive settled. I’ll handle hotels, a barn dinner plan, and essentials so {venue_name} works on your time."},
+    {"id":"outro_a19","template":"Leave the admin to me. Beds, bites, and basics set so you can just ride at {event_name}."},
+    {"id":"outro_a20","template":"I’ll keep confirmations synced and tables timed so you stay ring-focused at {venue_name}."},
+    {"id":"outro_a21","template":"I stage the week—lodging, meals, must-haves—so {city}, {state} becomes quiet background to your rides."},
+    {"id":"outro_a22","template":"One message and it’s done. I’ll line up rooms, reservations, and essentials for a smooth {event_name}."},
+    {"id":"outro_a23","template":"I’ll align bookings to your class blocks so you move cleanly from ring to reset at {venue_name}."},
+    {"id":"outro_a24","template":"Keep hands on the reins, not the phone. Lodging, dinner, and essentials are on me for {event_name}."}
   ]
 }
