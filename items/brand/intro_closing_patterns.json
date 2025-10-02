@@ -1,22 +1,25 @@
 {
-  "intro_closing_patterns": {
-    "templates_additional": [
-      "Arrive organized. We set the week so you stay ring-focused and fresh when it counts at {event_name}.",
-      "Everything else is handled. You walk the course rested and ready at {venue_name}.",
-      "Travel light. We stage the details so {event_name} feels simple from first schooling trip to last class.",
-      "Less scramble, more stride. We prep the plan so you keep eyes up and ride your track.",
-      "Your job: ride the plan. Our job: make {city} logistics disappear.",
-      "We clear the noise so you step in calm and leave with clean rounds.",
-      "From stabling to supper, we streamline the day so you stay on rhythm at {event_name}.",
-      "Walk in ready. We dial logistics tight so performance stays sharp.",
-      "Keep the engine for the ring. We handle routes, timing, and resets in the background.",
-      "You focus on feel and pace. We keep check-ins, dinners, and errands off your plate.",
-      "Arrive with time to breathe. We arrange the week so {venue_name} works on your schedule.",
-      "Stay on the ride line, not the phone. We set the plan and keep it moving.",
-      "One inbox, one plan, zero scramble. You point at {event_name}; we cover the rest.",
-      "We line up beds, meals, and must-haves so you keep attention on the next trip.",
-      "Show up, tack up, ride. We handle the boring parts of {city}, {state}.",
-      "Keep your reins light. We carry the to-do list."
-    ]
-  }
+  "version": "1.0.0",
+  "updated_iso": "2025-10-01T22:58:00-04:00",
+  "id": "intro_closing_patterns_v1",
+  "rotate": "sequential",
+  "variables": ["{event_name}", "{venue_name}", "{city}", "{state}"],
+  "templates": [
+    "Arrive organized. We set the week so you stay ring-focused and fresh when it counts at {event_name}.",
+    "Everything else is handled. You walk the course rested and ready at {venue_name}.",
+    "Travel light. We stage the details so {event_name} feels simple from first schooling trip to last class.",
+    "Less scramble, more stride. We prep the plan so you keep eyes up and ride your track.",
+    "Your job: ride the plan. Our job: make {city} logistics disappear.",
+    "We clear the noise so you step in calm and leave with clean rounds.",
+    "From stabling to supper, we streamline the day so you stay on rhythm at {event_name}.",
+    "Walk in ready. We dial logistics tight so performance stays sharp.",
+    "Keep the engine for the ring. We handle routes, timing, and resets in the background.",
+    "You focus on feel and pace. We keep check-ins, dinners, and errands off your plate.",
+    "Arrive with time to breathe. We arrange the week so {venue_name} works on your schedule.",
+    "Stay on the ride line, not the phone. We set the plan and keep it moving.",
+    "One inbox, one plan, zero scramble. You point at {event_name}; we cover the rest.",
+    "We line up beds, meals, and must-haves so you keep attention on the next trip.",
+    "Show up, tack up, ride. We handle the boring parts of {city}, {state}.",
+    "Keep your reins light. We carry the to-do list."
+  ]
 }
