@@ -3,17 +3,14 @@
   "updated_iso": "2025-10-02T00:00:00-04:00",
   "runner": "content-runner",
 
-  "validate_only_base_uri": true,
-  "require_assets": false,
-"content_type": {
-  "enforce": false,
-  "treat_text_plain_as_json": true
-},
+  "content_type": {
+    "enforce": false,
+    "treat_text_plain_as_json": true
+  },
 
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
-    "fail_on_4xx_required_links": false,
     "fail_on_missing_url": false,
     "include_seasonal_avg_requires_source": false
   },
@@ -26,8 +23,8 @@
   },
 
   "brand_requirements": {
-    "keywords_min": 0,
-    "insiders_min": 0,
+    "keywords_min": 3,
+    "insiders_min": 2,
     "audience_reference_required": false
   },
 
@@ -39,6 +36,7 @@
         "venue_feel_2traits",
         "city_feel_1sensory_1vibe"
       ],
+      "include_seasonal_normals_if_geo": true,
       "forbid": ["ticketing", "prices", "logistics_lists"]
     },
     "stay": { "paragraph": true, "cta_allowed": true },
@@ -68,8 +66,6 @@
       "no_insider_terms_in_seo": true
     }
   },
-
-  "emit_items": true,
 
   "output_contract": {
     "stay.items[]": { "name": "string", "url": "uri", "alt": "string" },
