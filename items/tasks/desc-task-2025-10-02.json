@@ -43,7 +43,7 @@
   "table_name": "tasks/",
   "dirs": "tasks",
   "blog_json": "desc-task-2025-10-02.json",
-  "task_link": "https://crt-b1434e13de34.herokuapp.com/items/tasks/desc-task-2025-10-02.json",
+  "task_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/tasks/desc-task-2025-10-02.json",
   "lane": "blog",
   "task_uuid": "desc-task",
   "research_mode": "true",
@@ -62,5 +62,7 @@
   "instructions_link": "https://crt-b1434e13de34.herokuapp.com/items/instructions/instructions.txt",
   "schema_link": "https://crt-b1434e13de34.herokuapp.com/items/schema/task.schema.json",
   "gold_link": "https://crt-b1434e13de34.herokuapp.com/items/gold/hchs.gold.json",
-  "runner": "{ \"task_uri\": \"https://crt-b1434e13de34.herokuapp.com/items/tasks/desc-task-2025-10-02.json\" }"
+  "runner": "{ \"task_uri\": \"https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/tasks/desc-task-2025-10-02.json\" }",
+  "base": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/",
+  "proxy": "https://items.clearroundtravel.com/items/"
 }
