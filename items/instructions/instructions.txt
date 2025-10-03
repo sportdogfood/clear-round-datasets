@@ -1,11 +1,5 @@
 TITLE: Content Runner — Equestrian Event Blogs
-
-HOTFIX
-remote_validation: off
-fail_closed: false
-
-
-BASE_URI: https://crt-b1434e13de34.herokuapp.com/items
+BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
 ASSETS (absolute URLs)
 SCHEMA:        {BASE_URI}/schema/task.schema.json
@@ -13,110 +7,66 @@ POLICY:        {BASE_URI}/policy/policy.json
 GOLD_SHAPE:    {BASE_URI}/gold/hchs.gold.json
 
 INPUT
-- Payload only: {"task_uri":"<FULL URL to task JSON>"}.
+- Payload: {"task_uri":"<FULL URL to task JSON>"} only.
 
 ALLOWLIST
-- {BASE_URI} and official event domains in the task JSON. Block all others.
+- {BASE_URI} (host: raw.githubusercontent.com) and official event domains present in the task JSON. Block all others.
 
 WORKFLOW
-1) Try to fetch SCHEMA, POLICY, GOLD_SHAPE. If any fail → record warning in source_trace and continue.
-2) Fetch {task_uri} (must be 200) → else fail.
+1) Fetch SCHEMA, POLICY, GOLD_SHAPE via GET with headers:
+   - Accept: application/json,*/*
+   Requirements:
+   - HTTP 200
+   - Do not follow redirects
+   - Content-Type may be application/json OR text/plain OR application/octet-stream if the body parses as JSON
+   - Record each in checked_sources
+   - If any fail → set validation.status="fail" with errors:["missing_asset"] and stop
+2) Fetch {task_uri} (same rules as #1). If not 200 or not JSON-parsable → fail.
 3) Coercions:
-   - "true"/"false" → booleans; numeric strings → numbers.
-   - timestamp_iso: accept loose; normalize to ISO; if impossible → warning (strict may fail).
-4) Validate required keys against SCHEMA; ignore extras/dupes.
-5) Required links (must be 200, BASE_URI only): founder_link, audiences_link, venue_link, geo_link,
-   keywords_link, insiders_link, stay_link, dine_link, essentials_link.
-   For event_official_url: record in checked_sources with status "skipped_external".
-
-6) Fetch order (record in source_trace): founder → audiences → event_official_url →
-   venue → geo → keywords → insiders → stay → dine → essentials.
-7) Generate per POLICY:
-   - Intro (80–140 words): event+dates (humanized), season/month, venue feel (2 traits),
-     city feel (1 sensory + 1 vibe), seasonal normals if geo present.
-     Insert ≥3 keywords and ≥2 insider terms; audience implied; close with founder/intro template.
-     No ticketing, prices, logistics lists.
-   - Stay: one paragraph; prioritize premium; mention most items; add one stay CTA if CTA library.
-   - Dine: two paragraphs (AM + Dinner); add one dinner CTA if available.
+   - "true"/"false" → booleans; numeric strings → numbers
+   - timestamp_iso: accept loose formats; normalize to ISO 8601; if impossible, add warning (strict mode may upgrade to fail)
+4) Validate required keys against SCHEMA. Ignore extra or duplicate keys.
+5) Required links from task.links (all must be 200):
+   founder_link, audiences_link, venue_link, geo_link, keywords_link, insiders_link, stay_link, dine_link, essentials_link, event_official_url
+6) Fetch in this order and record in source_trace:
+   founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials
+7) Generate sections per POLICY:
+   - Intro (80–140 words): event+dates (humanized), season/month, venue feel (2 traits), city feel (1 sensory + 1 vibe), seasonal temperature (normals if geo present). Insert ≥3 keywords and ≥2 insider terms naturally; reference audience implicitly; close with founder/intro template if available. No logistics lists, prices, or ticketing.
+   - Stay: one paragraph. Prioritize premium; mention all/most items. Add one stay CTA if CTA library provided.
+   - Dine: two paragraphs (AM + Dinner). Add one dinner CTA if available.
    - Locale: one paragraph (off-barn resets).
-   - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart); add one essentials CTA if available.
+   - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart). Add one essentials CTA if available.
    - Outro: 25–45 words; use founder/outro template if available.
-8) Templates (optional): intro_templates_link, outro_templates_link, cta_closers_link.
-   - If present and 200 → use by rotation; else fall back to founder.
-
-EMIT_ITEMS
-emit_items: true
-item_rules:
-  stay:
-    source: stay_link
-    required_fields: [name, url]
-    optional_fields: [alt, distance, notes]
-    map:
-      name: $.name
-      url: $.url
-      alt: $.alt || $.distance || $.notes
-    http_200_only: true
-  dine:
-    source: dine_link
-    required_fields: [name, url]
-    optional_fields: [alt, meal]
-    map:
-      name: $.name
-      url: $.url
-      alt: $.alt || $.meal
-    http_200_only: true
-  essentials:
-    source: essentials_link
-    required_fields: [type, name, url]
-    optional_fields: [alt, notes]
-    map:
-      type: $.type
-      name: $.name
-      url: $.url
-      alt: $.alt || $.notes
-    http_200_only: true
-output_contract:
-  stay.items[]: {name, url, alt}
-  dine.items[]: {name, url, alt}
-  essentials.items[]: {type, name, url, alt}
-fail_on_missing_url: true
+8) Optional templates if present in task.links and 200:
+   intro_templates_link, outro_templates_link, cta_closers_link. Use by rotation; else fall back to founder templates.
 
 OUTPUT (JSON only)
 {
-  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"1.0","policy_uri":"{BASE_URI}/policy/policy.json"},
-  "hello":{"intro":"","outro":""},
-  "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
-  "dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
-  "locale":{"title":"Locale — Off-Barn","paragraph":""},
-  "essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
+  "meta":{"run_id":"", "timestamp_iso":"", "task_uri":""},
+  "hello":{"intro":"", "outro":""},
+  "stay":{"paragraph":""},
+  "dine":{"am":"", "dinner":""},
+  "locale":{"paragraph":""},
+  "essentials":{"paragraph":""},
   "seo":{
-    "section_title":"","meta_description":"","open_graph_title":"",
-    "open_graph_description":"","search_title":"","search_description":""
+    "section_title":"", "meta_description":"", "open_graph_title":"",
+    "open_graph_description":"", "search_title":"", "search_description":""
   },
   "brand_usage":{
-    "keywords_used":[],"insiders_used":[],"audience_trait":"",
-    "intro_template_id":"","outro_template_id":"",
-    "cta_closers":{"stay":"","dine":"","essentials":""}
+    "keywords_used":[], "insiders_used":[], "audience_trait":"",
+    "intro_template_id":"", "outro_template_id":"",
+    "cta_closers":{"stay":"", "dine":"", "essentials":""}
   },
-  "source_trace":[{"url":"","http_status":200,"signals":[],"timestamp_iso":""}],
-  "checked_sources":[{"url":"","http_status":200}],
+  "source_trace":[{"url":"", "http_status":200, "signals":[], "timestamp_iso":""}],
+  "checked_sources":[{"url":"", "http_status":200}],
   "validation":{"status":"pass","warnings":[],"errors":[]}
 }
 
 CANVAS OUTPUT
-- Write the final JSON to canvas titled "{event_name} — Insider Guide" (fallback "Insider Guide"). JSON only.
+- Write the final JSON to canvas as a text document titled "{event_name} — Insider Guide" (fallback "Insider Guide"). JSON only.
 
 STRICT MODE
 no_guessing: true
 fail_on_missing_signal: true
 fail_on_4xx_required_links: true
 if include_seasonal_avg=true and climate normals cannot be fetched from allowlisted domains → fail
-
-FIELD_MAP
-schema_enforced: false
-alias:
-  insiders_link: insider_link
-  event_official_url: event_official_link
-  schema: schema_link
-  gold: gold_link
-
