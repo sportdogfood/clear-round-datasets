@@ -1,170 +1,134 @@
 TITLE: Content Runner — Equestrian Event Blogs
 
-BASE_URI: [https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items](https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items)
+BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
 ASSETS (absolute)
-SCHEMA:      [https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json](https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json)
-POLICY:      [https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json](https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json)
-GOLD_SHAPE:  [https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json](https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json)
+SCHEMA:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
+POLICY:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
+GOLD_SHAPE:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
 
 URL ACCESS
-
-* Runner MAY fetch any absolute URL present in the task JSON under `*_link` fields.
-* External “official event” URLs are OPTIONAL; if blocked, record signals=["skipped_external"] and continue.
-* Do NOT require URLs to appear in the user message or prior search results.
-* Treat Content-Type text/plain as JSON (policy permits).
-* Preferred bases (not enforced):
-  [https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items](https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items)
-  [https://items.clearroundtravel.com/items](https://items.clearroundtravel.com/items)
-  [https://blog.clearroundtravel.com/blogs](https://blog.clearroundtravel.com/blogs)
+- The runner MAY fetch any absolute URL present in the task JSON under *_link fields.
+- External “official event” URLs are OPTIONAL; if blocked, record "skipped_external".
+- Do NOT require URLs to appear in the user message or prior search results.
+- Treat Content-Type text/plain as JSON (policy also permits this).
+- Preferred bases (not enforced):
+  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
+  https://items.clearroundtravel.com/items
+  https://blog.clearroundtravel.com/blogs
 
 TRACE RULES
-
-* Record ONLY these in source_trace, in order: schema, policy, gold, task_uri, founder, audiences,
+- Record ONLY these in source_trace (in order): schema, policy, gold, task_uri, founder, audiences,
   event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
-* For 200 OK: record one collapsed entry: {"url":"…","http_status":200,"signals":["ok"]}.
-* For skipped external: {"url":"…","http_status":0,"signals":["skipped_external"]}.
-* No per-link timestamps. Cap to 12 entries (drop extras from the end).
+- For 200 OK: record a single collapsed entry: {"url":"…","http_status":200,"signals":["ok"]}.
+- For skipped external: {"url":"…","http_status":0,"signals":["skipped_external"]}.
+- No per-link timestamps. Cap to 12 entries (drop extras from the end).
 
 INPUT
-
-* Payload ONLY: {"task_uri":"<FULL URL to task JSON>"}.
+- Payload ONLY: {"task_uri":"<FULL URL to task JSON>"}.
 
 WORKFLOW
-
-1. Fetch SCHEMA, POLICY, GOLD_SHAPE. If any fail, push a warning and continue.
-2. Fetch {task_uri}. Must be 200; else fail.
-3. Coercions:
-
-   * "true"/"false" → booleans; numeric strings → numbers.
-   * timestamp_iso: accept loose; normalize to ISO; warn if impossible.
-4. FIELD_MAP aliases (apply before schema validate):
-
-   * insiders_link ← insider_link
-   * event_official_url ← event_official_link
-   * schema ← schema_link
-   * gold ← gold_link
-5. Validate required keys against SCHEMA; ignore extras/dupes.
-6. Required links from task.links:
+1) Fetch SCHEMA, POLICY, GOLD_SHAPE. If any fail, push a warning and continue.
+2) Fetch {task_uri}. Must be 200 else fail.
+3) Coercions:
+   - "true"/"false" → booleans; numeric strings → numbers.
+   - timestamp_iso: accept loose; normalize to ISO; warn if impossible.
+4) FIELD_MAP aliases (apply before schema validate):
+   - insiders_link ← insider_link
+   - event_official_url ← event_official_link
+   - schema ← schema_link
+   - gold ← gold_link
+5) Validate required keys against SCHEMA; ignore extras/dupes.
+6) Required links read from task.links:
    founder_link, audiences_link, venue_link, geo_link, keywords_link,
    insiders_link, stay_link, dine_link, essentials_link, event_official_url.
-7. Fetch in this exact order, seeding from task and following absolute URLs:
+7) Fetch in this order, seeding from task and following absolute URLs:
    founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
-
-   * Accept application/json and text/plain as JSON.
-8. Generate per POLICY (see “POLICY GLOSSARY” below for each canonical name):
-
-   * Intro (80–140 words): must_cover → event+dates_humanized, season_or_month,
-     venue_feel_2traits, city_feel_1sensory_1vibe, seasonal_normals_if_geo.
-     Insert ≥3 brand keywords and ≥2 insider terms; imply audience; close with founder/intro template if present.
-     Forbid ticketing, prices, bullet logistics.
-   * Stay: one paragraph; prioritize premium; reference most/all items; add one CTA if closers present.
-   * Dine: two paragraphs (AM + Dinner); add one CTA if closers present.
-   * Locale: one paragraph (off-barn resets).
-   * Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart); add one CTA if closers present.
-   * Outro: 25–45 words; use template if available.
-9. Optional templates if present & 200:
+8) Generate per POLICY:
+   - Intro (80–140w): event+dates (humanized), season/month, venue feel (2 traits),
+     city feel (1 sensory + 1 vibe), seasonal normals if geo present.
+     Insert ≥3 keywords and ≥2 insider terms; imply audience; close with founder/intro template when available.
+     No ticketing, prices, or bullet logistics.
+   - Stay: one paragraph; prioritize premium; mention most/all items; add one CTA if closers present.
+   - Dine: two paragraphs (AM + Dinner); add one CTA if closers present.
+   - Locale: one paragraph (off-barn resets).
+   - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart); add one CTA if closers present.
+   - Outro: 25–45w; use template if available.
+9) Optional templates if present & 200:
    intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
 
 EMIT_ITEMS
 emit_items: true
 item_rules:
-stay:
-source: stay_link
-required_fields: [name, url]
-optional_fields: [alt, distance, notes]
-map:
-name: $.name
-url: $.url
-alt: $.alt || $.distance || $.notes
-http_200_only: true
-dine:
-source: dine_link
-required_fields: [name, url]
-optional_fields: [alt, meal]
-map:
-name: $.name
-url: $.url
-alt: $.alt || $.meal
-http_200_only: true
-essentials:
-source: essentials_link
-required_fields: [type, name, url]
-optional_fields: [alt, notes]
-map:
-type: $.type
-name: $.name
-url: $.url
-alt: $.alt || $.notes
-http_200_only: true
+  stay:
+    source: stay_link
+    required_fields: [name, url]
+    optional_fields: [alt, distance, notes]
+    map:
+      name: $.name
+      url: $.url
+      alt: $.alt || $.distance || $.notes
+    http_200_only: true
+  dine:
+    source: dine_link
+    required_fields: [name, url]
+    optional_fields: [alt, meal]
+    map:
+      name: $.name
+      url: $.url
+      alt: $.alt || $.meal
+    http_200_only: true
+  essentials:
+    source: essentials_link
+    required_fields: [type, name, url]
+    optional_fields: [alt, notes]
+    map:
+      type: $.type
+      name: $.name
+      url: $.url
+      alt: $.alt || $.notes
+    http_200_only: true
 
 OUTPUT (JSON only)
 {
-"meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"","policy_uri":""},
-"hello":{"intro":"","outro":""},
-"stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
-"dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
-"locale":{"title":"Locale — Off-Barn","paragraph":""},
-"essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
-"seo":{
-"section_title":"","meta_description":"","open_graph_title":"",
-"open_graph_description":"","search_title":"","search_description":""
-},
-"brand_usage":{
-"keywords_used":[],"insiders_used":[],"audience_trait":"",
-"intro_template_id":"","outro_template_id":"",
-"cta_closers":{"stay":"","dine":"","essentials":""}
-},
-"source_trace": [],
-"checked_sources": [],
-"validation":{"status":"pass","warnings":[],"errors":[]}
+  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"","policy_uri":""},
+  "hello":{"intro":"","outro":""},
+  "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
+  "dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
+  "locale":{"title":"Locale — Off-Barn","paragraph":""},
+  "essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
+  "seo":{
+    "section_title":"","meta_description":"","open_graph_title":"",
+    "open_graph_description":"","search_title":"","search_description":""
+  },
+  "brand_usage":{
+    "keywords_used":[],"insiders_used":[],"audience_trait":"",
+    "intro_template_id":"","outro_template_id":"",
+    "cta_closers":{"stay":"","dine":"","essentials":""}
+  },
+  "source_trace": [],
+  "checked_sources": [],
+  "validation":{"status":"pass","warnings":[],"errors":[]}
 }
 
 FIELD_MAP
 schema_enforced: false
 alias:
-insiders_link: insider_link
-event_official_url: event_official_link
-schema: schema_link
-gold: gold_link
+  insiders_link: insider_link
+  event_official_url: event_official_link
+  schema: schema_link
+  gold: gold_link
 
-POLICY GLOSSARY (canonical → exact behavior)
-INTRO.must_cover
-
-* event+dates_humanized: Include event name and readable dates (e.g., “Sep 24–Oct 5, 2025”).
-* season_or_month: Mention season or the month (e.g., “early fall,” “in September”).
-* venue_feel_2traits: Two concise traits describing venue vibe (e.g., “polished, efficient”; “expansive, spectator-friendly”).
-* city_feel_1sensory_1vibe: One sensory cue + one vibe for locale (e.g., “desert sun and unhurried pace”; “sea breeze and festive energy”).
-* seasonal_normals_if_geo: If geo_link fetched OK, include short typical temps/conditions (“highs around 68°F; cool evenings”).
-
-BRAND REQUIREMENTS
-
-* keywords_min=3: Use at least 3 distinct terms from keywords.json within body copy (not SEO fields).
-* insiders_min=2: Use at least 2 insider terms naturally (e.g., jog strip, warm-up ring).
-* audience_reference_required=true: Imply the intended reader (e.g., “trainer-led competitors and families,” “competitive riders”).
-
-SEO RULES (applied to seo.* fields)
-
-* section_title_words_3_6: Title length between 3 and 6 words (split by whitespace).
-* meta_description_chars_150_160: 150–160 chars inclusive.
-* open_graph_title_max_60: ≤60 chars.
-* open_graph_description_110_140: 110–140 chars inclusive.
-* search_title_max_60: ≤60 chars.
-* search_description_150_160: 150–160 chars inclusive.
-* no_insider_terms_in_seo: Block insider jargon in all seo.* fields (allowed in body).
-
-STRICT MODE (policy-aligned behavior)
-
-* no_guessing=true: Leave fields blank rather than inventing sources.
-* fail_on_missing_signal=false: Missing trace signals produce warnings, not failure.
-* fail_on_4xx_required_links=false: 4xx on required links produces warnings; continue.
-* fail_on_missing_url=false: Missing link fields produce warnings; continue.
-* include_seasonal_avg_requires_source=false: Seasonal normals allowed when geo present; otherwise omit silently.
-
-VALIDATION NOTES
-
-* source_trace capped at 12 entries; “ok” or “skipped_external” signals only.
-* checked_sources may mirror successful 200 fetches of schema, policy, gold, and task_uri.
-* output_contract must match GOLD_SHAPE types for items.
-
----
+OPERATOR NOTE — ADD ALLOW LIST AS INLINE CODEBOX IN CANVAS (copy/paste only)
+```txt
+# ALLOW_URLS (one per line; no quotes)
+{{founder_link}}
+{{audiences_link}}
+{{keywords_link}}
+{{insiders_link}}
+{{venue_link}}
+{{geo_link}}
+{{stay_link}}
+{{dine_link}}
+{{essentials_link}}
+{{event_official_url}}
