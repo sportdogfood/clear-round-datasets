@@ -21,6 +21,13 @@
     "fail_on_4xx_required_links": false,
     "fail_on_missing_url": false
   }
+  
+"trace": {
+  "only_required": true,
+  "collapse_success": true,
+  "max_entries": 12,
+  "fields": ["url","http_status","signals"]
+}
 
   "link_policy": {
     "require_base_uri": true,
