@@ -1,54 +1,57 @@
 TITLE: Content Runner — Equestrian Event Blogs
+
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
+ASSETS (absolute)
+SCHEMA:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
+POLICY:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
+GOLD_SHAPE:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
+
 URL ACCESS
-- The runner MAY fetch any URL present in the task JSON under `*_link` fields if it starts with one of:
-      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
-      https://crt-b1434e13de34.herokuapp.com/items
-      https://items.clearroundtravel.com/items
-      https://blog.clearroundtravel.com/blogs
+- MAY fetch ANY URL found in the task JSON under *_link fields if it starts with:
+  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
+  https://crt-b1434e13de34.herokuapp.com/items
+- MAY fetch official venue URLs listed in policy.link_access.venue_allowlist.
+- External event_official_url is OPTIONAL: if blocked, mark signals=["skipped_external"].
+- DO NOT require that URLs appear in the user message or prior search results.
 
-- External “official event” URLs may be fetched but are OPTIONAL; mark as "skipped_external" if blocked.
-- Do NOT require the URLs to appear in the user message or a prior search result.
-
-
-ASSETS (absolute URLs)
-SCHEMA:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
-POLICY:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
-GOLD_SHAPE: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
 TRACE RULES
-- Record ONLY: schema, policy, gold, task_uri, founder, audiences, venue, geo, keywords, insiders, stay, dine, essentials.
-- For 200s: push a single collapsed entry with signals[]=["ok"]. Do NOT include timestamp.
-- For external event_official_url: record once with http_status=0 and signals=["skipped_external"].
-- Cap to 12 entries (drop extras from the end).
+- Record ONLY these in source_trace (in order): schema, policy, gold, task_uri, founder, audiences,
+  event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
+- For 200 OK: record a single collapsed entry: {"url":"…","http_status":200,"signals":["ok"]}.
+- For skipped external: {"url":"…","http_status":0,"signals":["skipped_external"]}.
+- No per-link timestamps. Cap to 12 entries (drop extras from the end).
 
 INPUT
-- Payload: {"task_uri":"<FULL URL to task JSON>"} only.
+- Payload ONLY: {"task_uri":"<FULL URL to task JSON>"}.
 
 ALLOWLIST
-- {BASE_URI} (host: raw.githubusercontent.com) and official event domains present in the task JSON. 
+- {BASE_URI} and the venue domains enumerated in policy.link_access.venue_allowlist.
 
 WORKFLOW
-1) Fetch SCHEMA, POLICY, GOLD_SHAPE (200 required for each) else record warning and continue.
-2) Fetch {task_uri} (must be 200) else fail.
-3) Coercions:
+1) Fetch SCHEMA, POLICY, GOLD_SHAPE. If any fail, push a warning and continue.
+2) Fetch {task_uri}. Must be 200, else fail.
+3) Coerce:
    - "true"/"false" → booleans; numeric strings → numbers.
-   - timestamp_iso: accept loose → normalize to ISO; if impossible → warning.
-4) Validate required keys against SCHEMA. Ignore extra or duplicate keys.
-5) Required links from task.links
-   founder_link, audiences_link, venue_link, geo_link, keywords_link, insiders_link, stay_link, dine_link, essentials_link, event_official_url
-6) Fetch in this order and record in source_trace:
-   founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials
-7) Generate sections per POLICY:
-   - Intro (80–140 words): event+dates (humanized), season/month, venue feel (2 traits), city feel (1 sensory + 1 vibe), seasonal temperature (normals if geo present). Insert ≥3 keywords and ≥2 insider terms naturally; reference audience implicitly; close with founder/intro template if available. No logistics lists, prices, or ticketing.
-   - Stay: one paragraph. Prioritize premium; mention all/most items. Add one stay CTA if CTA library provided.
-   - Dine: two paragraphs (AM + Dinner). Add one dinner CTA if available.
+   - timestamp_iso: accept loose; normalize to ISO; warn if impossible.
+4) Validate required keys against SCHEMA; ignore extras/dupes. Apply FIELD_MAP aliases before validate.
+5) Required links (read from task): founder_link, audiences_link, venue_link, geo_link, keywords_link,
+   insiders_link, stay_link, dine_link, essentials_link, event_official_url.
+6) Fetch in this exact order, seeding from task and following absolute URLs:
+   founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
+   - Treat Content-Type text/plain as JSON (policy allows).
+7) Generate per POLICY:
+   - Intro (80–140w): event+dates (humanized), season/month, venue feel (2 traits),
+     city feel (1 sensory + 1 vibe), seasonal normals if geo present.
+     Insert ≥3 keywords and ≥2 insider terms; imply audience; close with founder/intro template if present.
+     No ticketing, prices, or bullet logistics.
+   - Stay: one paragraph; prioritize premium; mention most/all items; add one CTA if closers present.
+   - Dine: two paragraphs (AM + Dinner); add one CTA if closers present.
    - Locale: one paragraph (off-barn resets).
-   - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart). Add one essentials CTA if available.
-   - Outro: 25–45 words; use founder/outro template if available.
-8) Optional templates if present in task.links and 200:
-   intro_templates_link, outro_templates_link, cta_closers_link. Use by rotation; else fall back to founder templates.
-
+   - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart); add one CTA if closers present.
+   - Outro: 25–45w; use template if available.
+8) Optional templates if present & 200:
+   intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
 
 EMIT_ITEMS
 emit_items: true
@@ -81,15 +84,10 @@ item_rules:
       url: $.url
       alt: $.alt || $.notes
     http_200_only: true
-output_contract:
-  stay.items[]: {name, url, alt}
-  dine.items[]: {name, url, alt}
-  essentials.items[]: {type, name, url, alt}
-fail_on_missing_url: true
 
 OUTPUT (JSON only)
 {
-  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"1.0","policy_uri":"{BASE_URI}/policy/policy.json"},
+  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"","policy_uri":""},
   "hello":{"intro":"","outro":""},
   "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
   "dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
@@ -104,19 +102,14 @@ OUTPUT (JSON only)
     "intro_template_id":"","outro_template_id":"",
     "cta_closers":{"stay":"","dine":"","essentials":""}
   },
-  "source_trace":[{"url":"","http_status":200,"signals":[],"timestamp_iso":""}],
-  "checked_sources":[{"url":"","http_status":200}],
+  "source_trace": [],
+  "checked_sources": [],
   "validation":{"status":"pass","warnings":[],"errors":[]}
 }
 
-CANVAS OUTPUT
-- Write the final JSON to canvas as a text document titled "{event_name} — Insider Guide" (fallback "Insider Guide"). JSON only.
-
 STRICT MODE
-no_guessing: true
-fail_on_missing_signal: true
-fail_on_4xx_required_links: true
-if include_seasonal_avg=true and climate normals cannot be fetched from allowlisted domains → fail
+- Obey policy.strict_mode (fail_on_4xx_required_links=false, fail_on_missing_url=false).
+- If include_seasonal_avg=true but geo normals unavailable: emit warning only.
 
 FIELD_MAP
 schema_enforced: false
