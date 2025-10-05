@@ -2,6 +2,13 @@
   "version": "1.0.1",
   "updated_iso": "2025-10-04T00:00:00-04:00",
   "runner": "content-runner",
+  "link_access": {
+    "allow_from_task_links": true,
+    "allow_base_uris": [
+      "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
+      "https://crt-b1434e13de34.herokuapp.com/items"
+    ]
+  },
 
   "content_type": {
     "enforce": false,
@@ -11,8 +18,8 @@
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
-    "fail_on_missing_url": false,
-    "include_seasonal_avg_requires_source": false
+    "fail_on_4xx_required_links": false,
+    "fail_on_missing_url": false
   }
 
   "link_policy": {
