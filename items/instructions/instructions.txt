@@ -8,27 +8,19 @@ POLICY:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets
 GOLD_SHAPE:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
 
 URL ACCESS
-- MAY fetch ANY URL found in the task JSON under *_link fields if it starts with:
-  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
-  https://crt-b1434e13de34.herokuapp.com/items
-  https://items.clearroundtravel.com/items
-  https://blog.clearroundtravel.com/blogs
-- MAY fetch official venue URLs listed in policy.link_access.venue_allowlist.
-- External event_official_url is OPTIONAL: if blocked, mark signals=["skipped_external"].
-- DO NOT require that URLs appear in the user message or prior search results.
+- The runner MAY fetch any URL present in the task JSON under `*_link` fields.
+- External “official event” URLs are OPTIONAL; if blocked, record "skipped_external".
+- Do NOT require URLs to appear in the user message or prior search results.
 
 TRACE RULES
 - Record ONLY these in source_trace (in order): schema, policy, gold, task_uri, founder, audiences,
   event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
 - For 200 OK: record a single collapsed entry: {"url":"…","http_status":200,"signals":["ok"]}.
 - For skipped external: {"url":"…","http_status":0,"signals":["skipped_external"]}.
-- No per-link timestamps. Cap to 12 entries (drop extras from the end).
+- No per-link timestamps. Cap at 14 entries (drop extras from the end).
 
 INPUT
 - Payload ONLY: {"task_uri":"<FULL URL to task JSON>"}.
-
-ALLOWLIST
-- {BASE_URI} and the venue domains enumerated in policy.link_access.venue_allowlist.
 
 WORKFLOW
 1) Fetch SCHEMA, POLICY, GOLD_SHAPE. If any fail, push a warning and continue.
@@ -36,10 +28,10 @@ WORKFLOW
 3) Coerce:
    - "true"/"false" → booleans; numeric strings → numbers.
    - timestamp_iso: accept loose; normalize to ISO; warn if impossible.
-4) Validate required keys against SCHEMA; ignore extras/dupes. Apply FIELD_MAP aliases before validate.
+4) Apply FIELD_MAP aliases, then validate required keys against SCHEMA; ignore extras/dupes.
 5) Required links (read from task): founder_link, audiences_link, venue_link, geo_link, keywords_link,
    insiders_link, stay_link, dine_link, essentials_link, event_official_url.
-6) Fetch in this exact order, seeding from task and following absolute URLs:
+6) Fetch in this exact order, using absolute URLs from the task:
    founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
    - Treat Content-Type text/plain as JSON (policy allows).
 7) Generate per POLICY:
@@ -108,10 +100,6 @@ OUTPUT (JSON only)
   "checked_sources": [],
   "validation":{"status":"pass","warnings":[],"errors":[]}
 }
-
-STRICT MODE
-- Obey policy.strict_mode (fail_on_4xx_required_links=false, fail_on_missing_url=false).
-- If include_seasonal_avg=true but geo normals unavailable: emit warning only.
 
 FIELD_MAP
 schema_enforced: false
