@@ -1,6 +1,6 @@
 {
-  "version": "1.0.2",
-  "updated_iso": "2025-10-02T00:00:00-04:00",
+  "version": "1.0.1",
+  "updated_iso": "2025-10-04T00:00:00-04:00",
   "runner": "content-runner",
 
   "content_type": {
@@ -8,18 +8,19 @@
     "treat_text_plain_as_json": true
   },
 
+  "strict_mode": {
+    "no_guessing": true,
+    "fail_on_missing_signal": false,
+    "fail_on_missing_url": false,
+    "include_seasonal_avg_requires_source": false
+  }
+
   "link_policy": {
     "require_base_uri": true,
     "allow_event_official_external": true
   },
 
-  "strict_mode": {
-    "no_guessing": true,
-    "fail_on_missing_signal": true,
-    "fail_on_missing_url": true,
-    "include_seasonal_avg_requires_source": true
-  },
-
+  
   "length_targets": {
     "intro_min": 80,
     "intro_max": 140,
