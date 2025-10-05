@@ -2,11 +2,14 @@
   "version": "1.0.1",
   "updated_iso": "2025-10-04T00:00:00-04:00",
   "runner": "content-runner",
+
   "link_access": {
     "allow_from_task_links": true,
     "allow_base_uris": [
       "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
-      "https://crt-b1434e13de34.herokuapp.com/items"
+      "https://crt-b1434e13de34.herokuapp.com/items",
+      "https://items.clearroundtravel.com/items",
+      "https://blog.clearroundtravel.com/blogs"
     ]
   },
 
@@ -20,21 +23,20 @@
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": false,
     "fail_on_missing_url": false
-  }
-  
-"trace": {
-  "only_required": true,
-  "collapse_success": true,
-  "max_entries": 12,
-  "fields": ["url","http_status","signals"]
-}
+  },
+
+  "trace": {
+    "only_required": true,
+    "collapse_success": true,
+    "max_entries": 12,
+    "fields": ["url", "http_status", "signals"]
+  },
 
   "link_policy": {
     "require_base_uri": true,
     "allow_event_official_external": true
   },
 
-  
   "length_targets": {
     "intro_min": 80,
     "intro_max": 140,
