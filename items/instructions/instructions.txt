@@ -2,9 +2,9 @@ TITLE: Content Runner — Equestrian Event Blogs
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
 ASSETS (absolute URLs)
-SCHEMA:        {BASE_URI}/schema/task.schema.json
-POLICY:        {BASE_URI}/policy/policy.json
-GOLD_SHAPE:    {BASE_URI}/gold/hchs.gold.json
+SCHEMA:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
+POLICY:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
+GOLD_SHAPE: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
 
 INPUT
 - Payload: {"task_uri":"<FULL URL to task JSON>"} only.
@@ -13,18 +13,11 @@ ALLOWLIST
 - {BASE_URI} (host: raw.githubusercontent.com) and official event domains present in the task JSON. Block all others.
 
 WORKFLOW
-1) Fetch SCHEMA, POLICY, GOLD_SHAPE via GET with headers:
-   - Accept: application/json,*/*
-   Requirements:
-   - HTTP 200
-   - Do not follow redirects
-   - Content-Type may be application/json OR text/plain OR application/octet-stream if the body parses as JSON
-   - Record each in checked_sources
-   - If any fail → set validation.status="fail" with errors:["missing_asset"] and stop
-2) Fetch {task_uri} (same rules as #1). If not 200 or not JSON-parsable → fail.
+1) Fetch SCHEMA, POLICY, GOLD_SHAPE (200 required for each) else record warning and continue.
+2) Fetch {task_uri} (must be 200) else fail.
 3) Coercions:
-   - "true"/"false" → booleans; numeric strings → numbers
-   - timestamp_iso: accept loose formats; normalize to ISO 8601; if impossible, add warning (strict mode may upgrade to fail)
+   - "true"/"false" → booleans; numeric strings → numbers.
+   - timestamp_iso: accept loose → normalize to ISO; if impossible → warning.
 4) Validate required keys against SCHEMA. Ignore extra or duplicate keys.
 5) Required links from task.links (all must be 200):
    founder_link, audiences_link, venue_link, geo_link, keywords_link, insiders_link, stay_link, dine_link, essentials_link, event_official_url
@@ -40,25 +33,63 @@ WORKFLOW
 8) Optional templates if present in task.links and 200:
    intro_templates_link, outro_templates_link, cta_closers_link. Use by rotation; else fall back to founder templates.
 
+
+EMIT_ITEMS
+emit_items: true
+item_rules:
+  stay:
+    source: stay_link
+    required_fields: [name, url]
+    optional_fields: [alt, distance, notes]
+    map:
+      name: $.name
+      url: $.url
+      alt: $.alt || $.distance || $.notes
+    http_200_only: true
+  dine:
+    source: dine_link
+    required_fields: [name, url]
+    optional_fields: [alt, meal]
+    map:
+      name: $.name
+      url: $.url
+      alt: $.alt || $.meal
+    http_200_only: true
+  essentials:
+    source: essentials_link
+    required_fields: [type, name, url]
+    optional_fields: [alt, notes]
+    map:
+      type: $.type
+      name: $.name
+      url: $.url
+      alt: $.alt || $.notes
+    http_200_only: true
+output_contract:
+  stay.items[]: {name, url, alt}
+  dine.items[]: {name, url, alt}
+  essentials.items[]: {type, name, url, alt}
+fail_on_missing_url: true
+
 OUTPUT (JSON only)
 {
-  "meta":{"run_id":"", "timestamp_iso":"", "task_uri":""},
-  "hello":{"intro":"", "outro":""},
-  "stay":{"paragraph":""},
-  "dine":{"am":"", "dinner":""},
-  "locale":{"paragraph":""},
-  "essentials":{"paragraph":""},
+  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"1.0","policy_uri":"{BASE_URI}/policy/policy.json"},
+  "hello":{"intro":"","outro":""},
+  "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
+  "dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
+  "locale":{"title":"Locale — Off-Barn","paragraph":""},
+  "essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
   "seo":{
-    "section_title":"", "meta_description":"", "open_graph_title":"",
-    "open_graph_description":"", "search_title":"", "search_description":""
+    "section_title":"","meta_description":"","open_graph_title":"",
+    "open_graph_description":"","search_title":"","search_description":""
   },
   "brand_usage":{
-    "keywords_used":[], "insiders_used":[], "audience_trait":"",
-    "intro_template_id":"", "outro_template_id":"",
-    "cta_closers":{"stay":"", "dine":"", "essentials":""}
+    "keywords_used":[],"insiders_used":[],"audience_trait":"",
+    "intro_template_id":"","outro_template_id":"",
+    "cta_closers":{"stay":"","dine":"","essentials":""}
   },
-  "source_trace":[{"url":"", "http_status":200, "signals":[], "timestamp_iso":""}],
-  "checked_sources":[{"url":"", "http_status":200}],
+  "source_trace":[{"url":"","http_status":200,"signals":[],"timestamp_iso":""}],
+  "checked_sources":[{"url":"","http_status":200}],
   "validation":{"status":"pass","warnings":[],"errors":[]}
 }
 
@@ -70,3 +101,11 @@ no_guessing: true
 fail_on_missing_signal: true
 fail_on_4xx_required_links: true
 if include_seasonal_avg=true and climate normals cannot be fetched from allowlisted domains → fail
+
+FIELD_MAP
+schema_enforced: false
+alias:
+  insiders_link: insider_link
+  event_official_url: event_official_link
+  schema: schema_link
+  gold: gold_link
