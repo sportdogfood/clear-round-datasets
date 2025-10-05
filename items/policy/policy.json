@@ -5,8 +5,14 @@
 
   "link_access": {
     "allow_from_task_links": true,
-    "allow_base_uris": [], 
-    "allow_event_official_external": true
+    "allow_base_uris": [
+      "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
+      "https://crt-b1434e13de34.herokuapp.com/items",
+      "https://items.clearroundtravel.com/items",
+      "https://blog.clearroundtravel.com/blogs"
+    ],
+    "allow_event_official_external": true,
+    "no_user_message_presence_required": true
   },
 
   "content_type": {
@@ -26,11 +32,28 @@
     "only_required": true,
     "collapse_success": true,
     "max_entries": 12,
-    "fields": ["url", "http_status", "signals"]
+    "fields": ["url", "http_status", "signals"],
+    "required_order": [
+      "schema",
+      "policy",
+      "gold",
+      "task_uri",
+      "founder",
+      "audiences",
+      "event_official_url",
+      "venue",
+      "geo",
+      "keywords",
+      "insiders",
+      "stay",
+      "dine",
+      "essentials"
+    ],
+    "skipped_external_signature": ["skipped_external"]
   },
 
   "link_policy": {
-    "require_base_uri": true,
+    "require_base_uri": false,
     "allow_event_official_external": true
   },
 
