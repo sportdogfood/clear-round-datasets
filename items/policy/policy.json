@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "updated_iso": "2025-10-02T00:00:00-04:00",
   "runner": "content-runner",
 
@@ -8,11 +8,16 @@
     "treat_text_plain_as_json": true
   },
 
+  "link_policy": {
+    "require_base_uri": true,
+    "allow_event_official_external": true
+  },
+
   "strict_mode": {
     "no_guessing": true,
-    "fail_on_missing_signal": false,
-    "fail_on_missing_url": false,
-    "include_seasonal_avg_requires_source": false
+    "fail_on_missing_signal": true,
+    "fail_on_missing_url": true,
+    "include_seasonal_avg_requires_source": true
   },
 
   "length_targets": {
@@ -25,7 +30,7 @@
   "brand_requirements": {
     "keywords_min": 3,
     "insiders_min": 2,
-    "audience_reference_required": false
+    "audience_reference_required": true
   },
 
   "section_rules": {
@@ -34,9 +39,9 @@
         "event+dates_humanized",
         "season_or_month",
         "venue_feel_2traits",
-        "city_feel_1sensory_1vibe"
+        "city_feel_1sensory_1vibe",
+        "seasonal_normals_if_geo"
       ],
-      "include_seasonal_normals_if_geo": true,
       "forbid": ["ticketing", "prices", "logistics_lists"]
     },
     "stay": { "paragraph": true, "cta_allowed": true },
