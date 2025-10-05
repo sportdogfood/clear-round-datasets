@@ -11,6 +11,7 @@ URL ACCESS
 - MAY fetch ANY URL found in the task JSON under *_link fields if it starts with:
   https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
   https://crt-b1434e13de34.herokuapp.com/items
+  https://items.clearroundtravel.com/items
 - MAY fetch official venue URLs listed in policy.link_access.venue_allowlist.
 - External event_official_url is OPTIONAL: if blocked, mark signals=["skipped_external"].
 - DO NOT require that URLs appear in the user message or prior search results.
