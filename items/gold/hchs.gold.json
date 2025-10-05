@@ -3,35 +3,48 @@
     "run_id": "",
     "timestamp_iso": "",
     "task_uri": "",
-    "policy_version": "1.0"
+    "policy_version": "",
+    "policy_uri": ""
   },
+
   "hello": {
     "intro": "",
     "outro": ""
   },
+
   "stay": {
     "title": "",
     "paragraph": "",
     "cta": "",
-    "items": [ { "name": "", "url": "", "alt": "" } ]
+    "items": [
+      { "name": "", "url": "", "alt": "" }
+    ]
   },
+
   "dine": {
     "title": "",
     "am": "",
     "dinner": "",
     "cta": "",
-    "items": [ { "name": "", "url": "", "alt": "" } ]
+    "items": [
+      { "name": "", "url": "", "alt": "" }
+    ]
   },
+
   "locale": {
     "title": "",
     "paragraph": ""
   },
+
   "essentials": {
     "title": "",
     "paragraph": "",
     "cta": "",
-    "items": [ { "type": "", "name": "", "url": "", "alt": "" } ]
+    "items": [
+      { "type": "", "name": "", "url": "", "alt": "" }
+    ]
   },
+
   "seo": {
     "section_title": "",
     "meta_description": "",
@@ -40,14 +53,20 @@
     "search_title": "",
     "search_description": ""
   },
+
   "brand_usage": {
     "keywords_used": [],
     "insiders_used": [],
     "audience_trait": "",
     "intro_template_id": "",
     "outro_template_id": "",
-    "cta_closers": { "stay": "", "dine": "", "essentials": "" }
+    "cta_closers": {
+      "stay": "",
+      "dine": "",
+      "essentials": ""
+    }
   },
+
   "word_counts": {
     "intro": 0,
     "outro": 0,
@@ -57,17 +76,24 @@
     "locale": 0,
     "essentials": 0
   },
+
   "limits": {
     "intro_min": 80,
     "intro_max": 140,
     "outro_min": 25,
     "outro_max": 45
   },
+
   "templates_used": {
     "intro": "",
     "outro": "",
-    "cta": { "stay": "", "dine": "", "essentials": "" }
+    "cta": {
+      "stay": "",
+      "dine": "",
+      "essentials": ""
+    }
   },
+
   "inputs_echo": {
     "founder_link": "",
     "audiences_link": "",
@@ -80,13 +106,19 @@
     "geo_link": "",
     "event_official_url": ""
   },
+
   "source_trace": [
-    { "url": "", "http_status": 200, "signals": [], "timestamp_iso": "" }
+    { "url": "", "http_status": 200, "signals": [] }
   ],
+
   "checked_sources": [
     { "url": "", "http_status": 200 }
   ],
-  "dedupe": { "content_sha256": "" },
+
+  "dedupe": {
+    "content_sha256": ""
+  },
+
   "validation": {
     "status": "pass",
     "warnings": [],
