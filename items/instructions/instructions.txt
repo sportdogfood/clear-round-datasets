@@ -1,16 +1,32 @@
 TITLE: Content Runner — Equestrian Event Blogs
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
+URL ACCESS
+- The runner MAY fetch any URL present in the task JSON under `*_link` fields if it starts with one of:
+      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
+      https://crt-b1434e13de34.herokuapp.com/items
+      https://items.clearroundtravel.com/items
+      https://blog.clearroundtravel.com/blogs
+
+- External “official event” URLs may be fetched but are OPTIONAL; mark as "skipped_external" if blocked.
+- Do NOT require the URLs to appear in the user message or a prior search result.
+
+
 ASSETS (absolute URLs)
 SCHEMA:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
 POLICY:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
 GOLD_SHAPE: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
+TRACE RULES
+- Record ONLY: schema, policy, gold, task_uri, founder, audiences, venue, geo, keywords, insiders, stay, dine, essentials.
+- For 200s: push a single collapsed entry with signals[]=["ok"]. Do NOT include timestamp.
+- For external event_official_url: record once with http_status=0 and signals=["skipped_external"].
+- Cap to 12 entries (drop extras from the end).
 
 INPUT
 - Payload: {"task_uri":"<FULL URL to task JSON>"} only.
 
 ALLOWLIST
-- {BASE_URI} (host: raw.githubusercontent.com) and official event domains present in the task JSON. Block all others.
+- {BASE_URI} (host: raw.githubusercontent.com) and official event domains present in the task JSON. 
 
 WORKFLOW
 1) Fetch SCHEMA, POLICY, GOLD_SHAPE (200 required for each) else record warning and continue.
@@ -19,7 +35,7 @@ WORKFLOW
    - "true"/"false" → booleans; numeric strings → numbers.
    - timestamp_iso: accept loose → normalize to ISO; if impossible → warning.
 4) Validate required keys against SCHEMA. Ignore extra or duplicate keys.
-5) Required links from task.links (all must be 200):
+5) Required links from task.links
    founder_link, audiences_link, venue_link, geo_link, keywords_link, insiders_link, stay_link, dine_link, essentials_link, event_official_url
 6) Fetch in this order and record in source_trace:
    founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials
