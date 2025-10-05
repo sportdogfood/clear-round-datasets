@@ -8,7 +8,7 @@
       "type": "string",
       "anyOf": [
         { "format": "date-time" },
-        { "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+        { "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?$" }
       ]
     },
     "hub": {
@@ -23,8 +23,8 @@
               "type": "object",
               "required": ["uid", "name", "start_date", "end_date", "venue_uid"],
               "properties": {
-                "uid": { "type": "string", "minLength": 1 },
-                "name": { "type": "string", "minLength": 1 },
+                "uid":        { "type": "string", "minLength": 1 },
+                "name":       { "type": "string", "minLength": 1 },
                 "start_date": {
                   "type": "string",
                   "anyOf": [
@@ -39,50 +39,25 @@
                     { "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
                   ]
                 },
-                "venue_uid": { "type": "string", "minLength": 1 }
-              },
-              "additionalProperties": true
+                "venue_uid":  { "type": "string", "minLength": 1 }
+              }
             },
             "venue": {
               "type": "object",
               "required": ["uid", "name", "official_url", "geometry_url"],
               "properties": {
-                "uid": { "type": "string", "minLength": 1 },
-                "name": { "type": "string", "minLength": 1 },
+                "uid":          { "type": "string", "minLength": 1 },
+                "name":         { "type": "string", "minLength": 1 },
                 "official_url": { "type": "string", "format": "uri" },
                 "geometry_url": { "type": "string", "format": "uri" }
-              },
-              "additionalProperties": true
+              }
             }
-          },
-          "additionalProperties": true
+          }
         }
-      },
-      "additionalProperties": true
+      }
     },
     "links": {
       "type": "object",
-      "properties": {
-        "event_official_url":   { "type": "string", "format": "uri" },
-        "event_official_link":  { "type": "string", "format": "uri" },
-
-        "venue_link":      { "type": "string", "format": "uri" },
-        "geo_link":        { "type": "string", "format": "uri" },
-        "stay_link":       { "type": "string", "format": "uri" },
-        "dine_link":       { "type": "string", "format": "uri" },
-        "essentials_link": { "type": "string", "format": "uri" },
-
-        "insiders_link": { "type": "string", "format": "uri" },
-        "insider_link":  { "type": "string", "format": "uri" },
-
-        "audiences_link": { "type": "string", "format": "uri" },
-        "founder_link":   { "type": "string", "format": "uri" },
-        "keywords_link":  { "type": "string", "format": "uri" },
-
-        "intro_templates_link": { "type": "string", "format": "uri" },
-        "outro_templates_link": { "type": "string", "format": "uri" },
-        "cta_closers_link":     { "type": "string", "format": "uri" }
-      },
       "required": [
         "venue_link",
         "geo_link",
@@ -93,9 +68,31 @@
         "founder_link",
         "keywords_link"
       ],
+      "properties": {
+        "event_official_link":  { "type": "string", "format": "uri" },
+        "event_official_url":   { "type": "string", "format": "uri" },
+
+        "venue_link":           { "type": "string", "format": "uri" },
+        "geo_link":             { "type": "string", "format": "uri" },
+
+        "stay_link":            { "type": "string", "format": "uri" },
+        "dine_link":            { "type": "string", "format": "uri" },
+        "essentials_link":      { "type": "string", "format": "uri" },
+
+        "insider_link":         { "type": "string", "format": "uri" },
+        "insiders_link":        { "type": "string", "format": "uri" },
+
+        "audiences_link":       { "type": "string", "format": "uri" },
+        "founder_link":         { "type": "string", "format": "uri" },
+        "keywords_link":        { "type": "string", "format": "uri" },
+
+        "intro_templates_link": { "type": "string", "format": "uri" },
+        "outro_templates_link": { "type": "string", "format": "uri" },
+        "cta_closers_link":     { "type": "string", "format": "uri" }
+      },
       "allOf": [
-        { "anyOf": [ { "required": ["insiders_link"] }, { "required": ["insider_link"] } ] },
-        { "anyOf": [ { "required": ["event_official_url"] }, { "required": ["event_official_link"] } ] }
+        { "anyOf": [ { "required": ["insider_link"] }, { "required": ["insiders_link"] } ] },
+        { "anyOf": [ { "required": ["event_official_link"] }, { "required": ["event_official_url"] } ] }
       ],
       "additionalProperties": true
     }
