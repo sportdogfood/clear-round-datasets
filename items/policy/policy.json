@@ -5,30 +5,7 @@
 
   "link_access": {
     "allow_from_task_links": true,
-    "allow_base_uris": [
-      "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
-      "https://crt-b1434e13de34.herokuapp.com/items",
-      "https://items.clearroundtravel.com/items",
-      "https://blog.clearroundtravel.com/blogs"
-    ],
-    "venue_allowlist": [
-      "https://www.hitsshows.com",
-      "https://www.hitsshows.com/hits-venues/hits-chicago",
-      "https://deserthorsepark.com",
-      "https://www.devonhorseshow.net",
-      "https://traversecityhorseshows.com",
-      "https://www.foxleafarm.net",
-      "https://www.hamptonclassic.com",
-      "https://kyhorsepark.com",
-      "https://oldsalemfarm.net",
-      "https://panational.org",
-      "https://www.pgparks.com",
-      "https://www.terranovaequestrian.com",
-      "https://wihs.org",
-      "https://www.resort.tryon.com",
-      "https://wellingtoninternational.com",
-      "https://worldequestriancenter.com"
-    ],
+    "allow_base_uris": [], 
     "allow_event_official_external": true
   },
 
