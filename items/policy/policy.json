@@ -1,6 +1,6 @@
 {
-  "version": "1.0.1",
-  "updated_iso": "2025-10-04T00:00:00-04:00",
+  "version": "1.0.2",
+  "updated_iso": "2025-10-05T00:00:00-04:00",
   "runner": "content-runner",
 
   "link_access": {
@@ -10,7 +10,26 @@
       "https://crt-b1434e13de34.herokuapp.com/items",
       "https://items.clearroundtravel.com/items",
       "https://blog.clearroundtravel.com/blogs"
-    ]
+    ],
+    "venue_allowlist": [
+      "https://www.hitsshows.com",
+      "https://www.hitsshows.com/hits-venues/hits-chicago",
+      "https://deserthorsepark.com",
+      "https://www.devonhorseshow.net",
+      "https://traversecityhorseshows.com",
+      "https://www.foxleafarm.net",
+      "https://www.hamptonclassic.com",
+      "https://kyhorsepark.com",
+      "https://oldsalemfarm.net",
+      "https://panational.org",
+      "https://www.pgparks.com",
+      "https://www.terranovaequestrian.com",
+      "https://wihs.org",
+      "https://www.resort.tryon.com",
+      "https://wellingtoninternational.com",
+      "https://worldequestriancenter.com"
+    ],
+    "allow_event_official_external": true
   },
 
   "content_type": {
@@ -22,7 +41,8 @@
     "no_guessing": true,
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": false,
-    "fail_on_missing_url": false
+    "fail_on_missing_url": false,
+    "include_seasonal_avg_requires_source": false
   },
 
   "trace": {
