@@ -6,8 +6,8 @@
   "types": "[\"travel_agency\",\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJvw1V34HBQIgRPJSM89JM0N0",
   "name": "World Equestrian Center",
-  "lat": "-83.88934619999999",
-  "lng": "39.4113426",
+  "lng": "-83.88934619999999",
+  "lat": "39.4113426",
   "geo_type_uuid": "travel_agency, point_of_interest, establishment",
   "geo_type_ms": "travel_agency, point_of_interest, establishment",
   "geo_uids": [
@@ -22,11 +22,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "wcoh-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/wcoh-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoh-geo.json",
   "output_uids": [],
   "venue_uuid": "wcoh-venue",
   "dine_uuid": "wcoh-dine",
   "stay_uuid": "wcoh-stay",
   "ess_uuid": "wcoh-essentials",
-  "place_uid": "ChIJvw1V34HBQIgRPJSM89JM0N0"
+  "place_uid": "ChIJvw1V34HBQIgRPJSM89JM0N0",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoh-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/wcoh-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
