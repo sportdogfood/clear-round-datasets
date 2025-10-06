@@ -1,16 +1,11 @@
+// items/schema/task.schema.json
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "title": "content-runner.task",
   "type": "object",
   "required": ["timestamp_iso", "hub", "links"],
   "properties": {
-    "timestamp_iso": {
-      "type": "string",
-      "anyOf": [
-        { "format": "date-time" },
-        { "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?$" }
-      ]
-    },
+    "timestamp_iso": { "type": "string", "format": "date-time" },
     "hub": {
       "type": "object",
       "required": ["core"],
@@ -58,44 +53,45 @@
     },
     "links": {
       "type": "object",
-      "required": [
-        "venue_link",
-        "geo_link",
-        "stay_link",
-        "dine_link",
-        "essentials_link",
-        "audiences_link",
-        "founder_link",
-        "keywords_link"
-      ],
       "properties": {
         "event_official_link":  { "type": "string", "format": "uri" },
         "event_official_url":   { "type": "string", "format": "uri" },
-
         "venue_link":           { "type": "string", "format": "uri" },
         "geo_link":             { "type": "string", "format": "uri" },
-
         "stay_link":            { "type": "string", "format": "uri" },
         "dine_link":            { "type": "string", "format": "uri" },
         "essentials_link":      { "type": "string", "format": "uri" },
-
         "insider_link":         { "type": "string", "format": "uri" },
         "insiders_link":        { "type": "string", "format": "uri" },
-
         "audiences_link":       { "type": "string", "format": "uri" },
         "founder_link":         { "type": "string", "format": "uri" },
         "keywords_link":        { "type": "string", "format": "uri" },
-
         "intro_templates_link": { "type": "string", "format": "uri" },
         "outro_templates_link": { "type": "string", "format": "uri" },
         "cta_closers_link":     { "type": "string", "format": "uri" }
       },
       "allOf": [
-        { "anyOf": [ { "required": ["insider_link"] }, { "required": ["insiders_link"] } ] },
-        { "anyOf": [ { "required": ["event_official_link"] }, { "required": ["event_official_url"] } ] }
-      ],
-      "additionalProperties": true
+        {
+          "anyOf": [
+            { "required": ["event_official_url"] },
+            { "required": ["event_official_link"] }
+          ]
+        },
+        { "required": ["venue_link"] },
+        { "required": ["geo_link"] },
+        { "required": ["stay_link"] },
+        { "required": ["dine_link"] },
+        { "required": ["essentials_link"] },
+        {
+          "anyOf": [
+            { "required": ["insiders_link"] },
+            { "required": ["insider_link"] }
+          ]
+        },
+        { "required": ["audiences_link"] },
+        { "required": ["founder_link"] },
+        { "required": ["keywords_link"] }
+      ]
     }
-  },
-  "additionalProperties": true
+  }
 }
