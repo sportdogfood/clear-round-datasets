@@ -1,0 +1,138 @@
+{
+  "name": "intro-outro-lockdown",
+  "version": "1.0.1",
+  "meta": {
+    "purpose": "Generate brochure-style two-paragraph Intro and a CTA Outro with strict validation for CAPC content",
+    "run_mode": "production_strict"
+  },
+  "trigger_minimum": {
+    "hub.core.event": ["uid", "name", "start_date", "end_date", "official_url", "venue_uid"],
+    "hub.core.venue": ["uid", "name", "official_url", "geometry_url"]
+  },
+  "research_links": [
+    {
+      "url_from": "task.events_link",
+      "role": "event",
+      "priority": 1,
+      "required": true,
+      "allowed_signals": ["event_highlights", "visual_tone", "official_url", "start_date", "end_date", "name"]
+    },
+    {
+      "url_from": "task.venue_link",
+      "role": "venue",
+      "priority": 1,
+      "required": true,
+      "allowed_signals": ["venue_description", "landscape_features", "visual_tone", "official_url", "name"]
+    },
+    {
+      "url_from": "task.geo_link",
+      "role": "geometry",
+      "priority": 1,
+      "required": true,
+      "allowed_signals": ["lat", "lon", "place_id", "geo_vicinity", "normals"]
+    },
+    {
+      "url_from": "task.audiences_link",
+      "role": "brand_audience",
+      "priority": 2,
+      "required": false,
+      "allowed_signals": ["tone", "audience_traits"]
+    },
+    {
+      "url_from": "task.insiders_link",
+      "role": "brand_insiders",
+      "priority": 2,
+      "required": false,
+      "allowed_signals": ["terms"]
+    }
+  ],
+  "llm_settings": {
+    "model": "gpt-5-thinking-mini",
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "max_tokens": 320,
+    "repetition_penalty": 1.1,
+    "deterministic_seeding": true
+  },
+  "prompt_template_intro_outro": {
+    "instructions": [
+      "Use only facts confirmed by successful HTTP 200 of research_links (respect priority).",
+      "Do not invent facts. If a required priority-1 link fails, abort with validation.error and no content.",
+      "Write a brochure-style Intro of TWO paragraphs and a single-paragraph Outro with a CTA.",
+      "Tone: brochure, insider, confident. Use brand tone if available.",
+      "Do not include logistics such as ticketing, parking, detailed schedules, or pricing.",
+      "Intro paragraph 1 must inline-link the event official URL and the venue official URL.",
+      "Paragraph 2 focuses on city/seasonal vibe; if temperatures are used, derive from geometry.normals and mark inferred.",
+      "No hotel or restaurant lists in the Intro/Outro."
+    ],
+    "structure": {
+      "intro": {
+        "paragraphs": 2,
+        "p1_words_min": 55,
+        "p1_words_max": 90,
+        "p2_words_min": 25,
+        "p2_words_max": 60,
+        "link_requirements": {
+          "p1": ["event_official_url", "venue_official_url"]
+        }
+      },
+      "outro": {
+        "words_min": 25,
+        "words_max": 45,
+        "cta_required": true
+      }
+    },
+    "forbid_list": [
+      "ticketing",
+      "parking",
+      "vendor_info",
+      "hotel names",
+      "restaurant names",
+      "distance measurements",
+      "schedules",
+      "prize lists"
+    ],
+    "render_pattern": {
+      "intro": "[[{{event_link}}]] runs {{date_window}} at [[{{venue_link}}]] in Upper Marlboro, Maryland. {{venue_traits}} {{event_vibe}}.\n\n{{city_vibe}} {{season_line}} {{insider_terms}}",
+      "outro": "{{closing_line}} {{cta_sentence}}"
+    }
+  },
+  "length_and_uniqueness_rules": {
+    "no_sentence_repetition_across_intro_outro": true
+  },
+  "validation": {
+    "mode": "strict-fail",
+    "checks": [
+      "All priority-1 research_links return HTTP 200 before generation",
+      "hub.core.event and hub.core.venue required keys present",
+      "geometry provides lat and lon",
+      "hello.intro contains two paragraphs",
+      "intro.p1 contains link to event_official_url and venue_official_url",
+      "outro length within bounds"
+    ],
+    "on_fail": {
+      "emit": ["meta", "validation.status", "validation.errors", "source_trace"],
+      "do_not_emit": ["hello"]
+    }
+  },
+  "output_schema": {
+    "hello": {
+      "intro": "string",
+      "outro": "string",
+      "cta": "string"
+    },
+    "source_trace_item": {
+      "url": "string",
+      "http_status": "int",
+      "extracted": "object",
+      "inferred": "boolean"
+    },
+    "envelope": ["meta", "hub", "brand", "seo", "hello", "source_trace", "validation"]
+  },
+  "audit": {
+    "require_source_trace": true,
+    "require_validation_pass": true,
+    "versioned_prompt_id": "capc-intro-outro-v1"
+  },
+  "commit_meta_template": "{run_id}: intro/outro for {hub.core.event.uid} — v{version}"
+}
