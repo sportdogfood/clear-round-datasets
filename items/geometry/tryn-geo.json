@@ -6,8 +6,8 @@
   "types": "[\"shopping_mall\",\"lodging\",\"restaurant\",\"point_of_interest\",\"food\",\"establishment\"]",
   "place_id": "ChIJDxkdFL5nV4gRicVl5lsiWww",
   "name": "Tryon International",
-  "lat": "-82.0680483",
-  "lng": "35.2821059",
+  "lng": "-82.0680483",
+  "lat": "35.2821059",
   "geo_type_uuid": "shopping_mall, lodging, restaurant, point_of_interest, food, establishment",
   "geo_type_ms": "shopping_mall, lodging, restaurant, food, point_of_interest, establishment",
   "geo_uids": [
@@ -25,11 +25,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "tryn-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/tryn-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tryn-geo.json",
   "output_uids": [],
   "venue_uuid": "tryn-venue",
   "dine_uuid": "tryn-dine",
   "stay_uuid": "tryn-stay",
   "ess_uuid": "tryn-essentials",
-  "place_uid": "ChIJDxkdFL5nV4gRicVl5lsiWww"
+  "place_uid": "ChIJDxkdFL5nV4gRicVl5lsiWww",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tryn-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/tryn-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
