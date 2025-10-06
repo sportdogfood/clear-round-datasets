@@ -1,132 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Loading…</title>
-
-  <!-- Tailwind CDN for quick styling; swap to a compiled CSS later if wanted -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Config: point at this folder's JSON -->
-  <script id="post-config" type="application/json">
-    { "json": "./capc-blog-2025-10-02.json", "assets": "./assets.json" }
-  </script>
-
-  <!-- Open Graph and SEO will be injected from JSON.seo -->
-  <meta id="og-title" property="og:title" content="">
-  <meta id="og-desc"  property="og:description" content="">
-  <meta id="og-type"  property="og:type" content="article">
-  <meta id="og-url"   property="og:url" content="">
-  <meta id="tw-card"  name="twitter:card" content="summary_large_image">
-  <meta id="meta-desc" name="description" content="">
+  <meta charset="utf-8">
+  <title>Clear Round Travel</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="canonical" href="https://blog.clearroundtravel.com/blogs/">
+  <meta http-equiv="refresh" content="0; url=/blogs/">
 </head>
-<body class="bg-white text-gray-900">
-  <main class="max-w-3xl mx-auto px-4 py-10">
-    <article id="post" class="prose prose-neutral lg:prose-lg">
-      <h1 id="title" class="!mb-2"></h1>
-      <p id="intro" class="lead"></p>
-
-      <section>
-        <h2 id="stay-title"></h2>
-        <p id="stay-p"></p>
-        <ul id="stay-list" class="list-disc pl-6"></ul>
-        <p id="stay-cta" class="italic"></p>
-      </section>
-
-      <section>
-        <h2 id="dine-title"></h2>
-        <h3 class="mt-2">AM</h3>
-        <p id="dine-am"></p>
-        <h3>Dinner</h3>
-        <p id="dine-dinner"></p>
-        <ul id="dine-list" class="list-disc pl-6"></ul>
-        <p id="dine-cta" class="italic"></p>
-      </section>
-
-      <section>
-        <h2 id="locale-title"></h2>
-        <p id="locale-p"></p>
-      </section>
-
-      <section>
-        <h2 id="essentials-title"></h2>
-        <p id="essentials-p"></p>
-        <ul id="essentials-list" class="list-disc pl-6"></ul>
-        <p id="essentials-cta" class="italic"></p>
-      </section>
-
-      <hr class="my-8" />
-      <p id="outro" class="text-gray-700"></p>
-    </article>
-
-    <nav class="mt-10">
-      <a href="/blogs/" class="text-blue-600 underline">All blogs</a>
-    </nav>
-  </main>
-
-  <script>
-    const cfg = JSON.parse(document.getElementById('post-config').textContent);
-    fetch(cfg.json).then(r => r.json()).then(data => {
-      // Title + SEO
-      const title = data.seo?.section_title || data.seo?.open_graph_title || 'Blog';
-      document.title = title;
-      document.getElementById('og-title').content = data.seo?.open_graph_title || title;
-      document.getElementById('og-desc').content  = data.seo?.open_graph_description || data.seo?.meta_description || '';
-      document.getElementById('meta-desc').content = data.seo?.meta_description || '';
-      document.getElementById('og-url').content = location.href;
-
-      // Headings
-      document.getElementById('title').textContent = title;
-
-      // Intro / Outro
-      document.getElementById('intro').textContent = data.hello?.intro || '';
-      document.getElementById('outro').textContent = data.hello?.outro || '';
-
-      // Helper to render link lists
-      const addItems = (arr, ul, labelKey='name') => {
-        if (!Array.isArray(arr)) return;
-        arr.forEach(it => {
-          const li = document.createElement('li');
-          const a = document.createElement('a');
-          a.href = it.url; a.textContent = it[labelKey] || it.name || it.type;
-          a.className = 'text-blue-600 underline break-all';
-          a.rel = 'noopener';
-          a.target = '_blank';
-          li.appendChild(a);
-          if (it.alt) {
-            const span = document.createElement('span');
-            span.textContent = ` — ${it.alt}`;
-            li.appendChild(span);
-          }
-          ul.appendChild(li);
-        });
-      };
-
-      // Stay
-      document.getElementById('stay-title').textContent = data.stay?.title || 'Stay';
-      document.getElementById('stay-p').textContent = data.stay?.paragraph || '';
-      addItems(data.stay?.items, document.getElementById('stay-list'));
-      document.getElementById('stay-cta').textContent = data.stay?.cta || '';
-
-      // Dine
-      document.getElementById('dine-title').textContent = data.dine?.title || 'Dine';
-      document.getElementById('dine-am').textContent = data.dine?.am || '';
-      document.getElementById('dine-dinner').textContent = data.dine?.dinner || '';
-      addItems(data.dine?.items, document.getElementById('dine-list'));
-
-      document.getElementById('dine-cta').textContent = data.dine?.cta || '';
-
-      // Locale
-      document.getElementById('locale-title').textContent = data.locale?.title || 'Locale';
-      document.getElementById('locale-p').textContent = data.locale?.paragraph || '';
-
-      // Essentials
-      document.getElementById('essentials-title').textContent = data.essentials?.title || 'Essentials';
-      document.getElementById('essentials-p').textContent = data.essentials?.paragraph || '';
-      addItems(data.essentials?.items, document.getElementById('essentials-list'), 'name');
-      document.getElementById('essentials-cta').textContent = data.essentials?.cta || '';
-    });
-  </script>
+<body>
+  <p>If you are not redirected, <a href="/blogs/">go to Blogs</a>.</p>
 </body>
 </html>
+
+
