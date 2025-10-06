@@ -6,8 +6,8 @@
   "types": "[\"tourist_attraction\",\"travel_agency\",\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJ7YbLbilHQogRJvtOq8a8edA",
   "name": "Kentucky Horse Park",
-  "lat": "-84.51988539999999",
-  "lng": "38.1496243",
+  "lng": "-84.51988539999999",
+  "lat": "38.1496243",
   "geo_type_uuid": "tourist_attraction, travel_agency, point_of_interest, establishment",
   "geo_type_ms": "tourist_attraction, travel_agency, point_of_interest, establishment",
   "geo_uids": [
@@ -23,11 +23,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "khp-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/khp-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/khp-geo.json",
   "output_uids": [],
   "venue_uuid": "khp-venue",
   "dine_uuid": "khp-dine",
   "stay_uuid": "khp-stay",
   "ess_uuid": "khp-essentials",
-  "place_uid": "ChIJ7YbLbilHQogRJvtOq8a8edA"
+  "place_uid": "ChIJ7YbLbilHQogRJvtOq8a8edA",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/khp-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/khp-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
