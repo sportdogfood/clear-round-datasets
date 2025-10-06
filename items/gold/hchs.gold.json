@@ -59,10 +59,14 @@
     "audience_trait": "",
     "intro_template_id": "",
     "outro_template_id": "",
-    "cta_closers": { "stay": "", "dine": "", "essentials": "" }
+    "cta_closers": { "stay": "", "dine": "", "essentials": "" },
+    "intro_outro_lockdown_used": false,
+    "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
   },
   "word_counts": {
     "intro": 0,
+    "intro_p1": 0,
+    "intro_p2": 0,
     "outro": 0,
     "stay": 0,
     "dine_am": 0,
@@ -70,9 +74,23 @@
     "locale": 0,
     "essentials": 0
   },
+  "paragraph_checks": {
+    "intro_paragraphs": 0,
+    "link_checks": {
+      "intro_p1": {
+        "event_link_present": false,
+        "venue_link_present": false
+      }
+    }
+  },
   "limits": {
     "intro_min": 80,
     "intro_max": 140,
+    "intro_paragraphs": 2,
+    "intro_p1_min": 55,
+    "intro_p1_max": 90,
+    "intro_p2_min": 25,
+    "intro_p2_max": 60,
     "outro_min": 25,
     "outro_max": 45
   },
@@ -80,6 +98,9 @@
     "intro": "",
     "outro": "",
     "cta": { "stay": "", "dine": "", "essentials": "" }
+  },
+  "features": {
+    "weather_normals": false
   },
   "inputs_echo": {
     "founder_link": "",
@@ -113,6 +134,15 @@
   "validation": {
     "status": "pass",
     "warnings": [],
-    "errors": []
+    "errors": [],
+    "flags": {
+      "used_founder": false,
+      "used_audiences": false,
+      "used_insiders": false,
+      "used_intro_patterns": false,
+      "used_outro_templates": false,
+      "used_cta_closers": false,
+      "emit_items_applied": false
+    }
   }
 }
