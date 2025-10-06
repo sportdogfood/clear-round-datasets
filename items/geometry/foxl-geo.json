@@ -6,8 +6,8 @@
   "types": "[\"travel_agency\",\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJ8UgfrYVaw4gRQo_I6AKhoCM",
   "name": "Fox Lea Farm",
-  "lat": "-82.3960814",
-  "lng": "27.1181344",
+  "lng": "-82.3960814",
+  "lat": "27.1181344",
   "geo_type_uuid": "travel_agency, point_of_interest, establishment",
   "geo_type_ms": "travel_agency, point_of_interest, establishment",
   "geo_uids": [
@@ -22,11 +22,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "foxl-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/foxl-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/foxl-geo.json",
   "output_uids": [],
   "venue_uuid": "foxl-venue",
   "dine_uuid": "foxl-dine",
   "stay_uuid": "foxl-stay",
   "ess_uuid": "foxl-essentials",
-  "place_uid": "ChIJ8UgfrYVaw4gRQo_I6AKhoCM"
+  "place_uid": "ChIJ8UgfrYVaw4gRQo_I6AKhoCM",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/foxl-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/foxl-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
