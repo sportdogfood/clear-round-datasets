@@ -1,0 +1,586 @@
+Purpose: Structure Runner scaffolds blog files. It never edits post body JSON.
+Scope: Build/maintain viewer pages, indices, feeds, sitemap, and manifest entries.
+
+TRIGGER CONTRACT (message JSON):
+{
+  "add_post": "<content JSON URL>",
+  "assets_uri": "<assets JSON URL>",
+  "canonical_base": "https://blog.clearroundtravel.com",
+  "allow_urls": [
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/capc-cap-challenge-ev.json",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/capc-venue.json",
+    "https://www.pgparks.com"
+  ]
+}
+Notes:
+- Use only HTTPS URLs listed in allow_urls plus the two trigger URLs.
+- canonical_base defaults to https://blog.clearroundtravel.com when omitted.
+
+PATH INVARIANTS
+- Storage: docs/blogs/{venue}-blogs-{year}/{slug}/
+- slug = {venue}-blog-{YYYY-MM-DD} (date from filename of content JSON)
+- Post files inside slug folder:
+  - index.html
+  - <verbatim content JSON filename, not renamed>
+
+RATINGS & DISCIPLINE
+- If event.rating_uids present: map to sanctioning fields and add human labels to tags.
+- If rating_uids missing/empty: omit rating fields entirely.
+- Discipline: include only if provided and non-empty in event data; else omit.
+
+ASSETS
+- Assets JSON keys like hero/stay/dine/locale/essentials.
+- src values must be site-root absolute paths (e.g., /assets/images/…).
+- alt must be preserved.
+
+MANIFEST UPSERT
+- File: docs/blogs/manifest.json (array)
+- Key: slug
+- Upsert fields:
+  slug, title, date, year, month_num, month_name, season, path, json, image,
+  venue, city, state, country, tags[], rating_uids[], rating_labels[],
+  sanctioning, fei_level, usef_premier, discipline[]
+- title from content.seo.section_title fallback seo.open_graph_title
+- image from assets.hero.src if available
+- tags include: venue, state, month_uid, season_uid, rating labels, keywords, audience_uids, insider_uids
+
+INTERACTIVES
+- Recent: newest 4 by date
+- Next/Prev: neighbors around current slug when sorted desc
+- Month, Season, Venue reels: filter manifest by derived fields
+
+OUTPUTS ON add_post
+1) docs/blogs/{venue}-blogs-{year}/{slug}/index.html (from templates/blog.index.html.tmpl)
+2) docs/blogs/manifest.json (upsert)
+3) docs/blogs/index.html (from templates/blogs.index.html.tmpl)
+4) docs/blogs/{year}/index.html (from templates/year.index.html.tmpl)
+5) docs/blogs/rss.xml (from templates/rss.xml.tmpl)
+6) docs/sitemap.xml (from templates/sitemap.xml.tmpl)
+
+REBUILD MODES
+- remove_post: delete slug folder, remove manifest entry, rebuild listing/year/rss/sitemap
+- rebuild_all: rebuild listing/year/rss/sitemap from manifest only
+
+VALIDATION
+- HEAD/GET for content and assets URIs must be 200 and JSON parseable
+- Secondary fetches restricted to allow_urls
+- Manifest must validate against manifest.schema.json
+
+IDEMPOTENCE
+- Deterministic content; avoid timestamps in generated files
+- Replace files atomically
+
+RETURN PAYLOAD
+- JSON with "writes", "deletes", "trace" arrays describing all operations
+
+=== items/runners/structure/policy.json ===
+{
+  "name": "Structure Runner Policy",
+  "version": "1.0.0",
+  "rules": {
+    "scaffold_only": true,
+    "never_edit_post_json": true,
+    "allow_trigger_allowlist_only": true,
+    "site_root_assets_only": true,
+    "manifest_upsert_key": "slug",
+    "derive_date_from_filename": true,
+    "emit_year_archives": true,
+    "emit_rss": true,
+    "emit_sitemap": true,
+    "neighbors_nav": true
+  },
+  "defaults": {
+    "canonical_base": "https://blog.clearroundtravel.com",
+    "recent_count": 4,
+    "rss_item_limit": 20
+  }
+}
+
+=== items/runners/structure/manifest.schema.json ===
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Blogs Manifest",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["slug","title","date","year","path","json"],
+    "properties": {
+      "slug": { "type": "string", "pattern": "^[a-z0-9-]+-blog-\\d{4}-\\d{2}-\\d{2}$" },
+      "title": { "type": "string" },
+      "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+      "year": { "type": "integer", "minimum": 1900 },
+      "month_num": { "type": "string", "pattern": "^(0[1-9]|1[0-2])$" },
+      "month_name": { "type": "string" },
+      "season": { "type": "string", "enum": ["Winter","Spring","Summer","Fall"] },
+      "path": { "type": "string" },
+      "json": { "type": "string" },
+      "image": { "type": "string" },
+      "venue": { "type": "string" },
+      "city": { "type": "string" },
+      "state": { "type": "string" },
+      "country": { "type": "string" },
+      "tags": { "type": "array", "items": { "type": "string" } },
+      "rating_uids": { "type": "array", "items": { "type": "string" } },
+      "rating_labels": { "type": "array", "items": { "type": "string" } },
+      "sanctioning": { "type": "string", "enum": ["FEI","USEF","FEI+USEF"] },
+      "fei_level": { "type": ["integer","null"], "minimum": 1, "maximum": 5 },
+      "usef_premier": { "type": ["string","null"], "enum": ["A","AA",null] },
+      "discipline": { "type": "array", "items": { "type": "string", "enum": ["hunter","jumper","eq"] } }
+    },
+    "additionalProperties": true
+  }
+}
+
+=== items/runners/structure/gold.run.json ===
+{
+  "writes": [
+    {"path":"docs/blogs/capc-blogs-2025/capc-blog-2025-10-06/index.html","content":"<compiled from template>"},
+    {"path":"docs/blogs/manifest.json","merge":"upsert","key":"slug","entry":{
+      "slug":"capc-blog-2025-10-06",
+      "title":"Capital Challenge — Stay, Dine, Essentials",
+      "date":"2025-10-06",
+      "year":2025,
+      "month_num":"10",
+      "month_name":"October",
+      "season":"Fall",
+      "path":"/blogs/capc-blog-2025-10-06/",
+      "json":"/blogs/capc-blogs-2025/capc-blog-2025-10-06/capc-blog-content-2025-10-06.json",
+      "image":"/assets/images/capc-2025-10-06-hero.jpg",
+      "venue":"capc",
+      "city":"Upper Marlboro",
+      "state":"MD",
+      "country":"USA",
+      "tags":["capc","md","fall","oct","FEI","CSI3*"],
+      "rating_uids":["fei-csi2","fei-csi3"],
+      "rating_labels":["CSI2*","CSI3*"],
+      "sanctioning":"FEI",
+      "fei_level":3
+    }},
+    {"path":"docs/blogs/index.html","content":"<compiled from template>"},
+    {"path":"docs/blogs/2025/index.html","content":"<compiled from template>"},
+    {"path":"docs/blogs/rss.xml","content":"<compiled from template>"},
+    {"path":"docs/sitemap.xml","content":"<compiled from template>"}
+  ],
+  "deletes": [],
+  "trace": [
+    {"op":"fetch","uri":"https://raw.githubusercontent.com/.../capc-blog-content-2025-10-06.json","status":200},
+    {"op":"fetch","uri":"https://raw.githubusercontent.com/.../capc-blog-assets-2025-10-06.json","status":200},
+    {"op":"fetch_allow","uri":"https://raw.githubusercontent.com/.../items/events/capc-cap-challenge-ev.json","status":200},
+    {"op":"fetch_allow","uri":"https://raw.githubusercontent.com/.../items/venues/capc-venue.json","status":200}
+  ]
+}
+
+=== items/runners/structure/templates/blog.index.html.tmpl ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loading…</title>
+<link rel="canonical" href="{{CANONICAL}}">
+<meta id="og-title" property="og:title" content="">
+<meta id="og-desc"  property="og:description" content="">
+<meta id="og-type"  property="og:type" content="article">
+<meta id="og-url"   property="og:url" content="">
+<meta id="tw-card"  name="twitter:card" content="summary_large_image">
+<meta id="meta-desc" name="description" content="">
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="post-config" type="application/json">{ "json": "{{JSON_PATH}}", "assets": "{{ASSETS_PATH}}", "slug": "{{SLUG}}" }</script>
+</head>
+<body class="bg-white text-gray-900">
+<main class="max-w-3xl mx-auto px-4 py-10">
+  <article class="prose prose-neutral lg:prose-lg">
+    <h1 id="title" class="!mb-2"></h1>
+    <img id="hero" alt="" class="w-full rounded-2xl mb-6 hidden" />
+    <p id="intro" class="lead"></p>
+
+    <section><h2 id="stay-title"></h2><img id="stay-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="stay-p"></p><ul id="stay-list" class="list-disc pl-6"></ul><p id="stay-cta" class="italic"></p></section>
+    <section><h2 id="dine-title"></h2><img id="dine-img" alt="" class="w-full rounded-xl mb-3 hidden"/><h3>AM</h3><p id="dine-am"></p><h3>Dinner</h3><p id="dine-dinner"></p><ul id="dine-list" class="list-disc pl-6"></ul><p id="dine-cta" class="italic"></p></section>
+    <section><h2 id="locale-title"></h2><img id="locale-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="locale-p"></p></section>
+    <section><h2 id="essentials-title"></h2><img id="essentials-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="essentials-p"></p><ul id="essentials-list" class="list-disc pl-6"></ul><p id="essentials-cta" class="italic"></p></section>
+
+    <hr class="my-8" />
+    <p id="outro" class="text-gray-700"></p>
+
+    <div id="tags" class="mt-6 flex flex-wrap gap-2"></div>
+    <div id="neighbors" class="mt-8 flex justify-between text-sm"></div>
+  </article>
+  <nav class="mt-10"><a href="/blogs/" class="text-blue-600 underline">All blogs</a></nav>
+</main>
+<script>
+const cfg=JSON.parse(document.getElementById('post-config').textContent);
+const setImg=(img,src,alt)=>{if(src){img.src=src;img.alt=alt||'';img.classList.remove('hidden')}};
+Promise.all([fetch(cfg.json).then(r=>r.json()), cfg.assets?fetch(cfg.assets).then(r=>r.json()).catch(()=>({})):Promise.resolve({}), fetch('/blogs/manifest.json').then(r=>r.json()).catch(()=>[])])
+.then(([d,a,m])=>{
+  const title=d.seo?.section_title||d.seo?.open_graph_title||'Blog';
+  document.title=title;
+  document.querySelector('link[rel=canonical]').href="{{CANONICAL}}";
+  document.getElementById('og-title').content=d.seo?.open_graph_title||title;
+  document.getElementById('og-desc').content=d.seo?.open_graph_description||d.seo?.meta_description||'';
+  document.getElementById('meta-desc').content=d.seo?.meta_description||'';
+  document.getElementById('og-url').content=location.href;
+
+  document.getElementById('title').textContent=title;
+  document.getElementById('intro').textContent=d.hello?.intro||'';
+  document.getElementById('outro').textContent=d.hello?.outro||'';
+
+  const add=(arr,ul,label='name')=>Array.isArray(arr)&&arr.forEach(it=>{const li=document.createElement('li');const a=document.createElement('a');a.href=it.url;a.textContent=it[label]||it.name||it.type;a.target='_blank';a.rel='noopener';a.className='text-blue-600 underline';li.appendChild(a);if(it.alt){const s=document.createElement('span');s.textContent=` — ${it.alt}`;li.appendChild(s)};ul.appendChild(li)});
+  const set=(id,t,f)=>document.getElementById(id).textContent=t||f||'';
+
+  set('stay-title',d.stay?.title,'Stay'); set('stay-p',d.stay?.paragraph,''); add(d.stay?.items,document.getElementById('stay-list')); set('stay-cta',d.stay?.cta,'');
+  set('dine-title',d.dine?.title,'Dine'); set('dine-am',d.dine?.am,''); set('dine-dinner',d.dine?.dinner,''); add(d.dine?.items,document.getElementById('dine-list')); set('dine-cta',d.dine?.cta,'');
+  set('locale-title',d.locale?.title,'Locale'); set('locale-p',d.locale?.paragraph,'');
+  set('essentials-title',d.essentials?.title,'Essentials'); set('essentials-p',d.essentials?.paragraph,''); add(d.essentials?.items,document.getElementById('essentials-list')); set('essentials-cta',d.essentials?.cta,'');
+
+  setImg(document.getElementById('hero'), a.hero?.src, a.hero?.alt);
+  setImg(document.getElementById('stay-img'), a.stay?.src, a.stay?.alt);
+  setImg(document.getElementById('dine-img'), a.dine?.src, a.dine?.alt);
+  setImg(document.getElementById('locale-img'), a.locale?.src, a.locale?.alt);
+  setImg(document.getElementById('essentials-img'), a.essentials?.src, a.essentials?.alt);
+
+  // Tags from manifest for this slug
+  const me = m.find(x=>x.slug===cfg.slug);
+  if(me && Array.isArray(me.tags)){ const wrap=document.getElementById('tags'); me.tags.forEach(t=>{const b=document.createElement('span'); b.className='text-xs border rounded-full px-2 py-1'; b.textContent=t; wrap.appendChild(b)}) }
+
+  // Neighbors
+  if(m.length){ const sorted=[...m].sort((a,b)=>(b.date||'').localeCompare(a.date||'')); const i=sorted.findIndex(x=>x.slug===cfg.slug);
+    const prev=sorted[i-1], next=sorted[i+1]; const n=document.getElementById('neighbors');
+    n.innerHTML=`${next?`<a class="underline" href="${next.path}">← Next: ${next.title}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title} →</a>`:''}`;
+  }
+});
+</script>
+</body>
+</html>
+
+=== items/runners/structure/templates/blogs.index.html.tmpl ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blogs</title><link rel="canonical" href="https://blog.clearroundtravel.com/blogs/">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+<main class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs</h1>
+  <div class="mb-4 flex gap-3 items-end">
+    <div><label class="text-sm">Year</label><select id="year" class="border rounded px-2 py-1"><option value="">All</option></select></div>
+    <div><label class="text-sm">Season</label><select id="season" class="border rounded px-2 py-1"><option value="">All</option><option>Winter</option><option>Spring</option><option>Summer</option><option>Fall</option></select></div>
+    <div><label class="text-sm">Venue</label><input id="venue" class="border rounded px-2 py-1" placeholder="e.g., capc"></div>
+  </div>
+  <div id="recent" class="mb-6"></div>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('./manifest.json').then(r=>r.json()).then(posts=>{
+  const ys=[...new Set(posts.map(p=>p.year).filter(Boolean))].sort((a,b)=>b-a);
+  const sel=document.getElementById('year'); ys.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o)});
+  const season=document.getElementById('season'); const venue=document.getElementById('venue');
+  const list=document.getElementById('list'); const recent=document.getElementById('recent');
+
+  const card=(p)=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
+    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
+    <div class="text-sm text-gray-600">${p.date||''}</div>
+    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+    <div class="mt-2 text-xs text-gray-500">${[p.season,p.venue,p.state].filter(Boolean).join(" • ")}</div>
+  </a>`;
+
+  const render=()=>{
+    const fy=sel.value, fs=season.value, fv=venue.value.trim().toLowerCase();
+    let data=[...posts];
+    if(fy) data=data.filter(p=>String(p.year)===fy);
+    if(fs) data=data.filter(p=>p.season===fs);
+    if(fv) data=data.filter(p=>(p.venue||'').toLowerCase().includes(fv));
+    data.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    list.innerHTML=data.map(card).join('');
+
+    const rec=[...posts].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
+    recent.innerHTML = `<div class="text-sm text-gray-600 mb-2">Recent</div>
+      <div class="grid gap-4 md:grid-cols-4">${rec.map(p=>`<a href="${p.path}" class="block text-sm underline">${p.title||p.slug}</a>`).join('')}</div>`;
+  };
+  sel.onchange=render; season.onchange=render; venue.oninput=render; render();
+});
+</script>
+</body>
+</html>
+
+=== items/runners/structure/templates/year.index.html.tmpl ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blogs — {{YEAR}}</title>
+<link rel="canonical" href="https://blog.clearroundtravel.com/blogs/{{YEAR}}/">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+<main class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs — {{YEAR}}</h1>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('/blogs/manifest.json').then(r=>r.json()).then(posts=>{
+  const yr='{{YEAR}}';
+  const list=document.getElementById('list');
+  const data=posts.filter(p=>String(p.year)===yr).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  list.innerHTML=data.map(p=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
+    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
+    <div class="text-sm text-gray-600">${p.date||''}</div>
+    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+  </a>`).join('');
+});
+</script>
+</body>
+</html>
+
+=== items/runners/structure/templates/rss.xml.tmpl ===
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Clear Round Travel — Blogs</title>
+    <link>https://blog.clearroundtravel.com/blogs/</link>
+    <description>Event travel briefs</description>
+    <language>en-us</language>
+{{#items}}
+    <item>
+      <title>{{title}}</title>
+      <link>https://blog.clearroundtravel.com{{path}}</link>
+      <guid isPermaLink="true">https://blog.clearroundtravel.com{{path}}</guid>
+      <pubDate>{{pubDate}}</pubDate>
+      <description><![CDATA[{{description}}]]></description>
+    </item>
+{{/items}}
+  </channel>
+</rss>
+
+=== items/runners/structure/templates/sitemap.xml.tmpl ===
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://blog.clearroundtravel.com/blogs/</loc></url>
+{{#years}}
+  <url><loc>https://blog.clearroundtravel.com/blogs/{{year}}/</loc></url>
+{{/years}}
+{{#posts}}
+  <url><loc>https://blog.clearroundtravel.com{{path}}</loc></url>
+{{/posts}}
+</urlset>
+
+=== docs/blogs/manifest.json ===
+[
+  {
+    "slug": "capc-blog-2025-01-01",
+    "title": "Capital Challenge — January Planning Brief",
+    "date": "2025-01-01",
+    "year": 2025,
+    "month_num": "01",
+    "month_name": "January",
+    "season": "Winter",
+    "path": "/blogs/capc-blog-2025-01-01/",
+    "json": "/blogs/capc-blogs-2025/capc-blog-2025-01-01/capc-event-2025-01-01.json",
+    "image": "/assets/images/capc-2025-01-01-hero.jpg",
+    "venue": "capc",
+    "city": "Upper Marlboro",
+    "state": "MD",
+    "country": "USA",
+    "tags": ["capc","md","winter","jan"]
+  },
+  {
+    "slug": "capc-blog-2025-05-01",
+    "title": "Capital Challenge — May Brief",
+    "date": "2025-05-01",
+    "year": 2025,
+    "month_num": "05",
+    "month_name": "May",
+    "season": "Spring",
+    "path": "/blogs/capc-blog-2025-05-01/",
+    "json": "/blogs/capc-blogs-2025/capc-blog-2025-05-01/capc-blog-2025-05-01.json",
+    "image": "/assets/images/capc-2025-05-01-hero.jpg",
+    "venue": "capc",
+    "city": "Upper Marlboro",
+    "state": "MD",
+    "country": "USA",
+    "tags": ["capc","md","spring","may"]
+  },
+  {
+    "slug": "capc-blog-2025-10-06",
+    "title": "Capital Challenge — Stay, Dine, Essentials",
+    "date": "2025-10-06",
+    "year": 2025,
+    "month_num": "10",
+    "month_name": "October",
+    "season": "Fall",
+    "path": "/blogs/capc-blog-2025-10-06/",
+    "json": "/blogs/capc-blogs-2025/capc-blog-2025-10-06/capc-blog-content-2025-10-06.json",
+    "image": "/assets/images/capc-2025-10-06-hero.jpg",
+    "venue": "capc",
+    "city": "Upper Marlboro",
+    "state": "MD",
+    "country": "USA",
+    "rating_uids": ["fei-csi2","fei-csi3"],
+    "rating_labels": ["CSI2*","CSI3*"],
+    "sanctioning": "FEI",
+    "fei_level": 3,
+    "tags": ["capc","md","fall","oct","FEI","CSI2*","CSI3*"]
+  },
+  {
+    "slug": "capc-blog-2026-10-01",
+    "title": "Capital Challenge — 2026 Preview",
+    "date": "2026-10-01",
+    "year": 2026,
+    "month_num": "10",
+    "month_name": "October",
+    "season": "Fall",
+    "path": "/blogs/capc-blog-2026-10-01/",
+    "json": "/blogs/capc-blogs-2026/capc-blog-2026-10-01/capc-event-2026-10-01.json",
+    "image": "/assets/images/capc-2026-10-01-hero.jpg",
+    "venue": "capc",
+    "city": "Upper Marlboro",
+    "state": "MD",
+    "country": "USA",
+    "tags": ["capc","md","fall","oct"]
+  }
+]
+
+=== docs/blogs/index.html ===
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blogs</title><link rel="canonical" href="https://blog.clearroundtravel.com/blogs/">
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-white text-gray-900">
+<main class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs</h1>
+  <div class="mb-4 flex gap-3 items-end">
+    <div><label class="text-sm">Year</label><select id="year" class="border rounded px-2 py-1"><option value="">All</option></select></div>
+    <div><label class="text-sm">Season</label><select id="season" class="border rounded px-2 py-1"><option value="">All</option><option>Winter</option><option>Spring</option><option>Summer</option><option>Fall</option></select></div>
+    <div><label class="text-sm">Venue</label><input id="venue" class="border rounded px-2 py-1" placeholder="e.g., capc"></div>
+  </div>
+  <div id="recent" class="mb-6"></div>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('./manifest.json').then(r=>r.json()).then(posts=>{
+  const ys=[...new Set(posts.map(p=>p.year).filter(Boolean))].sort((a,b)=>b-a);
+  const sel=document.getElementById('year'); ys.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o)});
+  const season=document.getElementById('season'); const venue=document.getElementById('venue');
+  const list=document.getElementById('list'); const recent=document.getElementById('recent');
+
+  const card=(p)=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
+    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
+    <div class="text-sm text-gray-600">${p.date||''}</div>
+    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+    <div class="mt-2 text-xs text-gray-500">${[p.season,p.venue,p.state].filter(Boolean).join(" • ")}</div>
+  </a>`;
+
+  const render=()=>{
+    const fy=sel.value, fs=season.value, fv=venue.value.trim().toLowerCase();
+    let data=[...posts];
+    if(fy) data=data.filter(p=>String(p.year)===fy);
+    if(fs) data=data.filter(p=>p.season===fs);
+    if(fv) data=data.filter(p=>(p.venue||'').toLowerCase().includes(fv));
+    data.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    list.innerHTML=data.map(card).join('');
+
+    const rec=[...posts].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
+    recent.innerHTML = `<div class="text-sm text-gray-600 mb-2">Recent</div>
+      <div class="grid gap-4 md:grid-cols-4">${rec.map(p=>`<a href="${p.path}" class="block text-sm underline">${p.title||p.slug}</a>`).join('')}</div>`;
+  };
+  sel.onchange=render; season.onchange=render; venue.oninput=render; render();
+});
+</script>
+</body></html>
+
+=== docs/blogs/2025/index.html ===
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blogs — 2025</title>
+<link rel="canonical" href="https://blog.clearroundtravel.com/blogs/2025/">
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-white text-gray-900">
+<main class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs — 2025</h1>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('/blogs/manifest.json').then(r=>r.json()).then(posts=>{
+  const data=posts.filter(p=>String(p.year)==='2025').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('list').innerHTML=data.map(p=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
+    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
+    <div class="text-sm text-gray-600">${p.date||''}</div>
+    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+  </a>`).join('');
+});
+</script>
+</body></html>
+
+=== docs/blogs/2026/index.html ===
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blogs — 2026</title>
+<link rel="canonical" href="https://blog.clearroundtravel.com/blogs/2026/">
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-white text-gray-900">
+<main class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs — 2026</h1>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('/blogs/manifest.json').then(r=>r.json()).then(posts=>{
+  const data=posts.filter(p=>String(p.year)==='2026').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('list').innerHTML=data.map(p=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
+    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
+    <div class="text-sm text-gray-600">${p.date||''}</div>
+    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+  </a>`).join('');
+});
+</script>
+</body></html>
+
+=== docs/blogs/rss.xml ===
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Clear Round Travel — Blogs</title>
+    <link>https://blog.clearroundtravel.com/blogs/</link>
+    <description>Event travel briefs</description>
+    <language>en-us</language>
+    <item>
+      <title>Capital Challenge — 2026 Preview</title>
+      <link>https://blog.clearroundtravel.com/blogs/capc-blog-2026-10-01/</link>
+      <guid isPermaLink="true">https://blog.clearroundtravel.com/blogs/capc-blog-2026-10-01/</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 -0000</pubDate>
+      <description><![CDATA[Preview for the 2026 Capital Challenge schedule.]]></description>
+    </item>
+    <item>
+      <title>Capital Challenge — Stay, Dine, Essentials</title>
+      <link>https://blog.clearroundtravel.com/blogs/capc-blog-2025-10-06/</link>
+      <guid isPermaLink="true">https://blog.clearroundtravel.com/blogs/capc-blog-2025-10-06/</guid>
+      <pubDate>Mon, 06 Oct 2025 00:00:00 -0000</pubDate>
+      <description><![CDATA[Concise guide for Capital Challenge Horse Show in Upper Marlboro, MD]]></description>
+    </item>
+    <item>
+      <title>Capital Challenge — May Brief</title>
+      <link>https://blog.clearroundtravel.com/blogs/capc-blog-2025-05-01/</link>
+      <guid isPermaLink="true">https://blog.clearroundtravel.com/blogs/capc-blog-2025-05-01/</guid>
+      <pubDate>Thu, 01 May 2025 00:00:00 -0000</pubDate>
+      <description><![CDATA[May planning notes for Capital Challenge attendance.]]></description>
+    </item>
+    <item>
+      <title>Capital Challenge — January Planning Brief</title>
+      <link>https://blog.clearroundtravel.com/blogs/capc-blog-2025-01-01/</link>
+      <guid isPermaLink="true">https://blog.clearroundtravel.com/blogs/capc-blog-2025-01-01/</guid>
+      <pubDate>Wed, 01 Jan 2025 00:00:00 -0000</pubDate>
+      <description><![CDATA[January planning notes for Capital Challenge.]]></description>
+    </item>
+  </channel>
+</rss>
+
+=== docs/sitemap.xml ===
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://blog.clearroundtravel.com/blogs/</loc></url>
+  <url><loc>https://blog.clearroundtravel.com/blogs/2025/</loc></url>
+  <url><loc>https://blog.clearroundtravel.com/blogs/2026/</loc></url>
+  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2025-01-01/</loc></url>
+  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2025-05-01/</loc></url>
+  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2025-10-06/</loc></url>
+  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2026-10-01/</loc></url>
+</urlset>
