@@ -6,8 +6,8 @@
   "types": "[\"tourist_attraction\",\"travel_agency\",\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJBxErc_d_6IgRZIOyCcrO1XE",
   "name": "Farm Tours of Ocala",
-  "lat": "-82.25154649999999",
-  "lng": "29.2056571",
+  "lng": "-82.25154649999999",
+  "lat": "29.2056571",
   "geo_type_uuid": "tourist_attraction, travel_agency, point_of_interest, establishment",
   "geo_type_ms": "point_of_interest, establishment",
   "geo_uids": [
@@ -21,11 +21,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "wcoc-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/wcoc-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoc-geo.json",
   "output_uids": [],
   "venue_uuid": "wcoc-venue",
   "dine_uuid": "wcoc-dine",
   "stay_uuid": "wcoc-stay",
   "ess_uuid": "wcoc-essentials",
-  "place_uid": "ChIJBxErc_d_6IgRZIOyCcrO1XE"
+  "place_uid": "ChIJBxErc_d_6IgRZIOyCcrO1XE",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoc-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/wcoc-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
