@@ -1,80 +1,297 @@
-
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Loading…</title>
-<link rel="canonical" href="{{CANONICAL}}">
-<meta id="og-title" property="og:title" content="">
-<meta id="og-desc"  property="og:description" content="">
-<meta id="og-type"  property="og:type" content="article">
-<meta id="og-url"   property="og:url" content="">
-<meta id="tw-card"  name="twitter:card" content="summary_large_image">
-<meta id="meta-desc" name="description" content="">
-<script src="https://cdn.tailwindcss.com"></script>
-<script id="post-config" type="application/json">{ "json": "{{JSON_PATH}}", "assets": "{{ASSETS_PATH}}", "slug": "{{SLUG}}" }</script>
+  <meta charset="utf-8" />
+  <title>Loading…</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="canonical" href="{{CANONICAL}}">
+  <meta id="og-title" property="og:title" content="">
+  <meta id="og-desc"  property="og:description" content="">
+  <meta id="og-type"  property="og:type" content="article">
+  <meta id="og-url"   property="og:url" content="">
+  <meta id="tw-card"  name="twitter:card" content="summary_large_image">
+  <meta id="meta-desc" name="description" content="">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Configure exact JSON paths -->
+  <script id="post-config" type="application/json">
+    { "slug": "{{SLUG}}", "json": "{{JSON_PATH}}", "assets": "{{ASSETS_PATH}}" }
+  </script>
 </head>
 <body class="bg-white text-gray-900">
-<main class="max-w-3xl mx-auto px-4 py-10">
-  <article class="prose prose-neutral lg:prose-lg">
-    <h1 id="title" class="!mb-2"></h1>
-    <img id="hero" alt="" class="w-full rounded-2xl mb-6 hidden" />
-    <p id="intro" class="lead"></p>
+  <main class="max-w-3xl mx-auto px-4 py-10">
+    <article>
+      <!-- Title + Hero -->
+      <header class="mb-8">
+        <h1 id="title" class="text-4xl md:text-5xl font-semibold tracking-tight mb-4"></h1>
+        <img id="hero" alt="" class="w-full rounded-2xl mb-4 hidden" />
+        <p id="intro" class="text-lg leading-relaxed text-gray-800"></p>
+      </header>
 
-    <section><h2 id="stay-title"></h2><img id="stay-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="stay-p"></p><ul id="stay-list" class="list-disc pl-6"></ul><p id="stay-cta" class="italic"></p></section>
-    <section><h2 id="dine-title"></h2><img id="dine-img" alt="" class="w-full rounded-xl mb-3 hidden"/><h3>AM</h3><p id="dine-am"></p><h3>Dinner</h3><p id="dine-dinner"></p><ul id="dine-list" class="list-disc pl-6"></ul><p id="dine-cta" class="italic"></p></section>
-    <section><h2 id="locale-title"></h2><img id="locale-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="locale-p"></p></section>
-    <section><h2 id="essentials-title"></h2><img id="essentials-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="essentials-p"></p><ul id="essentials-list" class="list-disc pl-6"></ul><p id="essentials-cta" class="italic"></p></section>
+      <!-- Stay -->
+      <section class="mt-12 border-t pt-8">
+        <h2 id="stay-title" class="text-2xl font-semibold tracking-tight mb-3">Stay</h2>
+        <img id="stay-img" alt="" class="w-full rounded-xl mb-4 hidden" />
+        <p id="stay-p" class="text-gray-800 leading-relaxed mb-3"></p>
+        <ul id="stay-list" class="list-disc pl-6 space-y-1"></ul>
+        <p id="stay-cta" class="italic text-gray-700 mt-3"></p>
+      </section>
 
-    <hr class="my-8" />
-    <p id="outro" class="text-gray-700"></p>
+      <!-- Dine -->
+      <section class="mt-12 border-t pt-8">
+        <h2 id="dine-title" class="text-2xl font-semibold tracking-tight mb-3">Dine</h2>
+        <img id="dine-img" alt="" class="w-full rounded-xl mb-4 hidden" />
+        <h3 class="text-lg font-medium mt-4 mb-2">AM</h3>
+        <p id="dine-am" class="text-gray-800 leading-relaxed mb-3"></p>
+        <h3 class="text-lg font-medium mt-6 mb-2">Dinner</h3>
+        <p id="dine-dinner" class="text-gray-800 leading-relaxed mb-3"></p>
+        <ul id="dine-list" class="list-disc pl-6 space-y-1"></ul>
+        <p id="dine-cta" class="italic text-gray-700 mt-3"></p>
+      </section>
 
-    <div id="tags" class="mt-6 flex flex-wrap gap-2"></div>
-    <div id="neighbors" class="mt-8 flex justify-between text-sm"></div>
-  </article>
-  <nav class="mt-10"><a href="/blogs/" class="text-blue-600 underline">All blogs</a></nav>
-</main>
-<script>
-const cfg=JSON.parse(document.getElementById('post-config').textContent);
-const setImg=(img,src,alt)=>{if(src){img.src=src;img.alt=alt||'';img.classList.remove('hidden')}};
-Promise.all([fetch(cfg.json).then(r=>r.json()), cfg.assets?fetch(cfg.assets).then(r=>r.json()).catch(()=>({})):Promise.resolve({}), fetch('/blogs/manifest.json').then(r=>r.json()).catch(()=>[])])
-.then(([d,a,m])=>{
-  const title=d.seo?.section_title||d.seo?.open_graph_title||'Blog';
-  document.title=title;
-  document.querySelector('link[rel=canonical]').href="{{CANONICAL}}";
-  document.getElementById('og-title').content=d.seo?.open_graph_title||title;
-  document.getElementById('og-desc').content=d.seo?.open_graph_description||d.seo?.meta_description||'';
-  document.getElementById('meta-desc').content=d.seo?.meta_description||'';
-  document.getElementById('og-url').content=location.href;
+      <!-- Locale -->
+      <section class="mt-12 border-t pt-8">
+        <h2 id="locale-title" class="text-2xl font-semibold tracking-tight mb-3">Locale</h2>
+        <img id="locale-img" alt="" class="w-full rounded-xl mb-4 hidden" />
+        <p id="locale-p" class="text-gray-800 leading-relaxed"></p>
+      </section>
 
-  document.getElementById('title').textContent=title;
-  document.getElementById('intro').textContent=d.hello?.intro||'';
-  document.getElementById('outro').textContent=d.hello?.outro||'';
+      <!-- Essentials -->
+      <section class="mt-12 border-t pt-8">
+        <h2 id="essentials-title" class="text-2xl font-semibold tracking-tight mb-3">Essentials</h2>
+        <img id="essentials-img" alt="" class="w-full rounded-xl mb-4 hidden" />
+        <p id="essentials-p" class="text-gray-800 leading-relaxed mb-3"></p>
+        <ul id="essentials-list" class="list-disc pl-6 space-y-1"></ul>
+        <p id="essentials-cta" class="italic text-gray-700 mt-3"></p>
+      </section>
 
-  const add=(arr,ul,label='name')=>Array.isArray(arr)&&arr.forEach(it=>{const li=document.createElement('li');const a=document.createElement('a');a.href=it.url;a.textContent=it[label]||it.name||it.type;a.target='_blank';a.rel='noopener';a.className='text-blue-600 underline';li.appendChild(a);if(it.alt){const s=document.createElement('span');s.textContent=` — ${it.alt}`;li.appendChild(s)};ul.appendChild(li)});
-  const set=(id,t,f)=>document.getElementById(id).textContent=t||f||'';
+      <!-- Outro -->
+      <section class="mt-12 border-t pt-8">
+        <p id="outro" class="text-gray-800 leading-relaxed"></p>
+      </section>
 
-  set('stay-title',d.stay?.title,'Stay'); set('stay-p',d.stay?.paragraph,''); add(d.stay?.items,document.getElementById('stay-list')); set('stay-cta',d.stay?.cta,'');
-  set('dine-title',d.dine?.title,'Dine'); set('dine-am',d.dine?.am,''); set('dine-dinner',d.dine?.dinner,''); add(d.dine?.items,document.getElementById('dine-list')); set('dine-cta',d.dine?.cta,'');
-  set('locale-title',d.locale?.title,'Locale'); set('locale-p',d.locale?.paragraph,'');
-  set('essentials-title',d.essentials?.title,'Essentials'); set('essentials-p',d.essentials?.paragraph,''); add(d.essentials?.items,document.getElementById('essentials-list')); set('essentials-cta',d.essentials?.cta,'');
+      <!-- Tags + Neighbors -->
+      <section class="mt-10">
+        <div id="tags" class="flex flex-wrap gap-2"></div>
+        <div id="neighbors" class="mt-6 flex justify-between text-sm text-blue-700 underline"></div>
+      </section>
+    </article>
 
-  setImg(document.getElementById('hero'), a.hero?.src, a.hero?.alt);
-  setImg(document.getElementById('stay-img'), a.stay?.src, a.stay?.alt);
-  setImg(document.getElementById('dine-img'), a.dine?.src, a.dine?.alt);
-  setImg(document.getElementById('locale-img'), a.locale?.src, a.locale?.alt);
-  setImg(document.getElementById('essentials-img'), a.essentials?.src, a.essentials?.alt);
+    <nav class="mt-12">
+      <a href="/blogs/" class="text-blue-700 underline">All blogs</a>
+    </nav>
+  </main>
 
-  // Tags from manifest for this slug
-  const me = m.find(x=>x.slug===cfg.slug);
-  if(me && Array.isArray(me.tags)){ const wrap=document.getElementById('tags'); me.tags.forEach(t=>{const b=document.createElement('span'); b.className='text-xs border rounded-full px-2 py-1'; b.textContent=t; wrap.appendChild(b)}) }
+  <script>
+    // Minimal sanitizer: escape HTML then replace Markdown links [label](url) with safe anchors (http/https only)
+    const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeUrl = (u) => /^https?:\/\//i.test(u) ? u : '#';
+    const mdInline = (s='') => {
+      const esc = escapeHtml(String(s));
+      return esc.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
+        `<a href="${safeUrl(url.trim())}" target="_blank" rel="noopener" class="underline text-blue-700">${escapeHtml(label)}</a>`
+      ).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+    };
+    const setHTML = (id, s) => { const el=document.getElementById(id); if(el){ el.innerHTML = `<p>${mdInline(s||'')}</p>`; } };
+    const setText = (id, v, f='') => { const el=document.getElementById(id); if (el) el.textContent = v || f; };
 
-  // Neighbors
-  if(m.length){ const sorted=[...m].sort((a,b)=>(b.date||'').localeCompare(a.date||'')); const i=sorted.findIndex(x=>x.slug===cfg.slug);
-    const prev=sorted[i-1], next=sorted[i+1]; const n=document.getElementById('neighbors');
-    n.innerHTML=`${next?`<a class="underline" href="${next.path}">← Next: ${next.title}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title} →</a>`:''}`;
-  }
-});
-</script>
+    const cfg = JSON.parse(document.getElementById('post-config').textContent);
+    const P = {
+      hero: "/assets/images/hero-placeholder.jpg",
+      stay: "/assets/images/stay-placeholder.jpg",
+      dine: "/assets/images/dine-placeholder.jpg",
+      locale: "/assets/images/place-placeholder.jpg"
+    };
+    const setImg = (el, src, alt) => { if (!el) return; el.src = src; el.alt = alt || "placeholder"; el.classList.remove("hidden"); };
+    const addItems = (arr, ul, label='name') => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach(it => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = it.url; a.textContent = it[label] || it.name || it.type;
+        a.className = 'text-blue-700 underline break-all';
+        a.rel = 'noopener'; a.target = '_blank';
+        li.appendChild(a);
+        if (it.alt) { const s=document.createElement('span'); s.textContent = ` — ${it.alt}`; li.appendChild(s); }
+        ul.appendChild(li);
+      });
+    };
+
+    Promise.all([
+      fetch(cfg.json).then(r=>r.json()),
+      fetch(cfg.assets).then(r=> r.ok ? r.json() : {}).catch(()=>({})),
+      fetch('/blogs/manifest.json').then(r=> r.ok ? r.json() : []).catch(()=>[])
+    ]).then(([d, a, m]) => {
+      // SEO + title
+      const title = d.seo?.section_title || d.seo?.open_graph_title || 'Blog';
+      document.title = title;
+      document.getElementById('og-title').content = d.seo?.open_graph_title || title;
+      document.getElementById('og-desc').content  = d.seo?.open_graph_description || d.seo?.meta_description || '';
+      document.getElementById('meta-desc').content = d.seo?.meta_description || '';
+      document.getElementById('og-url').content = location.href;
+
+      // Headings
+      document.getElementById('title').textContent = title;
+
+      // Paragraph fields with Markdown links
+      setHTML('intro', d.hello?.intro);
+      setHTML('outro', d.hello?.outro);
+      setText('stay-title', d.stay?.title, 'Stay');
+      setHTML('stay-p', d.stay?.paragraph);
+      addItems(d.stay?.items, document.getElementById('stay-list'));
+      setText('stay-cta', d.stay?.cta);
+
+      setText('dine-title', d.dine?.title, 'Dine');
+      setHTML('dine-am', d.dine?.am);
+      setHTML('dine-dinner', d.dine?.dinner);
+      addItems(d.dine?.items, document.getElementById('dine-list'));
+      setText('dine-cta', d.dine?.cta);
+
+      setText('locale-title', d.locale?.title, 'Locale');
+      setHTML('locale-p', d.locale?.paragraph);
+
+      setText('essentials-title', d.essentials?.title, 'Essentials');
+      setHTML('essentials-p', d.essentials?.paragraph);
+      addItems(d.essentials?.items, document.getElementById('essentials-list'));
+      setText('essentials-cta', d.essentials?.cta);
+
+      // Images with fallbacks
+      setImg(document.getElementById('hero'), a.hero?.src || P.hero, a.hero?.alt);
+      setImg(document.getElementById('stay-img'), a.stay?.src || P.stay, a.stay?.alt);
+      setImg(document.getElementById('dine-img'), a.dine?.src || P.dine, a.dine?.alt);
+      setImg(document.getElementById('locale-img'), a.locale?.src || P.locale, a.locale?.alt);
+      setImg(document.getElementById('essentials-img'), a.essentials?.src || P.locale, a.essentials?.alt);
+
+      // Tags
+      const me = (Array.isArray(m) ? m : []).find(x=>x.slug===cfg.slug);
+      if (me?.tags) {
+        const wrap = document.getElementById('tags');
+        me.tags.forEach(t => { const b=document.createElement('span'); b.className='text-xs border rounded-full px-2 py-1'; b.textContent=t; wrap.appendChild(b); });
+      }
+
+      // Neighbors
+      if (Array.isArray(m) && m.length) {
+        const sorted = [...m].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+        const i = sorted.findIndex(x=>x.slug===cfg.slug);
+        const prev = sorted[i-1], next = sorted[i+1];
+        const n = document.getElementById('neighbors');
+        n.innerHTML = `${next?`<a class="underline" href="${next.path}">← Next: ${next.title}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title} →</a>`:''}`;
+      }
+    });
+  </script>
 </body>
 </html>
+
+=== items/runners/structure/instruction.txt ===
+Purpose: Structure Runner scaffolds blog files. It never edits post body JSON.
+
+TRIGGER CONTRACT (message JSON):
+{
+  "add_post": "<content JSON URL>",
+  "assets_uri": "<assets JSON URL>",
+  "canonical_base": "https://blog.clearroundtravel.com",
+  "allow_urls": ["<event.json>","<venue.json>","<official site>"]
+}
+Notes:
+- Only fetch HTTPS URLs in allow_urls plus the two trigger URLs.
+- canonical_base defaults to https://blog.clearroundtravel.com.
+
+PATH INVARIANTS
+- Storage: docs/blogs/{venue}-blogs-{year}/{slug}/
+- slug = {venue}-blog-{YYYY-MM-DD} (date from content filename)
+- Post folder contains:
+  - index.html (generated from templates/blog.index.html.tmpl)
+  - <verbatim post JSON filename> (unchanged)
+
+MANIFEST UPSERT
+- File: docs/blogs/manifest.json (array)
+- Key: slug
+- Upsert fields:
+  slug, title, date, year, month_num, month_name, season,
+  path, json, image, venue, city, state, country,
+  tags[], rating_uids[], rating_labels[], sanctioning, fei_level, usef_premier, discipline[]
+- title from content.seo.section_title fallback seo.open_graph_title
+- image from assets.hero.src
+- path format: /blogs/{venue}-blogs-{year}/{slug}/
+
+RATINGS & DISCIPLINE
+- If event.rating_uids present: map to sanctioning/levels, add human labels to tags.
+- If rating_uids missing/empty: omit all rating fields.
+- Discipline: include only if non-empty in event data; otherwise omit.
+
+ASSETS
+- Accept hero/stay/dine/locale/essentials keys with {src,alt}.
+- Require site-root absolute src paths (/assets/images/...).
+- Fallbacks when missing:
+  hero=/assets/images/hero-placeholder.jpg
+  stay=/assets/images/stay-placeholder.jpg
+  dine=/assets/images/dine-placeholder.jpg
+  locale=/assets/images/place-placeholder.jpg
+- Preserve provided alt; default "placeholder" if missing.
+
+PARAGRAPH MARKDOWN
+- Convert inline Markdown links `[label](url)` to `<a>` with `target="_blank"` and `rel="noopener"`.
+- Apply only to these fields: hello.intro, dine.am, dine.dinner, stay.paragraph, locale.paragraph, essentials.paragraph, hello.outro.
+- Escape all HTML before link conversion; allow only anchors.
+- Lists remain in items[] with separate name, url, alt.
+
+INTERACTIVES
+- Recent: newest 4 by date.
+- Next/Prev: neighbors around current slug in date-desc order.
+- Reels: month, season, venue filters from manifest.
+
+OUTPUTS ON add_post
+1) docs/blogs/{venue}-blogs-{year}/{slug}/index.html
+2) docs/blogs/manifest.json (upsert)
+3) docs/blogs/index.html
+4) docs/blogs/{year}/index.html
+5) docs/blogs/rss.xml
+6) docs/sitemap.xml
+
+MODES
+- remove_post: delete slug folder, remove manifest entry, rebuild indices/feeds/sitemap
+- rebuild_all: rebuild indices/feeds/sitemap from manifest only
+
+VALIDATION
+- GET content and assets URIs → 200 + JSON parse
+- Secondary fetches restricted to allow_urls
+- Manifest must validate against manifest.schema.json
+
+IDEMPOTENCE
+- Deterministic output; avoid variable timestamps
+- Atomic replace of generated files
+
+RETURN PAYLOAD
+- JSON with "writes", "deletes", "trace" arrays listing all operations
+
+=== items/runners/structure/policy.json ===
+{
+  "name": "Structure Runner Policy",
+  "version": "1.1.0",
+  "rules": {
+    "scaffold_only": true,
+    "never_edit_post_json": true,
+    "allow_trigger_allowlist_only": true,
+    "site_root_assets_only": true,
+    "manifest_upsert_key": "slug",
+    "derive_date_from_filename": true,
+    "emit_year_archives": true,
+    "emit_rss": true,
+    "emit_sitemap": true,
+    "neighbors_nav": true,
+    "markdown_paragraphs": true,
+    "sanitize_links": true,
+    "items_lists_structured": true
+  },
+  "defaults": {
+    "canonical_base": "https://blog.clearroundtravel.com",
+    "recent_count": 4,
+    "rss_item_limit": 20,
+    "placeholders": {
+      "hero": "/assets/images/hero-placeholder.jpg",
+      "stay": "/assets/images/stay-placeholder.jpg",
+      "dine": "/assets/images/dine-placeholder.jpg",
+      "locale": "/assets/images/place-placeholder.jpg"
+    }
+  }
+}
