@@ -1,3 +1,5 @@
+# items/instructions/instructions.txt
+
 TITLE: Content Runner — Equestrian Event Blogs
 
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
@@ -11,18 +13,23 @@ URL ACCESS
 - The runner MAY fetch any absolute URL present in the task JSON under *_link fields.
 - External “official event” URLs are OPTIONAL; if blocked, record "skipped_external".
 - Do NOT require URLs to appear in the user message or prior search results.
-- Treat Content-Type text/plain as JSON (policy also permits this).
+- Treat Content-Type text/plain as JSON (policy permits).
 - Preferred bases (not enforced):
   https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
   https://items.clearroundtravel.com/items
   https://blog.clearroundtravel.com/blogs
 
+CANVAS BEHAVIOR
+- First, render a single codebox titled ALLOW_URLS that contains the allowlist lines (copy/paste only).
+- Do NOT echo those URLs elsewhere in the output.
+- After the codebox, render the final JSON only (no extra prose).
+
 TRACE RULES
 - Record ONLY these in source_trace (in order): schema, policy, gold, task_uri, founder, audiences,
   event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
-- For 200 OK: record a single collapsed entry: {"url":"…","http_status":200,"signals":["ok"]}.
-- For skipped external: {"url":"…","http_status":0,"signals":["skipped_external"]}.
-- No per-link timestamps. Cap to 12 entries (drop extras from the end).
+- For 200 OK: record a single collapsed entry: {"path":"<basename.ext>","status":200}.
+- For skipped external: {"path":"<host-or-key>","status":0}.
+- No timestamps, no signals. Cap to 12 entries (drop extras from the end).
 
 INPUT
 - Payload ONLY: {"task_uri":"<FULL URL to task JSON>"}.
@@ -50,9 +57,12 @@ WORKFLOW
      Insert ≥3 keywords and ≥2 insider terms; imply audience; close with founder/intro template when available.
      No ticketing, prices, or bullet logistics.
    - Stay: one paragraph; prioritize premium; mention most/all items; add one CTA if closers present.
+     Embed a few item names as inline links in the paragraph.
    - Dine: two paragraphs (AM + Dinner); add one CTA if closers present.
+     Embed a few item names as inline links in the paragraphs.
    - Locale: one paragraph (off-barn resets).
    - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart); add one CTA if closers present.
+     Embed one or two essentials as inline links.
    - Outro: 25–45w; use template if available.
 9) Optional templates if present & 200:
    intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
@@ -118,17 +128,3 @@ alias:
   event_official_url: event_official_link
   schema: schema_link
   gold: gold_link
-
-OPERATOR NOTE — ADD ALLOW LIST AS INLINE CODEBOX IN CANVAS (copy/paste only)
-```txt
-# ALLOW_URLS (one per line; no quotes)
-{{founder_link}}
-{{audiences_link}}
-{{keywords_link}}
-{{insiders_link}}
-{{venue_link}}
-{{geo_link}}
-{{stay_link}}
-{{dine_link}}
-{{essentials_link}}
-{{event_official_url}}
