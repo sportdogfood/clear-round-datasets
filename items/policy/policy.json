@@ -23,8 +23,7 @@
     "no_guessing": true,
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": false,
-    "fail_on_missing_url": false,
-    "include_seasonal_avg_requires_source": false
+    "fail_on_missing_url": false
   },
 
   "trace": {
@@ -33,22 +32,9 @@
     "max_entries": 12,
     "fields": ["path", "status"],
     "required_order": [
-      "schema",
-      "policy",
-      "gold",
-      "task_uri",
-      "founder",
-      "audiences",
-      "event_official_url",
-      "venue",
-      "geo",
-      "keywords",
-      "insiders",
-      "stay",
-      "dine",
-      "essentials"
-    ],
-    "skipped_external_signature": ["skipped_external"]
+      "schema","policy","gold","task_uri","founder","audiences",
+      "event_official_url","venue","geo","keywords","insiders","stay","dine","essentials"
+    ]
   },
 
   "length_targets": {
@@ -75,10 +61,10 @@
       ],
       "forbid": ["ticketing", "prices", "logistics_lists"]
     },
-    "stay": { "paragraph": true, "cta_allowed": true, "embed_links_in_paragraph": true },
-    "dine": { "am": true, "dinner": true, "cta_allowed": true, "embed_links_in_paragraph": true },
+    "stay": { "paragraph": true, "links_inline": true, "cta_allowed": true },
+    "dine": { "am": true, "dinner": true, "links_inline": true, "cta_allowed": true },
     "locale": { "paragraph": true },
-    "essentials": { "paragraph": true, "cta_allowed": true, "embed_links_in_paragraph": true },
+    "essentials": { "paragraph": true, "links_inline": true, "cta_allowed": true },
     "outro": { "use_template_if_available": true }
   },
 
