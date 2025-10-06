@@ -6,8 +6,8 @@
   "types": "[\"tourist_attraction\",\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJTZD_jRvRH4gR2BDPkiHbJn4",
   "name": "Traverse City Horse Shows at Flintfields Horse Park",
-  "lat": "-85.44525949999999",
-  "lng": "44.7809389",
+  "lng": "-85.44525949999999",
+  "lat": "44.7809389",
   "geo_type_uuid": "tourist_attraction, point_of_interest, establishment",
   "geo_type_ms": "tourist_attraction, point_of_interest, establishment",
   "geo_uids": [
@@ -22,11 +22,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "tchs-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/tchs-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tchs-geo.json",
   "output_uids": [],
   "venue_uuid": "tchs-venue",
   "dine_uuid": "tchs-dine",
   "stay_uuid": "tchs-stay",
   "ess_uuid": "tchs-essentials",
-  "place_uid": "ChIJTZD_jRvRH4gR2BDPkiHbJn4"
+  "place_uid": "ChIJTZD_jRvRH4gR2BDPkiHbJn4",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tchs-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/tchs-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
