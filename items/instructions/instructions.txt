@@ -1,4 +1,5 @@
 TITLE: Content Runner — Equestrian Event Blogs
+Policy: v1.0.5
 
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
@@ -18,21 +19,18 @@ URL ACCESS
   https://blog.clearroundtravel.com/blogs
 
 CANVAS
-- Begin with a codebox containing ALLOW_URLS (for tool visibility only).
-- Do not echo ALLOW_URLS inside the final text body.
-- After ALLOW_URLS codebox, output text JSON only.
+- Do not render ALLOW_URLS in canvas.
+- Output JSON only in the canvas document.
+- Keep all content inside the canvas; do not echo canvas content in chat.
 
 Operational rules
 - Use one canvas textdoc per task.
-- Put the ALLOW_URLS list in a fenced code block at the top of the canvas doc. After that, output JSON only.
-- Do not repeat ALLOW_URLS inside the JSON body.
-- Keep all content inside the canvas; do not echo any canvas content in chat.
 - Create with `create_textdoc`. For edits, use `update_textdoc` on the same doc.
 - Choose canvas type: `code/json` for JSON editing, or `document` for rich text.
 - Do not create multiple canvas docs unless explicitly asked.
 - Web calls: always set "response_length":"long".
 - If a required *_link 200-fails, retry once, then mark "skipped_external" in trace and continue.
-- For each fetched list (stay/dine/essentials), extract name, url, and alt. If missing, synthesize alt from source title.
+- For each fetched list (stay/dine/essentials), extract name, url, and alt. If missing, synthesize alt from source title or fallback per EMIT rules.
 
 TRACE RULES
 - Record ONLY: task_uri, founder, audiences, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, bootstrap_bundle.
@@ -65,13 +63,10 @@ WORKFLOW
      1 sensory + 1 vibe for city, seasonal temps if geo available.
      ≥3 keywords, ≥2 insider terms, audience implied, founder intro/CTA if templates present.
      No lists, ticketing, or pricing.
-   - Stay: 1 paragraph; mention 2–4 linked hotels inline; prioritize premium.
-     Add 1 CTA closer if available.
-   - Dine: 2 paragraphs (AM + Dinner) referencing 2–4 linked restaurants inline.
-     Add 1 CTA closer if available.
+   - Stay: 1 paragraph; mention 2–4 linked hotels inline; prioritize premium. Add 1 CTA closer if available.
+   - Dine: 2 paragraphs (AM + Dinner) referencing 2–4 linked restaurants inline. Add 1 CTA closer if available.
    - Locale: 1 paragraph highlighting nearby off-barn resets.
-   - Essentials: 1 paragraph with grocery, pharmacy, feed, car rental, golf-cart links.
-     Add 1 CTA closer if available.
+   - Essentials: 1 paragraph with grocery, pharmacy, feed, car rental, golf-cart links. Add 1 CTA closer if available.
    - Outro: 25–45w; use outro template if available.
 9) Templates:
    intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
@@ -107,11 +102,10 @@ item_rules:
       url: $.url
       alt: $.alt || $.notes
     http_200_only: true
-output_contract:
-  stay.items[]: {name, url, alt}
-  dine.items[]: {name, url, alt}
-  essentials.items[]: {type, name, url, alt}
-fail_on_missing_url: true
+emit_indicator:
+  on_apply:
+    set_validation_flag: validation.flags.emit_items_applied = true
+    add_warning: "emit_items: applied (stay=${stay.items.length}, dine=${dine.items.length}, essentials=${essentials.items.length})"
 
 OUTPUT (JSON only)
 {
@@ -131,7 +125,7 @@ OUTPUT (JSON only)
     "cta_closers":{"stay":"","dine":"","essentials":""}
   },
   "source_trace": [],
-  "validation":{"status":"pass","warnings":[],"errors":[]}
+  "validation":{"status":"pass","warnings":[],"errors":[],"flags":{}}
 }
 
 FIELD_MAP
