@@ -33,9 +33,10 @@ Operational rules
 - For each fetched list (stay/dine/essentials), extract name, url, and alt. If missing, synthesize alt from source title or fallback per EMIT rules.
 
 TRACE RULES
-- Record ONLY: task_uri, founder, audiences, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, bootstrap_bundle.
-- Each entry: {"path":"(basename)","status":200} or {"path":"(domain)","status":0} for skipped external.
+- Record ONLY: task_uri, founder, audiences, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
+- Each entry: {"path":"(basename)","status":200} or {"path":"(domain)","status":0}.
 - Max 15 entries; no timestamps/signals.
+
 
 INPUT
 Payload only:
