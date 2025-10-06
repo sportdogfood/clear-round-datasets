@@ -1,0 +1,37 @@
+{
+  "writes": [
+    {"path":"docs/blogs/capc-blogs-2025/capc-blog-2025-10-06/index.html","content":"<compiled from template>"},
+    {"path":"docs/blogs/manifest.json","merge":"upsert","key":"slug","entry":{
+      "slug":"capc-blog-2025-10-06",
+      "title":"Capital Challenge — Stay, Dine, Essentials",
+      "date":"2025-10-06",
+      "year":2025,
+      "month_num":"10",
+      "month_name":"October",
+      "season":"Fall",
+      "path":"/blogs/capc-blog-2025-10-06/",
+      "json":"/blogs/capc-blogs-2025/capc-blog-2025-10-06/capc-blog-content-2025-10-06.json",
+      "image":"/assets/images/capc-2025-10-06-hero.jpg",
+      "venue":"capc",
+      "city":"Upper Marlboro",
+      "state":"MD",
+      "country":"USA",
+      "tags":["capc","md","fall","oct","FEI","CSI3*"],
+      "rating_uids":["fei-csi2","fei-csi3"],
+      "rating_labels":["CSI2*","CSI3*"],
+      "sanctioning":"FEI",
+      "fei_level":3
+    }},
+    {"path":"docs/blogs/index.html","content":"<compiled from template>"},
+    {"path":"docs/blogs/2025/index.html","content":"<compiled from template>"},
+    {"path":"docs/blogs/rss.xml","content":"<compiled from template>"},
+    {"path":"docs/sitemap.xml","content":"<compiled from template>"}
+  ],
+  "deletes": [],
+  "trace": [
+    {"op":"fetch","uri":"https://raw.githubusercontent.com/.../capc-blog-content-2025-10-06.json","status":200},
+    {"op":"fetch","uri":"https://raw.githubusercontent.com/.../capc-blog-assets-2025-10-06.json","status":200},
+    {"op":"fetch_allow","uri":"https://raw.githubusercontent.com/.../items/events/capc-cap-challenge-ev.json","status":200},
+    {"op":"fetch_allow","uri":"https://raw.githubusercontent.com/.../items/venues/capc-venue.json","status":200}
+  ]
+}
