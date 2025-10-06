@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blogs — {{YEAR}}</title>
+<link rel="canonical" href="https://blog.clearroundtravel.com/blogs/{{YEAR}}/">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+<main class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs — {{YEAR}}</h1>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('/blogs/manifest.json').then(r=>r.json()).then(posts=>{
+  const yr='{{YEAR}}';
+  const list=document.getElementById('list');
+  const data=posts.filter(p=>String(p.year)===yr).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  list.innerHTML=data.map(p=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
+    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
+    <div class="text-sm text-gray-600">${p.date||''}</div>
+    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+  </a>`).join('');
+});
+</script>
+</body>
+</html>
