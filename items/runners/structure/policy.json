@@ -1,0 +1,21 @@
+{
+  "name": "Structure Runner Policy",
+  "version": "1.0.0",
+  "rules": {
+    "scaffold_only": true,
+    "never_edit_post_json": true,
+    "allow_trigger_allowlist_only": true,
+    "site_root_assets_only": true,
+    "manifest_upsert_key": "slug",
+    "derive_date_from_filename": true,
+    "emit_year_archives": true,
+    "emit_rss": true,
+    "emit_sitemap": true,
+    "neighbors_nav": true
+  },
+  "defaults": {
+    "canonical_base": "https://blog.clearroundtravel.com",
+    "recent_count": 4,
+    "rss_item_limit": 20
+  }
+}
