@@ -6,12 +6,10 @@
     "policy_version": "",
     "policy_uri": ""
   },
-
   "hello": {
     "intro": "",
     "outro": ""
   },
-
   "stay": {
     "title": "",
     "paragraph": "",
@@ -20,7 +18,6 @@
       { "name": "", "url": "", "alt": "" }
     ]
   },
-
   "dine": {
     "title": "",
     "am": "",
@@ -30,12 +27,10 @@
       { "name": "", "url": "", "alt": "" }
     ]
   },
-
   "locale": {
     "title": "",
     "paragraph": ""
   },
-
   "essentials": {
     "title": "",
     "paragraph": "",
@@ -44,7 +39,6 @@
       { "type": "", "name": "", "url": "", "alt": "" }
     ]
   },
-
   "seo": {
     "section_title": "",
     "meta_description": "",
@@ -53,7 +47,6 @@
     "search_title": "",
     "search_description": ""
   },
-
   "brand_usage": {
     "keywords_used": [],
     "insiders_used": [],
@@ -66,7 +59,6 @@
       "essentials": ""
     }
   },
-
   "word_counts": {
     "intro": 0,
     "outro": 0,
@@ -76,14 +68,12 @@
     "locale": 0,
     "essentials": 0
   },
-
   "limits": {
     "intro_min": 80,
     "intro_max": 140,
     "outro_min": 25,
     "outro_max": 45
   },
-
   "templates_used": {
     "intro": "",
     "outro": "",
@@ -93,7 +83,6 @@
       "essentials": ""
     }
   },
-
   "inputs_echo": {
     "founder_link": "",
     "audiences_link": "",
@@ -106,19 +95,15 @@
     "geo_link": "",
     "event_official_url": ""
   },
-
   "source_trace": [
-    { "url": "", "http_status": 200, "signals": [] }
+    { "path": "", "status": 200 }
   ],
-
   "checked_sources": [
-    { "url": "", "http_status": 200 }
+    { "path": "", "status": 200 }
   ],
-
   "dedupe": {
     "content_sha256": ""
   },
-
   "validation": {
     "status": "pass",
     "warnings": [],
