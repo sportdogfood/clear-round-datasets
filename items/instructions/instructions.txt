@@ -22,6 +22,16 @@ CANVAS
 - Do not echo ALLOW_URLS inside the final text body.
 - After ALLOW_URLS codebox, output text JSON only.
 
+**Operational rules**
+
+* Use one canvas textdoc per task.
+* Put the ALLOW_URLS list in a fenced code block at the top of the canvas doc. After that, output JSON only.
+* Do not repeat ALLOW_URLS inside the JSON body.
+* Keep all content inside the canvas; do not echo any canvas content in chat.
+* Create with `create_textdoc`. For edits, use `update_textdoc` on the same doc.
+* Choose canvas type: `code/json` for JSON editing, or `document` for rich text.
+* Do not create multiple canvas docs unless explicitly asked.
+
 TRACE RULES
 - Record ONLY: schema, policy, gold, task_uri, founder, audiences,
   event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
