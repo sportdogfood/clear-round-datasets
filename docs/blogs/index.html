@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blog</title><script src="https://cdn.tailwindcss.com"></script>
+</head><body class="bg-white text-gray-900">
+<main class="max-w-4xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-semibold mb-6">Blogs</h1>
+  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
+</main>
+<script>
+fetch('./manifest.json').then(r=>r.json()).then(posts=>{
+  const list = document.getElementById('list');
+  posts.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  posts.forEach(p=>{
+    const card = document.createElement('a');
+    card.href = p.path;
+    card.className = 'block border rounded-2xl p-4 hover:shadow';
+    card.innerHTML = `
+      ${p.image ? `<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">` : ``}
+      <div class="text-sm text-gray-600">${p.date||''}</div>
+      <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
+    `;
+    list.appendChild(card);
+  });
+});
+</script>
+</body></html>
