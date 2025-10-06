@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "updated_iso": "2025-10-06T00:00:00-04:00",
   "runner": "content-runner",
 
@@ -57,9 +57,18 @@
     }
   },
 
+  "features": {
+    "weather_normals": false
+  },
+
   "length_targets": {
     "intro_min": 80,
     "intro_max": 140,
+    "intro_paragraphs": 2,
+    "intro_p1_min_words": 55,
+    "intro_p1_max_words": 90,
+    "intro_p2_min_words": 25,
+    "intro_p2_max_words": 60,
     "outro_min": 25,
     "outro_max": 45
   },
@@ -72,14 +81,16 @@
 
   "section_rules": {
     "intro": {
+      "paragraphs": 2,
+      "p1_links_required": ["event_official_url", "venue_official_url"],
       "must_cover": [
         "event+dates_humanized",
         "season_or_month",
         "venue_feel_2traits",
         "city_feel_1sensory_1vibe",
-        "seasonal_normals_if_geo"
+        "seasonal_normals_if_geo_feature_enabled"
       ],
-      "forbid": ["ticketing", "prices", "logistics_lists"]
+      "forbid": ["ticketing", "prices", "logistics_lists", "hotel_names", "restaurant_names"]
     },
     "stay": { "paragraph": true, "links_inline": true, "cta_allowed": true },
     "dine": { "am": true, "dinner": true, "links_inline": true, "cta_allowed": true },
@@ -92,6 +103,8 @@
     "use_intro_closing_patterns": true,
     "use_outro_templates": true,
     "use_cta_closers": true,
+    "use_intro_outro_lockdown": true,
+    "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json",
     "rotation": "sequential",
     "fallback_to_founder": true
   },
@@ -142,6 +155,19 @@
       ],
       "bootstrap_handling": "If bootstrap_bundle is present, do not require separate schema/policy/gold entries.",
       "status_zero_rule": "Entries with status:0 are allowed for external fetch failures after one retry and do not fail validation."
+    },
+    "intro_requirements": {
+      "paragraphs": 2,
+      "p1_links_required": ["event_official_url", "venue_official_url"],
+      "p1_min_words": 55,
+      "p1_max_words": 90,
+      "p2_min_words": 25,
+      "p2_max_words": 60
+    },
+    "outro_requirements": {
+      "min_words": 25,
+      "max_words": 45,
+      "cta_required": true
     },
     "items_requirements": {
       "stay_items_min": 2,
