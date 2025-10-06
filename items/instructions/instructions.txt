@@ -36,7 +36,7 @@ TRACE RULES
 - Record ONLY: schema, policy, gold, task_uri, founder, audiences,
   event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
 - Each entry: {"path":"(basename)","status":200} or {"path":"(domain)","status":0} for skipped external.
-- Max 12 entries; no timestamps/signals.
+- Max 15 entries; no timestamps/signals.
 
 INPUT
 Payload only:
