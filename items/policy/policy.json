@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2.1",
+  "version": "1.0.3",
   "updated_iso": "2025-10-05T00:00:00-04:00",
   "runner": "content-runner",
 
@@ -7,7 +7,6 @@
     "allow_from_task_links": true,
     "allow_base_uris": [
       "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items",
-      "https://crt-b1434e13de34.herokuapp.com/items",
       "https://items.clearroundtravel.com/items",
       "https://blog.clearroundtravel.com/blogs"
     ],
@@ -32,7 +31,7 @@
     "only_required": true,
     "collapse_success": true,
     "max_entries": 12,
-    "fields": ["url", "http_status", "signals"],
+    "fields": ["path", "status"],
     "required_order": [
       "schema",
       "policy",
@@ -50,11 +49,6 @@
       "essentials"
     ],
     "skipped_external_signature": ["skipped_external"]
-  },
-
-  "link_policy": {
-    "require_base_uri": false,
-    "allow_event_official_external": true
   },
 
   "length_targets": {
@@ -81,10 +75,10 @@
       ],
       "forbid": ["ticketing", "prices", "logistics_lists"]
     },
-    "stay": { "paragraph": true, "cta_allowed": true },
-    "dine": { "am": true, "dinner": true, "cta_allowed": true },
+    "stay": { "paragraph": true, "cta_allowed": true, "embed_links_in_paragraph": true },
+    "dine": { "am": true, "dinner": true, "cta_allowed": true, "embed_links_in_paragraph": true },
     "locale": { "paragraph": true },
-    "essentials": { "paragraph": true, "cta_allowed": true },
+    "essentials": { "paragraph": true, "cta_allowed": true, "embed_links_in_paragraph": true },
     "outro": { "use_template_if_available": true }
   },
 
