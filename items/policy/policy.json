@@ -1,5 +1,5 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.5",
   "updated_iso": "2025-10-06T00:00:00-04:00",
   "runner": "content-runner",
 
@@ -35,7 +35,7 @@
   "trace": {
     "only_required": true,
     "collapse_success": true,
-    "max_entries": 12,
+    "max_entries": 15,
     "fields": ["path", "status"],
     "required_order": [
       "task_uri",
