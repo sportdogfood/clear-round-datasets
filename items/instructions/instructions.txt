@@ -31,6 +31,10 @@ CANVAS
 * Create with `create_textdoc`. For edits, use `update_textdoc` on the same doc.
 * Choose canvas type: `code/json` for JSON editing, or `document` for rich text.
 * Do not create multiple canvas docs unless explicitly asked.
++ Web calls: always set "response_length":"long".
++ If a required *_link 200-fails, retry once, then mark "skipped_external" in trace and continue.
++ For each fetched list (stay/dine/essentials), extract name, url, and alt. If missing, synthesize alt from source title.
+
 
 TRACE RULES
 - Record ONLY: schema, policy, gold, task_uri, founder, audiences,
