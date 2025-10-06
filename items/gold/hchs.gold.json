@@ -6,11 +6,45 @@
     "policy_version": "",
     "policy_uri": ""
   },
-  "hello": { "intro": "", "outro": "" },
-  "stay": { "title": "", "paragraph": "", "cta": "", "items": [ { "name": "", "url": "", "alt": "" } ] },
-  "dine": { "title": "", "am": "", "dinner": "", "cta": "", "items": [ { "name": "", "url": "", "alt": "" } ] },
-  "locale": { "title": "", "paragraph": "" },
-  "essentials": { "title": "", "paragraph": "", "cta": "", "items": [ { "type": "", "name": "", "url": "", "alt": "" } ] },
+  "hello": {
+    "intro": "",
+    "outro": ""
+  },
+  "stay": {
+    "title": "",
+    "paragraph": "",
+    "cta": "",
+    "items": [
+      { "name": "", "url": "", "alt": "" },
+      { "name": "", "url": "", "alt": "" }
+    ]
+  },
+  "dine": {
+    "title": "",
+    "am": "",
+    "dinner": "",
+    "cta": "",
+    "items": [
+      { "name": "", "url": "", "alt": "" },
+      { "name": "", "url": "", "alt": "" },
+      { "name": "", "url": "", "alt": "" }
+    ]
+  },
+  "locale": {
+    "title": "",
+    "paragraph": ""
+  },
+  "essentials": {
+    "title": "",
+    "paragraph": "",
+    "cta": "",
+    "items": [
+      { "type": "", "name": "", "url": "", "alt": "" },
+      { "type": "", "name": "", "url": "", "alt": "" },
+      { "type": "", "name": "", "url": "", "alt": "" },
+      { "type": "", "name": "", "url": "", "alt": "" }
+    ]
+  },
   "seo": {
     "section_title": "",
     "meta_description": "",
@@ -36,8 +70,17 @@
     "locale": 0,
     "essentials": 0
   },
-  "limits": { "intro_min": 80, "intro_max": 140, "outro_min": 25, "outro_max": 45 },
-  "templates_used": { "intro": "", "outro": "", "cta": { "stay": "", "dine": "", "essentials": "" } },
+  "limits": {
+    "intro_min": 80,
+    "intro_max": 140,
+    "outro_min": 25,
+    "outro_max": 45
+  },
+  "templates_used": {
+    "intro": "",
+    "outro": "",
+    "cta": { "stay": "", "dine": "", "essentials": "" }
+  },
   "inputs_echo": {
     "founder_link": "",
     "audiences_link": "",
@@ -50,7 +93,26 @@
     "geo_link": "",
     "event_official_url": ""
   },
-  "source_trace": [ { "path": "", "status": 200 } ],
-  "dedupe": { "content_sha256": "" },
-  "validation": { "status": "pass", "warnings": [], "errors": [] }
+  "source_trace": [
+    { "path": "bootstrap_bundle", "status": 200 },
+    { "path": "task_uri", "status": 200 },
+    { "path": "founder", "status": 200 },
+    { "path": "audiences", "status": 200 },
+    { "path": "event_official_url", "status": 200 },
+    { "path": "venue", "status": 200 },
+    { "path": "geo", "status": 200 },
+    { "path": "keywords", "status": 200 },
+    { "path": "insiders", "status": 200 },
+    { "path": "stay", "status": 200 },
+    { "path": "dine", "status": 200 },
+    { "path": "essentials", "status": 200 }
+  ],
+  "dedupe": {
+    "content_sha256": ""
+  },
+  "validation": {
+    "status": "pass",
+    "warnings": [],
+    "errors": []
+  }
 }
