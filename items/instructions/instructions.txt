@@ -71,6 +71,24 @@ WORKFLOW
 9) Templates:
    intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
 
+USAGE_INDICATORS
+on_apply:
+  set_flags:
+    validation.flags.used_founder: true
+    validation.flags.used_audiences: true
+    validation.flags.used_insiders: true
+    validation.flags.used_intro_patterns: true
+    validation.flags.used_outro_templates: true
+    validation.flags.used_cta_closers: true
+  add_warning: "templates+brand: applied (founder,audiences,insiders,intro,outro,cta)"
+inputs_echo:
+  founder_link: "<full url>"
+  audiences_link: "<full url>"
+  insiders_link: "<full url>"
+  intro_templates_link: "<full url>"
+  outro_templates_link: "<full url>"
+  cta_closers_link: "<full url>"
+
 EMIT_ITEMS
 emit_items: true
 item_rules:
