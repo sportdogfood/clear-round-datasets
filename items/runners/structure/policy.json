@@ -1,6 +1,6 @@
 {
   "name": "Structure Runner Policy",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "rules": {
     "scaffold_only": true,
     "never_edit_post_json": true,
@@ -11,11 +11,20 @@
     "emit_year_archives": true,
     "emit_rss": true,
     "emit_sitemap": true,
-    "neighbors_nav": true
+    "neighbors_nav": true,
+    "markdown_paragraphs": true,
+    "sanitize_links": true,
+    "items_lists_structured": true
   },
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
     "recent_count": 4,
-    "rss_item_limit": 20
+    "rss_item_limit": 20,
+    "placeholders": {
+      "hero": "/assets/images/hero-placeholder.jpg",
+      "stay": "/assets/images/stay-placeholder.jpg",
+      "dine": "/assets/images/dine-placeholder.jpg",
+      "locale": "/assets/images/place-placeholder.jpg"
+    }
   }
 }
