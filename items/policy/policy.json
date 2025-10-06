@@ -1,6 +1,6 @@
 {
-  "version": "1.0.3",
-  "updated_iso": "2025-10-05T00:00:00-04:00",
+  "version": "1.0.4",
+  "updated_iso": "2025-10-06T00:00:00-04:00",
   "runner": "content-runner",
 
   "link_access": {
@@ -26,15 +26,35 @@
     "fail_on_missing_url": false
   },
 
+  "fetch": {
+    "response_length": "long",
+    "retry_on_http_error": 1,
+    "record_skipped_external": true
+  },
+
   "trace": {
     "only_required": true,
     "collapse_success": true,
     "max_entries": 12,
     "fields": ["path", "status"],
     "required_order": [
-      "schema","policy","gold","task_uri","founder","audiences",
-      "event_official_url","venue","geo","keywords","insiders","stay","dine","essentials"
-    ]
+      "task_uri",
+      "founder",
+      "audiences",
+      "event_official_url",
+      "venue",
+      "geo",
+      "keywords",
+      "insiders",
+      "stay",
+      "dine",
+      "essentials",
+      "bootstrap_bundle"
+    ],
+    "notes": {
+      "bootstrap_bundle": "Summarizes schema, policy, and gold bootstrap fetches in one entry.",
+      "on_external_fetch_failure": "After one retry, record {\"path\":\"(domain)\",\"status\":0} and continue."
+    }
   },
 
   "length_targets": {
@@ -93,5 +113,41 @@
     "stay.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "dine.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "essentials.items[]": { "type": "string", "name": "string", "url": "uri", "alt": "string" }
+  },
+
+  "output_guards": {
+    "arrays_min": {
+      "stay.items": 2,
+      "dine.items": 3,
+      "essentials.items": 4
+    },
+    "require_fields": ["name", "url", "alt"],
+    "reject_single_line_placeholders": true
+  },
+
+  "validation": {
+    "trace_requirements": {
+      "must_include": [
+        "task_uri",
+        "founder",
+        "audiences",
+        "event_official_url",
+        "venue",
+        "geo",
+        "keywords",
+        "insiders",
+        "stay",
+        "dine",
+        "essentials"
+      ],
+      "bootstrap_handling": "If bootstrap_bundle is present, do not require separate schema/policy/gold entries.",
+      "status_zero_rule": "Entries with status:0 are allowed for external fetch failures after one retry and do not fail validation."
+    },
+    "items_requirements": {
+      "stay_items_min": 2,
+      "dine_items_min": 3,
+      "essentials_items_min": 4,
+      "fields_required_per_item": ["name", "url", "alt"]
+    }
   }
 }
