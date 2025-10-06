@@ -1,5 +1,5 @@
 TITLE: Content Runner — Equestrian Event Blogs
-Policy: v1.0.5
+Policy: v1.0.6
 
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
@@ -7,6 +7,7 @@ ASSETS (absolute)
 SCHEMA:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
 POLICY:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
 GOLD_SHAPE:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
+LOCKDOWN:    https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json
 
 URL ACCESS
 - Runner MAY fetch any absolute URL in task JSON under *_link fields.
@@ -33,17 +34,16 @@ Operational rules
 - For each fetched list (stay/dine/essentials), extract name, url, and alt. If missing, synthesize alt from source title or fallback per EMIT rules.
 
 TRACE RULES
-- Record ONLY: task_uri, founder, audiences, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
+- Record ONLY: task_uri, founder, audiences, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, intro-outro-lockdown, bootstrap_bundle.
 - Each entry: {"path":"(basename)","status":200} or {"path":"(domain)","status":0}.
 - Max 15 entries; no timestamps/signals.
-
 
 INPUT
 Payload only:
 {"task_uri":"<FULL URL to task JSON>"}
 
 WORKFLOW
-1) Fetch SCHEMA, POLICY, GOLD_SHAPE (warn if fail, continue).
+1) Fetch SCHEMA, POLICY, GOLD_SHAPE, LOCKDOWN (warn if fail on any; continue).
 2) Fetch {task_uri} (must be 200 else fail).
 3) Coercions:
    - "true"/"false" → booleans; numeric strings → numbers.
@@ -59,18 +59,23 @@ WORKFLOW
    insiders_link, stay_link, dine_link, essentials_link, event_official_url.
 7) Fetch in order:
    founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
-8) Generate per POLICY:
-   - Intro (80–140w): event+dates (humanized), season/month, 2 venue traits,
-     1 sensory + 1 vibe for city, seasonal temps if geo available.
-     ≥3 keywords, ≥2 insider terms, audience implied, founder intro/CTA if templates present.
-     No lists, ticketing, or pricing.
-   - Stay: 1 paragraph; mention 2–4 linked hotels inline; prioritize premium. Add 1 CTA closer if available.
-   - Dine: 2 paragraphs (AM + Dinner) referencing 2–4 linked restaurants inline. Add 1 CTA closer if available.
+8) Generate per POLICY and LOCKDOWN:
+   - Intro (two paragraphs; total 80–140w):
+     P1: Must include inline markdown links to event_official_url and venue.official_url. Cover event+dates (humanized) and 2 venue traits.
+     P2: City vibe + one sensory detail; season/month allowed. No hotel or restaurant names.
+     ≥3 keywords, ≥2 insider terms, audience implied, founder intro/CTA if templates present. No ticketing or pricing.
+   - Stay: 1 paragraph; include inline links to 2–4 hotels referenced by name from Stay items; prioritize premium. Add 1 CTA closer if available.
+   - Dine: 2 paragraphs:
+       AM paragraph with inline links to 1–2 breakfast/brunch spots from Dine items.
+       Dinner paragraph with inline links to 2–3 dinner spots from Dine items.
+     Add 1 CTA closer if available.
    - Locale: 1 paragraph highlighting nearby off-barn resets.
-   - Essentials: 1 paragraph with grocery, pharmacy, feed, car rental, golf-cart links. Add 1 CTA closer if available.
+   - Essentials: 1 paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers from Essentials items. Add 1 CTA closer if available.
    - Outro: 25–45w; use outro template if available.
-9) Templates:
-   intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
+
+TEMPLATES
+- intro_closing_patterns_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
+- intro-outro-lockdown.json governs: two-paragraph intro rule, required P1 links, and forbid list. If present, apply before other templates.
 
 USAGE_INDICATORS
 on_apply:
@@ -81,7 +86,8 @@ on_apply:
     validation.flags.used_intro_patterns: true
     validation.flags.used_outro_templates: true
     validation.flags.used_cta_closers: true
-  add_warning: "templates+brand: applied (founder,audiences,insiders,intro,outro,cta)"
+    validation.flags.used_intro_outro_lockdown: true
+  add_warning: "templates+brand: applied (founder,audiences,insiders,intro,outro,cta,lockdown)"
 inputs_echo:
   founder_link: "<full url>"
   audiences_link: "<full url>"
@@ -89,6 +95,7 @@ inputs_echo:
   intro_templates_link: "<full url>"
   outro_templates_link: "<full url>"
   cta_closers_link: "<full url>"
+  intro_outro_lockdown_link: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
 
 EMIT_ITEMS
 emit_items: true
@@ -154,3 +161,11 @@ alias:
   event_official_url: event_official_link
   schema: schema_link
   gold: gold_link
+
+VALIDATION RULES (linking and shape)
+- Intro must have exactly two paragraphs.
+- Intro P1 must contain a markdown link to the event_official_url and a markdown link to venue.official_url.
+- Stay paragraph must contain inline links to 2–4 hotels that also appear in stay.items.
+- Dine AM must contain inline links to 1–2 breakfast/brunch entries from dine.items; Dine Dinner must contain inline links to 2–3 dinner entries from dine.items.
+- Essentials paragraph must contain inline links to grocery, pharmacy, feed, car rental, and golf-cart entries from essentials.items.
+- Fail run if any of the above link requirements are not met.
