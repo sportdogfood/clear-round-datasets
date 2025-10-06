@@ -1,1 +1,103 @@
-capc-blog-content-2025-10-06.json
+{
+  "meta": {
+    "run_id": "capc-task-2025-10-05",
+    "timestamp_iso": "2025-10-06T00:00:00-04:00",
+    "task_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/tasks/capc-task-2025-10-05.json",
+    "policy_version": "1.0.5",
+    "policy_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json"
+  },
+  "hello": {
+    "intro": "The [Capital Challenge Horse Show](https://www.pgparks.com/event_list/capital-challenge-horse-show) runs September 24–October 5, 2025 at the [Prince George Equestrian Center](https://www.pgparks.com) in Upper Marlboro, Maryland. Expect polished hunter, equitation, and jumper moments inside The Show Place Arena with a smooth ring flow and efficient operations that keep days moving.\n\nUpper Marlboro sits close to the DMV hub, so downtime feels easy: suburban greenways, coffee in hand, and crisp early‑fall air on your walk between barn row and the jog strip. We keep the plan tight so you stay focused on warm‑up ring rhythm and vendor row resets between trips.",
+    "outro": "Keep the week simple and sport‑forward. I can book lodging, map one barn dinner, and prep essentials so you walk into Capital Challenge Horse Show ready to ride."
+  },
+  "stay": {
+    "title": "Where to Stay",
+    "paragraph": "Set a calm base at the premium [Gaylord National Resort & Convention Center](https://www.marriott.com/en-us/hotels/wasgn-gaylord-national-resort-and-convention-center/overview/) or [The Hotel at The University of Maryland](https://www.thehotelumd.com), with a practical backup at [Courtyard by Marriott Largo Medical Center Drive](https://www.marriott.com/en-us/hotels/waslg-courtyard-largo-capital-beltway/overview/). Rooms align well with early warm‑ups and quick returns after last rounds.",
+    "cta": "Want it handled? I’ll lock rooms and sync confirmations.",
+    "items": [
+      {"name": "Gaylord National Resort & Convention Center", "url": "https://www.marriott.com/en-us/hotels/wasgn-gaylord-national-resort-and-convention-center/overview/", "alt": "Premium resort at National Harbor"},
+      {"name": "The Hotel at The University of Maryland", "url": "https://www.thehotelumd.com", "alt": "Upscale College Park hub"},
+      {"name": "Courtyard by Marriott Largo Medical Center Drive", "url": "https://www.marriott.com/en-us/hotels/waslg-courtyard-largo-capital-beltway/overview/", "alt": "Reliable, close-in standard pick"}
+    ]
+  },
+  "dine": {
+    "title": "Dine",
+    "am": "Start light at [First Watch](https://www.firstwatch.com) for coffee, avocado toast, and eggs before schooling—fast and consistent near the venue.",
+    "dinner": "Post-round, keep it straightforward: [Copper Canyon Grill](https://www.coppercanyongrill.com) for steaks and rotisserie, [Grace’s Steak & Seafood](https://www.gracesrestaurants.com) for surf‑and‑turf with sushi, or [Sobe Restaurant & Lounge](https://www.soberestaurantandlounge.com) when the crew wants a scene.",
+    "cta": "I’ll map a barn‑friendly dinner loop with quick reservations.",
+    "items": [
+      {"name": "First Watch", "url": "https://www.firstwatch.com", "alt": "Breakfast spot near venue"},
+      {"name": "Copper Canyon Grill", "url": "https://www.coppercanyongrill.com", "alt": "Dinner steaks and American plates"},
+      {"name": "Grace’s Steak & Seafood", "url": "https://www.gracesrestaurants.com", "alt": "Dinner steak, seafood, sushi"},
+      {"name": "Sobe Restaurant & Lounge", "url": "https://www.soberestaurantandlounge.com", "alt": "Dinner, trendy lounge vibe"}
+    ]
+  },
+  "locale": {
+    "title": "Locale — Off-Barn",
+    "paragraph": "Use short resets between trips: quick suburban park walks, a coffee run, or a quiet campus spin nearby. Keep energy for the ring, not the commute."
+  },
+  "essentials": {
+    "title": "Essentials",
+    "paragraph": "Stock up at [Giant Food Upper Marlboro](https://giantfood.com) and grab meds at [CVS Pharmacy Upper Marlboro](https://www.cvs.com). For barn needs, [Southern States Upper Marlboro Co‑op](https://www.southernstates.com) covers feed, bedding, and tack. Wheels handled by [Enterprise Rent‑A‑Car Largo](https://www.enterprise.com); golf carts via [Dever, Inc.](https://www.deverinc.com).",
+    "cta": "I’ll pack a lean kit so nothing slows your rounds.",
+    "items": [
+      {"type": "grocery", "name": "Giant Food Upper Marlboro", "url": "https://giantfood.com", "alt": "Closest full‑service grocery to the showgrounds."},
+      {"type": "pharmacy", "name": "CVS Pharmacy Upper Marlboro", "url": "https://www.cvs.com", "alt": "Full‑service pharmacy near Giant."},
+      {"type": "feed", "name": "Southern States Upper Marlboro Co‑op", "url": "https://www.southernstates.com", "alt": "Feed, bedding, and tack supplies."},
+      {"type": "car", "name": "Enterprise Rent‑A‑Car Largo", "url": "https://www.enterprise.com", "alt": "Closest rental branch with SUVs and vans."},
+      {"type": "cart", "name": "Dever, Inc.", "url": "https://www.deverinc.com", "alt": "Golf cart rentals coordinated with show office."}
+    ]
+  },
+  "seo": {
+    "section_title": "Capital Challenge — Upper Marlboro Guide",
+    "meta_description": "Plan Capital Challenge in Upper Marlboro: premium stays, quick breakfast, reliable dinners, and essentials near Prince George Equestrian Center.",
+    "open_graph_title": "Capital Challenge Horse Show: Where to Stay, Dine, and Stock Up",
+    "open_graph_description": "Premium hotels, barn‑friendly meals, and must‑have essentials near Prince George Equestrian Center for a calm, rider‑first week.",
+    "search_title": "Capital Challenge Horse Show — Stay, Dine, Essentials",
+    "search_description": "Upper Marlboro picks near Prince George Equestrian Center: hotels, breakfast and dinner options, and grocery, pharmacy, feed, car, and cart vendors."
+  },
+  "brand_usage": {
+    "keywords_used": ["warm-up-ring","jog-strip","vendor-row","ring-flow"],
+    "insiders_used": ["jog-strip","vendor-row"],
+    "audience_trait": "competitive-rider",
+    "intro_template_id": "intro_closing_patterns_v1#1",
+    "outro_template_id": "outro_001",
+    "cta_closers": {
+      "stay": "Want it handled? I’ll lock rooms and sync confirmations.",
+      "dine": "I’ll map a barn-friendly dinner loop with quick reservations.",
+      "essentials": "I’ll pack a lean kit so nothing slows your rounds."
+    }
+  },
+  "source_trace": [
+    {"path":"bootstrap_bundle","status":200},
+    {"path":"task_uri","status":200},
+    {"path":"founder","status":200},
+    {"path":"audiences","status":200},
+    {"path":"event_official_url","status":200},
+    {"path":"venue","status":200},
+    {"path":"geo","status":200},
+    {"path":"keywords","status":200},
+    {"path":"insiders","status":200},
+    {"path":"stay","status":200},
+    {"path":"dine","status":200},
+    {"path":"essentials","status":200}
+  ],
+  "validation": {
+    "status": "pass",
+    "warnings": [
+      "templates+brand: applied (founder,audiences,insiders,intro,outro,cta,lockdown)",
+      "emit_items: applied (stay=3, dine=4, essentials=5)"
+    ],
+    "errors": [],
+    "flags": {
+      "used_founder": true,
+      "used_audiences": true,
+      "used_insiders": true,
+      "used_intro_patterns": true,
+      "used_outro_templates": true,
+      "used_cta_closers": true,
+      "used_intro_outro_lockdown": true,
+      "emit_items_applied": true
+    }
+  }
+}
