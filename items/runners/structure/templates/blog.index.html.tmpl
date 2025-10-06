@@ -1,0 +1,80 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loading…</title>
+<link rel="canonical" href="{{CANONICAL}}">
+<meta id="og-title" property="og:title" content="">
+<meta id="og-desc"  property="og:description" content="">
+<meta id="og-type"  property="og:type" content="article">
+<meta id="og-url"   property="og:url" content="">
+<meta id="tw-card"  name="twitter:card" content="summary_large_image">
+<meta id="meta-desc" name="description" content="">
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="post-config" type="application/json">{ "json": "{{JSON_PATH}}", "assets": "{{ASSETS_PATH}}", "slug": "{{SLUG}}" }</script>
+</head>
+<body class="bg-white text-gray-900">
+<main class="max-w-3xl mx-auto px-4 py-10">
+  <article class="prose prose-neutral lg:prose-lg">
+    <h1 id="title" class="!mb-2"></h1>
+    <img id="hero" alt="" class="w-full rounded-2xl mb-6 hidden" />
+    <p id="intro" class="lead"></p>
+
+    <section><h2 id="stay-title"></h2><img id="stay-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="stay-p"></p><ul id="stay-list" class="list-disc pl-6"></ul><p id="stay-cta" class="italic"></p></section>
+    <section><h2 id="dine-title"></h2><img id="dine-img" alt="" class="w-full rounded-xl mb-3 hidden"/><h3>AM</h3><p id="dine-am"></p><h3>Dinner</h3><p id="dine-dinner"></p><ul id="dine-list" class="list-disc pl-6"></ul><p id="dine-cta" class="italic"></p></section>
+    <section><h2 id="locale-title"></h2><img id="locale-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="locale-p"></p></section>
+    <section><h2 id="essentials-title"></h2><img id="essentials-img" alt="" class="w-full rounded-xl mb-3 hidden"/><p id="essentials-p"></p><ul id="essentials-list" class="list-disc pl-6"></ul><p id="essentials-cta" class="italic"></p></section>
+
+    <hr class="my-8" />
+    <p id="outro" class="text-gray-700"></p>
+
+    <div id="tags" class="mt-6 flex flex-wrap gap-2"></div>
+    <div id="neighbors" class="mt-8 flex justify-between text-sm"></div>
+  </article>
+  <nav class="mt-10"><a href="/blogs/" class="text-blue-600 underline">All blogs</a></nav>
+</main>
+<script>
+const cfg=JSON.parse(document.getElementById('post-config').textContent);
+const setImg=(img,src,alt)=>{if(src){img.src=src;img.alt=alt||'';img.classList.remove('hidden')}};
+Promise.all([fetch(cfg.json).then(r=>r.json()), cfg.assets?fetch(cfg.assets).then(r=>r.json()).catch(()=>({})):Promise.resolve({}), fetch('/blogs/manifest.json').then(r=>r.json()).catch(()=>[])])
+.then(([d,a,m])=>{
+  const title=d.seo?.section_title||d.seo?.open_graph_title||'Blog';
+  document.title=title;
+  document.querySelector('link[rel=canonical]').href="{{CANONICAL}}";
+  document.getElementById('og-title').content=d.seo?.open_graph_title||title;
+  document.getElementById('og-desc').content=d.seo?.open_graph_description||d.seo?.meta_description||'';
+  document.getElementById('meta-desc').content=d.seo?.meta_description||'';
+  document.getElementById('og-url').content=location.href;
+
+  document.getElementById('title').textContent=title;
+  document.getElementById('intro').textContent=d.hello?.intro||'';
+  document.getElementById('outro').textContent=d.hello?.outro||'';
+
+  const add=(arr,ul,label='name')=>Array.isArray(arr)&&arr.forEach(it=>{const li=document.createElement('li');const a=document.createElement('a');a.href=it.url;a.textContent=it[label]||it.name||it.type;a.target='_blank';a.rel='noopener';a.className='text-blue-600 underline';li.appendChild(a);if(it.alt){const s=document.createElement('span');s.textContent=` — ${it.alt}`;li.appendChild(s)};ul.appendChild(li)});
+  const set=(id,t,f)=>document.getElementById(id).textContent=t||f||'';
+
+  set('stay-title',d.stay?.title,'Stay'); set('stay-p',d.stay?.paragraph,''); add(d.stay?.items,document.getElementById('stay-list')); set('stay-cta',d.stay?.cta,'');
+  set('dine-title',d.dine?.title,'Dine'); set('dine-am',d.dine?.am,''); set('dine-dinner',d.dine?.dinner,''); add(d.dine?.items,document.getElementById('dine-list')); set('dine-cta',d.dine?.cta,'');
+  set('locale-title',d.locale?.title,'Locale'); set('locale-p',d.locale?.paragraph,'');
+  set('essentials-title',d.essentials?.title,'Essentials'); set('essentials-p',d.essentials?.paragraph,''); add(d.essentials?.items,document.getElementById('essentials-list')); set('essentials-cta',d.essentials?.cta,'');
+
+  setImg(document.getElementById('hero'), a.hero?.src, a.hero?.alt);
+  setImg(document.getElementById('stay-img'), a.stay?.src, a.stay?.alt);
+  setImg(document.getElementById('dine-img'), a.dine?.src, a.dine?.alt);
+  setImg(document.getElementById('locale-img'), a.locale?.src, a.locale?.alt);
+  setImg(document.getElementById('essentials-img'), a.essentials?.src, a.essentials?.alt);
+
+  // Tags from manifest for this slug
+  const me = m.find(x=>x.slug===cfg.slug);
+  if(me && Array.isArray(me.tags)){ const wrap=document.getElementById('tags'); me.tags.forEach(t=>{const b=document.createElement('span'); b.className='text-xs border rounded-full px-2 py-1'; b.textContent=t; wrap.appendChild(b)}) }
+
+  // Neighbors
+  if(m.length){ const sorted=[...m].sort((a,b)=>(b.date||'').localeCompare(a.date||'')); const i=sorted.findIndex(x=>x.slug===cfg.slug);
+    const prev=sorted[i-1], next=sorted[i+1]; const n=document.getElementById('neighbors');
+    n.innerHTML=`${next?`<a class="underline" href="${next.path}">← Next: ${next.title}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title} →</a>`:''}`;
+  }
+});
+</script>
+</body>
+</html>
