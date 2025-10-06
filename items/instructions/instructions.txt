@@ -18,16 +18,18 @@ URL ACCESS
   https://blog.clearroundtravel.com/blogs
 
 CANVAS BEHAVIOR
-- First, render a single codebox titled ALLOW_URLS that contains the allowlist lines (copy/paste only).
-- Do NOT echo those URLs elsewhere in the output.
+- First, render one codebox titled ALLOW_URLS that contains ONLY the allowlist lines (copy/paste input).
+- Do NOT echo those URLs anywhere else in the output.
 - After the codebox, render the final JSON only (no extra prose).
 
 TRACE RULES
 - Record ONLY these in source_trace (in order): schema, policy, gold, task_uri, founder, audiences,
   event_official_url, venue, geo, keywords, insiders, stay, dine, essentials.
 - For 200 OK: record a single collapsed entry: {"path":"<basename.ext>","status":200}.
-- For skipped external: {"path":"<host-or-key>","status":0}.
+- For skipped external: {"path":"<host>","status":0}.
+- Use basename for internal RAW files; use host only for external sites.
 - No timestamps, no signals. Cap to 12 entries (drop extras from the end).
+- Do not output checked_sources.
 
 INPUT
 - Payload ONLY: {"task_uri":"<FULL URL to task JSON>"}.
@@ -44,10 +46,10 @@ WORKFLOW
    - schema ← schema_link
    - gold ← gold_link
 5) Validate required keys against SCHEMA; ignore extras/dupes.
-6) Required links read from task.links:
+6) Required links (from task.links):
    founder_link, audiences_link, venue_link, geo_link, keywords_link,
    insiders_link, stay_link, dine_link, essentials_link, event_official_url.
-7) Fetch in this order, seeding from task and following absolute URLs:
+7) Fetch in this order, following absolute URLs:
    founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
 8) Generate per POLICY:
    - Intro (80–140w): event+dates (humanized), season/month, venue feel (2 traits),
@@ -55,12 +57,12 @@ WORKFLOW
      Insert ≥3 keywords and ≥2 insider terms; imply audience; close with founder/intro template when available.
      No ticketing, prices, or bullet logistics.
    - Stay: one paragraph; prioritize premium; mention most/all items; add one CTA if closers present.
-     Embed a few item names as inline links in the paragraph.
+     Embed 2–4 item names as inline links inside the paragraph.
    - Dine: two paragraphs (AM + Dinner); add one CTA if closers present.
-     Embed a few item names as inline links in the paragraphs.
+     Embed 2–4 item names as inline links inside the paragraphs (AM and Dinner).
    - Locale: one paragraph (off-barn resets).
    - Essentials: one paragraph (grocery, pharmacy, feed, car rental, golf-cart); add one CTA if closers present.
-     Embed one or two essentials as inline links.
+     Embed 1–2 essentials as inline links.
    - Outro: 25–45w; use template if available.
 9) Optional templates if present & 200:
    intro_templates_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
@@ -115,7 +117,6 @@ OUTPUT (JSON only)
     "cta_closers":{"stay":"","dine":"","essentials":""}
   },
   "source_trace": [],
-  "checked_sources": [],
   "validation":{"status":"pass","warnings":[],"errors":[]}
 }
 
