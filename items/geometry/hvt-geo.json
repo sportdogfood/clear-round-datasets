@@ -6,8 +6,8 @@
   "types": "[\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJ59Am6H5d4IkR196rjvd9mLc",
   "name": "Vermont Summer Festival/HITS Vermont",
-  "lat": "-73.00757329999999",
-  "lng": "43.2529478",
+  "lng": "-73.00757329999999",
+  "lat": "43.2529478",
   "geo_type_uuid": "point_of_interest, establishment",
   "geo_type_ms": "point_of_interest, establishment",
   "geo_uids": [
@@ -21,11 +21,16 @@
   "created": "2025-09-29",
   "last_modified": "2025-10-01 11:14am",
   "geometry_json": "hvt-geo.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/geometry/hvt-geo.json",
+  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/hvt-geo.json",
   "output_uids": [],
   "venue_uuid": "hvt-venue",
   "dine_uuid": "hvt-dine",
   "stay_uuid": "hvt-stay",
   "ess_uuid": "hvt-essentials",
-  "place_uid": "ChIJ59Am6H5d4IkR196rjvd9mLc"
+  "place_uid": "ChIJ59Am6H5d4IkR196rjvd9mLc",
+  "git_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/hvt-geo.json",
+  "crt_link": "https://items.clearroundtravel.com/items/geometry/hvt-geo.json",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://items.clearroundtravel.com/items/"
 }
