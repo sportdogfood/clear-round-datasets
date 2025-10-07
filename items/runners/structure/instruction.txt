@@ -45,10 +45,22 @@ ASSETS
 - Preserve provided alt; default "placeholder" if missing.
 
 PARAGRAPH MARKDOWN
-- Convert inline Markdown links `[label](url)` to `<a>` with `target="_blank"` and `rel="noopener"`.
-- Apply only to these fields: hello.intro, dine.am, dine.dinner, stay.paragraph, locale.paragraph, essentials.paragraph, hello.outro.
+- Use helper at /assets/js/md.js.
+- Convert inline Markdown links `[label](url)` to `<a>` with `target="_blank"` and `rel="noopener nofollow external"`.
 - Escape all HTML before link conversion; allow only anchors.
+- Apply only to these fields:
+  hello.intro, hello.outro,
+  stay.paragraph,
+  dine.overview, dine.am, dine.dinner,
+  locale.paragraph,
+  essentials.paragraph.
 - Lists remain in items[] with separate name, url, alt.
+
+DINE FIELDS
+- Render three paragraphs with headings in this order:
+  1) Overview → from dine.overview
+  2) Breakfast → from dine.am
+  3) Dinner → from dine.dinner
 
 INTERACTIVES
 - Recent: newest 4 by date.
