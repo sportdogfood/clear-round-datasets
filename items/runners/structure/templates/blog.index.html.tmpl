@@ -41,7 +41,9 @@
       <section class="mt-12 border-t pt-8">
         <h2 id="dine-title" class="text-2xl font-semibold tracking-tight mb-3">Dine</h2>
         <img id="dine-img" alt="" class="w-full rounded-xl mb-4 hidden" />
-        <h3 class="text-lg font-medium mt-4 mb-2">AM</h3>
+        <h3 class="text-lg font-medium mt-4 mb-2">Overview</h3>
+        <p id="dine-overview" class="text-gray-800 leading-relaxed mb-3"></p>
+        <h3 class="text-lg font-medium mt-6 mb-2">Breakfast</h3>
         <p id="dine-am" class="text-gray-800 leading-relaxed mb-3"></p>
         <h3 class="text-lg font-medium mt-6 mb-2">Dinner</h3>
         <p id="dine-dinner" class="text-gray-800 leading-relaxed mb-3"></p>
@@ -82,17 +84,12 @@
     </nav>
   </main>
 
-  <script>
-    // Minimal sanitizer: escape HTML then replace Markdown links [label](url) with safe anchors (http/https only)
-    const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const safeUrl = (u) => /^https?:\/\//i.test(u) ? u : '#';
-    const mdInline = (s='') => {
-      const esc = escapeHtml(String(s));
-      return esc.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
-        `<a href="${safeUrl(url.trim())}" target="_blank" rel="noopener" class="underline text-blue-700">${escapeHtml(label)}</a>`
-      ).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
-    };
-    const setHTML = (id, s) => { const el=document.getElementById(id); if(el){ el.innerHTML = `<p>${mdInline(s||'')}</p>`; } };
+  <!-- Use site-root helper at /docs/assets/js/md.js -->
+  <script type="module">
+    import { md } from "/assets/js/md.js";
+
+    const unwrapP = (html) => String(html || "").replace(/^<p>/, "").replace(/<\/p>$/, "");
+    const setHTML = (id, s) => { const el=document.getElementById(id); if(el){ el.innerHTML = unwrapP(md(s||"")); } };
     const setText = (id, v, f='') => { const el=document.getElementById(id); if (el) el.textContent = v || f; };
 
     const cfg = JSON.parse(document.getElementById('post-config').textContent);
@@ -102,17 +99,31 @@
       dine: "/assets/images/dine-placeholder.jpg",
       locale: "/assets/images/place-placeholder.jpg"
     };
-    const setImg = (el, src, alt) => { if (!el) return; el.src = src; el.alt = alt || "placeholder"; el.classList.remove("hidden"); };
+    const setImg = (el, src, alt) => {
+      if (!el) return;
+      el.src = src; el.alt = alt || "placeholder"; el.classList.remove("hidden");
+      el.addEventListener('error', ()=>{ el.classList.add('hidden'); el.remove(); });
+    };
     const addItems = (arr, ul, label='name') => {
       if (!Array.isArray(arr)) return;
       arr.forEach(it => {
         const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = it.url; a.textContent = it[label] || it.name || it.type;
-        a.className = 'text-blue-700 underline break-all';
-        a.rel = 'noopener'; a.target = '_blank';
-        li.appendChild(a);
-        if (it.alt) { const s=document.createElement('span'); s.textContent = ` — ${it.alt}`; li.appendChild(s); }
+        if (it.url) {
+          const a = document.createElement('a');
+          a.href = it.url;
+          a.textContent = it[label] || it.name || it.type || it.url;
+          a.className = 'text-blue-700 underline break-all';
+          a.rel = 'noopener nofollow external';
+          a.target = '_blank';
+          li.appendChild(a);
+          if (it.alt) {
+            const s = document.createElement('span');
+            s.textContent = ` — ${it.alt}`;
+            li.appendChild(s);
+          }
+        } else {
+          li.textContent = it[label] || it.name || it.type || '';
+        }
         ul.appendChild(li);
       });
     };
@@ -136,14 +147,17 @@
       // Paragraph fields with Markdown links
       setHTML('intro', d.hello?.intro);
       setHTML('outro', d.hello?.outro);
+
       setText('stay-title', d.stay?.title, 'Stay');
       setHTML('stay-p', d.stay?.paragraph);
       addItems(d.stay?.items, document.getElementById('stay-list'));
       setText('stay-cta', d.stay?.cta);
 
+      // Dine: three paragraphs (overview, breakfast, dinner)
       setText('dine-title', d.dine?.title, 'Dine');
-      setHTML('dine-am', d.dine?.am);
-      setHTML('dine-dinner', d.dine?.dinner);
+      setHTML('dine-overview', d.dine?.overview || '');
+      setHTML('dine-am', d.dine?.am || '');
+      setHTML('dine-dinner', d.dine?.dinner || '');
       addItems(d.dine?.items, document.getElementById('dine-list'));
       setText('dine-cta', d.dine?.cta);
 
@@ -166,7 +180,12 @@
       const me = (Array.isArray(m) ? m : []).find(x=>x.slug===cfg.slug);
       if (me?.tags) {
         const wrap = document.getElementById('tags');
-        me.tags.forEach(t => { const b=document.createElement('span'); b.className='text-xs border rounded-full px-2 py-1'; b.textContent=t; wrap.appendChild(b); });
+        me.tags.forEach(t => {
+          const b=document.createElement('span');
+          b.className='text-xs border rounded-full px-2 py-1';
+          b.textContent=t;
+          wrap.appendChild(b);
+        });
       }
 
       // Neighbors
@@ -181,117 +200,3 @@
   </script>
 </body>
 </html>
-
-=== items/runners/structure/instruction.txt ===
-Purpose: Structure Runner scaffolds blog files. It never edits post body JSON.
-
-TRIGGER CONTRACT (message JSON):
-{
-  "add_post": "<content JSON URL>",
-  "assets_uri": "<assets JSON URL>",
-  "canonical_base": "https://blog.clearroundtravel.com",
-  "allow_urls": ["<event.json>","<venue.json>","<official site>"]
-}
-Notes:
-- Only fetch HTTPS URLs in allow_urls plus the two trigger URLs.
-- canonical_base defaults to https://blog.clearroundtravel.com.
-
-PATH INVARIANTS
-- Storage: docs/blogs/{venue}-blogs-{year}/{slug}/
-- slug = {venue}-blog-{YYYY-MM-DD} (date from content filename)
-- Post folder contains:
-  - index.html (generated from templates/blog.index.html.tmpl)
-  - <verbatim post JSON filename> (unchanged)
-
-MANIFEST UPSERT
-- File: docs/blogs/manifest.json (array)
-- Key: slug
-- Upsert fields:
-  slug, title, date, year, month_num, month_name, season,
-  path, json, image, venue, city, state, country,
-  tags[], rating_uids[], rating_labels[], sanctioning, fei_level, usef_premier, discipline[]
-- title from content.seo.section_title fallback seo.open_graph_title
-- image from assets.hero.src
-- path format: /blogs/{venue}-blogs-{year}/{slug}/
-
-RATINGS & DISCIPLINE
-- If event.rating_uids present: map to sanctioning/levels, add human labels to tags.
-- If rating_uids missing/empty: omit all rating fields.
-- Discipline: include only if non-empty in event data; otherwise omit.
-
-ASSETS
-- Accept hero/stay/dine/locale/essentials keys with {src,alt}.
-- Require site-root absolute src paths (/assets/images/...).
-- Fallbacks when missing:
-  hero=/assets/images/hero-placeholder.jpg
-  stay=/assets/images/stay-placeholder.jpg
-  dine=/assets/images/dine-placeholder.jpg
-  locale=/assets/images/place-placeholder.jpg
-- Preserve provided alt; default "placeholder" if missing.
-
-PARAGRAPH MARKDOWN
-- Convert inline Markdown links `[label](url)` to `<a>` with `target="_blank"` and `rel="noopener"`.
-- Apply only to these fields: hello.intro, dine.am, dine.dinner, stay.paragraph, locale.paragraph, essentials.paragraph, hello.outro.
-- Escape all HTML before link conversion; allow only anchors.
-- Lists remain in items[] with separate name, url, alt.
-
-INTERACTIVES
-- Recent: newest 4 by date.
-- Next/Prev: neighbors around current slug in date-desc order.
-- Reels: month, season, venue filters from manifest.
-
-OUTPUTS ON add_post
-1) docs/blogs/{venue}-blogs-{year}/{slug}/index.html
-2) docs/blogs/manifest.json (upsert)
-3) docs/blogs/index.html
-4) docs/blogs/{year}/index.html
-5) docs/blogs/rss.xml
-6) docs/sitemap.xml
-
-MODES
-- remove_post: delete slug folder, remove manifest entry, rebuild indices/feeds/sitemap
-- rebuild_all: rebuild indices/feeds/sitemap from manifest only
-
-VALIDATION
-- GET content and assets URIs → 200 + JSON parse
-- Secondary fetches restricted to allow_urls
-- Manifest must validate against manifest.schema.json
-
-IDEMPOTENCE
-- Deterministic output; avoid variable timestamps
-- Atomic replace of generated files
-
-RETURN PAYLOAD
-- JSON with "writes", "deletes", "trace" arrays listing all operations
-
-=== items/runners/structure/policy.json ===
-{
-  "name": "Structure Runner Policy",
-  "version": "1.1.0",
-  "rules": {
-    "scaffold_only": true,
-    "never_edit_post_json": true,
-    "allow_trigger_allowlist_only": true,
-    "site_root_assets_only": true,
-    "manifest_upsert_key": "slug",
-    "derive_date_from_filename": true,
-    "emit_year_archives": true,
-    "emit_rss": true,
-    "emit_sitemap": true,
-    "neighbors_nav": true,
-    "markdown_paragraphs": true,
-    "sanitize_links": true,
-    "items_lists_structured": true
-  },
-  "defaults": {
-    "canonical_base": "https://blog.clearroundtravel.com",
-    "recent_count": 4,
-    "rss_item_limit": 20,
-    "placeholders": {
-      "hero": "/assets/images/hero-placeholder.jpg",
-      "stay": "/assets/images/stay-placeholder.jpg",
-      "dine": "/assets/images/dine-placeholder.jpg",
-      "locale": "/assets/images/place-placeholder.jpg"
-    }
-  }
-}
