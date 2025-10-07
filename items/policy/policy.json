@@ -2,37 +2,31 @@
   "version": "1.0.6",
   "updated_iso": "2025-10-06T00:00:00-04:00",
   "runner": "content-runner",
-
-"link_access": {
-  "allow_from_task_links": true,
-  "allow_base_uris": [
-    "https://raw.githubusercontent.com/sportdogfood/",
-    "https://items.clearroundtravel.com",
-    "https://blog.clearroundtravel.com"
-  ],
-  "allow_event_official_external": true,
-  "no_user_message_presence_required": true
-},
-
-
+  "link_access": {
+    "allow_from_task_links": true,
+    "allow_base_uris": [
+      "https://raw.githubusercontent.com/sportdogfood/",
+      "https://items.clearroundtravel.com",
+      "https://blog.clearroundtravel.com"
+    ],
+    "allow_event_official_external": true,
+    "no_user_message_presence_required": true
+  },
   "content_type": {
     "enforce": false,
     "treat_text_plain_as_json": true
   },
-
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": true,
     "fail_on_missing_url": true
   },
-
   "fetch": {
     "response_length": "long",
     "retry_on_http_error": 1,
     "record_skipped_external": true
   },
-
   "trace": {
     "only_required": true,
     "collapse_success": true,
@@ -58,11 +52,9 @@
       "on_external_fetch_failure": "After one retry, record {\"path\":\"(domain)\",\"status\":0} and continue."
     }
   },
-
   "features": {
     "weather_normals": false
   },
-
   "length_targets": {
     "intro_min": 80,
     "intro_max": 140,
@@ -74,13 +66,11 @@
     "outro_min": 25,
     "outro_max": 45
   },
-
   "brand_requirements": {
     "keywords_min": 3,
     "insiders_min": 2,
     "audience_reference_required": true
   },
-
   "section_rules": {
     "intro": {
       "paragraphs": 2,
@@ -102,7 +92,6 @@
     "essentials": { "paragraph": true, "links_inline": true, "cta_allowed": true },
     "outro": { "use_template_if_available": true }
   },
-
   "templates": {
     "use_intro_closing_patterns": true,
     "use_outro_templates": true,
@@ -112,7 +101,6 @@
     "rotation": "sequential",
     "fallback_to_founder": true
   },
-
   "seo": {
     "emit": true,
     "rules": {
@@ -125,31 +113,27 @@
       "no_insider_terms_in_seo": true
     }
   },
-
   "output_contract": {
     "stay.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "dine.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "essentials.items[]": { "type": "string", "name": "string", "url": "uri", "alt": "string" }
   },
-
-"output_guards": {
-  "arrays_min": {
-    "stay.items": 2,
-    "dine.items": 3,
-    "essentials.items": 5
-  },
-  "require_fields": ["name", "url", "alt"],
-  "reject_single_line_placeholders": true,
-  "string_rules": {
-    "hello.intro": {
-      "must_contain_literal": "\\n\\n",
-      "must_contain_count": 1,
-      "forbid_raw_newlines": true
+  "output_guards": {
+    "arrays_min": {
+      "stay.items": 2,
+      "dine.items": 3,
+      "essentials.items": 5
+    },
+    "require_fields": ["name", "url", "alt"],
+    "reject_single_line_placeholders": true,
+    "string_rules": {
+      "hello.intro": {
+        "must_contain_literal": "\\n\\n",
+        "must_contain_count": 1,
+        "forbid_raw_newlines": true
+      }
     }
-  }
-},
-
-
+  },
   "validation": {
     "trace_requirements": {
       "must_include": [
