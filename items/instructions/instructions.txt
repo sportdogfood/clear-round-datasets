@@ -11,13 +11,9 @@ LOCKDOWN:    https://raw.githubusercontent.com/sportdogfood/clear-round-datasets
 
 URL ACCESS
 - Runner MAY fetch any absolute URL in task JSON under *_link fields.
-- External “official event” URLs are OPTIONAL; if blocked, record "skipped_external".
+- External “official event” URLs are REQUIRED; if 200-fails, mark "skipped_external" and fail intro.
 - Do NOT require URLs to appear in user message or prior search results.
 - Treat Content-Type text/plain as JSON.
-- Preferred bases (not enforced):
-  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
-  https://items.clearroundtravel.com/items
-  https://blog.clearroundtravel.com/blogs
 
 CANVAS
 - Do not render ALLOW_URLS in canvas.
@@ -34,7 +30,7 @@ Operational rules
 - For each fetched list (stay/dine/essentials), extract name, url, and alt. If missing, synthesize alt from source title or fallback per EMIT rules.
 
 TRACE RULES
-- Record ONLY: task_uri, founder, audiences, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, intro-outro-lockdown, bootstrap_bundle.
+- Record ONLY: task_uri, founder, audiences, events, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, intro-outro-lockdown, bootstrap_bundle.
 - Each entry: {"path":"(basename)","status":200} or {"path":"(domain)","status":0}.
 - Max 15 entries; no timestamps/signals.
 
@@ -55,10 +51,10 @@ WORKFLOW
    gold ← gold_link
 5) Validate required keys (ignore extras/dupes).
 6) Required links:
-   founder_link, audiences_link, venue_link, geo_link, keywords_link,
+   founder_link, audiences_link, events_link, venue_link, geo_link, keywords_link,
    insiders_link, stay_link, dine_link, essentials_link, event_official_url.
 7) Fetch in order:
-   founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
+   founder → audiences → events → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
 8) Generate per POLICY and LOCKDOWN:
    - Paragraph joiner: use the literal "\\n\\n" between P1 and P2. No raw blank lines inside JSON strings.
    - Intro (two paragraphs; total 80–140w):
@@ -78,26 +74,6 @@ WORKFLOW
 TEMPLATES
 - intro_closing_patterns_link, outro_templates_link, cta_closers_link (rotate sequentially; fallback to founder).
 - intro-outro-lockdown.json governs: two-paragraph intro rule, required P1 links, and forbid list. If present, apply before other templates.
-
-USAGE_INDICATORS
-on_apply:
-  set_flags:
-    validation.flags.used_founder: true
-    validation.flags.used_audiences: true
-    validation.flags.used_insiders: true
-    validation.flags.used_intro_patterns: true
-    validation.flags.used_outro_templates: true
-    validation.flags.used_cta_closers: true
-    validation.flags.used_intro_outro_lockdown: true
-  add_warning: "templates+brand: applied (founder,audiences,insiders,intro,outro,cta,lockdown)"
-inputs_echo:
-  founder_link: "<full url>"
-  audiences_link: "<full url>"
-  insiders_link: "<full url>"
-  intro_templates_link: "<full url>"
-  outro_templates_link: "<full url>"
-  cta_closers_link: "<full url>"
-  intro_outro_lockdown_link: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
 
 EMIT_ITEMS
 emit_items: true
@@ -141,7 +117,7 @@ OUTPUT (JSON only)
   "hello":{"intro":"","outro":""},
   "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
   "dine":{"title":"Dine","overview":"","am":"","dinner":"","cta":"","items":[]},
-  "locale":{"title":"Locale — Off-Barn","paragraph":""},
+  "locale":{"title":"Locale - Off-Barn","paragraph":""},
   "essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
   "seo":{
     "section_title":"","meta_description":"","open_graph_title":"",
