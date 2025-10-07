@@ -29,7 +29,15 @@
       { "name": "", "url": "", "alt": "" },
       { "name": "", "url": "", "alt": "" },
       { "name": "", "url": "", "alt": "" }
-    ]
+    ],
+    "labels": {
+      "am_label": "",         /* expected values: "am" or "lunch" */
+      "dinner_label": ""      /* expected values: "dinner" or "lunch" */
+    },
+    "fallback": {
+      "am_used_lunch": false,     /* true when AM borrowed lunch items and copy says "lunch" */
+      "dinner_used_lunch": false  /* true when Dinner borrowed lunch items and copy says "lunch" */
+    }
   },
   "locale": {
     "title": "Locale - Off-Barn",
@@ -84,6 +92,10 @@
         "event_link_present": false,
         "venue_link_present": false
       }
+    },
+    "dine_copy_checks": {
+      "am_mentions_lunch_when_fallback_true": false,
+      "dinner_mentions_lunch_when_fallback_true": false
     }
   },
   "limits": {
@@ -146,7 +158,10 @@
       "used_outro_templates": false,
       "used_cta_closers": false,
       "used_intro_outro_lockdown": false,
-      "emit_items_applied": false
+      "emit_items_applied": false,
+      "allow_lunch_as_fallback": true,
+      "am_used_lunch": false,
+      "dinner_used_lunch": false
     }
   }
 }
