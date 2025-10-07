@@ -1,48 +1,20 @@
 {
   "essential_uid": "wcoc-essential",
-  "venue_uid": "wcoc-venue",
-  "blurb": "",
-  "cta_text": "",
-  "spot_grocery_uids": [
-    "publix-super-grocery-wcoc"
-  ],
-  "essential_uuid": "wcoc-essential",
-  "zone_uid": "wcoc-zone",
-  "venue_uuid": "wcoc-essential",
-  "zone_uuid": "wcoc-zone",
-  "dirs": "essentials",
-  "spot_cart_uids": [
-    "dever-inc-golfcartrental-wcoc"
-  ],
-  "spot_feed_uids": [
-    "tack-shack-of-feedtackbedding-wcoc"
-  ],
-  "spot_pharmacy_uids": [
-    "walgreens-sw-college-rd-pharmacy-wcoc"
-  ],
-  "spot_car_uids": [
-    "enterprise-car-wcoc"
-  ],
-  "ess_uuid": "wcoc-essentials",
-  "spot_grocery_count": "1",
-  "spot_pharmacy_count": "1",
-  "spot_feed_count": "1",
-  "spot_cart_count": "1",
-  "spot_car_count": "1",
-  "curator": "",
+  "essentials_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/essentials/wcoc-essential.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/wcoc-venue.json",
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoc-geo.json",
   "essential_image": "",
-  "blurb_uid": "",
-  "table_name": "essentials/",
-  "essentials_json": "wcoc-essential.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/essentials/wcoc-essential.json",
   "essential_image_alt": "",
-  "last_modified": "10/1/2025 3:02pm",
-  "created": "9/29/2025",
-  "essentials_record_id": "rec4oHemum36bScC8",
-  "spot_car_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/enterprise-car-wcoc.json",
-  "spot_cart_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/dever-inc-golfcartrental-wcoc.json",
-  "spot_feed_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/tack-shack-of-feedtackbedding-wcoc.json",
-  "spot_pharmacy_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/walgreens-sw-college-rd-pharmacy-wcoc.json",
-  "spot_grocery_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/publix-super-grocery-wcoc.json",
-  "output_uids": []
+  "essential_blurb": "",
+  "cta_text": "",
+  "spot_grocery_count": "1",
+  "spot_grocery_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/publix-super-grocery-wcoc.json",
+  "spot_pharmacy_count": "1",
+  "spot_pharmacy_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/walgreens-sw-college-rd-pharmacy-wcoc.json",
+  "spot_feed_count": "1",
+  "spot_feed_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/tack-shack-of-feedtackbedding-wcoc.json",
+  "spot_cart_count": "1",
+  "spot_cart_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/dever-inc-golfcartrental-wcoc.json",
+  "spot_car_count": "1",
+  "spot_car_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/enterprise-car-wcoc.json"
 }
