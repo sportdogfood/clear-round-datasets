@@ -5,7 +5,7 @@
   "vacinity": "6535 Bates Rd, Williamsburg",
   "types": "[\"tourist_attraction\",\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJTZD_jRvRH4gR2BDPkiHbJn4",
-  "name": "Traverse City Horse Shows at Flintfields Horse Park",
+  "venue_name": "Traverse City Horse Shows at Flintfields Horse Park",
   "lng": "-85.44525949999999",
   "lat": "44.7809389",
   "geo_type_uuid": "tourist_attraction, point_of_interest, establishment",
@@ -20,9 +20,9 @@
   "table_name": "geometry/",
   "gerometry_recordId": "recxO2DehxBABY5jP",
   "created": "2025-09-29",
-  "last_modified": "2025-10-01 11:14am",
+  "last_modified": "2025-10-07 7:50am",
   "geometry_json": "tchs-geo.json",
-  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tchs-geo.json",
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tchs-geo.json",
   "output_uids": [],
   "venue_uuid": "tchs-venue",
   "dine_uuid": "tchs-dine",
@@ -33,5 +33,7 @@
   "crt_link": "https://items.clearroundtravel.com/items/geometry/tchs-geo.json",
   "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
   "proxy_clear": "https://items.clearroundtravel.com/items/",
-  "proxy_heroku": "https://items.clearroundtravel.com/items/"
+  "proxy_heroku": "https://items.clearroundtravel.com/items/",
+  "seasonal_normals": "",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/tchs-venue.json"
 }
