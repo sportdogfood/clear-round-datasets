@@ -1,43 +1,16 @@
 {
   "dine_uid": "hchs-dine",
-  "dine_image": "",
-  "dine_recordId": "recHIFTCIKvOHw33J",
-  "last_modified": "10/1/2025 1:13pm",
-  "created": "9/29/2025",
-  "blurb": "",
-  "venue_uid": "hchs-venue",
-  "dine_uuid": "hchs-dine",
-  "zone_uid": "hchs-zone",
-  "venue_uuid": "hchs-venue",
-  "dirs": "dine",
-  "food_preview_lunch_uids": [
-    "world-pie-lunch-hchs",
-    "page-at-63-main-lunch-hchs",
-    "world-pie-lunch-hchs",
-    "almond-restaurant-lunch-hchs",
-    "page-at-63-main-lunch-hchs",
-    "estias-little-kitchen-lunch-hchs"
-  ],
-  "food_preview_dinner_uids": [
-    "topping-rose-house-restaurant-dinner-hchs"
-  ],
-  "food_preview_am_uids": [
-    "espresso-da-asporto-am-hchs",
-    "topping-rose-house-restaurant-am-hchs"
-  ],
-  "food_preview_am_count": "2",
-  "food_preview_lunch_count": "6",
-  "food_preview_dinner_count": "1",
+  "dine_blurb": "",
   "cta_text": "",
-  "blurb_uid": "",
-  "table_name": "dine/",
-  "dine.json": "hchs-dine.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/dine/hchs-dine.json",
+  "dine_image": "",
   "dine_img_alt": "",
-  "curator": "",
-  "food_preview_am_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/espresso-da-asporto-am-hchs.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/topping-rose-house-restaurant-am-hchs.json",
-  "food_preview_lunch_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/world-pie-lunch-hchs.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/page-at-63-main-lunch-hchs.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/world-pie-lunch-hchs.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/almond-restaurant-lunch-hchs.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/page-at-63-main-lunch-hchs.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/estias-little-kitchen-lunch-hchs.json",
-  "food_preview_dinner_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/topping-rose-house-restaurant-dinner-hchs.json",
+  "food_preview_am_count": "2",
+  "food_preview_am_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/espresso-da-asporto-am-hchs.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/topping-rose-house-restaurant-am-hchs.json",
+  "food_preview_lunch_count": "6",
+  "food_preview_lunch_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/world-pie-lunch-hchs.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/page-at-63-main-lunch-hchs.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/world-pie-lunch-hchs.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/almond-restaurant-lunch-hchs.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/page-at-63-main-lunch-hchs.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/estias-little-kitchen-lunch-hchs.json",
+  "food_preview_dinner_count": "1",
+  "food_preview_dinner_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/topping-rose-house-restaurant-dinner-hchs.json",
   "food_preview_total": "9",
-  "output_uids": []
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/hchs-geo.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/hchs-venue.json"
 }
