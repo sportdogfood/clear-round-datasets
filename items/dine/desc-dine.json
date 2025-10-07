@@ -1,43 +1,16 @@
 {
   "dine_uid": "desc-dine",
-  "dine_image": "",
-  "dine_recordId": "recpkkZUKiwx0xt74",
-  "last_modified": "10/1/2025 1:13pm",
-  "created": "9/29/2025",
-  "blurb": "",
-  "venue_uid": "desc-venue",
-  "dine_uuid": "desc-dine",
-  "zone_uid": "desc-zone",
-  "venue_uuid": "desc-venue",
-  "dirs": "dine",
-  "food_preview_lunch_uids": [
-    "tack-room-tavern-lunch-desc",
-    "the-cafe-at-shields-date-garden-lunch-desc",
-    "heirloom-craft-kitchen-lunch-desc",
-    "marios-italian-cafe-lunch-desc"
-  ],
-  "food_preview_dinner_uids": [
-    "lavender-bistro-dinner-desc",
-    "arnold-palmers-restaurant-dinner-desc",
-    "morgans-in-the-desert-dinner-desc",
-    "lgs-prime-steakhouse-la-quinta-dinner-desc"
-  ],
-  "food_preview_am_uids": [
-    "ernies-cafe-am-desc"
-  ],
-  "food_preview_am_count": "1",
-  "food_preview_lunch_count": "4",
-  "food_preview_dinner_count": "4",
+  "dine_blurb": "",
   "cta_text": "",
-  "blurb_uid": "",
-  "table_name": "dine/",
-  "dine.json": "desc-dine.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/dine/desc-dine.json",
+  "dine_image": "",
   "dine_img_alt": "",
-  "curator": "",
-  "food_preview_am_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/ernies-cafe-am-desc.json",
-  "food_preview_lunch_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/tack-room-tavern-lunch-desc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/the-cafe-at-shields-date-garden-lunch-desc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/heirloom-craft-kitchen-lunch-desc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/marios-italian-cafe-lunch-desc.json",
-  "food_preview_dinner_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/lavender-bistro-dinner-desc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/arnold-palmers-restaurant-dinner-desc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/morgans-in-the-desert-dinner-desc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/lgs-prime-steakhouse-la-quinta-dinner-desc.json",
+  "food_preview_am_count": "1",
+  "food_preview_am_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/ernies-cafe-am-desc.json",
+  "food_preview_lunch_count": "4",
+  "food_preview_lunch_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/tack-room-tavern-lunch-desc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/the-cafe-at-shields-date-garden-lunch-desc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/heirloom-craft-kitchen-lunch-desc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/marios-italian-cafe-lunch-desc.json",
+  "food_preview_dinner_count": "4",
+  "food_preview_dinner_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/lavender-bistro-dinner-desc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/arnold-palmers-restaurant-dinner-desc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/morgans-in-the-desert-dinner-desc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/lgs-prime-steakhouse-la-quinta-dinner-desc.json",
   "food_preview_total": "9",
-  "output_uids": []
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/desc-geo.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/desc-venue.json"
 }
