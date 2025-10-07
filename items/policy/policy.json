@@ -22,8 +22,8 @@
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
-    "fail_on_4xx_required_links": false,
-    "fail_on_missing_url": false
+    "fail_on_4xx_required_links": true,
+    "fail_on_missing_url": true
   },
 
   "fetch": {
@@ -41,6 +41,7 @@
       "task_uri",
       "founder",
       "audiences",
+      "events",
       "event_official_url",
       "venue",
       "geo",
@@ -153,6 +154,7 @@
         "task_uri",
         "founder",
         "audiences",
+        "events",
         "event_official_url",
         "venue",
         "geo",
@@ -187,8 +189,9 @@
     "items_requirements": {
       "stay_items_min": 2,
       "dine_items_min": 3,
-      "essentials_items_min": 4,
-      "fields_required_per_item": ["name", "url", "alt"]
+      "essentials_items_min": 5,
+      "fields_required_per_item": ["name", "url", "alt"],
+      "essentials_required_types": ["grocery", "pharmacy", "feed", "car", "cart"]
     }
   }
 }
