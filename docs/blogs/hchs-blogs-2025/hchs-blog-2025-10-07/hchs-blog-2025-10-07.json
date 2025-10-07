@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "run_id": "hchs-task-2025-10-07",
+    "timestamp_iso": "2025-10-07T00:00:00-04:00",
+    "task_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/tasks/hchs-task-2025-09-30.json",
+    "policy_version": "1.0.6",
+    "policy_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json"
+  },
+  "hello": {
+    "intro": "The [Hampton Classic Horse Show](https://www.hamptonclassic.com/) runs August 23–30, 2026 at the [Hampton Classic Horse Show](https://www.hamptonclassic.com/) in Bridgehampton, NY. Expect FEI 5* and 2* show jumping with world‑class hunters, a polished showground feel, and a spectator‑friendly layout that keeps the grand‑prix focus clear. Warm‑up-ring flow rewards timing and course-walk prep for a smooth week.\n\nBridgehampton carries an easy coastal‑village vibe: mornings start crisp, afternoons soften with salt air, and evenings lean social along village streets. It’s late‑summer in the Hamptons, so plan resets between rides with a quick vendor-row stroll and jog-strip timing in mind—clean, rider‑first days built for a-circuit rhythm.",
+    "outro": "Keep the week simple and sport-forward. I can book lodging, map one barn dinner, and prep essentials so you walk into Hampton Classic Horse Show ready to ride, with confirmations organized and adjustments handled quickly."
+  },
+  "stay": {
+    "title": "Where to Stay",
+    "paragraph": "Set close and quiet: [Topping Rose House](https://www.toppingrosehouse.com) for luxury near the rings, [Baron’s Cove](https://www.caperesorts.com/barons-cove) for harbor views in Sag Harbor, and [Southampton Inn](https://www.southamptoninn.com) for village convenience and easy parking.",
+    "cta": "Want it handled? I'll lock rooms and sync confirmations.",
+    "items": [
+      { "name": "Topping Rose House", "url": "https://www.toppingrosehouse.com", "alt": "Luxury boutique near Bridgehampton rings" },
+      { "name": "Baron’s Cove", "url": "https://www.caperesorts.com/barons-cove", "alt": "Harborfront hotel in Sag Harbor" },
+      { "name": "Southampton Inn", "url": "https://www.southamptoninn.com", "alt": "Boutique stay in Southampton village" }
+    ]
+  },
+  "dine": {
+    "title": "Dine",
+    "overview": "Keep meals simple and close to the showgrounds: quick daytime bites, then seated dinners that work around orders-of-go.",
+    "am": "For breakfast, book a calm start at [Topping Rose House Restaurant](https://www.toppingrosehouse.com/dining).",
+    "dinner": "After rounds, Sag Harbor and Bridgehampton offer reliable sit‑downs: [Page at 63 Main](https://www.page63main.com) for farm‑to‑table plates and [Almond](https://www.almondrestaurant.com) for French‑American bistro classics.",
+    "cta": "I'll map a barn-friendly dinner loop with quick reservations.",
+    "items": [
+      { "name": "Topping Rose House Restaurant", "url": "https://www.toppingrosehouse.com/dining", "alt": "Upscale breakfast near venue" },
+      { "name": "World Pie", "url": "https://www.worldpiebh.com", "alt": "Casual pizza and salads near venue" },
+      { "name": "Page at 63 Main", "url": "https://www.page63main.com", "alt": "Farm-to-table spot in Sag Harbor" },
+      { "name": "Almond Restaurant", "url": "https://www.almondrestaurant.com", "alt": "French-American bistro in Bridgehampton" },
+      { "name": "Estia's Little Kitchen", "url": "https://www.estiaslittlekitchen.com", "alt": "Local favorite for brunch and lunch" }
+    ]
+  },
+  "locale": {
+    "title": "Locale - Off-Barn",
+    "paragraph": "Reset with short village walks, quick coffee runs, and harbor sunsets; save longer beach time for off days so the ring stays first."
+  },
+  "essentials": {
+    "title": "Essentials",
+    "paragraph": "Stock up at [King Kullen](https://www.kingkullen.com) and keep meds covered at [CVS Pharmacy](https://www.cvs.com). For barn needs, [Hampton Feed & Tack](https://hamptonfeedtack.com) has feed and bedding. Wheels are easy via [Enterprise](https://www.enterprise.com), and carts by [Dever, Inc.](https://www.deverinc.com).",
+    "cta": "I'll pack a lean kit so nothing slows your rounds.",
+    "items": [
+      { "type": "grocery", "name": "King Kullen Bridgehampton", "url": "https://www.kingkullen.com", "alt": "Closest full grocery to the showgrounds" },
+      { "type": "pharmacy", "name": "CVS Pharmacy Bridgehampton", "url": "https://www.cvs.com", "alt": "Full-service pharmacy near venue" },
+      { "type": "feed", "name": "Hampton Feed & Tack", "url": "https://hamptonfeedtack.com", "alt": "Feed, bedding, and tack supplies" },
+      { "type": "car", "name": "Enterprise Rent-A-Car Southampton", "url": "https://www.enterprise.com", "alt": "Closest rental office with SUVs" },
+      { "type": "cart", "name": "Dever, Inc.", "url": "https://www.deverinc.com", "alt": "Golf cart rentals with delivery" }
+    ]
+  },
+  "seo": {
+    "section_title": "Hampton Classic Horse Show — Bridgehampton Guide",
+    "meta_description": "Plan your Hampton Classic week: where to stay, eat, and stock up near Bridgehampton, NY, with rider‑first picks close to the rings.",
+    "open_graph_title": "Hampton Classic: Stay, Dine, Essentials",
+    "open_graph_description": "Rider‑first hotels, dining, and essentials for Hampton Classic week in Bridgehampton, NY.",
+    "search_title": "Hampton Classic Week: Stay, Dine, Essentials",
+    "search_description": "Bridgehampton rider guide for hotels, breakfast and dinner picks, groceries, pharmacy, car and cart rentals near the Hampton Classic."
+  },
+  "brand_usage": {
+    "keywords_used": ["a-circuit","grand-prix","course-walk","warm-up-ring","vendor-row"],
+    "insiders_used": ["vendor-row","jog-strip","warm-up-ring","course-walk"],
+    "audience_trait": "spectator-support",
+    "intro_template_id": "intro_closing_patterns_v1#1",
+    "outro_template_id": "outro_001",
+    "cta_closers": { "stay": "stay_01", "dine": "dine_01", "essentials": "essentials_01" }
+  },
+  "source_trace": [
+    {"path":"bootstrap_bundle","status":200},
+    {"path":"task_uri","status":200},
+    {"path":"founder","status":200},
+    {"path":"audiences","status":200},
+    {"path":"events","status":0},
+    {"path":"event_official_url","status":200},
+    {"path":"venue","status":200},
+    {"path":"geo","status":200},
+    {"path":"keywords","status":200},
+    {"path":"insiders","status":200},
+    {"path":"stay","status":200},
+    {"path":"dine","status":200},
+    {"path":"essentials","status":200}
+  ],
+  "validation": {
+    "status": "pass",
+    "warnings": ["emit_items: applied (stay=3, dine=5, essentials=5)"],
+    "errors": [],
+    "flags": { "emit_items_applied": true, "used_intro_outro_lockdown": true }
+  }
+}
