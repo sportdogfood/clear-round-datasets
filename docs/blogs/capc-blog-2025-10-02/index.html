@@ -71,101 +71,114 @@
 </section>
 
 <script>
-(async function(){
-  const base = location.pathname.replace(/\/index\.html?$/,'');
-  const contentUrl = base + '/capc-blog-2025-10-02.json';
-  const assetsUrl  = base + '/assets.json';
+(function(){
+  // Minimal safe Markdown: links + line breaks
+  function md(s=""){
+    const esc = x => x.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+    // escape then convert [text](https://url)
+    let out = esc(String(s)).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      (_,t,u)=>`<a href="${u}" target="_blank" rel="noopener nofollow external">${t}</a>`);
+    // paragraphs and line breaks
+    out = out.replace(/\n{2,}/g,'</p><p>').replace(/\n/g,'<br>');
+    return `<p>${out}</p>`;
+  }
 
-  const [content, assets] = await Promise.all([
-    fetch(contentUrl).then(r=>r.json()),
-    fetch(assetsUrl).then(r=>r.json())
-  ]);
+  (async function(){
+    const base = location.pathname.replace(/\/index\.html?$/,'');
+    const contentUrl = base + '/capc-blog-2025-10-02.json';
+    const assetsUrl  = base + '/assets.json';
 
-  // Absolute canonical + og:url
-  const canonical = location.origin + base + '/';
-  document.getElementById('canonical').setAttribute('href', canonical);
-  document.getElementById('og-url').setAttribute('content', canonical);
+    const [content, assets] = await Promise.all([
+      fetch(contentUrl).then(r=>r.json()),
+      fetch(assetsUrl).then(r=>r.json())
+    ]);
 
-  // SEO head
-  const seo = content.seo || {};
-  const title = seo.search_title || 'Insider Guide';
-  const desc  = seo.meta_description || '';
-  const ogt   = seo.open_graph_title || title;
-  const ogd   = seo.open_graph_description || desc;
-  const heroSrc = (assets.hero && assets.hero.src) || '';
+    // Absolute canonical + og:url
+    const canonical = location.origin + base + '/';
+    document.getElementById('canonical').setAttribute('href', canonical);
+    document.getElementById('og-url').setAttribute('content', canonical);
 
-  document.getElementById('title').textContent = title;
-  document.getElementById('meta-desc').setAttribute('content', desc);
-  document.getElementById('og-title').setAttribute('content', ogt);
-  document.getElementById('og-desc').setAttribute('content', ogd);
-  document.getElementById('og-image').setAttribute('content', heroSrc);
-  document.getElementById('tw-title').setAttribute('content', ogt);
-  document.getElementById('tw-desc').setAttribute('content', ogd);
-  document.getElementById('tw-image').setAttribute('content', heroSrc);
+    // SEO head
+    const seo = content.seo || {};
+    const title = seo.search_title || 'Insider Guide';
+    const desc  = seo.meta_description || '';
+    const ogt   = seo.open_graph_title || title;
+    const ogd   = seo.open_graph_description || desc;
+    const heroSrc = (assets.hero && assets.hero.src) || '';
 
-  // Hero + section images (hide if missing or error)
-  const safeImg = (el, src, alt) => {
-    if(!src){ el.parentElement.remove(); return; }
-    el.src = src; el.alt = alt || el.alt || '';
-    el.addEventListener('error', ()=>{ el.parentElement.remove(); });
-  };
-  safeImg(document.getElementById('hero'), heroSrc, assets.hero && assets.hero.alt);
-  safeImg(document.getElementById('stay-img'), assets.stay && assets.stay.src, assets.stay && assets.stay.alt);
-  safeImg(document.getElementById('dine-img'), assets.dine && assets.dine.src, assets.dine && assets.dine.alt);
+    document.getElementById('title').textContent = title;
+    document.getElementById('meta-desc').setAttribute('content', desc);
+    document.getElementById('og-title').setAttribute('content', ogt);
+    document.getElementById('og-desc').setAttribute('content', ogd);
+    document.getElementById('og-image').setAttribute('content', heroSrc);
+    document.getElementById('tw-title').setAttribute('content', ogt);
+    document.getElementById('tw-desc').setAttribute('content', ogd);
+    document.getElementById('tw-image').setAttribute('content', heroSrc);
 
-  // Title H1 prefer SEO title, fallback event_name
-  const eventName = title || (content.meta && content.meta.event_name) || 'Insider Guide';
-  document.getElementById('h1').textContent = eventName;
+    // Hero + section images (hide if missing or error)
+    const safeImg = (el, src, alt) => {
+      if(!src){ el.parentElement.remove(); return; }
+      el.src = src; el.alt = alt || el.alt || '';
+      el.addEventListener('error', ()=>{ el.parentElement.remove(); });
+    };
+    safeImg(document.getElementById('hero'), heroSrc, assets.hero && assets.hero.alt);
+    safeImg(document.getElementById('stay-img'), assets.stay && assets.stay.src, assets.stay && assets.stay.alt);
+    safeImg(document.getElementById('dine-img'), assets.dine && assets.dine.src, assets.dine && assets.dine.alt);
 
-  // Intro/Outro
-  document.getElementById('intro').innerHTML = '<p>'+ (content.hello?.intro || '') +'</p>';
-  document.getElementById('outro-p').textContent = content.hello?.outro || '';
+    // Title H1 prefer SEO title, fallback event_name
+    const eventName = title || (content.meta && content.meta.event_name) || 'Insider Guide';
+    document.getElementById('h1').textContent = eventName;
 
-  // Stay
-  document.getElementById('stay-p').textContent = content.stay?.paragraph || '';
-  (content.stay?.items || []).forEach(it=>{
-    const li=document.createElement('li');
-    if(it.url){
-      li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':'');
-    } else { li.textContent = it.name || ''; }
-    document.getElementById('stay-list').appendChild(li);
-  });
-  document.getElementById('stay-cta').textContent = content.stay?.cta || '';
+    // Intro/Outro with Markdown links
+    document.getElementById('intro').innerHTML = md(content.hello?.intro || '');
+    document.getElementById('outro-p').innerHTML = md(content.hello?.outro || '').replace(/^<p>|<\/p>$/g,'');
 
-  // Dine
-  document.getElementById('dine-am').textContent = content.dine?.am || '';
-  document.getElementById('dine-dinner').textContent = content.dine?.dinner || '';
-  document.getElementById('dine-cta').textContent = content.dine?.cta || '';
+    // Stay
+    document.getElementById('stay-p').innerHTML = md(content.stay?.paragraph || '');
+    (content.stay?.items || []).forEach(it=>{
+      const li=document.createElement('li');
+      if(it.url){
+        li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':'');
+      } else { li.textContent = it.name || ''; }
+      document.getElementById('stay-list').appendChild(li);
+    });
+    document.getElementById('stay-cta').textContent = content.stay?.cta || '';
 
-  // Locale
-  document.getElementById('locale-p').textContent = content.locale?.paragraph || '';
+    // Dine (AM/Dinner accept Markdown links)
+    document.getElementById('dine-am').innerHTML = md(content.dine?.am || '').replace(/^<p>|<\/p>$/g,'');
+    document.getElementById('dine-dinner').innerHTML = md(content.dine?.dinner || '').replace(/^<p>|<\/p>$/g,'');
+    document.getElementById('dine-cta').textContent = content.dine?.cta || '';
 
-  // Essentials
-  document.getElementById('essentials-p').textContent = content.essentials?.paragraph || '';
-  (content.essentials?.items || []).forEach(it=>{
-    const li=document.createElement('li');
-    if(it.url){
-      li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':'');
-    } else { li.textContent = it.name || ''; }
-    document.getElementById('essentials-list').appendChild(li);
-  });
-  document.getElementById('essentials-cta').textContent = content.essentials?.cta || '';
+    // Locale
+    document.getElementById('locale-p').innerHTML = md(content.locale?.paragraph || '');
 
-  // JSON-LD Article
-  const ld = {
-    "@context":"https://schema.org",
-    "@type":"Article",
-    "headline": ogt,
-    "description": desc,
-    "image": heroSrc ? [heroSrc] : [],
-    "mainEntityOfPage": canonical,
-    "datePublished": (content.meta && content.meta.timestamp_iso) || "",
-    "author": { "@type":"Organization", "name":"Clear Round Travel" }
-  };
-  const s = document.createElement('script');
-  s.type = 'application/ld+json';
-  s.textContent = JSON.stringify(ld);
-  document.head.appendChild(s);
+    // Essentials
+    document.getElementById('essentials-p').innerHTML = md(content.essentials?.paragraph || '');
+    (content.essentials?.items || []).forEach(it=>{
+      const li=document.createElement('li');
+      if(it.url){
+        li.innerHTML = '<a rel="noopener nofollow external" target="_blank" href="'+it.url+'">'+(it.name||'')+'</a>' + (it.alt? ' — <span class="muted">'+it.alt+'</span>':'');
+      } else { li.textContent = it.name || ''; }
+      document.getElementById('essentials-list').appendChild(li);
+    });
+    document.getElementById('essentials-cta').textContent = content.essentials?.cta || '';
+
+    // JSON-LD Article
+    const ld = {
+      "@context":"https://schema.org",
+      "@type":"Article",
+      "headline": ogt,
+      "description": desc,
+      "image": heroSrc ? [heroSrc] : [],
+      "mainEntityOfPage": canonical,
+      "datePublished": (content.meta && content.meta.timestamp_iso) || "",
+      "author": { "@type":"Organization", "name":"Clear Round Travel" }
+    };
+    const s = document.createElement('script');
+    s.type = 'application/ld+json';
+    s.textContent = JSON.stringify(ld);
+    document.head.appendChild(s);
+  })();
 })();
 </script>
 </body>
