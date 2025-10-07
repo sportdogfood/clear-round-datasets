@@ -93,7 +93,7 @@
       "forbid": ["ticketing", "prices", "logistics_lists", "hotel_names", "restaurant_names"]
     },
     "stay": { "paragraph": true, "links_inline": true, "cta_allowed": true },
-    "dine": { "am": true, "dinner": true, "links_inline": true, "cta_allowed": true },
+    "dine": { "overview": true, "am": true, "dinner": true, "links_inline": true, "cta_allowed": true },
     "locale": { "paragraph": true },
     "essentials": { "paragraph": true, "links_inline": true, "cta_allowed": true },
     "outro": { "use_template_if_available": true }
@@ -163,6 +163,9 @@
       "p1_max_words": 90,
       "p2_min_words": 25,
       "p2_max_words": 60
+    },
+    "dine_requirements": {
+      "fields_required": ["overview", "am", "dinner"]
     },
     "outro_requirements": {
       "min_words": 25,
