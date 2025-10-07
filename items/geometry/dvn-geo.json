@@ -5,7 +5,7 @@
   "vacinity": "23 Dorset Rd, Devon",
   "types": "[\"point_of_interest\",\"establishment\"]",
   "place_id": "ChIJQzYwE7uUxokRSMsO20tr-w4",
-  "name": "Devon Horse Show & Country Fair and Devon Fall Classic",
+  "venue_name": "Devon Horse Show & Country Fair and Devon Fall Classic",
   "lng": "-75.4203",
   "lat": "40.0457585",
   "geo_type_uuid": "point_of_interest, establishment",
@@ -19,9 +19,9 @@
   "table_name": "geometry/",
   "gerometry_recordId": "recpSGq60PbNtSDIH",
   "created": "2025-09-29",
-  "last_modified": "2025-10-01 11:14am",
+  "last_modified": "2025-10-07 7:50am",
   "geometry_json": "dvn-geo.json",
-  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/dvn-geo.json",
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/dvn-geo.json",
   "output_uids": [],
   "venue_uuid": "dvn-venue",
   "dine_uuid": "dvn-dine",
@@ -32,5 +32,7 @@
   "crt_link": "https://items.clearroundtravel.com/items/geometry/dvn-geo.json",
   "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
   "proxy_clear": "https://items.clearroundtravel.com/items/",
-  "proxy_heroku": "https://items.clearroundtravel.com/items/"
+  "proxy_heroku": "https://items.clearroundtravel.com/items/",
+  "seasonal_normals": "",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/dvn-venue.json"
 }
