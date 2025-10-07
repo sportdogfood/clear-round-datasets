@@ -47,23 +47,25 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "event_official_link":  { "type": "string", "format": "uri" },
-        "venue_link":           { "type": "string", "format": "uri" },
-        "geo_link":             { "type": "string", "format": "uri" },
-        "stay_link":            { "type": "string", "format": "uri" },
-        "dine_link":            { "type": "string", "format": "uri" },
-        "essentials_link":      { "type": "string", "format": "uri" },
-        "insider_link":         { "type": "string", "format": "uri", "description": "Deprecated alias for insiders_link" },
-        "insiders_link":        { "type": "string", "format": "uri" },
-        "audiences_link":       { "type": "string", "format": "uri" },
-        "founder_link":         { "type": "string", "format": "uri" },
-        "keywords_link":        { "type": "string", "format": "uri" },
-        "intro_templates_link": { "type": "string", "format": "uri" },
-        "outro_templates_link": { "type": "string", "format": "uri" },
-        "cta_closers_link":     { "type": "string", "format": "uri" }
+        "events_link":         { "type": "string", "format": "uri", "description": "Primary event JSON source" },
+        "event_official_link": { "type": "string", "format": "uri", "description": "Deprecated in favor of event_official_url" },
+        "event_official_url":  { "type": "string", "format": "uri", "description": "Canonical public event URL used in Intro P1" },
+        "venue_link":          { "type": "string", "format": "uri" },
+        "geo_link":            { "type": "string", "format": "uri" },
+        "stay_link":           { "type": "string", "format": "uri" },
+        "dine_link":           { "type": "string", "format": "uri" },
+        "essentials_link":     { "type": "string", "format": "uri" },
+        "insider_link":        { "type": "string", "format": "uri", "description": "Deprecated alias for insiders_link" },
+        "insiders_link":       { "type": "string", "format": "uri" },
+        "audiences_link":      { "type": "string", "format": "uri" },
+        "founder_link":        { "type": "string", "format": "uri" },
+        "keywords_link":       { "type": "string", "format": "uri" },
+        "intro_templates_link":{ "type": "string", "format": "uri" },
+        "outro_templates_link":{ "type": "string", "format": "uri" },
+        "cta_closers_link":    { "type": "string", "format": "uri" }
       },
       "required": [
-        "event_official_link",
+        "events_link",
         "venue_link",
         "geo_link",
         "stay_link",
@@ -73,9 +75,19 @@
         "founder_link",
         "keywords_link"
       ],
-      "anyOf": [
-        { "required": ["insider_link"] },
-        { "required": ["insiders_link"] }
+      "allOf": [
+        {
+          "anyOf": [
+            { "required": ["insider_link"] },
+            { "required": ["insiders_link"] }
+          ]
+        },
+        {
+          "anyOf": [
+            { "required": ["event_official_url"] },
+            { "required": ["event_official_link"] }
+          ]
+        }
       ]
     }
   }
