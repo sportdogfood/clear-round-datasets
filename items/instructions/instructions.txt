@@ -65,7 +65,8 @@ WORKFLOW
      P2: City vibe + one sensory detail; season/month allowed. No hotel or restaurant names.
      ≥3 keywords, ≥2 insider terms, audience implied, founder intro/CTA if templates present. No ticketing or pricing.
    - Stay: 1 paragraph; include inline links to 2–4 hotels referenced by name from Stay items; prioritize premium. Add 1 CTA closer if available.
-   - Dine: 2 paragraphs:
+   - Dine: 3 paragraphs:
+       Overview paragraph that frames dining near the venue.
        AM paragraph with inline links to 1–2 breakfast/brunch spots from Dine items.
        Dinner paragraph with inline links to 2–3 dinner spots from Dine items.
      Add 1 CTA closer if available.
@@ -138,7 +139,7 @@ OUTPUT (JSON only)
   "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"","policy_uri":""},
   "hello":{"intro":"","outro":""},
   "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
-  "dine":{"title":"Dine","am":"","dinner":"","cta":"","items":[]},
+  "dine":{"title":"Dine","overview":"","am":"","dinner":"","cta":"","items":[]},
   "locale":{"title":"Locale — Off-Barn","paragraph":""},
   "essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
   "seo":{
@@ -166,6 +167,7 @@ VALIDATION RULES (linking and shape)
 - Intro must have exactly two paragraphs.
 - Intro P1 must contain a markdown link to the event_official_url and a markdown link to venue.official_url.
 - Stay paragraph must contain inline links to 2–4 hotels that also appear in stay.items.
+- Dine Overview must be present; no link minimums required.
 - Dine AM must contain inline links to 1–2 breakfast/brunch entries from dine.items; Dine Dinner must contain inline links to 2–3 dinner entries from dine.items.
 - Essentials paragraph must contain inline links to grocery, pharmacy, feed, car rental, and golf-cart entries from essentials.items.
 - Fail run if any of the above link requirements are not met.
