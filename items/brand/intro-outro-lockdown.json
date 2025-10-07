@@ -1,6 +1,6 @@
 {
   "name": "intro-outro-lockdown",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "meta": {
     "purpose": "Generate brochure-style two-paragraph Intro and a CTA Outro with strict validation for CAPC content",
     "run_mode": "production_strict"
@@ -29,7 +29,7 @@
       "role": "geometry",
       "priority": 1,
       "required": true,
-      "allowed_signals": ["lat", "lon", "place_id", "geo_vicinity", "normals"]
+      "allowed_signals": ["lat", "lon", "place_id", "geo_vicinity", "normals", "city", "state"]
     },
     {
       "url_from": "task.audiences_link",
@@ -63,7 +63,8 @@
       "Do not include logistics such as ticketing, parking, detailed schedules, or pricing.",
       "Intro paragraph 1 must inline-link the event official URL and the venue official URL.",
       "Paragraph 2 focuses on city/seasonal vibe; if temperatures are used, derive from geometry.normals and mark inferred.",
-      "No hotel or restaurant lists in the Intro/Outro."
+      "No hotel or restaurant lists in the Intro/Outro.",
+      "Intro must contain the literal \"\\\\n\\\\n\" separator; do not emit raw newline characters."
     ],
     "structure": {
       "intro": {
@@ -72,6 +73,8 @@
         "p1_words_max": 90,
         "p2_words_min": 25,
         "p2_words_max": 60,
+        "total_words_min": 80,
+        "total_words_max": 140,
         "link_requirements": {
           "p1": ["event_official_url", "venue_official_url"]
         }
@@ -93,7 +96,7 @@
       "prize lists"
     ],
     "render_pattern": {
-      "intro": "[[{{event_link}}]] runs {{date_window}} at [[{{venue_link}}]] in Upper Marlboro, Maryland. {{venue_traits}} {{event_vibe}}.\n\n{{city_vibe}} {{season_line}} {{insider_terms}}",
+      "intro": "[[{{event_link}}]] runs {{date_window}} at [[{{venue_link}}]] in {{city}}, {{state}}. {{venue_traits}} {{event_vibe}}.\\n\\n{{city_vibe}} {{season_line}} {{insider_terms}}",
       "outro": "{{closing_line}} {{cta_sentence}}"
     }
   },
@@ -107,8 +110,10 @@
       "hub.core.event and hub.core.venue required keys present",
       "geometry provides lat and lon",
       "hello.intro contains two paragraphs",
+      "hello.intro contains the literal \"\\\\n\\\\n\" exactly once and no raw newlines",
       "intro.p1 contains link to event_official_url and venue_official_url",
-      "outro length within bounds"
+      "outro length within bounds",
+      "intro total word count within bounds"
     ],
     "on_fail": {
       "emit": ["meta", "validation.status", "validation.errors", "source_trace"],
@@ -118,8 +123,7 @@
   "output_schema": {
     "hello": {
       "intro": "string",
-      "outro": "string",
-      "cta": "string"
+      "outro": "string"
     },
     "source_trace_item": {
       "url": "string",
