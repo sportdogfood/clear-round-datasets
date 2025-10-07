@@ -1,48 +1,20 @@
 {
   "essential_uid": "dvn-essential",
-  "venue_uid": "dvn-venue",
-  "blurb": "",
-  "cta_text": "",
-  "spot_grocery_uids": [
-    "acme-grocery-dvn"
-  ],
-  "essential_uuid": "dvn-essential",
-  "zone_uid": "dvn-zone",
-  "venue_uuid": "dvn-essential",
-  "zone_uuid": "dvn-zone",
-  "dirs": "essentials",
-  "spot_cart_uids": [
-    "dever-inc-golf-cart-golfcartrental-dvn"
-  ],
-  "spot_feed_uids": [
-    "devon-feed-and-feedtackbedding-dvn"
-  ],
-  "spot_pharmacy_uids": [
-    "cvs-pharmacy-dvn"
-  ],
-  "spot_car_uids": [
-    "enterprise-car-dvn"
-  ],
-  "ess_uuid": "dvn-essentials",
-  "spot_grocery_count": "1",
-  "spot_pharmacy_count": "1",
-  "spot_feed_count": "1",
-  "spot_cart_count": "1",
-  "spot_car_count": "1",
-  "curator": "",
+  "essentials_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/essentials/dvn-essential.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/dvn-venue.json",
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/dvn-geo.json",
   "essential_image": "",
-  "blurb_uid": "",
-  "table_name": "essentials/",
-  "essentials_json": "dvn-essential.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/essentials/dvn-essential.json",
   "essential_image_alt": "",
-  "last_modified": "10/1/2025 3:02pm",
-  "created": "9/29/2025",
-  "essentials_record_id": "recdfqOkPoSgobDX3",
-  "spot_car_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/enterprise-car-dvn.json",
-  "spot_cart_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/dever-inc-golf-cart-golfcartrental-dvn.json",
-  "spot_feed_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/devon-feed-and-feedtackbedding-dvn.json",
-  "spot_pharmacy_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/cvs-pharmacy-dvn.json",
-  "spot_grocery_links": "https://crt-b1434e13de34.herokuapp.com/items/spots/acme-grocery-dvn.json",
-  "output_uids": []
+  "essential_blurb": "",
+  "cta_text": "",
+  "spot_grocery_count": "1",
+  "spot_grocery_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/acme-grocery-dvn.json",
+  "spot_pharmacy_count": "1",
+  "spot_pharmacy_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/cvs-pharmacy-dvn.json",
+  "spot_feed_count": "1",
+  "spot_feed_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/devon-feed-and-feedtackbedding-dvn.json",
+  "spot_cart_count": "1",
+  "spot_cart_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/dever-inc-golf-cart-golfcartrental-dvn.json",
+  "spot_car_count": "1",
+  "spot_car_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/spots/enterprise-car-dvn.json"
 }
