@@ -40,7 +40,9 @@
       <section>
         <h2 id="dine-title"></h2>
         <img id="dine-img" alt="" class="w-full rounded-xl mb-3 hidden" />
-        <h3>AM</h3>
+        <h3>Overview</h3>
+        <p id="dine-overview"></p>
+        <h3>Breakfast</h3>
         <p id="dine-am"></p>
         <h3>Dinner</h3>
         <p id="dine-dinner"></p>
@@ -76,6 +78,21 @@
 
   <script>
     const cfg = JSON.parse(document.getElementById('post-config').textContent);
+
+    // Minimal Markdown-to-HTML for links and line breaks
+    function mdToHTML(s = "") {
+      const esc = (x) => String(x).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+      // escape then convert [text](https://url)
+      let out = esc(s).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        (_, t, u) => `<a href="${u}" target="_blank" rel="noopener nofollow external" class="underline break-words text-blue-600">${t}</a>`);
+      // keep line breaks
+      return out.replace(/\n/g, '<br>');
+    }
+    const setHTML = (id, v, f = '') => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = mdToHTML(v || f);
+    };
+
     const P = {
       hero: "/assets/images/hero-placeholder.jpg",
       stay: "/assets/images/stay-placeholder.jpg",
@@ -85,17 +102,28 @@
     const setImg = (el, src, alt) => {
       if (!el) return;
       el.src = src; el.alt = alt || "placeholder"; el.classList.remove("hidden");
+      el.addEventListener('error', ()=>{ el.classList.add('hidden'); el.remove(); });
     };
     const addItems = (arr, ul, label='name') => {
       if (!Array.isArray(arr)) return;
       arr.forEach(it => {
         const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = it.url; a.textContent = it[label] || it.name || it.type;
-        a.className = 'text-blue-600 underline break-all';
-        a.rel = 'noopener'; a.target = '_blank';
-        li.appendChild(a);
-        if (it.alt) { const s=document.createElement('span'); s.textContent = ` — ${it.alt}`; li.appendChild(s); }
+        if (it.url) {
+          const a = document.createElement('a');
+          a.href = it.url;
+          a.textContent = it[label] || it.name || it.type || it.url;
+          a.className = 'text-blue-600 underline break-all';
+          a.rel = 'noopener nofollow external';
+          a.target = '_blank';
+          li.appendChild(a);
+          if (it.alt) {
+            const s = document.createElement('span');
+            s.textContent = ` — ${it.alt}`;
+            li.appendChild(s);
+          }
+        } else {
+          li.textContent = it[label] || it.name || it.type || '';
+        }
         ul.appendChild(li);
       });
     };
@@ -113,40 +141,56 @@
       document.getElementById('meta-desc').content = d.seo?.meta_description || '';
       document.getElementById('og-url').content = location.href;
 
-      document.getElementById('title').textContent = title;
-      setText('intro', d.hello?.intro);
-      setText('outro', d.hello?.outro);
+      setText('title', title);
 
+      // Intro/Outro with Markdown links
+      setHTML('intro', d.hello?.intro);
+      setHTML('outro', d.hello?.outro);
+
+      // Stay
       setText('stay-title', d.stay?.title, 'Stay');
-      setText('stay-p', d.stay?.paragraph);
+      setHTML('stay-p', d.stay?.paragraph);
       addItems(d.stay?.items, document.getElementById('stay-list'));
       setText('stay-cta', d.stay?.cta);
 
+      // Dine: three paragraphs (overview, breakfast, dinner)
       setText('dine-title', d.dine?.title, 'Dine');
-      setText('dine-am', d.dine?.am);
-      setText('dine-dinner', d.dine?.dinner);
+      setHTML('dine-overview', d.dine?.overview || '');
+      setHTML('dine-am', d.dine?.am || '');        // labeled "Breakfast" in the markup
+      setHTML('dine-dinner', d.dine?.dinner || '');
       addItems(d.dine?.items, document.getElementById('dine-list'));
       setText('dine-cta', d.dine?.cta);
 
+      // Locale
       setText('locale-title', d.locale?.title, 'Locale');
-      setText('locale-p', d.locale?.paragraph);
+      setHTML('locale-p', d.locale?.paragraph);
 
+      // Essentials
       setText('essentials-title', d.essentials?.title, 'Essentials');
-      setText('essentials-p', d.essentials?.paragraph);
+      setHTML('essentials-p', d.essentials?.paragraph);
       addItems(d.essentials?.items, document.getElementById('essentials-list'));
       setText('essentials-cta', d.essentials?.cta);
 
+      // Images
       setImg(document.getElementById('hero'), a.hero?.src || P.hero, a.hero?.alt);
       setImg(document.getElementById('stay-img'), a.stay?.src || P.stay, a.stay?.alt);
       setImg(document.getElementById('dine-img'), a.dine?.src || P.dine, a.dine?.alt);
       setImg(document.getElementById('locale-img'), a.locale?.src || P.locale, a.locale?.alt);
       setImg(document.getElementById('essentials-img'), a.essentials?.src || P.locale, a.essentials?.alt);
 
+      // Tags from manifest
       const me = (Array.isArray(m) ? m : []).find(x=>x.slug===cfg.slug);
       if (me?.tags) {
         const wrap = document.getElementById('tags');
-        me.tags.forEach(t => { const b=document.createElement('span'); b.className='text-xs border rounded-full px-2 py-1'; b.textContent=t; wrap.appendChild(b); });
+        me.tags.forEach(t => {
+          const b=document.createElement('span');
+          b.className='text-xs border rounded-full px-2 py-1';
+          b.textContent=t;
+          wrap.appendChild(b);
+        });
       }
+
+      // Neighbors from manifest
       if (Array.isArray(m) && m.length) {
         const sorted = [...m].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
         const i = sorted.findIndex(x=>x.slug===cfg.slug);
