@@ -1,43 +1,16 @@
 {
   "dine_uid": "wcoh-dine",
-  "dine_image": "",
-  "dine_recordId": "recWtswAiiKHZkisI",
-  "last_modified": "10/1/2025 1:13pm",
-  "created": "9/29/2025",
-  "blurb": "",
-  "venue_uid": "wcoh-venue",
-  "dine_uuid": "wcoh-dine",
-  "zone_uid": "wcoh-zone",
-  "venue_uuid": "wcoh-venue",
-  "dirs": "dine",
-  "food_preview_lunch_uids": [
-    "deweys-pizza-lunch-wcoh",
-    "generations-pizzeria-lunch-wcoh",
-    "el-dorado-mexican-restaurant-lunch-wcoh",
-    "roosters-roadhouse-lunch-wcoh"
-  ],
-  "food_preview_dinner_uids": [
-    "the-mediterranean-restaurant-cafe-dinner-wcoh",
-    "el-dorado-mexican-restaurant-dinner-wcoh",
-    "generations-pizzeria-dinner-wcoh",
-    "the-general-denver-hotel-restaurant-dinner-wcoh"
-  ],
-  "food_preview_am_uids": [
-    "fiesta-veracruz-mexican-restaurant-bakery-am-wcoh"
-  ],
-  "food_preview_am_count": "1",
-  "food_preview_lunch_count": "4",
-  "food_preview_dinner_count": "4",
+  "dine_blurb": "",
   "cta_text": "",
-  "blurb_uid": "",
-  "table_name": "dine/",
-  "dine.json": "wcoh-dine.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/dine/wcoh-dine.json",
+  "dine_image": "",
   "dine_img_alt": "",
-  "curator": "",
-  "food_preview_am_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/fiesta-veracruz-mexican-restaurant-bakery-am-wcoh.json",
-  "food_preview_lunch_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/deweys-pizza-lunch-wcoh.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/generations-pizzeria-lunch-wcoh.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/el-dorado-mexican-restaurant-lunch-wcoh.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/roosters-roadhouse-lunch-wcoh.json",
-  "food_preview_dinner_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/the-mediterranean-restaurant-cafe-dinner-wcoh.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/el-dorado-mexican-restaurant-dinner-wcoh.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/generations-pizzeria-dinner-wcoh.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/the-general-denver-hotel-restaurant-dinner-wcoh.json",
+  "food_preview_am_count": "1",
+  "food_preview_am_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/fiesta-veracruz-mexican-restaurant-bakery-am-wcoh.json",
+  "food_preview_lunch_count": "4",
+  "food_preview_lunch_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/deweys-pizza-lunch-wcoh.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/generations-pizzeria-lunch-wcoh.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/el-dorado-mexican-restaurant-lunch-wcoh.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/roosters-roadhouse-lunch-wcoh.json",
+  "food_preview_dinner_count": "4",
+  "food_preview_dinner_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/the-mediterranean-restaurant-cafe-dinner-wcoh.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/el-dorado-mexican-restaurant-dinner-wcoh.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/generations-pizzeria-dinner-wcoh.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/the-general-denver-hotel-restaurant-dinner-wcoh.json",
   "food_preview_total": "9",
-  "output_uids": []
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoh-geo.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/wcoh-venue.json"
 }
