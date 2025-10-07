@@ -3,7 +3,7 @@
   "venue_official_name": "Hudson Valley",
   "city_uid": "saugerties",
   "venue_zip": "12477",
-  "last_modified": "9/29/2025 10:48pm",
+  "last_modified": "10/7/2025 8:13am",
   "created": "8/27/2025",
   "event_uids": [
     "hhv-spring-ev",
@@ -41,7 +41,7 @@
     "hhv-hudson-hb",
     "hhv-spring-hb"
   ],
-  "venue_ticker": "HHV",
+  "venue_ticker": "hhv",
   "sourced": "HITS Hudson Valley, HITS Hudson Valley schedule",
   "city_state": "Saugerties NY, Saugerties NY",
   "link-sourced": "https://www.hitsshows.com/events/list/?tribe_venues%5B0%5D=1282",
@@ -72,10 +72,7 @@
   ],
   "venue_city": "Saugerties",
   "venue_city-der": "saugerties",
-  "lon": "-74.2967438",
-  "lat": "41.4153055",
   "food_preview_uids": [
-    "hudson-coffee-traders-am-hhv",
     "love-bites-cafe-am-hhv",
     "dutch-ale-house-am-hhv",
     "the-bakery-am-hhv",
@@ -85,7 +82,6 @@
     "love-bites-cafe-lunch-hhv",
     "miss-lucys-kitchen-dinner-hhv",
     "the-red-onion-dinner-hhv",
-    "diamond-mills-tavern-dinner-hhv",
     "the-dutch-ale-house-dinner-hhv"
   ],
   "cuisine_uids": [
@@ -108,9 +104,9 @@
   "keywords": "hudson-valley, equestrian-venue",
   "venue_short_description": "Hudson Valley in Saugerties, NY is a notable hub for A-circuit competition.",
   "venue_descriptionv2": "HITSâ€‘onâ€‘theâ€‘Hudson in Saugerties, New York is a premier equestrian venue offering thrilling horse shows and competitions in a lively atmospherehttps://www.vrbo.com/vacation-rentals/usa/new-york/saugerties/saugerties-lighthouse#:~:text=Don%27t%20forget%20to%20explore%20the,bed%20for%20a%20memorable%20experience.",
-  "stay": "hhv-stay-premium, hhv-stay-standard",
+  "stay": "hhv-stay",
   "locale": "",
-  "dine": "hhv-dine-am, hhv-dine-lunch, hhv-dine-dinner",
+  "dine": "hhv-dine",
   "section_uid_helper": "hhv-venue-sec",
   "links": "hhv-link-official, hhv-link-events, hhv-link-riders, hhv-link-vendors, hhv-link-results",
   "maps_link": "https://maps.google.com/?q=349+Sarah+Wells+Trl,+Goshen,+NY+10924",
@@ -122,17 +118,31 @@
   "section-venue": "{\n  \"run_id\": \"hhv-venuev1\",\n  \"venue_uid\": \"hhv-venue\",\n  \"outputs\": {\n    \"section\": {\n      \"section_uid\": \"hhv-essentials\",\n      \"section_type\": \"section_profile\",\n      \"section_title\": \"HITS Hudson Valley Essentials\",\n      \"section_overview\": \"Your quick guide to Saugerties—coffee before jog, cozy downtown lunches, and trainer dinners with Hudson Valley views.\",\n      \"section_keywords\": [\"HITS Hudson Valley\",\"Saugerties\",\"hunter/jumper\",\"coffee\",\"lunch\",\"dinner\",\"Hudson Valley\"],\n      \"section_cta_text\": \"Need a smooth Hudson Valley setup? I can coordinate hotels, rentals, and barn support for your team.\",\n      \"section_img\": \"https://www.hitsshows.com/uploads/venues/HudsonValley.jpg\",\n      \"section_img_alt\": \"Hudson Valley showgrounds with rings and backdrop of Catskills\",\n      \"section_link\": \"https://www.hitsshows.com/hits-venues/hits-hudson-valley/\",\n      \"section_meta_description\": \"Insider essentials for HITS Hudson Valley: early coffee, Saugerties lunch, and Hudson Valley dinners.\",\n      \"section_open_graph_title\": \"HITS Hudson Valley Essentials — Clear Round Travel\",\n      \"section_open_graph_description\": \"Show-mom travel advisor picks for Saugerties: coffee, lunch, and dinner spots near the barns.\",\n      \"section_search_title\": \"HITS Hudson Valley Essentials\",\n      \"section_search_description\": \"Insider guide to Hudson Valley—coffee, lunch, and dinner picks in Saugerties.\",\n      \"section_spotlight\": [\n        {\n          \"title\": \"Coffee Before Jog\",\n          \"blurb\": \"Love Bites Cafe and The Bakery are early-morning go-tos.\",\n          \"link\": \"https://www.lovebitescafe.com\"\n        },\n        {\n          \"title\": \"Trainer Dinner Favorites\",\n          \"blurb\": \"Miss Lucy's Kitchen and The Red Onion are top trainer dinner picks.\",\n          \"link\": \"https://www.misslucyskitchen.com\"\n        }\n      ]\n    }\n  }\n}",
   "section-venue-resp": "ok-hhv-venuev1",
   "event_count": "3",
-  "geo_name": "Old Field Farm",
-  "geo_placeid": "ChIJOx63yZArw4kRF6KWrRzvWFc",
-  "geo_lng": "-74.2967438",
-  "geo_lat": "41.4153055",
-  "geo_types": "[\"point_of_interest\",\"establishment\"]",
-  "geo_vacinity": "349 Sarah Wells Trail, Goshen",
   "legs": "hhv-hudson-lg-1, hhv-hudson-lg-2, hhv-hudson-lg-3, hhv-hudson-lg-4, hhv-hudson-lg-5, hhv-hudson-lg-6, hhv-hudson-lg-7, hhv-hudson-lg-8, hhv-classic-lg-1, hhv-classic-lg-2",
-  "essentials": "hhv-essentials-cart, hhv-essentials-pharmacy, hhv-essentials-car, hhv-essentials-grocery, hhv-essentials-feed",
+  "essentials": "hhv-essential",
   "things": "",
   "geometry_uuid": "hhv-geo",
   "geometry_uid": "hhv-geo",
-  "meta": "hhv-meta",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items//venues/hhv-venue.json"
+  "venue_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/hhv-venue.json",
+  "output": "",
+  "Ing": "-74.2967438",
+  "lat": "41.4153055",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://crt-b1434e13de34.herokuapp.com/items/",
+  "table_name": "venues/",
+  "audience_uids": [
+    "competitive hunter/jumper riders"
+  ],
+  "insider_uids": [
+    "course-walk",
+    "jumper-arena",
+    "junior-hunters",
+    "walk-the-course"
+  ],
+  "venue_official_url": "https://www.hitsshows.com/hits-venues/hits-hudson-valley/",
+  "geometry_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/hhv-geo.json",
+  "event_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/hhv-spring-ev.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/hhv-classic-ev.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/hhv-hudson-ev.json",
+  "detail": "venues/hhv-venue-detail.json",
+  "venue_detail_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/hhv-venue-detail.json"
 }
