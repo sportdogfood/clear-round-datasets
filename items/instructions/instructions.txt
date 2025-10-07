@@ -60,6 +60,7 @@ WORKFLOW
 7) Fetch in order:
    founder → audiences → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
 8) Generate per POLICY and LOCKDOWN:
+   - Paragraph joiner: use the literal "\\n\\n" between P1 and P2. No raw blank lines inside JSON strings.
    - Intro (two paragraphs; total 80–140w):
      P1: Must include inline markdown links to event_official_url and venue.official_url. Cover event+dates (humanized) and 2 venue traits.
      P2: City vibe + one sensory detail; season/month allowed. No hotel or restaurant names.
@@ -154,6 +155,7 @@ OUTPUT (JSON only)
   "source_trace": [],
   "validation":{"status":"pass","warnings":[],"errors":[],"flags":{}}
 }
+- hello.intro contains exactly one literal "\\n\\n" separator between two paragraphs.
 
 FIELD_MAP
 schema_enforced: false
@@ -165,6 +167,7 @@ alias:
 
 VALIDATION RULES (linking and shape)
 - Intro must have exactly two paragraphs.
+- Intro must contain the literal "\\n\\n" sequence exactly once; no unescaped newline characters allowed.
 - Intro P1 must contain a markdown link to the event_official_url and a markdown link to venue.official_url.
 - Stay paragraph must contain inline links to 2–4 hotels that also appear in stay.items.
 - Dine Overview must be present; no link minimums required.
