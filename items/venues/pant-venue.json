@@ -3,7 +3,7 @@
   "venue_official_name": "PA Farm Show Complex",
   "city_uid": "harrisburg",
   "venue_zip": "17110",
-  "last_modified": "9/29/2025 10:48pm",
+  "last_modified": "10/7/2025 8:13am",
   "created": "9/15/2025",
   "event_uids": [
     "pant-pa-national-ev"
@@ -37,7 +37,7 @@
   "hub_uids": [
     "pant-pa-national-hb"
   ],
-  "venue_ticker": "PANT",
+  "venue_ticker": "pant",
   "sourced": "PA National Horse Show",
   "city_state": "Harrisburg PA",
   "link-sourced": "https://panational.org/",
@@ -68,10 +68,7 @@
   ],
   "venue_city": "Harrisburg",
   "venue_city-der": "harrisburg",
-  "lon": "-76.8831769",
-  "lat": "40.2858907",
   "food_preview_uids": [
-    "little-amps-coffee-roasters-am-pant",
     "sturges-speakeasy-brunch-am-pant",
     "yellow-bird-caf-am-pant",
     "capital-joe-coffee-am-pant",
@@ -104,9 +101,9 @@
   "keywords": "pa-farm-show-complex, harrisburg, equestrian-venue",
   "venue_short_description": "PA Farm Show Complex in Harrisburg, PA is a notable hub for A-circuit competition.",
   "venue_descriptionv2": "PA Farm Show Complex is a key venue for competitive hunter/jumper events in Harrisburg, Pennsylvania.",
-  "stay": "pant-stay-premium, pant-stay-standard",
+  "stay": "pant-stay",
   "locale": "",
-  "dine": "pant-dine-am, pant-dine-lunch, pant-dine-dinner",
+  "dine": "pant-dine",
   "section_uid_helper": "pant-venue-sec",
   "links": "pant-link-official, pant-link-events, pant-link-results, pant-link-riders, pant-link-locale",
   "maps_link": "https://maps.google.com/?q=2300+N+Cameron+St,+Harrisburg,+PA+17110",
@@ -118,17 +115,31 @@
   "section-venue": "{\n  \"run_id\": \"pant-venuev1\",\n  \"venue_uid\": \"pant-venue\",\n  \"outputs\": {\n    \"section\": {\n      \"section_uid\": \"pant-essentials\",\n      \"section_type\": \"section_profile\",\n      \"section_title\": \"PA Farm Show Complex Show Week Essentials\",\n      \"section_overview\": \"Insider’s guide for Harrisburg: safe hotels, early coffee, and trainer-friendly dinner spots for PA National week.\",\n      \"section_keywords\": [\"PA Farm Show Complex\",\"Harrisburg\",\"Pennsylvania National\",\"hunter/jumper\",\"coffee\",\"dinner\",\"parking\"],\n      \"section_cta_text\": \"Need a seamless Harrisburg week? I can book rooms, set up essentials, and secure barn dinner spots so you focus on the jog strip.\",\n      \"section_img\": \"https://panational.org/wp-content/uploads/2021/08/farm-show-complex.jpg\",\n      \"section_img_alt\": \"Exterior of PA Farm Show Complex in Harrisburg, PA\",\n      \"section_link\": \"https://panational.org/\",\n      \"section_meta_description\": \"Hotels, coffee, lunch, and dinner near the PA Farm Show Complex in Harrisburg.\",\n      \"section_open_graph_title\": \"PA Farm Show Complex Essentials — Clear Round Travel\",\n      \"section_open_graph_description\": \"Where to stay, eat, and prep for Harrisburg during the Pennsylvania National Horse Show.\",\n      \"section_search_title\": \"PA Farm Show Complex Show Essentials\",\n      \"section_search_description\": \"Hotels, early coffee, and late trainer dinners near the PA Farm Show Complex.\",\n      \"section_spotlight\": [\n        {\"title\": \"Early Coffee Options\",\"blurb\": \"Reliable Harrisburg cafés open by 6:30 for jog mornings.\",\"link\": \"https://capitaljoe.com/\"},\n        {\"title\": \"Trainer Dinners After Classes\",\"blurb\": \"Downtown Harrisburg has late kitchens for barn groups.\",\"link\": \"https://millworksharrisburg.com/\"}\n      ]\n    }\n  }\n}",
   "section-venue-resp": "ok-pant-venuev1",
   "event_count": "1",
-  "geo_name": "Pennsylvania Farm Show Complex & Expo Center",
-  "geo_placeid": "ChIJAQbcUS7ByIkRbOIf-xVMSNA",
-  "geo_lng": "-76.8845347",
-  "geo_lat": "40.2887557",
-  "geo_types": "[\"point_of_interest\",\"establishment\"]",
-  "geo_vacinity": "2300 N Cameron St, Harrisburg",
   "legs": "",
-  "essentials": "pant-essentials-grocery, pant-essentials-pharmacy, pant-essentials-feed, pant-essentials-car, pant-essentials-cart",
+  "essentials": "pant-essential",
   "things": "",
   "geometry_uuid": "pant-geo",
   "geometry_uid": "pant-geo",
-  "meta": "pant-meta",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items//venues/pant-venue.json"
+  "venue_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/pant-venue.json",
+  "output": "",
+  "Ing": "-76.8831388",
+  "lat": "40.2858133",
+  "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
+  "proxy_clear": "https://items.clearroundtravel.com/items/",
+  "proxy_heroku": "https://crt-b1434e13de34.herokuapp.com/items/",
+  "table_name": "venues/",
+  "audience_uids": [
+    "competitive hunter/jumper riders"
+  ],
+  "insider_uids": [
+    "course-walk",
+    "jumper-arena",
+    "junior-hunters",
+    "walk-the-course"
+  ],
+  "venue_official_url": "https://panational.org/",
+  "geometry_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/pant-geo.json",
+  "event_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/pant-pa-national-ev.json",
+  "detail": "venues/pant-venue-detail.json",
+  "venue_detail_url": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/pant-venue-detail.json"
 }
