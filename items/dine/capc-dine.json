@@ -1,43 +1,16 @@
 {
   "dine_uid": "capc-dine",
-  "dine_image": "",
-  "dine_recordId": "receflRHfm0mXMrNu",
-  "last_modified": "10/1/2025 1:13pm",
-  "created": "9/29/2025",
-  "blurb": "",
-  "venue_uid": "capc-venue",
-  "dine_uuid": "capc-dine",
-  "zone_uid": "capc-zone",
-  "venue_uuid": "capc-venue",
-  "dirs": "dine",
-  "food_preview_lunch_uids": [
-    "carolina-kitchen-lunch-capc",
-    "milk-honey-cafe-lunch-capc",
-    "busboys-and-poets-hyattsville-lunch-capc",
-    "mission-bbq-bowie-lunch-capc"
-  ],
-  "food_preview_dinner_uids": [
-    "sobe-restaurant-lounge-dinner-capc",
-    "copper-canyon-grill-dinner-capc",
-    "graces-steak-seafood-dinner-capc",
-    "busboys-and-poets-hyattsville-dinner-capc"
-  ],
-  "food_preview_am_uids": [
-    "first-watch-am-capc"
-  ],
-  "food_preview_am_count": "1",
-  "food_preview_lunch_count": "4",
-  "food_preview_dinner_count": "4",
+  "dine_blurb": "",
   "cta_text": "",
-  "blurb_uid": "",
-  "table_name": "dine/",
-  "dine.json": "capc-dine.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/dine/capc-dine.json",
+  "dine_image": "",
   "dine_img_alt": "",
-  "curator": "",
-  "food_preview_am_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/first-watch-am-capc.json",
-  "food_preview_lunch_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/carolina-kitchen-lunch-capc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/milk-honey-cafe-lunch-capc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/busboys-and-poets-hyattsville-lunch-capc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/mission-bbq-bowie-lunch-capc.json",
-  "food_preview_dinner_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/sobe-restaurant-lounge-dinner-capc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/copper-canyon-grill-dinner-capc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/graces-steak-seafood-dinner-capc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/busboys-and-poets-hyattsville-dinner-capc.json",
+  "food_preview_am_count": "1",
+  "food_preview_am_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/first-watch-am-capc.json",
+  "food_preview_lunch_count": "4",
+  "food_preview_lunch_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/carolina-kitchen-lunch-capc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/milk-honey-cafe-lunch-capc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/busboys-and-poets-hyattsville-lunch-capc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/mission-bbq-bowie-lunch-capc.json",
+  "food_preview_dinner_count": "4",
+  "food_preview_dinner_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/sobe-restaurant-lounge-dinner-capc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/copper-canyon-grill-dinner-capc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/graces-steak-seafood-dinner-capc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/busboys-and-poets-hyattsville-dinner-capc.json",
   "food_preview_total": "9",
-  "output_uids": []
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/capc-geo.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/capc-venue.json"
 }
