@@ -132,22 +132,23 @@
     "essentials.items[]": { "type": "string", "name": "string", "url": "uri", "alt": "string" }
   },
 
-  "output_guards": {
-    "arrays_min": {
-      "stay.items": 2,
-      "dine.items": 3,
-      "essentials.items": 4
-    },
-    "require_fields": ["name", "url", "alt"],
-    "reject_single_line_placeholders": true,
-    "string_rules": {
-      "hello.intro": {
-        "must_contain_literal": "\\n\\n",
-        "must_contain_count": 1,
-        "forbid_raw_newlines": true
-      }
-    }
+"output_guards": {
+  "arrays_min": {
+    "stay.items": 2,
+    "dine.items": 3,
+    "essentials.items": 5
   },
+  "require_fields": ["name", "url", "alt"],
+  "reject_single_line_placeholders": true,
+  "string_rules": {
+    "hello.intro": {
+      "must_contain_literal": "\\n\\n",
+      "must_contain_count": 1,
+      "forbid_raw_newlines": true
+    }
+  }
+},
+
 
   "validation": {
     "trace_requirements": {
