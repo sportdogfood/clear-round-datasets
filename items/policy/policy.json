@@ -82,6 +82,8 @@
   "section_rules": {
     "intro": {
       "paragraphs": 2,
+      "paragraph_joiner_literal": "\\n\\n",
+      "no_raw_newlines": true,
       "p1_links_required": ["event_official_url", "venue_official_url"],
       "must_cover": [
         "event+dates_humanized",
@@ -135,7 +137,14 @@
       "essentials.items": 4
     },
     "require_fields": ["name", "url", "alt"],
-    "reject_single_line_placeholders": true
+    "reject_single_line_placeholders": true,
+    "string_rules": {
+      "hello.intro": {
+        "must_contain_literal": "\\n\\n",
+        "must_contain_count": 1,
+        "forbid_raw_newlines": true
+      }
+    }
   },
 
   "validation": {
@@ -158,6 +167,9 @@
     },
     "intro_requirements": {
       "paragraphs": 2,
+      "escaped_joiner_literal": "\\n\\n",
+      "escaped_joiner_count": 1,
+      "forbid_raw_newlines": true,
       "p1_links_required": ["event_official_url", "venue_official_url"],
       "p1_min_words": 55,
       "p1_max_words": 90,
