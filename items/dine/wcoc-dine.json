@@ -1,45 +1,16 @@
 {
   "dine_uid": "wcoc-dine",
-  "dine_image": "",
-  "dine_recordId": "rec2TMAp7tahwTKwk",
-  "last_modified": "10/1/2025 1:13pm",
-  "created": "9/29/2025",
-  "blurb": "",
-  "venue_uid": "wcoc-venue",
-  "dine_uuid": "wcoc-dine",
-  "zone_uid": "wcoc-zone",
-  "venue_uuid": "wcoc-venue",
-  "dirs": "dine",
-  "food_preview_lunch_uids": [
-    "harrys-seafood-bar-grille-lunch-wcoc",
-    "brick-city-southern-kitchen-whiskey-bar-lunch-wcoc",
-    "ivy-on-the-square-lunch-wcoc",
-    "mojos-grill-catering-lunch-wcoc"
-  ],
-  "food_preview_dinner_uids": [
-    "la-cuisine-french-restaurant-dinner-wcoc",
-    "marks-prime-steakhouse-dinner-wcoc",
-    "katya-vineyards-dinner-wcoc",
-    "the-white-elephant-dinner-wcoc"
-  ],
-  "food_preview_am_uids": [
-    "first-watch-ocala-am-wcoc",
-    "panera-bread-ocala-am-wcoc",
-    "starbucks-ocala-sw-19th-ave-rd-am-wcoc"
-  ],
-  "food_preview_am_count": "3",
-  "food_preview_lunch_count": "4",
-  "food_preview_dinner_count": "4",
+  "dine_blurb": "",
   "cta_text": "",
-  "blurb_uid": "",
-  "table_name": "dine/",
-  "dine.json": "wcoc-dine.json",
-  "full_path": "https://crt-b1434e13de34.herokuapp.com/items/dine/wcoc-dine.json",
+  "dine_image": "",
   "dine_img_alt": "",
-  "curator": "",
-  "food_preview_am_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/first-watch-ocala-am-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/panera-bread-ocala-am-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/starbucks-ocala-sw-19th-ave-rd-am-wcoc.json",
-  "food_preview_lunch_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/harrys-seafood-bar-grille-lunch-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/brick-city-southern-kitchen-whiskey-bar-lunch-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/ivy-on-the-square-lunch-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/mojos-grill-catering-lunch-wcoc.json",
-  "food_preview_dinner_links": "https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/la-cuisine-french-restaurant-dinner-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/marks-prime-steakhouse-dinner-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/katya-vineyards-dinner-wcoc.json, https://crt-b1434e13de34.herokuapp.com/items/commitrestaurants/the-white-elephant-dinner-wcoc.json",
+  "food_preview_am_count": "3",
+  "food_preview_am_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/first-watch-ocala-am-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/panera-bread-ocala-am-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/starbucks-ocala-sw-19th-ave-rd-am-wcoc.json",
+  "food_preview_lunch_count": "4",
+  "food_preview_lunch_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/harrys-seafood-bar-grille-lunch-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/brick-city-southern-kitchen-whiskey-bar-lunch-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/ivy-on-the-square-lunch-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/mojos-grill-catering-lunch-wcoc.json",
+  "food_preview_dinner_count": "4",
+  "food_preview_dinner_links": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/la-cuisine-french-restaurant-dinner-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/marks-prime-steakhouse-dinner-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/katya-vineyards-dinner-wcoc.json, https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/restaurants/the-white-elephant-dinner-wcoc.json",
   "food_preview_total": "11",
-  "output_uids": []
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/wcoc-geo.json",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/wcoc-venue.json"
 }
