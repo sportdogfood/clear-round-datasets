@@ -5,7 +5,7 @@
   "vacinity": "25 International Blvd, Mill Spring",
   "types": "[\"shopping_mall\",\"lodging\",\"restaurant\",\"point_of_interest\",\"food\",\"establishment\"]",
   "place_id": "ChIJDxkdFL5nV4gRicVl5lsiWww",
-  "name": "Tryon International",
+  "venue_name": "Tryon International",
   "lng": "-82.0680483",
   "lat": "35.2821059",
   "geo_type_uuid": "shopping_mall, lodging, restaurant, point_of_interest, food, establishment",
@@ -23,9 +23,9 @@
   "table_name": "geometry/",
   "gerometry_recordId": "recpU0TlrrVycriJw",
   "created": "2025-09-29",
-  "last_modified": "2025-10-01 11:14am",
+  "last_modified": "2025-10-07 7:50am",
   "geometry_json": "tryn-geo.json",
-  "full_path": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tryn-geo.json",
+  "geometry_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/tryn-geo.json",
   "output_uids": [],
   "venue_uuid": "tryn-venue",
   "dine_uuid": "tryn-dine",
@@ -36,5 +36,7 @@
   "crt_link": "https://items.clearroundtravel.com/items/geometry/tryn-geo.json",
   "git_raw": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/",
   "proxy_clear": "https://items.clearroundtravel.com/items/",
-  "proxy_heroku": "https://items.clearroundtravel.com/items/"
+  "proxy_heroku": "https://items.clearroundtravel.com/items/",
+  "seasonal_normals": "",
+  "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/tryn-venue.json"
 }
