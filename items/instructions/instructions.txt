@@ -53,7 +53,7 @@ WORKFLOW
      P2: city vibe + one sensory detail; season/month allowed.
      Use ≥3 keywords and ≥2 insider terms; imply audience; no ticketing/pricing/hotel/restaurant names.
    - Stay: one paragraph with inline links to 2–4 hotels from Stay items (prioritize premium). Add one CTA closer if available.
-   - Dine: three paragraphs—overview; AM with 1–2 breakfast/brunch links from Dine; Dinner with 2–3 dinner links from Dine. Add one CTA closer if available.
+   - Dine: three paragraphs—overview; AM with 1–2 breakfast/brunch links from Dine (if short, use lunch items and write as lunch); Dinner with 2–3 dinner links from Dine (if short, use lunch items and write as lunch). Add one CTA closer if available.
    - Locale: one paragraph with off-barn resets.
    - Essentials: one paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers from Essentials. Add one CTA closer if available.
    - Outro: 25–45 words; use template if available.
@@ -124,7 +124,7 @@ VALIDATION
 - Intro P1 has markdown links to event_official_url and venue.official_url.
 - Stay paragraph links to 2–4 hotels present in stay.items.
 - Dine overview present.
-- Dine AM links to 1–2 breakfast/brunch items from dine.items.
-- Dine Dinner links to 2–3 dinner items from dine.items.
+- Dine AM links to 1–2 breakfast/brunch items from dine.items; if fallback used, 1–2 lunch items from dine.items and copy must say “lunch.”
+- Dine Dinner links to 2–3 dinner items from dine.items; if fallback used, 2–3 lunch items from dine.items and copy must say “lunch.”
 - Essentials paragraph links to grocery, pharmacy, feed, car rental, and golf-cart items from essentials.items.
 - Fail run if any link requirements are unmet.
