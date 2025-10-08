@@ -1,71 +1,65 @@
 {
   "name": "cta_closers_library",
-  "version": "1.1.0",
-  "updated_iso": "2025-10-01T22:59:00-04:00",
+  "version": "1.2.0",
+  "updated_iso": "2025-10-07T00:00:00-04:00",
+  "variables": ["{event_name}", "{venue_name}", "{city}", "{finals_day?}", "{weekend?}"],
   "categories": {
     "generic": [
-      { "id": "generic_01", "text": "Want it handled? I'll line it up so you stay ring-focused." },
-      { "id": "generic_02", "text": "Ride first. I'll manage the rest and keep your week quiet." },
-      { "id": "generic_03", "text": "You ride the plan; I'll keep logistics invisible." },
-      { "id": "generic_04", "text": "Keep eyes up. I'll run the checklist in the background." },
-      { "id": "generic_05", "text": "One job: ride well. I'll cover the rest." },
-      { "id": "generic_06", "text": "Need a calm week? I'll set beds, bites, and basics." },
-      { "id": "generic_07", "text": "Show up ready, not rushed. I'll arrange the moving parts." },
-      { "id": "generic_08", "text": "Less scramble, more stride. I'll keep the plan tight." },
-      { "id": "generic_09", "text": "Keep energy for the ring. I'll handle logistics." },
-      { "id": "generic_10", "text": "I'll set the week so you arrive settled and sharp." }
+      { "id": "generic_01", "text": "Tell me once. I’ll run the week.", "tags": ["neutral"] },
+      { "id": "generic_02", "text": "You ride. I’ll handle logistics.", "tags": ["neutral"] },
+      { "id": "generic_03", "text": "Stay ring-focused. I’ll coordinate everything.", "tags": ["neutral"] },
+      { "id": "generic_04", "text": "I’ll keep plans tight and quiet.", "tags": ["neutral"] },
+      { "id": "generic_05", "text": "I’ll absorb changes and keep pace.", "tags": ["neutral"] },
+      { "id": "generic_06", "text": "One message. I’ll handle the rest.", "tags": ["neutral"] }
     ],
     "stay": [
-      { "id": "stay_01", "text": "Want it handled? I'll lock rooms and sync confirmations." },
-      { "id": "stay_02", "text": "I'll book close-in rooms so mornings stay simple." },
-      { "id": "stay_03", "text": "Beds sorted. You focus on the track and the clock." },
-      { "id": "stay_04", "text": "I'll place you near the rings with easy parking." },
-      { "id": "stay_05", "text": "I'll secure lodging that matches your class times." },
-      { "id": "stay_06", "text": "I'll hold a primary and a backup room nightly." },
-      { "id": "stay_07", "text": "Late add? I'll expand the block without drama." },
-      { "id": "stay_08", "text": "I'll align check-in times to the order of go." },
-      { "id": "stay_09", "text": "I'll keep confirmations tidy in one thread." },
-      { "id": "stay_10", "text": "Walking distance if possible, quick drive if not." },
-      { "id": "stay_11", "text": "I'll chase upgrades; you save the legwork." },
-      { "id": "stay_12", "text": "Shared rooms or suites - set to your roster." },
-      { "id": "stay_13", "text": "Early checkout or late - timed to your finals." },
-      { "id": "stay_14", "text": "I'll pin parking notes so arrivals are clean." },
-      { "id": "stay_15", "text": "I'll keep a waitlist ready for last-minute needs." }
+      { "id": "stay_01", "text": "I’ll lock rooms near the rings.", "tags": ["near"] },
+      { "id": "stay_02", "text": "I’ll place you close for quick mornings.", "tags": ["near"] },
+      { "id": "stay_03", "text": "I’ll hold a nightly backup room.", "tags": ["backup"] },
+      { "id": "stay_04", "text": "I’ll sync confirmations in one thread.", "tags": ["ops"] },
+      { "id": "stay_05", "text": "I’ll align check-ins to your classes.", "tags": ["timing"] },
+      { "id": "stay_06", "text": "I’ll expand the block for late adds.", "tags": ["late"] }
     ],
     "dine": [
-      { "id": "dine_01", "text": "I'll map a barn-friendly dinner loop with quick reservations." },
-      { "id": "dine_02", "text": "Two solid dinner options, pre-booked. You just walk in." },
-      { "id": "dine_03", "text": "I'll set post-round tables and keep them flexible." },
-      { "id": "dine_04", "text": "I'll line up quick eats near the venue." },
-      { "id": "dine_05", "text": "Menus handled. You reset while I keep tables on time." },
-      { "id": "dine_06", "text": "Primary table plus backup - nightly, no scramble." },
-      { "id": "dine_07", "text": "I'll match cuisine to the crew and call it in." },
-      { "id": "dine_08", "text": "Late class? I'll slide the table, no fuss." },
-      { "id": "dine_09", "text": "Walk-in nights planned to save buffer." },
-      { "id": "dine_10", "text": "I'll stack reservations around awards and jog." },
-      { "id": "dine_11", "text": "I'll confirm parking and host stands ahead." },
-      { "id": "dine_12", "text": "Quiet table for debriefs? I'll arrange it." },
-      { "id": "dine_13", "text": "I'll tag takeout spots for short turnarounds." },
-      { "id": "dine_14", "text": "I'll manage headcount changes in real time." },
-      { "id": "dine_15", "text": "You eat well; I keep timing tight." }
+      { "id": "dine_01", "text": "I’ll book two dinner holds nightly.", "tags": ["default"] },
+      { "id": "dine_02", "text": "Late class? I’ll slide the table.", "tags": ["late"] },
+      { "id": "dine_03", "text": "I’ll map quick eats near the venue.", "tags": ["near"] },
+      { "id": "dine_04", "text": "I’ll plan one calm breakfast daily.", "tags": ["am"] },
+      { "id": "dine_05", "text": "I’ll match cuisine to the crew.", "tags": ["fit"] },
+      { "id": "dine_06", "text": "I’ll tag takeout for short turnarounds.", "tags": ["speed"] }
     ],
     "essentials": [
-      { "id": "essentials_01", "text": "I'll pack a lean kit so nothing slows your rounds." },
-      { "id": "essentials_02", "text": "Basics stocked and labeled. You stay on rhythm." },
-      { "id": "essentials_03", "text": "I'll stage water, layers, and ring bag essentials." },
-      { "id": "essentials_04", "text": "I'll prep a no-fuss checklist matched to the forecast." },
-      { "id": "essentials_05", "text": "I'll keep the barn stash topped so you keep pace." }
+      { "id": "essentials_01", "text": "I’ll stock barn basics and ice.", "tags": ["stock"] },
+      { "id": "essentials_02", "text": "I’ll stage water, layers, and tape.", "tags": ["stage"] },
+      { "id": "essentials_03", "text": "I’ll prep a simple ring-bag checklist.", "tags": ["checklist"] },
+      { "id": "essentials_04", "text": "I’ll keep the stash topped nightly.", "tags": ["replenish"] },
+      { "id": "essentials_05", "text": "I’ll arrange carts and wheels.", "tags": ["mobility"] }
     ],
     "benefit_variants": [
-      { "id": "benefit_01", "text": "No planning fee. I set the week; you ride." },
-      { "id": "benefit_02", "text": "No extra cost to you - just clean logistics." },
-      { "id": "benefit_03", "text": "Included service: I handle bookings and confirmations." }
+      { "id": "benefit_01", "text": "No planning fee.", "tags": ["disclosure"] }
     ]
   },
   "usage": {
-    "placement": "End of section or intro",
-    "length_words_max": 16,
-    "rotation": "sequential",
-    "notes": "Use one closer per section. Keep insider terms minimal."
+    "placement": "End of section only",
+    "sections_allowed": ["stay", "dine", "essentials", "locale"],
+    "length_words_max": 12,
+    "require_terminal_period": true,
+    "one_per_section": true,
+    "no_intro": true,
+    "no_outro": true,
+    "notes": "Follow tell–write–tell paragraph pattern. Use exactly one closer."
+  },
+  "selection": {
+    "mode": "hash",
+    "seed": "hub.core.event.uid",
+    "algorithm": "fnv1a",
+    "dedupe_within_document": true,
+    "index_rule": "fnv1a(seed + ':' + section_id + ':' + doc_index) % template_count",
+    "fallback": "generic",
+    "routing_rules": [
+      { "when": "finals_day==true", "prefer_tags": ["finals"], "sections": ["stay", "dine"] },
+      { "when": "late_classes==true", "prefer_tags": ["late"], "sections": ["dine", "stay"] },
+      { "when": "most_hotels_distance_mi>5", "prefer_tags": ["near"], "sections": ["stay"] }
+    ]
   }
 }
