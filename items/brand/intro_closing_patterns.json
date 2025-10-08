@@ -6,7 +6,12 @@
   "rotation_seed": "hub.core.event.uid",
   "algorithm": "fnv1a",
   "paragraph_joiner": "",
-  "variables": ["{event_name}", "{venue_name}", "{city}", "{state}"],
+  "variables": [
+    "{event_name}",
+    "{venue_name}",
+    "{city}",
+    "{state}"
+  ],
   "templates": [
     "Walk in ready for {event_name}.",
     "Focus on your rounds at {venue_name}.",
