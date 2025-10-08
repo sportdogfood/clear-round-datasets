@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "updated_iso": "2025-10-08T00:00:00-04:00",
   "id": "intro_outro_lockdown_v1",
   "purpose": "Constrain intro/outro to gold-standard style using *_link keys only.",
@@ -8,7 +8,11 @@
     "paragraphs": 1,
     "min_words": 110,
     "max_words": 180,
-    "links_required": ["event_official_link", "venue_official_link"],
+    "structure": "tell-write-tell",
+    "links_required": [
+      "event_official_link",
+      "venue_official_link"
+    ],
     "must_cover": [
       "time_phrase",
       "season_phrase_only",
@@ -26,8 +30,13 @@
       "restaurant_names"
     ],
     "research_sources": {
-      "required": ["event_official_link", "venue_official_link"],
-      "optional": ["geo_link"],
+      "required": [
+        "event_official_link",
+        "venue_official_link"
+      ],
+      "optional": [
+        "geo_link"
+      ],
       "notes": "Use official pages; geo only for month/city naming."
     }
   },
@@ -41,6 +50,12 @@
       "seed": "hub.core.event.uid",
       "algorithm": "fnv1a"
     }
+  },
+  "naming": {
+    "venue_preferred_first": "Desert International Horse Park",
+    "venue_abbrev": "DIHP",
+    "rule": "first_mention_full_then_abbrev",
+    "notes": "Apply to copy generation only; do not override official names in data."
   },
   "compliance": {
     "no_raw_urls_in_prose": true,
