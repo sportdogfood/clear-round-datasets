@@ -88,7 +88,6 @@
         "city_presence_phrase",
         "rider_caliber_ops_quality"
       ],
-      "structure": "tell-write-tell",
       "forbid": [
         "ticketing",
         "prices",
@@ -96,7 +95,8 @@
         "hotel_names",
         "restaurant_names",
         "temperatures_or_ranges"
-      ]
+      ],
+      "structure": "tell-write-tell"
     },
     "transition": {
       "emit": true,
@@ -124,13 +124,6 @@
       "links_inline": true,
       "cta_allowed": true,
       "dynamic_title": true,
-      "structure": "tell-write-tell",
-      "opener_words_min": 45,
-      "opener_words_max": 60,
-      "inline_items_blend": true,
-      "require_also_consider_sentence": true,
-      "spectator_tip_allowed": true,
-      "spectator_tip_max_sentences": 1,
       "fallbacks": {
         "use_lunch_when_short": true,
         "am": {
@@ -141,7 +134,14 @@
           "fallback_meal": "lunch",
           "label_as": "lunch"
         }
-      }
+      },
+      "structure": "tell-write-tell",
+      "opener_words_min": 45,
+      "opener_words_max": 60,
+      "inline_items_blend": true,
+      "require_also_consider_sentence": true,
+      "spectator_tip_allowed": true,
+      "spectator_tip_max_sentences": 1
     },
     "locale": {
       "paragraph": true,
@@ -149,6 +149,8 @@
       "structure": "tell-write-tell",
       "opener_words_min": 45,
       "opener_words_max": 60,
+      "inline_items_blend": true,
+      "require_also_consider_sentence": true,
       "spectator_tip_allowed": true,
       "spectator_tip_max_sentences": 1
     },
