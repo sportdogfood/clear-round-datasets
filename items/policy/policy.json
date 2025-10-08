@@ -61,6 +61,12 @@
     "weather_normals": false,
     "suppress_section_titles_in_output": true
   },
+  "naming": {
+    "use_acronym_if_present_or_confirmed": true,
+    "venue_acronym_source": "hub.core.venue.acronym or venue_official_link",
+    "rule": "first_full_then_acronym",
+    "notes": "Apply to generated prose only; never overwrite official data fields."
+  },
   "length_targets": {
     "intro_min": 110,
     "intro_max": 180,
@@ -168,7 +174,19 @@
       "spectator_tip_max_sentences": 1
     },
     "outro": {
-      "use_template_if_available": true
+      "two_part": true,
+      "pivot": {
+        "paragraphs": 1,
+        "min_words": 35,
+        "max_words": 70
+      },
+      "main": {
+        "allow_multi_paragraphs": true,
+        "min_words": 120,
+        "max_words": 220
+      },
+      "no_links": true,
+      "notes": "Emit hello.outro_pivot then hello.outro_main. Pivot summarizes zones and hands off; main carries logistics-driven close."
     }
   },
   "templates": {
@@ -267,10 +285,19 @@
       "opener_words_min": 45,
       "opener_words_max": 60
     },
-    "outro_requirements": {
-      "min_words": 25,
-      "max_words": 45,
-      "cta_required": true
+    "outro_two_part_requirements": {
+      "enabled": true,
+      "pivot": {
+        "paragraphs": 1,
+        "min_words": 35,
+        "max_words": 70
+      },
+      "main": {
+        "allow_multi_paragraphs": true,
+        "min_words": 120,
+        "max_words": 220
+      },
+      "links_forbidden": true
     },
     "items_requirements": {
       "stay_items_min": 2,
