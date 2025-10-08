@@ -8,7 +8,6 @@
     "paragraphs": 1,
     "min_words": 110,
     "max_words": 180,
-    "structure": "tell-write-tell",
     "links_required": [
       "event_official_link",
       "venue_official_link"
@@ -38,7 +37,8 @@
         "geo_link"
       ],
       "notes": "Use official pages; geo only for month/city naming."
-    }
+    },
+    "structure": "tell-write-tell"
   },
   "outro": {
     "enabled": true,
@@ -51,14 +51,14 @@
       "algorithm": "fnv1a"
     }
   },
+  "compliance": {
+    "no_raw_urls_in_prose": true,
+    "markdown_links_only": true
+  },
   "naming": {
     "venue_preferred_first": "Desert International Horse Park",
     "venue_abbrev": "DIHP",
     "rule": "first_mention_full_then_abbrev",
-    "notes": "Apply to copy generation only; do not override official names in data."
-  },
-  "compliance": {
-    "no_raw_urls_in_prose": true,
-    "markdown_links_only": true
+    "notes": "Apply to generated prose only; never overwrite official names in data."
   }
 }
