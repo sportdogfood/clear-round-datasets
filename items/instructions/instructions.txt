@@ -1,4 +1,3 @@
-// items/instructions/instructions.txt
 TITLE: Content Runner — Equestrian Event Blogs
 Policy: v1.0.9
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
@@ -10,66 +9,104 @@ GOLD_SHAPE: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/
 INPUT
 - Payload: {"task_uri":"<absolute URL>"} only.
 - Use *_link keys from the task. Do not invent URLs.
+- Treat text/plain responses as JSON iff POLICY.content_type.treat_text_plain_as_json = true.
 
 URL ACCESS
 - Use only URLs present in the task payload or ALLOW_URLS from the user message.
 - Required 200s for Intro emit: event_official_link, venue_official_link.
 - Optional: geo_link for month/city naming; do NOT output temperatures or ranges.
+- On external 4xx/5xx: one retry; if still failing, record status:0 in trace and continue per POLICY.trace.notes.
 
 TRACE (path+status only; max 15)
-- Record: task_uri, founder, audiences, events, event_official_link, venue, venue_official_link, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
+- Record, in order: task_uri, founder, audiences, events, event_official_link, venue, venue_official_link, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
+- Collapse long success runs; keep failures visible.
 
 WORKFLOW
-1) Fetch POLICY, SCHEMA, GOLD_SHAPE (continue on failure).
+1) Fetch POLICY, SCHEMA, GOLD_SHAPE (continue on failure; always trace).
 2) Fetch {task_uri}. Fail task if non-200.
 3) Normalize types (booleans, numbers, timestamps).
 4) Fetch links listed in POLICY.trace.required_order until budget hit.
-5) Build content using Lean Research directive.
+5) Build content using Lean Research + Section Rules.
+6) Validate against POLICY.validation. If hard fail, emit errors only.
+7) If pass or pass-with-warnings, emit to canvas and suggest save path.
+
+PRINTING RULE
+- Do NOT print literal section labels “Intro”, “Stay”, “Dine”, “Locale”, “Essentials”, “Outro”.
+- Output dynamic titles only for zones (3–6 words). Enforce via SEO guard.
 
 LEAN RESEARCH (no city_reference_url)
-- Research official event & venue pages first (geo_link optional for month/city naming).
+- Use official event & venue pages first (geo_link optional for month/city naming).
 - Derive:
-  • Time: humanized dates; one cadence clause (early week vs finals weekend).
+  • Time: humanized dates + one cadence clause (early week vs finals weekend).
   • Season: one simple term only (e.g., “late-summer”).
   • Event: stature + one hallmark (e.g., a final or feature class).
-  • Venue: two concrete visuals/flow traits seen on the pages.
+  • Venue: two concrete visuals/flow traits visible on official pages.
   • City: one vibe + proximity phrase via geo context; no separate city source.
-  • Rider-caliber: range implied by sanctioning; one ops-quality clause.
+  • Rider-caliber: level implied by sanctioning + one ops-quality clause.
 - Do not copy phrasing from canonicals/examples.
 
-Intro
-- Single paragraph, 110–180 words, travel-brochure style for a competitor.
+NAMING (venue acronym logic)
+- If hub.core.venue.acronym exists OR acronym confirmed from venue_official_link:
+  First mention = full official venue name; later mentions = acronym.
+- Never overwrite official data fields; apply to generated prose only.
+
+INTRO
+- Single paragraph, 110–180 words, competitor-first travel-brochure style.
+- Follow tell → write → tell (do not print these words).
 - Include exactly two markdown links: event_official_link and venue_official_link.
-- Cover ≥3 of the derived elements above.
+- Cover ≥3 of the derived elements (Time, Season, Event, Venue, City, Rider-caliber).
 - Forbid lists, prices, ticketing, weather numbers, hotel/restaurant names.
 
-Stay
+TRANSITION
+- One paragraph, 40–70 words.
+- Bridges intro → zones; set expectations for moving through the week.
+- No bullets, no lists, no prices, no explicit labels.
+
+STAY
 - Dynamic title (3–6 words).
-- One paragraph using “tell → write → tell” logic, without printing those words.
-- Mention 1–2 featured hotels in prose with inline links.
-- Close with: “Also consider: Name; Name.” as prose with inline links.
-- Optional one CTA closer at end of paragraph.
+- One paragraph using tell → write → tell.
+- Zone opener inside paragraph must be 45–60 words before the rest of the copy continues.
+- Blend 1–2 featured hotels inline with markdown links (no list formatting).
+- REQUIRED close: “Also consider: Name; Name.” with inline links.
+- One spectator tip allowed; max one sentence; practical tone.
+- Optional one CTA closer from cta_closers_library at paragraph end.
 
-Dine
-- Dynamic title.
-- One flowing paragraph. If AM or Dinner fallback is used, label as “lunch” internally; do not print labels.
-- Use inline links; tone “predictable and close.”
-- Optional: “Also consider:” as prose. Optional one CTA closer.
+DINE
+- Dynamic title (3–6 words).
+- One single flowing paragraph; no AM/Dinner labels in output.
+- If AM or Dinner data missing, borrow “lunch” internally for selection only.
+- Zone opener inside paragraph must be 45–60 words before the rest of the copy continues.
+- Keep options predictable and near the venue; use inline links; avoid list formatting.
+- REQUIRED close: “Also consider: Name; Name.” with inline links.
+- One spectator tip allowed; max one sentence; practical tone.
+- Optional one CTA closer at paragraph end.
 
-Locale
-- Dynamic title.
-- One paragraph focused on parks, attractions, culture, leisure near the venue.
-- No motifs system. No lists. Optional one CTA closer.
+LOCALE
+- Dynamic title (3–6 words).
+- One paragraph using tell → write → tell.
+- Zone opener inside paragraph must be 45–60 words before the rest of the copy continues.
+- Focus on light resets near the venue; short walks/drives; inline links allowed.
+- REQUIRED close: “Also consider: Name; Name.” with inline links.
+- One spectator tip allowed; max one sentence; practical tone.
+- Optional one CTA closer.
 
-Essentials
-- Dynamic title.
-- One paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers.
-- Optional: “Also consider:” as prose. Optional one CTA closer.
+ESSENTIALS
+- Dynamic title (3–6 words).
+- One paragraph using tell → write → tell.
+- Zone opener inside paragraph must be 45–60 words before the rest of the copy continues.
+- Blend grocery, pharmacy, feed, car rental, golf-cart providers; include on-grounds vendors if present.
+- REQUIRED close: “Also consider: Name; Name.” with inline links.
+- One spectator tip allowed; max one sentence; practical tone.
+- Optional one CTA closer.
 
-Outro
-- 25–45 words from outro_templates (deterministic hash selection; see TEMPLATES).
+OUTRO (two-part)
+- Emit two parts in order:
+  1) hello.outro_pivot — 35–70 words, single paragraph, summarizes zones and hands off to main.
+  2) hello.outro_main — 120–220 words, may be multi-paragraph, logistics-driven close.
+- Finals/weekend routing applies when flags present (templates may influence tone).
+- No links; terminal periods required.
 
-EMIT_ITEMS (still emit prose per rules)
+EMIT_ITEMS (still write prose per rules)
 emit_items: true
 item_rules:
   stay:
@@ -118,20 +155,29 @@ DYNAMIC TITLES
 TEMPLATES (deterministic)
 - rotation_mode: hash
 - rotation_seed: hub.core.event.uid
-- rotation_index = fnv1a(rotation_seed + ":" + section_id) % template_count
-- De-dupe within document: if chosen index already used, bump +1 mod template_count.
+- rotation_index = fnv1a(rotation_seed + ":" + section_id + ":" + doc_index) % template_count
+- De-dupe within document: if chosen index used, bump +1 mod template_count.
 - Apply to: outro_templates and cta_closers.
 
 EXAMPLES IN GOLD
-- If GOLD_SHAPE.examples.*_md present, treat as reference only; do not emit verbatim.
+- GOLD_SHAPE.examples.*_md are reference only; do not emit verbatim.
 
 QUALITY GUARDS
 - No raw URLs in prose; use markdown links.
-- No bullet lists for content; “Also consider:” is prose.
-- Keep sentences concise; avoid jargon overload.
+- No bullet lists in content; “Also consider:” is prose.
+- Sentences concise; avoid jargon overload.
+- Enforce tell → write → tell for Intro and all zones.
+
+VALIDATION SNAPSHOT (must pass)
+- Intro: 1 paragraph; 110–180 words; exactly two links; structure = tell→write→tell.
+- Transition: 1 paragraph; 40–70 words.
+- Zones: dynamic titles; opener 45–60 words; inline item blending; “Also consider:” present; spectator tip ≤1 sentence.
+- Dine: single paragraph; lunch fallback allowed; no printed labels.
+- Outro: two-part — pivot 35–70 words, main 120–220 words, no links, main may be multi-paragraph.
+- Items: stay ≥2; dine ≥3; essentials ≥5; require name/url/alt (alt via fallback ladder).
 
 CANVAS EMIT
-- Emit the final JSON that conforms to SCHEMA exactly. No extra fields.
+- Emit final JSON that conforms to SCHEMA exactly. No extra fields.
 - Create one canvas textdoc with type `code/json`.
 - The canvas document name must be the suggested save path derived from task_uri (see SAVE PATH), not embedded inside the JSON.
 
