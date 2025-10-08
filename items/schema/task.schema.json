@@ -58,6 +58,7 @@
               "properties": {
                 "uid": { "type": "string", "minLength": 1 },
                 "name": { "type": "string", "minLength": 1 },
+                "acronym": { "type": "string", "minLength": 1 },
                 "official_link": { "type": "string", "format": "uri" },
                 "geometry_link": { "type": "string", "format": "uri" }
               }
