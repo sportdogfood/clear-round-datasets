@@ -1,5 +1,6 @@
+// items/instructions/instructions.txt
 TITLE: Content Runner — Equestrian Event Blogs
-Policy: v1.0.8
+Policy: v1.0.9
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
 SCHEMA: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
@@ -23,55 +24,52 @@ WORKFLOW
 2) Fetch {task_uri}. Fail task if non-200.
 3) Normalize types (booleans, numbers, timestamps).
 4) Fetch links listed in POLICY.trace.required_order until budget hit.
-5) Build content using Six-Pillar Research.
+5) Build content using Lean Research directive.
 
-SIX-PILLAR RESEARCH (no city_reference_url)
-- Sources: event_official_link, venue_official_link; geo_link optional.
+LEAN RESEARCH (no city_reference_url)
+- Research official event & venue pages first (geo_link optional for month/city naming).
 - Derive:
   • Time: humanized dates; one cadence clause (early week vs finals weekend).
-  • Season: single phrase only (e.g., “late-summer”).
+  • Season: one simple term only (e.g., “late-summer”).
   • Event: stature + one hallmark (e.g., a final or feature class).
-  • Venue: two setting/flow traits (e.g., white tents; compact layout).
+  • Venue: two concrete visuals/flow traits seen on the pages.
   • City: one vibe + proximity phrase via geo context; no separate city source.
-  • Rider-caliber: level implied by sanctioning; footing/timing/polish clause.
-- Rule: Do not rely on canonicals or memory; use the official pages (and geo for naming/month).
-
-EMIT RULES (align to Policy v1.0.8)
+  • Rider-caliber: range implied by sanctioning; one ops-quality clause.
+- Do not copy phrasing from canonicals/examples.
 
 Intro
-- Single paragraph, 110–180 words.
-- Must include inline markdown links to event_official_link and venue_official_link.
-- Must cover all six pillars.
-- Forbid ticketing, prices, lists, temperatures, hotel/restaurant names.
+- Single paragraph, 110–180 words, travel-brochure style for a competitor.
+- Include exactly two markdown links: event_official_link and venue_official_link.
+- Cover ≥3 of the derived elements above.
+- Forbid lists, prices, ticketing, weather numbers, hotel/restaurant names.
 
 Stay
-- Dynamic title (3–6 words). Do NOT use static titles from gold.
-- One paragraph using “tell → write → tell”.
+- Dynamic title (3–6 words).
+- One paragraph using “tell → write → tell” logic, without printing those words.
 - Mention 1–2 featured hotels in prose with inline links.
 - Close with: “Also consider: Name; Name.” as prose with inline links.
-- Optional CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
+- Optional one CTA closer at end of paragraph.
 
 Dine
 - Dynamic title.
-- Three short paragraphs: overview; AM (or borrowed lunch labeled “lunch”); Dinner.
-- Use inline links; keep tone “predictable and close”.
-- Optional: “Also consider:” as prose if needed. One CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
+- One flowing paragraph. If AM or Dinner fallback is used, label as “lunch” internally; do not print labels.
+- Use inline links; tone “predictable and close.”
+- Optional: “Also consider:” as prose. Optional one CTA closer.
 
 Locale
 - Dynamic title.
 - One paragraph focused on parks, attractions, culture, leisure near the venue.
-- No motifs system. No lists.
-- Optional CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
+- No motifs system. No lists. Optional one CTA closer.
 
 Essentials
 - Dynamic title.
 - One paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers.
-- Optional: “Also consider:” as prose. One CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
+- Optional: “Also consider:” as prose. Optional one CTA closer.
 
 Outro
-- 25–45 words from outro_templates (rotation hash; see TEMPLATES).
+- 25–45 words from outro_templates (deterministic hash selection; see TEMPLATES).
 
-EMIT_ITEMS (data extraction; still emit prose per rules)
+EMIT_ITEMS (still emit prose per rules)
 emit_items: true
 item_rules:
   stay:
@@ -117,7 +115,7 @@ DYNAMIC TITLES
 - Generate 3–6 words per section, descriptive and unique to the venue/week.
 - SEO guard enforces 3–6 words; fail if empty.
 
-TEMPLATES (deterministic selection; no RNG)
+TEMPLATES (deterministic)
 - rotation_mode: hash
 - rotation_seed: hub.core.event.uid
 - rotation_index = fnv1a(rotation_seed + ":" + section_id) % template_count
@@ -133,21 +131,17 @@ QUALITY GUARDS
 - Keep sentences concise; avoid jargon overload.
 
 CANVAS EMIT
-- Emit the **final JSON** that conforms to SCHEMA exactly. No extra fields.
+- Emit the final JSON that conforms to SCHEMA exactly. No extra fields.
 - Create one canvas textdoc with type `code/json`.
-- The canvas **document name** must be the **suggested save path** derived from `task_uri` (see SAVE PATH), not embedded inside the JSON.
+- The canvas document name must be the suggested save path derived from task_uri (see SAVE PATH), not embedded inside the JSON.
 
-SAVE PATH (deterministic, from task_uri filename)
-Given: `.../items/tasks/{slug}-task-YYYY-MM-DD.json`
+SAVE PATH (from task_uri)
+Given: .../items/tasks/{slug}-task-YYYY-MM-DD.json
 Derive:
-1) `base_date = YYYY-MM-DD`
-2) `slug = text before "-task"` (e.g., "hchs")
-3) `year = YYYY`
-4) `blog_base = "{slug}-blog-{base_date}"`            → e.g., `hchs-blog-2025-10-07`
-5) `blogs_dir = "{slug}-blogs-{year}"`                → e.g., `hchs-blogs-2025`
-6) Suggested path (directories+file):
-   `docs/blogs/{blogs_dir}/{blog_base}/{blog_base}.json`
-   Example:
-   task_uri → `/hchs-task-2025-10-07.json`
-   suggested canvas name → `docs/blogs/hchs-blogs-2025/hchs-blog-2025-10-07/hchs-blog-2025-10-07.json`
-- Do not write this path inside the JSON. Use it only as the canvas document name.
+1) base_date = YYYY-MM-DD
+2) slug = text before "-task"
+3) year = YYYY
+4) blog_base = "{slug}-blog-{base_date}"
+5) blogs_dir = "{slug}-blogs-{year}"
+6) Suggested path:
+   docs/blogs/{blogs_dir}/{blog_base}/{blog_base}.json
