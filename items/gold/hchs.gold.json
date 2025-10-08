@@ -3,13 +3,14 @@
     "run_id": "",
     "timestamp_iso": "",
     "task_uri": "",
-    "policy_version": "",
-    "policy_uri": ""
+    "policy_version": "1.0.9",
+    "policy_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json"
   },
   "hello": {
     "intro": "",
     "transition": "",
-    "outro": ""
+    "outro_pivot": "",
+    "outro_main": ""
   },
   "stay": {
     "title": "",
@@ -24,9 +25,6 @@
   "dine": {
     "title": "",
     "paragraph": "",
-    "overview": "",
-    "am": "",
-    "dinner": "",
     "spectator_tip": "",
     "cta": "",
     "items": [
@@ -75,17 +73,19 @@
   },
   "word_counts": {
     "intro": 0,
-    "outro": 0,
+    "transition": 0,
+    "outro_pivot": 0,
+    "outro_main": 0,
     "stay": 0,
     "dine_paragraph": 0,
-    "dine_overview": 0,
-    "dine_am": 0,
-    "dine_dinner": 0,
     "locale": 0,
     "essentials": 0
   },
   "paragraph_checks": {
     "intro_paragraphs": 0,
+    "transition_paragraphs": 0,
+    "outro_pivot_paragraphs": 0,
+    "outro_main_paragraphs": 0,
     "link_checks": {
       "intro_p1": { "event_link_present": false, "venue_link_present": false }
     },
@@ -98,12 +98,17 @@
     "intro_min": 110,
     "intro_max": 180,
     "intro_paragraphs": 1,
-    "outro_min": 25,
-    "outro_max": 45
+    "transition_min": 40,
+    "transition_max": 70,
+    "outro_pivot_min": 35,
+    "outro_pivot_max": 70,
+    "outro_main_min": 120,
+    "outro_main_max": 220
   },
   "templates_used": {
     "intro": "",
-    "outro": "",
+    "outro_pivot": "",
+    "outro_main": "",
     "cta": { "stay": "", "dine": "", "essentials": "" }
   },
   "features": { "weather_normals": false },
@@ -123,11 +128,12 @@
   "examples": {
     "intro_md": "Early winter brings two fast weeks at the Desert Holiday Series. December 3–14 splits into DH1 and DH2, building to CSI5*, MLSJ team rounds, and big-ticket grands prix. Rings sit against desert mountains with clean sightlines and all-weather footing. Schooling lanes and bridle paths keep traffic moving between barns and arenas. Thermal, CA stays calm and practical between trips, with services close enough to keep focus on the board. Start early in the week. Let finals weekend carry pace and energy. Get official details and class highlights on the event page, and plan on-grounds flow via the venue site. Focus on your rounds at Desert International Horse Park.",
     "transition_md": "After you’ve mapped your arrival, shift focus to how you’ll move through the week—where to sleep, eat, reset, and restock. The Desert Holiday Series runs tight, so a solid plan around DIHP keeps the show smooth and the downtime easy. The next sections guide each piece.",
-    "stay_md": "**Sleep Close to DIHP**\n\nAim for zero-friction mornings and quiet recovery at night. Keep drives short, parking simple, and layouts walkable so resets between rounds stay quick. La Quinta Resort & Club delivers roomy casitas and quiet paths for fast debriefs, while Renaissance Esmeralda provides polished service and dependable late-return windows that keep evenings controlled. Also consider: Holiday Inn Express & Suites; JW Marriott Desert Springs.\n*Spectator tip:* For friends or family, La Quinta’s grounds and Esmeralda’s pool terraces both give easy ring access and relaxed viewing breaks.",
-    "dine_md": "**Eat Efficiently Nearby**\n\nPlan food like gear: predictable, close, and timed to your schedule so warm-ups and walks never slip. The Cafe at Shields Date Garden covers quick greens and wraps between trips, and Heirloom Craft Kitchen is a steady midday stop for bowls and sandwiches when turnarounds tighten; after late classes, Lavender Bistro or Arnold Palmer’s gives a calm, seated finish, and LG’s Prime Steakhouse keeps steak night simple. Also consider: Tack Room Tavern.\n*Spectator tip:* Most restaurants welcome equestrian guests; outdoor tables at Heirloom and Lavender Bistro make post-round meals easy to share and review.",
-    "locale_md": "**Desert Downtime, Minutes Away**\n\nBetween rounds, use small windows for recovery and clear air. Quick drives from Thermal open desert and mountain views, short walking paths, and easy stops for coffee or a date shake. Keep it light on show days—a stroll and one simple errand—then save longer detours for off-days.\n*Spectator tip:* Palm Desert’s El Paseo shops and mountain drives add quick, scenic resets within fifteen minutes of Thermal.",
-    "essentials_md": "**Barn Basics On Hand**\n\nLock down essentials so mornings stay clear and the barn runs without questions. Stock staples nearby, tap on-grounds vendors for show-specific needs, and secure wheels before arrival. Ralphs covers groceries and ice, CVS Pharmacy handles meds and tape, and DIHP vendors stock feed, bedding, and tack during shows; wheels stay straightforward with Enterprise Rent-A-Car for SUVs and Dever, Inc. for golf carts with delivery. Also consider: advance cart reservations on peak weekends.\n*Spectator tip:* Vendor rows open early; walk them before heat builds for an easy look at tack and local gear.",
-    "outro_md": "**hello.outro (pivot start)**\nWith rest, meals, and essentials set, the week runs clean. Every plan here keeps you closer to the rings and clear of guesswork, so focus stays on your rounds and recovery as the Desert Holiday builds momentum.\n\n**hello.outro (main)**\nI’ll keep your week quiet where it counts and loud where it should be. Sleep close, eat on schedule, move clean between barns and rings. As DH1 builds into DH2, the cadence sharpens. Early rounds set rhythm, schooling lanes stay open, and you arrive where you need to be with minutes to spare. Finals weekend will carry its own charge. You will feel it on the warm-up track, under the desert light, with the mountains holding the frame.\n\nI will lock rooms, set two dinner holds nightly, stage groceries and tape, and place carts where you step off the gravel. Tickets, parking, and best-view notes will sit on the same sheet as your ring times. Review class highlights on the event page, confirm on-grounds flow on the venue site, and send changes once. I will close the loops so your Desert Holiday reads like clear rounds in sequence."
+    "stay_md": "Sleep Close to DIHP\n\nAim for zero-friction mornings and quiet recovery at night. Keep drives short, parking simple, and layouts walkable so resets between rounds stay quick. La Quinta Resort & Club delivers roomy casitas and quiet paths for fast debriefs, while Renaissance Esmeralda provides polished service and dependable late-return windows that keep evenings controlled. Also consider: Holiday Inn Express & Suites; JW Marriott Desert Springs.\nSpectator tip: For friends or family, La Quinta’s grounds and Esmeralda’s pool terraces both give easy ring access and relaxed viewing breaks.",
+    "dine_md": "Eat Efficiently Nearby\n\nPlan food like gear: predictable, close, and timed to your schedule so warm-ups and walks never slip. The Cafe at Shields Date Garden covers quick greens and wraps between trips, and Heirloom Craft Kitchen is a steady midday stop for bowls and sandwiches when turnarounds tighten; after late classes, Lavender Bistro or Arnold Palmer’s gives a calm, seated finish, and LG’s Prime Steakhouse keeps steak night simple. Also consider: Tack Room Tavern.\nSpectator tip: Most restaurants welcome equestrian guests; outdoor tables at Heirloom and Lavender Bistro make post-round meals easy to share and review.",
+    "locale_md": "Desert Downtime, Minutes Away\n\nBetween rounds, use small windows for recovery and clear air. Quick drives from Thermal open desert and mountain views, short walking paths, and easy stops for coffee or a date shake. Keep it light on show days—a stroll and one simple errand—then save longer detours for off-days.\nSpectator tip: Palm Desert’s El Paseo shops and mountain drives add quick, scenic resets within fifteen minutes of Thermal.",
+    "essentials_md": "Barn Basics On Hand\n\nLock down essentials so mornings stay clear and the barn runs without questions. Stock staples nearby, tap on-grounds vendors for show-specific needs, and secure wheels before arrival. Ralphs covers groceries and ice, CVS Pharmacy handles meds and tape, and DIHP vendors stock feed, bedding, and tack during shows; wheels stay straightforward with Enterprise Rent-A-Car for SUVs and Dever, Inc. for golf carts with delivery. Also consider: advance cart reservations on peak weekends.\nSpectator tip: Vendor rows open early; walk them before heat builds for an easy look at tack and local gear.",
+    "outro_pivot_md": "With rest, meals, and essentials set, the week runs clean. Every plan here keeps you closer to the rings and clear of guesswork, so focus stays on your rounds and recovery as the Desert Holiday builds momentum.",
+    "outro_main_md": "I’ll keep your week quiet where it counts and loud where it should be. Sleep close, eat on schedule, move clean between barns and rings. As DH1 builds into DH2, the cadence sharpens. Early rounds set rhythm, schooling lanes stay open, and you arrive where you need to be with minutes to spare. Finals weekend will carry its own charge. You will feel it on the warm-up track, under the desert light, with the mountains holding the frame.\n\nI will lock rooms, set two dinner holds nightly, stage groceries and tape, and place carts where you step off the gravel. Tickets, parking, and best-view notes will sit on the same sheet as your ring times. Review class highlights on the event page, confirm on-grounds flow on the venue site, and send changes once. I will close the loops so your Desert Holiday reads like clear rounds in sequence."
   },
   "notes": {
     "examples_usage": "examples.*_md are reference only; runner must not emit these verbatim."
