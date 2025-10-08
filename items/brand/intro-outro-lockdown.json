@@ -1,29 +1,22 @@
 {
   "version": "1.0.1",
-  "updated_iso": "2025-10-07T00:00:00-04:00",
+  "updated_iso": "2025-10-08T00:00:00-04:00",
   "id": "intro_outro_lockdown_v1",
-  "purpose": "Lock down intro/outro rules so emitted copy matches gold-standard without relying on city_reference_url.",
-
+  "purpose": "Constrain intro/outro to gold-standard style using *_link keys only.",
   "intro": {
     "enabled": true,
     "paragraphs": 1,
     "min_words": 110,
     "max_words": 180,
-
-    "links_required": [
-      "event_official_link",
-      "venue_official_link"
-    ],
-
+    "links_required": ["event_official_link", "venue_official_link"],
     "must_cover": [
       "time_phrase",
       "season_phrase_only",
-      "event_stature_hallmark",
-      "venue_traits_flow",
+      "event_stature_hallmark_or_final",
+      "venue_visual_flow_trait",
       "city_presence_phrase",
       "rider_caliber_ops_quality"
     ],
-
     "forbid": [
       "ticketing",
       "prices",
@@ -32,42 +25,25 @@
       "hotel_names",
       "restaurant_names"
     ],
-
     "research_sources": {
       "required": ["event_official_link", "venue_official_link"],
       "optional": ["geo_link"],
-      "notes": "Derive all six pillars from the official event and venue pages; geo_link only guides month/city naming."
+      "notes": "Use official pages; geo only for month/city naming."
     }
   },
-
   "outro": {
     "enabled": true,
     "min_words": 25,
     "max_words": 45,
     "template_source": "items/brand/outro_templates.json",
-
     "selection": {
       "mode": "hash",
       "seed": "hub.core.event.uid",
-      "algorithm": "fnv1a",
-      "notes": "Deterministic pick per event; prevents always choosing the first template."
+      "algorithm": "fnv1a"
     }
   },
-
   "compliance": {
     "no_raw_urls_in_prose": true,
-    "markdown_links_only": true,
-    "telemetry_fields": [
-      "word_counts.intro",
-      "word_counts.outro",
-      "paragraph_checks.intro_paragraphs",
-      "paragraph_checks.link_checks.intro_p1.event_link_present",
-      "paragraph_checks.link_checks.intro_p1.venue_link_present"
-    ]
-  },
-
-  "notes": {
-    "emission": "This file sets constraints only; it does not emit copy.",
-    "compat": "Aligned to *_link keys. No city_reference_url dependency."
+    "markdown_links_only": true
   }
 }
