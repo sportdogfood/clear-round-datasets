@@ -1,37 +1,37 @@
 {
-  "version": "1.2.3",
-  "updated_iso": "2025-10-07T00:00:00-04:00",
+  "version": "1.2.4",
+  "updated_iso": "2025-10-08T00:00:00-04:00",
   "id": "clearround_founder_firstperson_v1",
-
-  "audience": ["competitive-rider","trainer","groom","spectator_support","equine-professional-services"],
-
+  "audience": [
+    "competitive-rider",
+    "trainer",
+    "groom",
+    "spectator_support",
+    "equine-professional-services"
+  ],
   "pov": {
     "person": "first",
     "persona": "Founder, Clear Round Travel",
     "credentials": "Wellington local • 20+ years in travel & equestrian sport • mom to a 14-year-old A-circuit rider",
-    "core_message": "Focus on riding. We'll handle the rest."
+    "core_message": "Focus on riding.\nWe'll handle the rest."
   },
-
   "voice": {
     "primary": "confident",
-    "secondary": ["practical","warm","insider"],
+    "secondary": ["practical", "warm", "insider"],
     "character": "authoritative but approachable"
   },
-
   "style": {
     "register": "conversational-brochure",
     "imagery": "sensory but restrained",
     "sentence_tone": "short-to-medium; active voice",
     "vocabulary": "equestrian-literate; avoid jargon overload"
   },
-
   "length_targets": {
     "intro": { "words_min": 110, "words_max": 180, "paragraphs": 1 },
     "section_overview": { "words_min": 50, "words_max": 90 },
     "item_blurb": { "words_min": 10, "words_max": 25 },
     "outro": { "words_min": 25, "words_max": 45 }
   },
-
   "tone_rules": {
     "do": [
       "Lead with rider-first clarity",
@@ -47,13 +47,16 @@
       "Overdo SEO phrasing or flowery prose"
     ]
   },
-
   "content_constraints": {
     "first_person_anchor": true,
     "disclosure": "(no fee to you; we work with partners)",
-    "no_guessing": true
+    "no_guessing": true,
+    "forbid_phrases": [
+      "rider-first scheduling",
+      "hallmark money classes",
+      "footing, timing, and polish match the standard"
+    ]
   },
-
   "research": {
     "intro_requires": ["event_official_link", "venue_official_link"],
     "optional": ["geo_link"],
@@ -61,13 +64,12 @@
     "fail_if_missing": true,
     "record_in_source_trace": true
   },
-
   "templates": {
     "intro_closing_patterns_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro_closing_patterns.json",
     "outro_templates_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/outro_templates.json",
-    "cta_closers_library_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/cta_closers_library.json"
+    "cta_closers_library_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/cta_closers_library.json",
+    "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
   },
-
   "defaults": {
     "keywords_min": 3,
     "insiders_min": 2,
