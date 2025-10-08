@@ -1,130 +1,131 @@
 TITLE: Content Runner — Equestrian Event Blogs
-Policy: v1.0.6
-
+Policy: v1.0.8
 BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
 
-ASSETS (absolute)
-SCHEMA:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
-POLICY:      https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
-GOLD_SHAPE:  https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
-LOCKDOWN:    https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json
-
-URL ACCESS
-- Fetch any absolute URL in *_link fields.
-- Event official URL: REQUIRED; on 200-fail -> record skipped_external and do not emit intro.
-- Do not require URLs to appear in user chat.
-- Treat text/plain as JSON.
-
-CANVAS
-- Do not render ALLOW_URLS in canvas.
-- Output JSON only. Do not echo canvas JSON in chat.
-- One canvas per task: create_textdoc then update_textdoc for edits.
-- Use type `code/json` for JSON, `document` for prose.
-
-OPS
-- All web calls: "response_length":"long".
-- If a required *_link 200-fails, retry once, then mark skipped_external in trace and continue.
-- From lists (stay/dine/essentials) extract name, url, alt; synthesize alt if missing per EMIT rules.
-
-TRACE
-- Record ONLY: task_uri, founder, audiences, events, event_official_url, venue, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, intro-outro-lockdown, bootstrap_bundle.
-- Each entry: {"path":"(basename)","status":200} or {"path":"(domain)","status":0}. Max 15.
+SCHEMA: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
+POLICY: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
+GOLD_SHAPE: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
 
 INPUT
-Payload only:
-{"task_uri":"<FULL URL to task JSON>"}
+- Payload: {"task_uri":"<absolute URL>"} only.
+- Use *_link keys from the task. Do not invent URLs.
+
+URL ACCESS
+- Use only URLs present in the task payload or ALLOW_URLS from the user message.
+- Required 200s for Intro emit: event_official_link, venue_official_link.
+- Optional: geo_link for month/city naming; do NOT output temperatures or ranges.
+
+TRACE (path+status only; max 15)
+- Record: task_uri, founder, audiences, events, event_official_link, venue, venue_official_link, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
 
 WORKFLOW
-1) Fetch SCHEMA, POLICY, GOLD_SHAPE, LOCKDOWN (warn on failure; continue).
-2) Fetch {task_uri} (must be 200 or fail).
-3) Coerce types: "true"/"false"→booleans; numeric strings→numbers. Normalize timestamp_iso.
-4) FIELD_MAP before validation:
-   insiders_link ← insider_link
-   event_official_url ← event_official_link
-   schema ← schema_link
-   gold ← gold_link
-5) Validate required keys (ignore extras/dupes).
-6) Required links: founder_link, audiences_link, events_link, venue_link, geo_link, keywords_link, insiders_link, stay_link, dine_link, essentials_link, event_official_url.
-7) Fetch in order: founder → audiences → events → event_official_url → venue → geo → keywords → insiders → stay → dine → essentials.
-8) Generate per POLICY + LOCKDOWN:
-   - LOCKDOWN injects the **only** paragraph joiner. Do not add your own.
-   - Intro: exactly two paragraphs joined by the literal "\\n\\n" (no raw newlines).
-     P1: inline markdown links to event_official_url and venue.official_url; include event+dates (humanized) and two venue traits.
-     P2: city vibe + one sensory detail; season/month allowed.
-     Use ≥3 keywords and ≥2 insider terms; imply audience; no ticketing/pricing/hotel/restaurant names.
-   - Stay: one paragraph with inline links to 2–4 hotels from Stay items (prioritize premium). Add one CTA closer if available.
-   - Dine: three paragraphs—overview; AM with 1–2 breakfast/brunch links from Dine (if short, use lunch items and write as lunch); Dinner with 2–3 dinner links from Dine (if short, use lunch items and write as lunch). Add one CTA closer if available.
-   - Locale: one paragraph with off-barn resets.
-   - Essentials: one paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers from Essentials. Add one CTA closer if available.
-   - Outro: 25–45 words; use template if available.
+1) Fetch POLICY, SCHEMA, GOLD_SHAPE (continue on failure).
+2) Fetch {task_uri}. Fail task if non-200.
+3) Normalize types (booleans, numbers, timestamps).
+4) Fetch links listed in POLICY.trace.required_order until budget hit.
+5) Build content using Six-Pillar Research.
 
-TEMPLATES
-- Use intro_closing_patterns, outro_templates, cta_closers (rotate sequentially; fallback to founder).
-- intro-outro-lockdown.json governs two-paragraph intro, required P1 links, forbid list, and literal "\\n\\n". Apply lockdown before other templates.
-- Note: intro_closing_patterns.paragraph_joiner is empty; do not double-join. The LOCKDOWN pattern supplies "\\n\\n".
+SIX-PILLAR RESEARCH (no city_reference_url)
+- Sources: event_official_link, venue_official_link; geo_link optional.
+- Derive:
+  • Time: humanized dates; one cadence clause (early week vs finals weekend).
+  • Season: single phrase only (e.g., “late-summer”).
+  • Event: stature + one hallmark (e.g., a final or feature class).
+  • Venue: two setting/flow traits (e.g., white tents; compact layout).
+  • City: one vibe + proximity phrase via geo context; no separate city source.
+  • Rider-caliber: level implied by sanctioning; footing/timing/polish clause.
+- Rule: Do not rely on canonicals or memory; use the official pages (and geo for naming/month).
 
-EMIT_ITEMS
+EMIT RULES (align to Policy v1.0.8)
+
+Intro
+- Single paragraph, 110–180 words.
+- Must include inline markdown links to event_official_link and venue_official_link.
+- Must cover all six pillars.
+- Forbid ticketing, prices, lists, temperatures, hotel/restaurant names.
+
+Stay
+- Dynamic title (3–6 words). Do NOT use static titles from gold.
+- One paragraph using “tell → write → tell”.
+- Mention 1–2 featured hotels in prose with inline links.
+- Close with: “Also consider: Name; Name.” as prose with inline links.
+- Optional CTA closer allowed.
+
+Dine
+- Dynamic title.
+- Three short paragraphs: overview; AM (or borrowed lunch labeled “lunch”); Dinner.
+- Use inline links; keep tone “predictable and close”.
+- Optional: “Also consider:” as prose if needed. One CTA closer allowed.
+
+Locale
+- Dynamic title.
+- One paragraph focused on parks, attractions, culture, leisure near the venue.
+- No motifs system. No lists.
+
+Essentials
+- Dynamic title.
+- One paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers.
+- Optional: “Also consider:” as prose. One CTA closer allowed.
+
+Outro
+- 25–45 words from outro_templates (rotation hash; see TEMPLATES).
+
+EMIT_ITEMS (data extraction; still emit prose per rules)
 emit_items: true
 item_rules:
   stay:
     source: stay_link
     required_fields: [name, url]
-    optional_fields: [alt, distance, notes]
-    map: { name: $.name, url: $.url, alt: $.alt || $.distance || $.notes }
+    optional_fields: [alt, distance, notes, approx_drive, approx_distance, distance_m, distance_mi]
+    map:
+      name: $.name
+      url: $.url
+      alt: $.alt || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi) || $.distance || $.notes
     http_200_only: true
   dine:
     source: dine_link
     required_fields: [name, url]
-    optional_fields: [alt, meal]
-    map: { name: $.name, url: $.url, alt: $.alt || $.meal }
+    optional_fields: [alt, meal, approx_drive, approx_distance, distance_m, distance_mi]
+    map:
+      name: $.name
+      url: $.url
+      alt: $.alt || $.meal || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
     http_200_only: true
   essentials:
     source: essentials_link
     required_fields: [type, name, url]
-    optional_fields: [alt, notes]
-    map: { type: $.type, name: $.name, url: $.url, alt: $.alt || $.notes }
+    optional_fields: [alt, notes, approx_drive, approx_distance, distance_m, distance_mi]
+    map:
+      type: $.type
+      name: $.name
+      url: $.url
+      alt: $.alt || $.notes || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
     http_200_only: true
+helpers:
+  formatDistance(m, mi):
+    - if mi present -> "{mi} mi"
+    - else if m present -> "{(m/1609).toFixed(1)} mi"
+    - else -> ""
+
 emit_indicator:
   on_apply:
     set validation.flags.emit_items_applied = true
     add warning: "emit_items: applied (stay=${stay.items.length}, dine=${dine.items.length}, essentials=${essentials.items.length})"
 
-OUTPUT (JSON only)
-{
-  "meta":{"run_id":"","timestamp_iso":"","task_uri":"","policy_version":"","policy_uri":""},
-  "hello":{"intro":"","outro":""},
-  "stay":{"title":"Where to Stay","paragraph":"","cta":"","items":[]},
-  "dine":{"title":"Dine","overview":"","am":"","dinner":"","cta":"","items":[]},
-  "locale":{"title":"Locale - Off-Barn","paragraph":""},
-  "essentials":{"title":"Essentials","paragraph":"","cta":"","items":[]},
-  "seo":{
-    "section_title":"","meta_description":"","open_graph_title":"",
-    "open_graph_description":"","search_title":"","search_description":""
-  },
-  "brand_usage":{
-    "keywords_used":[],"insiders_used":[],"audience_trait":"",
-    "intro_template_id":"","outro_template_id":"",
-    "cta_closers":{"stay":"","dine":"","essentials":""}
-  },
-  "source_trace": [],
-  "validation":{"status":"pass","warnings":[],"errors":[],"flags":{}}
-}
-- hello.intro: exactly one literal "\\n\\n"; no raw newline characters.
+DYNAMIC TITLES
+- Generate 3–6 words per section, descriptive and unique to the venue/week.
+- SEO guard enforces 3–6 words; fail if empty.
 
-FIELD_MAP
-schema_enforced: false
-alias:
-  insiders_link: insider_link
-  event_official_url: event_official_link
-  schema: schema_link
-  gold: gold_link
+TEMPLATES (deterministic selection; no RNG)
+- rotation_mode: hash
+- rotation_seed: hub.core.event.uid
+- rotation_index = fnv1a(rotation_seed + ":" + section_id) % template_count
+- Apply to: outro_templates and cta_closers.
 
-VALIDATION
-- Intro has two paragraphs; contains one literal "\\n\\n"; no raw newlines.
-- Intro P1 has markdown links to event_official_url and venue.official_url.
-- Stay paragraph links to 2–4 hotels present in stay.items.
-- Dine overview present.
-- Dine AM links to 1–2 breakfast/brunch items from dine.items; if fallback used, 1–2 lunch items from dine.items and copy must say “lunch.”
-- Dine Dinner links to 2–3 dinner items from dine.items; if fallback used, 2–3 lunch items from dine.items and copy must say “lunch.”
-- Essentials paragraph links to grocery, pharmacy, feed, car rental, and golf-cart items from essentials.items.
-- Fail run if any link requirements are unmet.
+EXAMPLES IN GOLD
+- If GOLD_SHAPE.examples.*_md present, treat as reference only; do not emit verbatim.
+
+QUALITY GUARDS
+- No raw URLs in prose; use markdown links.
+- No bullet lists for content; “Also consider:” is prose.
+- Keep sentences concise; avoid jargon overload.
