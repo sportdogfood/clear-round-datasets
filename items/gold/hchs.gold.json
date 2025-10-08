@@ -6,12 +6,14 @@
     "policy_version": "",
     "policy_uri": ""
   },
+
   "hello": {
     "intro": "",
     "outro": ""
   },
+
   "stay": {
-    "title": "Where to Stay",
+    "title": "",
     "paragraph": "",
     "cta": "",
     "items": [
@@ -19,8 +21,9 @@
       { "name": "", "url": "", "alt": "" }
     ]
   },
+
   "dine": {
-    "title": "Dine",
+    "title": "",
     "overview": "",
     "am": "",
     "dinner": "",
@@ -31,20 +34,22 @@
       { "name": "", "url": "", "alt": "" }
     ],
     "labels": {
-      "am_label": "",         /* expected values: "am" or "lunch" */
-      "dinner_label": ""      /* expected values: "dinner" or "lunch" */
+      "am_label": "",
+      "dinner_label": ""
     },
     "fallback": {
-      "am_used_lunch": false,     /* true when AM borrowed lunch items and copy says "lunch" */
-      "dinner_used_lunch": false  /* true when Dinner borrowed lunch items and copy says "lunch" */
+      "am_used_lunch": false,
+      "dinner_used_lunch": false
     }
   },
+
   "locale": {
-    "title": "Locale - Off-Barn",
+    "title": "",
     "paragraph": ""
   },
+
   "essentials": {
-    "title": "Essentials",
+    "title": "",
     "paragraph": "",
     "cta": "",
     "items": [
@@ -55,6 +60,7 @@
       { "type": "", "name": "", "url": "", "alt": "" }
     ]
   },
+
   "seo": {
     "section_title": "",
     "meta_description": "",
@@ -63,6 +69,7 @@
     "search_title": "",
     "search_description": ""
   },
+
   "brand_usage": {
     "keywords_used": [],
     "insiders_used": [],
@@ -73,10 +80,9 @@
     "intro_outro_lockdown_used": false,
     "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
   },
+
   "word_counts": {
     "intro": 0,
-    "intro_p1": 0,
-    "intro_p2": 0,
     "outro": 0,
     "stay": 0,
     "dine_overview": 0,
@@ -85,6 +91,7 @@
     "locale": 0,
     "essentials": 0
   },
+
   "paragraph_checks": {
     "intro_paragraphs": 0,
     "link_checks": {
@@ -98,25 +105,25 @@
       "dinner_mentions_lunch_when_fallback_true": false
     }
   },
+
   "limits": {
-    "intro_min": 80,
-    "intro_max": 140,
-    "intro_paragraphs": 2,
-    "intro_p1_min": 55,
-    "intro_p1_max": 90,
-    "intro_p2_min": 25,
-    "intro_p2_max": 60,
+    "intro_min": 110,
+    "intro_max": 180,
+    "intro_paragraphs": 1,
     "outro_min": 25,
     "outro_max": 45
   },
+
   "templates_used": {
     "intro": "",
     "outro": "",
     "cta": { "stay": "", "dine": "", "essentials": "" }
   },
+
   "features": {
     "weather_normals": false
   },
+
   "inputs_echo": {
     "founder_link": "",
     "audiences_link": "",
@@ -127,15 +134,54 @@
     "essentials_link": "",
     "venue_link": "",
     "geo_link": "",
-    "event_official_url": ""
+    "event_official_link": "",
+    "venue_official_link": ""
   },
+
+  "examples": {
+    "intro_md": "August in Bridgehampton, the Hampton Classic unfolds like summer set to sport: white tents and green rings under open sky, a compact layout that keeps stabling, schooling, and show rings a short, easy walk. The week carries real prestige—pace and polish you feel as classes rise—yet the grounds stay welcoming, with the boutique garden moving between trips and clear sightlines almost everywhere you stand. Days are warm with a salt-air edge; mornings cooler and calm, good for first rounds; late light slipping across the fields to soften the end of a long day. Beyond the gates, Bridgehampton is close at hand—hedgerows and farmstands, coffee on Main Street, harbors and beaches minutes away—so the whole trip reads as one experience: serious competition, photogenic setting, and late-summer ease.",
+    "stay_md": "## Sleep Close to the Rings\n\nIf you want quiet nights and quick mornings, base within minutes of the grounds. **Topping Rose House** fits a tight show schedule: calm rooms, steady service, and an easy hop to schooling. **Baron’s Cove** adds harbor views and relaxed end-of-day dinners without losing proximity. Both handle quick resets between rounds and a reliable breakfast before first trips.\n**Also consider:** The Roundtree Amagansett; Southampton Inn.",
+    "dine_md": "## Eat Well Between Rounds\n\nKeep food close and predictable so the day stays smooth. **Topping Rose House Restaurant** is a calm, punctual breakfast before schooling. Midday, **World Pie** handles quick slices and salads without derailing a course walk. For dinner, **Page at 63 Main** reads polished but relaxed, while **Almond** delivers satisfying bistro plates after late classes.\n**Also consider:** Estia’s Little Kitchen; The Golden Pear; Sag Pizza.",
+    "locale_md": "## Off-Barn Hours\n\nReset near the showgrounds: short village walks, a coffee on Main Street, and harbor sunsets that don’t steal your legs for tomorrow. Save longer beach time for off-days; use quick drives for farmstands, a vineyard tasting, or a Sag Harbor stroll between classes.\n**Plan:** Stack 30–45 minute breaks near the show; keep one longer window after your last trip.",
+    "essentials_md": "## Essentials on Hand\n\nKeep basics within a short drive so nothing stalls your day. **King Kullen** covers groceries and ice. **CVS Pharmacy** handles meds and tape runs early or late. **Hampton Feed & Tack** has bedding and barn basics without a long detour. Wheels and carts are simple: **Enterprise** for SUVs, **Dever, Inc.** for golf carts with delivery.\n**Also consider:** Farmstands for fruit and water; fuel up the night before.",
+    "outro_md": "## Your Week, Dialed In\n\nStay close to the rings, anchor one breakfast and one fast lunch, and hold a flexible dinner window. Do a single supply run on day one, then top up at night so mornings stay clear. Bridgehampton brings late-summer ease; the Classic supplies pace and polish. If you want it handled, I’ll lock rooms, set dinner holds, and arrange carts so you can focus on your rounds."
+  },
+
+  "notes": {
+    "examples_usage": "examples.*_md are reference only; runner must not emit these verbatim."
+  },
+
+  "dynamic_titles": {
+    "stay": "",
+    "dine": "",
+    "locale": "",
+    "essentials": ""
+  },
+
+  "selection_indices": {
+    "outro_template_index": 0,
+    "cta_stay_index": 0,
+    "cta_dine_index": 0,
+    "cta_essentials_index": 0
+  },
+
+  "research_pillars": {
+    "time_phrase": "",
+    "season_phrase": "",
+    "event_stature_hallmark": "",
+    "venue_traits_flow": "",
+    "city_presence_phrase": "",
+    "rider_caliber_ops_quality": ""
+  },
+
   "source_trace": [
     { "path": "bootstrap_bundle", "status": 200 },
     { "path": "task_uri", "status": 200 },
     { "path": "founder", "status": 200 },
     { "path": "audiences", "status": 200 },
-    { "path": "event_official_url", "status": 200 },
+    { "path": "event_official_link", "status": 200 },
     { "path": "venue", "status": 200 },
+    { "path": "venue_official_link", "status": 200 },
     { "path": "geo", "status": 200 },
     { "path": "keywords", "status": 200 },
     { "path": "insiders", "status": 200 },
@@ -143,9 +189,11 @@
     { "path": "dine", "status": 200 },
     { "path": "essentials", "status": 200 }
   ],
+
   "dedupe": {
     "content_sha256": ""
   },
+
   "validation": {
     "status": "pass",
     "warnings": [],
