@@ -13,19 +13,29 @@
     "allow_venue_official_external": true,
     "no_user_message_presence_required": true
   },
-  "content_type": { "enforce": false, "treat_text_plain_as_json": true },
+  "content_type": {
+    "enforce": false,
+    "treat_text_plain_as_json": true
+  },
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": true,
     "fail_on_missing_url": true
   },
-  "fetch": { "response_length": "long", "retry_on_http_error": 1, "record_skipped_external": true },
+  "fetch": {
+    "response_length": "long",
+    "retry_on_http_error": 1,
+    "record_skipped_external": true
+  },
   "trace": {
     "only_required": true,
     "collapse_success": true,
     "max_entries": 15,
-    "fields": ["path", "status"],
+    "fields": [
+      "path",
+      "status"
+    ],
     "required_order": [
       "task_uri",
       "founder",
@@ -47,13 +57,29 @@
       "on_external_fetch_failure": "After one retry, record {\"path\":\"(domain)\",\"status\":0} and continue."
     }
   },
-  "features": { "weather_normals": false },
-  "length_targets": { "intro_min": 110, "intro_max": 180, "intro_paragraphs": 1, "outro_min": 25, "outro_max": 45 },
-  "brand_requirements": { "keywords_min": 3, "insiders_min": 2, "audience_reference_required": true },
+  "features": {
+    "weather_normals": false,
+    "suppress_section_titles_in_output": true
+  },
+  "length_targets": {
+    "intro_min": 110,
+    "intro_max": 180,
+    "intro_paragraphs": 1,
+    "outro_min": 25,
+    "outro_max": 45
+  },
+  "brand_requirements": {
+    "keywords_min": 3,
+    "insiders_min": 2,
+    "audience_reference_required": true
+  },
   "section_rules": {
     "intro": {
       "paragraphs": 1,
-      "links_required": ["event_official_link", "venue_official_link"],
+      "links_required": [
+        "event_official_link",
+        "venue_official_link"
+      ],
       "must_cover": [
         "time_phrase",
         "season_phrase_only",
@@ -62,9 +88,35 @@
         "city_presence_phrase",
         "rider_caliber_ops_quality"
       ],
-      "forbid": ["ticketing", "prices", "logistics_lists", "hotel_names", "restaurant_names", "temperatures_or_ranges"]
+      "structure": "tell-write-tell",
+      "forbid": [
+        "ticketing",
+        "prices",
+        "logistics_lists",
+        "hotel_names",
+        "restaurant_names",
+        "temperatures_or_ranges"
+      ]
     },
-    "stay": { "paragraph": true, "links_inline": true, "cta_allowed": true, "dynamic_title": true },
+    "transition": {
+      "emit": true,
+      "paragraphs": 1,
+      "min_words": 40,
+      "max_words": 70
+    },
+    "stay": {
+      "paragraph": true,
+      "links_inline": true,
+      "cta_allowed": true,
+      "dynamic_title": true,
+      "structure": "tell-write-tell",
+      "opener_words_min": 45,
+      "opener_words_max": 60,
+      "inline_items_blend": true,
+      "require_also_consider_sentence": true,
+      "spectator_tip_allowed": true,
+      "spectator_tip_max_sentences": 1
+    },
     "dine": {
       "overview": false,
       "am": false,
@@ -72,15 +124,50 @@
       "links_inline": true,
       "cta_allowed": true,
       "dynamic_title": true,
+      "structure": "tell-write-tell",
+      "opener_words_min": 45,
+      "opener_words_max": 60,
+      "inline_items_blend": true,
+      "require_also_consider_sentence": true,
+      "spectator_tip_allowed": true,
+      "spectator_tip_max_sentences": 1,
       "fallbacks": {
         "use_lunch_when_short": true,
-        "am": { "fallback_meal": "lunch", "label_as": "lunch" },
-        "dinner": { "fallback_meal": "lunch", "label_as": "lunch" }
+        "am": {
+          "fallback_meal": "lunch",
+          "label_as": "lunch"
+        },
+        "dinner": {
+          "fallback_meal": "lunch",
+          "label_as": "lunch"
+        }
       }
     },
-    "locale": { "paragraph": true, "dynamic_title": true },
-    "essentials": { "paragraph": true, "links_inline": true, "cta_allowed": true, "dynamic_title": true },
-    "outro": { "use_template_if_available": true }
+    "locale": {
+      "paragraph": true,
+      "dynamic_title": true,
+      "structure": "tell-write-tell",
+      "opener_words_min": 45,
+      "opener_words_max": 60,
+      "spectator_tip_allowed": true,
+      "spectator_tip_max_sentences": 1
+    },
+    "essentials": {
+      "paragraph": true,
+      "links_inline": true,
+      "cta_allowed": true,
+      "dynamic_title": true,
+      "structure": "tell-write-tell",
+      "opener_words_min": 45,
+      "opener_words_max": 60,
+      "inline_items_blend": true,
+      "require_also_consider_sentence": true,
+      "spectator_tip_allowed": true,
+      "spectator_tip_max_sentences": 1
+    },
+    "outro": {
+      "use_template_if_available": true
+    }
   },
   "templates": {
     "use_intro_closing_patterns": true,
@@ -104,13 +191,34 @@
     }
   },
   "output_contract": {
-    "stay.items[]": { "name": "string", "url": "uri", "alt": "string" },
-    "dine.items[]": { "name": "string", "url": "uri", "alt": "string" },
-    "essentials.items[]": { "type": "string", "name": "string", "url": "uri", "alt": "string" }
+    "stay.items[]": {
+      "name": "string",
+      "url": "uri",
+      "alt": "string"
+    },
+    "dine.items[]": {
+      "name": "string",
+      "url": "uri",
+      "alt": "string"
+    },
+    "essentials.items[]": {
+      "type": "string",
+      "name": "string",
+      "url": "uri",
+      "alt": "string"
+    }
   },
   "output_guards": {
-    "arrays_min": { "stay.items": 2, "dine.items": 3, "essentials.items": 5 },
-    "require_fields": ["name", "url", "alt"],
+    "arrays_min": {
+      "stay.items": 2,
+      "dine.items": 3,
+      "essentials.items": 5
+    },
+    "require_fields": [
+      "name",
+      "url",
+      "alt"
+    ],
     "reject_single_line_placeholders": true
   },
   "validation": {
@@ -135,18 +243,61 @@
     },
     "intro_requirements": {
       "paragraphs": 1,
-      "links_required": ["event_official_link", "venue_official_link"],
+      "links_required": [
+        "event_official_link",
+        "venue_official_link"
+      ],
       "min_words": 110,
-      "max_words": 180
+      "max_words": 180,
+      "structure": "tell-write-tell"
     },
-    "dine_requirements": { "fields_required": [], "allow_lunch_as_fallback": true },
-    "outro_requirements": { "min_words": 25, "max_words": 45, "cta_required": true },
+    "transition_requirements": {
+      "enabled": true,
+      "paragraphs": 1,
+      "min_words": 40,
+      "max_words": 70
+    },
+    "dine_requirements": {
+      "fields_required": [],
+      "allow_lunch_as_fallback": true,
+      "single_paragraph": true,
+      "structure": "tell-write-tell",
+      "opener_words_min": 45,
+      "opener_words_max": 60
+    },
+    "outro_requirements": {
+      "min_words": 25,
+      "max_words": 45,
+      "cta_required": true
+    },
     "items_requirements": {
       "stay_items_min": 2,
       "dine_items_min": 3,
       "essentials_items_min": 5,
-      "fields_required_per_item": ["name", "url", "alt"],
-      "essentials_required_types": ["grocery", "pharmacy", "feed", "car", "cart"]
+      "fields_required_per_item": [
+        "name",
+        "url",
+        "alt"
+      ],
+      "essentials_required_types": [
+        "grocery",
+        "pharmacy",
+        "feed",
+        "car",
+        "cart"
+      ],
+      "inline_items_blend_required": true,
+      "also_consider_sentence_required": true
+    },
+    "spectator_tip_requirements": {
+      "allowed": true,
+      "max_sentences": 1,
+      "zones": [
+        "stay",
+        "dine",
+        "locale",
+        "essentials"
+      ]
     }
   }
 }
