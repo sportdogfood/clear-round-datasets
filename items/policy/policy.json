@@ -1,7 +1,8 @@
 {
-  "version": "1.0.6",
-  "updated_iso": "2025-10-06T00:00:00-04:00",
+  "version": "1.0.8",
+  "updated_iso": "2025-10-07T00:00:00-04:00",
   "runner": "content-runner",
+
   "link_access": {
     "allow_from_task_links": true,
     "allow_base_uris": [
@@ -10,23 +11,21 @@
       "https://blog.clearroundtravel.com"
     ],
     "allow_event_official_external": true,
+    "allow_venue_official_external": true,
     "no_user_message_presence_required": true
   },
-  "content_type": {
-    "enforce": false,
-    "treat_text_plain_as_json": true
-  },
+
+  "content_type": { "enforce": false, "treat_text_plain_as_json": true },
+
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": true,
     "fail_on_missing_url": true
   },
-  "fetch": {
-    "response_length": "long",
-    "retry_on_http_error": 1,
-    "record_skipped_external": true
-  },
+
+  "fetch": { "response_length": "long", "retry_on_http_error": 1, "record_skipped_external": true },
+
   "trace": {
     "only_required": true,
     "collapse_success": true,
@@ -37,8 +36,9 @@
       "founder",
       "audiences",
       "events",
-      "event_official_url",
+      "event_official_link",
       "venue",
+      "venue_official_link",
       "geo",
       "keywords",
       "insiders",
@@ -52,66 +52,66 @@
       "on_external_fetch_failure": "After one retry, record {\"path\":\"(domain)\",\"status\":0} and continue."
     }
   },
-  "features": {
-    "weather_normals": false
-  },
+
+  "features": { "weather_normals": false },
+
   "length_targets": {
-    "intro_min": 80,
-    "intro_max": 140,
-    "intro_paragraphs": 2,
-    "intro_p1_min_words": 55,
-    "intro_p1_max_words": 90,
-    "intro_p2_min_words": 25,
-    "intro_p2_max_words": 60,
+    "intro_min": 110,
+    "intro_max": 180,
+    "intro_paragraphs": 1,
     "outro_min": 25,
     "outro_max": 45
   },
+
   "brand_requirements": {
     "keywords_min": 3,
     "insiders_min": 2,
     "audience_reference_required": true
   },
+
   "section_rules": {
     "intro": {
-      "paragraphs": 2,
-      "paragraph_joiner_literal": "\\n\\n",
-      "no_raw_newlines": true,
-      "p1_links_required": ["event_official_url", "venue_official_url"],
+      "paragraphs": 1,
+      "links_required": ["event_official_link", "venue_official_link"],
       "must_cover": [
-        "event+dates_humanized",
-        "season_or_month",
-        "venue_feel_2traits",
-        "city_feel_1sensory_1vibe",
-        "seasonal_normals_if_geo_feature_enabled"
+        "time_phrase",
+        "season_phrase_only",
+        "event_stature_hallmark",
+        "venue_traits_flow",
+        "city_presence_phrase",
+        "rider_caliber_ops_quality"
       ],
-      "forbid": ["ticketing", "prices", "logistics_lists", "hotel_names", "restaurant_names"]
+      "forbid": ["ticketing", "prices", "logistics_lists", "hotel_names", "restaurant_names", "temperatures_or_ranges"]
     },
-    "stay": { "paragraph": true, "links_inline": true, "cta_allowed": true },
+    "stay": { "paragraph": true, "links_inline": true, "cta_allowed": true, "dynamic_title": true },
     "dine": {
       "overview": true,
       "am": true,
       "dinner": true,
       "links_inline": true,
       "cta_allowed": true,
+      "dynamic_title": true,
       "fallbacks": {
         "use_lunch_when_short": true,
         "am": { "fallback_meal": "lunch", "label_as": "lunch" },
         "dinner": { "fallback_meal": "lunch", "label_as": "lunch" }
       }
     },
-    "locale": { "paragraph": true },
-    "essentials": { "paragraph": true, "links_inline": true, "cta_allowed": true },
+    "locale": { "paragraph": true, "dynamic_title": true },
+    "essentials": { "paragraph": true, "links_inline": true, "cta_allowed": true, "dynamic_title": true },
     "outro": { "use_template_if_available": true }
   },
+
   "templates": {
     "use_intro_closing_patterns": true,
     "use_outro_templates": true,
     "use_cta_closers": true,
-    "use_intro_outro_lockdown": true,
-    "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json",
-    "rotation": "sequential",
+    "use_intro_outro_lockdown": false,
+    "rotation": "hash",
+    "rotation_seed": "hub.core.event.uid",
     "fallback_to_founder": true
   },
+
   "seo": {
     "emit": true,
     "rules": {
@@ -124,27 +124,19 @@
       "no_insider_terms_in_seo": true
     }
   },
+
   "output_contract": {
     "stay.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "dine.items[]": { "name": "string", "url": "uri", "alt": "string" },
     "essentials.items[]": { "type": "string", "name": "string", "url": "uri", "alt": "string" }
   },
+
   "output_guards": {
-    "arrays_min": {
-      "stay.items": 2,
-      "dine.items": 3,
-      "essentials.items": 5
-    },
+    "arrays_min": { "stay.items": 2, "dine.items": 3, "essentials.items": 5 },
     "require_fields": ["name", "url", "alt"],
-    "reject_single_line_placeholders": true,
-    "string_rules": {
-      "hello.intro": {
-        "must_contain_literal": "\\n\\n",
-        "must_contain_count": 1,
-        "forbid_raw_newlines": true
-      }
-    }
+    "reject_single_line_placeholders": true
   },
+
   "validation": {
     "trace_requirements": {
       "must_include": [
@@ -152,8 +144,9 @@
         "founder",
         "audiences",
         "events",
-        "event_official_url",
+        "event_official_link",
         "venue",
+        "venue_official_link",
         "geo",
         "keywords",
         "insiders",
@@ -165,25 +158,16 @@
       "status_zero_rule": "Entries with status:0 are allowed for external fetch failures after one retry and do not fail validation."
     },
     "intro_requirements": {
-      "paragraphs": 2,
-      "escaped_joiner_literal": "\\n\\n",
-      "escaped_joiner_count": 1,
-      "forbid_raw_newlines": true,
-      "p1_links_required": ["event_official_url", "venue_official_url"],
-      "p1_min_words": 55,
-      "p1_max_words": 90,
-      "p2_min_words": 25,
-      "p2_max_words": 60
+      "paragraphs": 1,
+      "links_required": ["event_official_link", "venue_official_link"],
+      "min_words": 110,
+      "max_words": 180
     },
     "dine_requirements": {
       "fields_required": ["overview", "am", "dinner"],
       "allow_lunch_as_fallback": true
     },
-    "outro_requirements": {
-      "min_words": 25,
-      "max_words": 45,
-      "cta_required": true
-    },
+    "outro_requirements": { "min_words": 25, "max_words": 45, "cta_required": true },
     "items_requirements": {
       "stay_items_min": 2,
       "dine_items_min": 3,
