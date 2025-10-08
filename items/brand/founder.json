@@ -1,36 +1,42 @@
 {
-  "version": "1.2.1",
-  "updated_iso": "2025-10-01T22:25:00-04:00",
+  "version": "1.2.3",
+  "updated_iso": "2025-10-07T00:00:00-04:00",
   "id": "clearround_founder_firstperson_v1",
+
   "audience": ["competitive-rider","trainer","groom","spectator_support","equine-professional-services"],
+
   "pov": {
     "person": "first",
     "persona": "Founder, Clear Round Travel",
     "credentials": "Wellington local • 20+ years in travel & equestrian sport • mom to a 14-year-old A-circuit rider",
-    "core_message": "With a little help you can enjoy the week you earned. Focus on riding. We'll handle the rest."
+    "core_message": "Focus on riding. We'll handle the rest."
   },
+
   "voice": {
     "primary": "confident",
     "secondary": ["practical","warm","insider"],
     "character": "authoritative but approachable"
   },
+
   "style": {
     "register": "conversational-brochure",
     "imagery": "sensory but restrained",
     "sentence_tone": "short-to-medium; active voice",
     "vocabulary": "equestrian-literate; avoid jargon overload"
   },
+
   "length_targets": {
-    "intro": {"words_min":80,"words_max":140},
-    "section_overview": {"words_min":50,"words_max":90},
-    "item_blurb": {"words_min":10,"words_max":25},
-    "outro": {"words_min":25,"words_max":45}
+    "intro": { "words_min": 110, "words_max": 180, "paragraphs": 1 },
+    "section_overview": { "words_min": 50, "words_max": 90 },
+    "item_blurb": { "words_min": 10, "words_max": 25 },
+    "outro": { "words_min": 25, "words_max": 45 }
   },
+
   "tone_rules": {
     "do": [
-      "Lead with: 'Focus on riding. We handle logistics.'",
+      "Lead with rider-first clarity",
       "Use one local sensory detail in the lede",
-      "Use insider jargon sparingly",
+      "Use insider terms sparingly and only when clear",
       "Offer one clear benefit sentence (no fee to you; we work with partners)",
       "Close with a single, specific CTA"
     ],
@@ -38,19 +44,30 @@
       "Invent facts",
       "List ticket/parking procedures",
       "Repeat sentences across sections",
-      "Overly academic or flowery prose"
+      "Overdo SEO phrasing or flowery prose"
     ]
   },
+
   "content_constraints": {
     "first_person_anchor": true,
     "disclosure": "(no fee to you; we work with partners)",
     "no_guessing": true
   },
-  "templates": {
-    "intro_closing_patterns_link": "https://crt-b1434e13de34.herokuapp.com/items/brand/intro_closing_patterns.json",
-    "outro_templates_link": "https://crt-b1434e13de34.herokuapp.com/items/brand/outro_templates.json",
-    "cta_closers_library_link": "https://crt-b1434e13de34.herokuapp.com/items/brand/cta_closers_library.json"
+
+  "research": {
+    "intro_requires": ["event_official_link", "venue_official_link"],
+    "optional": ["geo_link"],
+    "locale_requires": [],
+    "fail_if_missing": true,
+    "record_in_source_trace": true
   },
+
+  "templates": {
+    "intro_closing_patterns_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro_closing_patterns.json",
+    "outro_templates_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/outro_templates.json",
+    "cta_closers_library_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/cta_closers_library.json"
+  },
+
   "defaults": {
     "keywords_min": 3,
     "insiders_min": 2,
