@@ -24,6 +24,9 @@
   "dine": {
     "title": "",
     "paragraph": "",
+    "overview": "",
+    "am": "",
+    "dinner": "",
     "spectator_tip": "",
     "cta": "",
     "items": [
@@ -31,14 +34,8 @@
       { "name": "", "url": "", "alt": "" },
       { "name": "", "url": "", "alt": "" }
     ],
-    "labels": {
-      "am_label": "",
-      "dinner_label": ""
-    },
-    "fallback": {
-      "am_used_lunch": false,
-      "dinner_used_lunch": false
-    }
+    "labels": { "am_label": "", "dinner_label": "" },
+    "fallback": { "am_used_lunch": false, "dinner_used_lunch": false }
   },
   "locale": {
     "title": "",
@@ -72,11 +69,7 @@
     "audience_trait": "",
     "intro_template_id": "",
     "outro_template_id": "",
-    "cta_closers": {
-      "stay": "",
-      "dine": "",
-      "essentials": ""
-    },
+    "cta_closers": { "stay": "", "dine": "", "essentials": "" },
     "intro_outro_lockdown_used": false,
     "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
   },
@@ -85,16 +78,16 @@
     "outro": 0,
     "stay": 0,
     "dine_paragraph": 0,
+    "dine_overview": 0,
+    "dine_am": 0,
+    "dine_dinner": 0,
     "locale": 0,
     "essentials": 0
   },
   "paragraph_checks": {
     "intro_paragraphs": 0,
     "link_checks": {
-      "intro_p1": {
-        "event_link_present": false,
-        "venue_link_present": false
-      }
+      "intro_p1": { "event_link_present": false, "venue_link_present": false }
     },
     "dine_copy_checks": {
       "am_mentions_lunch_when_fallback_true": false,
@@ -111,15 +104,9 @@
   "templates_used": {
     "intro": "",
     "outro": "",
-    "cta": {
-      "stay": "",
-      "dine": "",
-      "essentials": ""
-    }
+    "cta": { "stay": "", "dine": "", "essentials": "" }
   },
-  "features": {
-    "weather_normals": false
-  },
+  "features": { "weather_normals": false },
   "inputs_echo": {
     "founder_link": "",
     "audiences_link": "",
@@ -134,25 +121,19 @@
     "venue_official_link": ""
   },
   "examples": {
-    "intro_md": "…",
-    "stay_md": "…",
-    "dine_md": "…",
-    "locale_md": "…",
-    "essentials_md": "…",
-    "outro_md": "…"
+    "intro_md": "Early winter brings two fast weeks at the Desert Holiday Series. December 3–14 splits into DH1 and DH2, building to CSI5*, MLSJ team rounds, and big-ticket grands prix. Rings sit against desert mountains with clean sightlines and all-weather footing. Schooling lanes and bridle paths keep traffic moving between barns and arenas. Thermal, CA stays calm and practical between trips, with services close enough to keep focus on the board. Start early in the week. Let finals weekend carry pace and energy. Get official details and class highlights on the event page, and plan on-grounds flow via the venue site. Focus on your rounds at Desert International Horse Park.",
+    "transition_md": "After you’ve mapped your arrival, shift focus to how you’ll move through the week—where to sleep, eat, reset, and restock. The Desert Holiday Series runs tight, so a solid plan around DIHP keeps the show smooth and the downtime easy. The next sections guide each piece.",
+    "stay_md": "**Sleep Close to DIHP**\n\nAim for zero-friction mornings and quiet recovery at night. Keep drives short, parking simple, and layouts walkable so resets between rounds stay quick. La Quinta Resort & Club delivers roomy casitas and quiet paths for fast debriefs, while Renaissance Esmeralda provides polished service and dependable late-return windows that keep evenings controlled. Also consider: Holiday Inn Express & Suites; JW Marriott Desert Springs.\n*Spectator tip:* For friends or family, La Quinta’s grounds and Esmeralda’s pool terraces both give easy ring access and relaxed viewing breaks.",
+    "dine_md": "**Eat Efficiently Nearby**\n\nPlan food like gear: predictable, close, and timed to your schedule so warm-ups and walks never slip. The Cafe at Shields Date Garden covers quick greens and wraps between trips, and Heirloom Craft Kitchen is a steady midday stop for bowls and sandwiches when turnarounds tighten; after late classes, Lavender Bistro or Arnold Palmer’s gives a calm, seated finish, and LG’s Prime Steakhouse keeps steak night simple. Also consider: Tack Room Tavern.\n*Spectator tip:* Most restaurants welcome equestrian guests; outdoor tables at Heirloom and Lavender Bistro make post-round meals easy to share and review.",
+    "locale_md": "**Desert Downtime, Minutes Away**\n\nBetween rounds, use small windows for recovery and clear air. Quick drives from Thermal open desert and mountain views, short walking paths, and easy stops for coffee or a date shake. Keep it light on show days—a stroll and one simple errand—then save longer detours for off-days.\n*Spectator tip:* Palm Desert’s El Paseo shops and mountain drives add quick, scenic resets within fifteen minutes of Thermal.",
+    "essentials_md": "**Barn Basics On Hand**\n\nLock down essentials so mornings stay clear and the barn runs without questions. Stock staples nearby, tap on-grounds vendors for show-specific needs, and secure wheels before arrival. Ralphs covers groceries and ice, CVS Pharmacy handles meds and tape, and DIHP vendors stock feed, bedding, and tack during shows; wheels stay straightforward with Enterprise Rent-A-Car for SUVs and Dever, Inc. for golf carts with delivery. Also consider: advance cart reservations on peak weekends.\n*Spectator tip:* Vendor rows open early; walk them before heat builds for an easy look at tack and local gear.",
+    "outro_md": "**hello.outro (pivot start)**\nWith rest, meals, and essentials set, the week runs clean. Every plan here keeps you closer to the rings and clear of guesswork, so focus stays on your rounds and recovery as the Desert Holiday builds momentum.\n\n**hello.outro (main)**\nI’ll keep your week quiet where it counts and loud where it should be. Sleep close, eat on schedule, move clean between barns and rings. As DH1 builds into DH2, the cadence sharpens. Early rounds set rhythm, schooling lanes stay open, and you arrive where you need to be with minutes to spare. Finals weekend will carry its own charge. You will feel it on the warm-up track, under the desert light, with the mountains holding the frame.\n\nI will lock rooms, set two dinner holds nightly, stage groceries and tape, and place carts where you step off the gravel. Tickets, parking, and best-view notes will sit on the same sheet as your ring times. Review class highlights on the event page, confirm on-grounds flow on the venue site, and send changes once. I will close the loops so your Desert Holiday reads like clear rounds in sequence."
   },
-  "dynamic_titles": {
-    "stay": "",
-    "dine": "",
-    "locale": "",
-    "essentials": ""
+  "notes": {
+    "examples_usage": "examples.*_md are reference only; runner must not emit these verbatim."
   },
-  "selection_indices": {
-    "outro_template_index": 0,
-    "cta_stay_index": 0,
-    "cta_dine_index": 0,
-    "cta_essentials_index": 0
-  },
+  "dynamic_titles": { "stay": "", "dine": "", "locale": "", "essentials": "" },
+  "selection_indices": { "outro_template_index": 0, "cta_stay_index": 0, "cta_dine_index": 0, "cta_essentials_index": 0 },
   "research_pillars": {
     "time_phrase": "",
     "season_phrase": "",
@@ -176,9 +157,7 @@
     { "path": "dine", "status": 200 },
     { "path": "essentials", "status": 200 }
   ],
-  "dedupe": {
-    "content_sha256": ""
-  },
+  "dedupe": { "content_sha256": "" },
   "validation": {
     "status": "pass",
     "warnings": [],
