@@ -49,23 +49,24 @@ Stay
 - One paragraph using “tell → write → tell”.
 - Mention 1–2 featured hotels in prose with inline links.
 - Close with: “Also consider: Name; Name.” as prose with inline links.
-- Optional CTA closer allowed.
+- Optional CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
 
 Dine
 - Dynamic title.
 - Three short paragraphs: overview; AM (or borrowed lunch labeled “lunch”); Dinner.
 - Use inline links; keep tone “predictable and close”.
-- Optional: “Also consider:” as prose if needed. One CTA closer allowed.
+- Optional: “Also consider:” as prose if needed. One CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
 
 Locale
 - Dynamic title.
 - One paragraph focused on parks, attractions, culture, leisure near the venue.
 - No motifs system. No lists.
+- Optional CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
 
 Essentials
 - Dynamic title.
 - One paragraph with inline links to grocery, pharmacy, feed, car rental, and golf-cart providers.
-- Optional: “Also consider:” as prose. One CTA closer allowed.
+- Optional: “Also consider:” as prose. One CTA closer allowed. Use at most one CTA closer per section. None in Intro or Outro.
 
 Outro
 - 25–45 words from outro_templates (rotation hash; see TEMPLATES).
@@ -120,6 +121,7 @@ TEMPLATES (deterministic selection; no RNG)
 - rotation_mode: hash
 - rotation_seed: hub.core.event.uid
 - rotation_index = fnv1a(rotation_seed + ":" + section_id) % template_count
+- De-dupe within document: if chosen index already used, bump +1 mod template_count.
 - Apply to: outro_templates and cta_closers.
 
 EXAMPLES IN GOLD
