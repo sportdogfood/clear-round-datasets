@@ -131,3 +131,23 @@ QUALITY GUARDS
 - No raw URLs in prose; use markdown links.
 - No bullet lists for content; “Also consider:” is prose.
 - Keep sentences concise; avoid jargon overload.
+
+CANVAS EMIT
+- Emit the **final JSON** that conforms to SCHEMA exactly. No extra fields.
+- Create one canvas textdoc with type `code/json`.
+- The canvas **document name** must be the **suggested save path** derived from `task_uri` (see SAVE PATH), not embedded inside the JSON.
+
+SAVE PATH (deterministic, from task_uri filename)
+Given: `.../items/tasks/{slug}-task-YYYY-MM-DD.json`
+Derive:
+1) `base_date = YYYY-MM-DD`
+2) `slug = text before "-task"` (e.g., "hchs")
+3) `year = YYYY`
+4) `blog_base = "{slug}-blog-{base_date}"`            → e.g., `hchs-blog-2025-10-07`
+5) `blogs_dir = "{slug}-blogs-{year}"`                → e.g., `hchs-blogs-2025`
+6) Suggested path (directories+file):
+   `docs/blogs/{blogs_dir}/{blog_base}/{blog_base}.json`
+   Example:
+   task_uri → `/hchs-task-2025-10-07.json`
+   suggested canvas name → `docs/blogs/hchs-blogs-2025/hchs-blog-2025-10-07/hchs-blog-2025-10-07.json`
+- Do not write this path inside the JSON. Use it only as the canvas document name.
