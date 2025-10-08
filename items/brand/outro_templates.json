@@ -1,60 +1,24 @@
 {
   "version": "1.2.0",
-  "updated_iso": "2025-10-07T00:00:00-04:00",
+  "updated_iso": "2025-10-08T00:00:00-04:00",
   "id": "outro_templates_compact_v2",
   "rotate": "hash",
   "rotation_seed": "hub.core.event.uid",
   "algorithm": "fnv1a",
   "variables": ["{event_name}", "{venue_name}", "{finals_day?}", "{weekend?}"],
   "templates": [
-    {
-      "id": "outro_01",
-      "template": "You ride. I’ll run the week so {event_name} stays simple, with bookings settled and quiet fixes when timing shifts."
-    },
-    {
-      "id": "outro_02",
-      "template": "Walk out focused. I’ll keep rooms, tables, and essentials aligned to your blocks so {venue_name} feels effortless."
-    },
-    {
-      "id": "outro_03",
-      "template": "Keep attention in the ring. I’ll manage confirmations, backups, and pivots so {event_name} runs clean from first trip to last."
-    },
-    {
-      "id": "outro_04",
-      "template": "I’ll stage stays, meals, and must-haves, then absorb changes in stride so {venue_name} works on your schedule."
-    },
-    {
-      "id": "outro_05",
-      "template": "Less scramble, more stride. I’ll coordinate the moving parts and keep updates tight while you aim at {event_name}."
-    },
-    {
-      "id": "outro_06",
-      "template": "Show up ready. I’ll hold two dinner options, steady lodging, and a lean kit so {venue_name} remains straightforward."
-    },
-    {
-      "id": "outro_07",
-      "template": "I’ll keep logistics invisible—rooms locked, tables timed, essentials topped—so {event_name} stays front and center."
-    },
-    {
-      "id": "outro_08",
-      "template": "One thread, clear confirmations. I’ll align bookings around your classes and handle late switches without friction at {venue_name}."
-    },
-    {
-      "id": "outro_09",
-      "template": "You handle feel and pace. I’ll manage the rest so {event_name} runs predictably, even when boards change."
-    },
-    {
-      "id": "outro_10",
-      "template": "Travel light. I’ll arrange lodging, a simple dinner loop, and essentials so {venue_name} supports performance, not distractions."
-    },
-    {
-      "id": "outro_11_finals",
-      "template": "Finals ahead? I’ll guard buffers, keep holds flexible, and steady the plan so you roll sharp into {event_name}."
-    },
-    {
-      "id": "outro_12_weekend",
-      "template": "Weekend crowds expected? I’ll simplify routes and timing while you stay ring-focused at {venue_name}."
-    }
+    { "id": "outro_01", "template": "You ride. I’ll run the week so {event_name} stays simple, with bookings settled and quiet fixes when timing shifts." },
+    { "id": "outro_02", "template": "Walk out focused. I’ll keep rooms, tables, and essentials aligned to your blocks so {venue_name} feels effortless." },
+    { "id": "outro_03", "template": "Keep attention in the ring. I’ll manage confirmations, backups, and pivots so {event_name} runs clean from first trip to last." },
+    { "id": "outro_04", "template": "I’ll stage stays, meals, and must-haves, then absorb changes in stride so {venue_name} works on your schedule." },
+    { "id": "outro_05", "template": "Less scramble, more stride. I’ll coordinate the moving parts and keep updates tight while you aim at {event_name}." },
+    { "id": "outro_06", "template": "Show up ready. I’ll hold two dinner options, steady lodging, and a lean kit so {venue_name} remains straightforward." },
+    { "id": "outro_07", "template": "I’ll keep logistics invisible—rooms locked, tables timed, essentials topped—so {event_name} stays front and center." },
+    { "id": "outro_08", "template": "One thread, clear confirmations. I’ll align bookings around your classes and handle late switches without friction at {venue_name}." },
+    { "id": "outro_09", "template": "You handle feel and pace. I’ll manage the rest so {event_name} runs predictably, even when boards change." },
+    { "id": "outro_10", "template": "Travel light. I’ll arrange lodging, a simple dinner loop, and essentials so {venue_name} supports performance, not distractions." },
+    { "id": "outro_11_finals", "template": "Finals ahead? I’ll guard buffers, keep holds flexible, and steady the plan so you roll sharp into {event_name}." },
+    { "id": "outro_12_weekend", "template": "Weekend crowds expected? I’ll simplify routes and timing while you stay ring-focused at {venue_name}." }
   ],
   "selection": {
     "dedupe_within_document": true,
@@ -71,6 +35,6 @@
     "require_terminal_period": true,
     "no_links": true,
     "no_pillars": true,
-    "notes": "Crisp, rider-first close. Deterministic selection via hash; route to finals/weekend variants when flags present."
+    "notes": "Crisp close. Deterministic hash; route to finals/weekend variants when flags present."
   }
 }
