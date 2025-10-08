@@ -1,5 +1,5 @@
 {
-  "version": "1.2.4",
+  "version": "1.2.5",
   "updated_iso": "2025-10-08T00:00:00-04:00",
   "id": "clearround_founder_firstperson_v1",
   "audience": [
@@ -24,7 +24,17 @@
     "register": "conversational-brochure",
     "imagery": "sensory but restrained",
     "sentence_tone": "short-to-medium; active voice",
-    "vocabulary": "equestrian-literate; avoid jargon overload"
+    "vocabulary": "equestrian-literate; avoid jargon overload",
+    "naming": {
+      "venue_preferred_first": "Desert International Horse Park",
+      "venue_abbrev": "DIHP",
+      "rule": "first_mention_full_then_abbrev"
+    },
+    "spectator_tip": {
+      "allowed": true,
+      "max_sentences": 1,
+      "tone": "practical and observant; no hype"
+    }
   },
   "length_targets": {
     "intro": { "words_min": 110, "words_max": 180, "paragraphs": 1 },
