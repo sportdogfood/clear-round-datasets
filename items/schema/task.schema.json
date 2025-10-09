@@ -85,8 +85,7 @@
         "insiders_link": { "type": "string", "format": "uri" },
         "intro_templates_link": { "type": "string", "format": "uri" },
         "outro_templates_link": { "type": "string", "format": "uri" },
-        "cta_closers_link": { "type": "string", "format": "uri" },
-        "intro_outro_lockdown_link": { "type": "string", "format": "uri" }
+        "cta_closers_link": { "type": "string", "format": "uri" }
       },
       "required": [
         "events_link",
@@ -100,10 +99,7 @@
         "audiences_link",
         "founder_link",
         "keywords_link",
-        "insiders_link",
-        "intro_templates_link",
-        "outro_templates_link",
-        "cta_closers_link"
+        "insiders_link"
       ]
     }
   }
