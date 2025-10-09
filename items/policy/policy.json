@@ -21,7 +21,8 @@
     "no_guessing": true,
     "fail_on_missing_signal": false,
     "fail_on_4xx_required_links": true,
-    "fail_on_missing_url": true
+    "fail_on_missing_url": false,
+    "fail_on_missing_link": true
   },
   "fetch": {
     "response_length": "long",
@@ -31,7 +32,7 @@
   "trace": {
     "only_required": true,
     "collapse_success": true,
-    "max_entries": 15,
+    "max_entries": 18,
     "fields": [
       "path",
       "status"
@@ -59,7 +60,8 @@
   },
   "features": {
     "weather_normals": false,
-    "suppress_section_titles_in_output": true
+    "suppress_section_titles_in_output": true,
+    "use_ratings": false
   },
   "naming": {
     "use_acronym_if_present_or_confirmed": true,
@@ -102,7 +104,8 @@
         "restaurant_names",
         "temperatures_or_ranges"
       ],
-      "structure": "tell-write-tell"
+      "structure": "tell-write-tell",
+      "notes": "For rider_caliber_ops_quality derive from sanctioning tier and operational quality; do not use star ratings."
     },
     "transition": {
       "emit": true,
@@ -213,18 +216,21 @@
   "output_contract": {
     "stay.items[]": {
       "name": "string",
-      "url": "uri",
+      "link": "uri",
+      "links": "uri[]",
       "alt": "string"
     },
     "dine.items[]": {
       "name": "string",
-      "url": "uri",
+      "link": "uri",
+      "links": "uri[]",
       "alt": "string"
     },
     "essentials.items[]": {
       "type": "string",
       "name": "string",
-      "url": "uri",
+      "link": "uri",
+      "links": "uri[]",
       "alt": "string"
     }
   },
@@ -236,9 +242,13 @@
     },
     "require_fields": [
       "name",
-      "url",
+      "link",
       "alt"
     ],
+    "link_field_rules": {
+      "prefer": "link",
+      "fallback_to_links_index": 0
+    },
     "reject_single_line_placeholders": true
   },
   "validation": {
@@ -305,7 +315,7 @@
       "essentials_items_min": 5,
       "fields_required_per_item": [
         "name",
-        "url",
+        "link",
         "alt"
       ],
       "essentials_required_types": [
@@ -327,6 +337,23 @@
         "locale",
         "essentials"
       ]
+    },
+    "language_guards": {
+      "rider_caliber": {
+        "forbid_patterns": [
+          "(?i)\\bCSI(?:O)?\\d\\*\\b",
+          "(?i)\\bCSIO\\*?\\b",
+          "(?i)\\bCSI\\*\\b",
+          "(?i)\\b\\d\\*\\b",
+          "(?i)\\b5\\*\\b",
+          "(?i)\\b4\\*\\b",
+          "(?i)\\b3\\*\\b",
+          "(?i)\\b2\\*\\b",
+          "(?i)\\b1\\*\\b",
+          "(?i)\\bWEG\\b"
+        ],
+        "allowed_guidance": "Describe rider caliber via sanctioning tier and operational quality only. Examples: 'A-circuit with top-level footing and efficient ring flow', 'National weeks with seasoned ops and deep fields', 'FEI-sanctioned stop with professional scheduling'. Do not mention star ratings."
+      }
     }
   }
 }
