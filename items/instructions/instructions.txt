@@ -17,7 +17,7 @@ URL ACCESS
 - Optional: geo_link for month/city naming; do NOT output temperatures or ranges.
 - On external 4xx/5xx: one retry; if still failing, record status:0 in trace and continue per POLICY.trace.notes.
 
-TRACE (path+status only; max 15)
+TRACE (path+status only; max 18)
 - Record, in order: task_uri, founder, audiences, events, event_official_link, venue, venue_official_link, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
 - Collapse long success runs; keep failures visible.
 
@@ -42,7 +42,7 @@ LEAN RESEARCH (no city_reference_url)
   • Event: stature + one hallmark (e.g., a final or feature class).
   • Venue: two concrete visuals/flow traits visible on official pages.
   • City: one vibe + proximity phrase via geo context; no separate city source.
-  • Rider-caliber: level implied by sanctioning + one ops-quality clause.
+  • Rider-caliber: level implied by sanctioning + one ops-quality clause. Do not use CSI/CSIO star ratings.
 - Do not copy phrasing from canonicals/examples.
 
 NAMING (venue acronym logic)
@@ -111,30 +111,30 @@ emit_items: true
 item_rules:
   stay:
     source: stay_link
-    required_fields: [name, url]
-    optional_fields: [alt, distance, notes, approx_drive, approx_distance, distance_m, distance_mi]
+    required_fields: [name, link]
+    optional_fields: [links, alt, distance, notes, approx_drive, approx_distance, distance_m, distance_mi]
     map:
       name: $.name
-      url: $.url
+      link: $.link || ($.links && $.links[0])
       alt: $.alt || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi) || $.distance || $.notes
     http_200_only: true
   dine:
     source: dine_link
-    required_fields: [name, url]
-    optional_fields: [alt, meal, approx_drive, approx_distance, distance_m, distance_mi]
+    required_fields: [name, link]
+    optional_fields: [links, alt, meal, approx_drive, approx_distance, distance_m, distance_mi]
     map:
       name: $.name
-      url: $.url
+      link: $.link || ($.links && $.links[0])
       alt: $.alt || $.meal || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
     http_200_only: true
   essentials:
     source: essentials_link
-    required_fields: [type, name, url]
-    optional_fields: [alt, notes, approx_drive, approx_distance, distance_m, distance_mi]
+    required_fields: [type, name, link]
+    optional_fields: [links, alt, notes, approx_drive, approx_distance, distance_m, distance_mi]
     map:
       type: $.type
       name: $.name
-      url: $.url
+      link: $.link || ($.links && $.links[0])
       alt: $.alt || $.notes || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
     http_200_only: true
 helpers:
@@ -174,7 +174,7 @@ VALIDATION SNAPSHOT (must pass)
 - Zones: dynamic titles; opener 45–60 words; inline item blending; “Also consider:” present; spectator tip ≤1 sentence.
 - Dine: single paragraph; lunch fallback allowed; no printed labels.
 - Outro: two-part — pivot 35–70 words, main 120–220 words, no links, main may be multi-paragraph.
-- Items: stay ≥2; dine ≥3; essentials ≥5; require name/url/alt (alt via fallback ladder).
+- Items: stay ≥2; dine ≥3; essentials ≥5; require name/link/alt (alt via fallback ladder).
 
 CANVAS EMIT
 - Emit final JSON that conforms to SCHEMA exactly. No extra fields.
