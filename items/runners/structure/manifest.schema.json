@@ -2,32 +2,75 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Blogs Manifest",
   "type": "array",
+  "description": "Sorted by date desc. One object per post.",
   "items": {
     "type": "object",
-    "required": ["slug","title","date","year","path","json"],
+    "additionalProperties": false,
+    "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "properties": {
-      "slug": { "type": "string", "pattern": "^[a-z0-9-]+-blog-\\d{4}-\\d{2}-\\d{2}$" },
-      "title": { "type": "string" },
-      "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-      "year": { "type": "integer", "minimum": 1900 },
-      "month_num": { "type": "string", "pattern": "^(0[1-9]|1[0-2])$" },
-      "month_name": { "type": "string" },
-      "season": { "type": "string", "enum": ["Winter","Spring","Summer","Fall"] },
-      "path": { "type": "string" },
-      "json": { "type": "string" },
-      "image": { "type": "string" },
-      "venue": { "type": "string" },
+      "slug": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+-blog-\\d{4}-\\d{2}-\\d{2}$"
+      },
+      "title": { "type": "string", "minLength": 1 },
+      "date": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      "year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
+      "month_num": { "type": "integer", "minimum": 1, "maximum": 12 },
+      "month_name": {
+        "type": "string",
+        "enum": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+      },
+      "season": {
+        "type": "string",
+        "enum": ["spring","summer","fall","winter"]
+      },
+      "path": {
+        "type": "string",
+        "pattern": "^/blogs/[a-z0-9-]+-blogs-\\d{4}/[a-z0-9-]+/$"
+      },
+      "json": {
+        "type": "string",
+        "pattern": "^/blogs/[a-z0-9-]+-blogs-\\d{4}/[a-z0-9-]+/[a-z0-9-]+\\.json$"
+      },
+      "image": {
+        "type": "string",
+        "pattern": "^/assets/images/.+"
+      },
+      "venue": { "type": "string", "minLength": 1 },
       "city": { "type": "string" },
       "state": { "type": "string" },
       "country": { "type": "string" },
-      "tags": { "type": "array", "items": { "type": "string" } },
-      "rating_uids": { "type": "array", "items": { "type": "string" } },
-      "rating_labels": { "type": "array", "items": { "type": "string" } },
-      "sanctioning": { "type": "string", "enum": ["FEI","USEF","FEI+USEF"] },
-      "fei_level": { "type": ["integer","null"], "minimum": 1, "maximum": 5 },
-      "usef_premier": { "type": ["string","null"], "enum": ["A","AA",null] },
-      "discipline": { "type": "array", "items": { "type": "string", "enum": ["hunter","jumper","eq"] } }
-    },
-    "additionalProperties": true
+      "lat": { "type": "number" },
+      "lng": { "type": "number" },
+      "place_id": { "type": "string" },
+      "timezone": { "type": "string" },
+      "start_date": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      "end_date": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      "event_duration": {
+        "type": "string",
+        "enum": ["single","weekend","multi-day"]
+      },
+      "audience_labels": {
+        "type": "array",
+        "items": { "type": "string" },
+        "uniqueItems": true
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string", "pattern": "^[a-z0-9-:]+$" },
+        "uniqueItems": true
+      },
+      "section_link": { "type": "string", "format": "uri", "pattern": "^https?://" },
+      "maps_link": { "type": "string", "format": "uri", "pattern": "^https?://" }
+    }
   }
 }
