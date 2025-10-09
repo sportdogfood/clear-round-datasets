@@ -1,6 +1,6 @@
 {
   "name": "Structure Runner Policy",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "rules": {
     "scaffold_only": true,
     "never_edit_post_json": true,
@@ -14,7 +14,9 @@
     "neighbors_nav": true,
     "markdown_paragraphs": true,
     "sanitize_links": true,
-    "items_lists_structured": true
+    "items_lists_structured": true,
+    "seo_precedence_blog_over_section": true,
+    "validate_http_urls_only": true
   },
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
@@ -26,5 +28,55 @@
       "dine": "/assets/images/dine-placeholder.jpg",
       "locale": "/assets/images/place-placeholder.jpg"
     }
+  },
+  "allow_urls": [
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/docs/blogs/**",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/**",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/**",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/**",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/audiences.json",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/sections/desc-section.json",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/manifest.schema.json",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/blog.index.html.tmpl",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/blogs.index.html.tmpl",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/year.index.html.tmpl",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/rss.xml.tmpl",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/sitemap.xml.tmpl"
+  ],
+  "manifest_shape": {
+    "required": ["slug","title","date","year","path","json","venue"],
+    "recommended": ["month_num","month_name","season","image","city","state","country","lat","lng","place_id","timezone","start_date","end_date","event_duration","audience_labels","tags","section_link","maps_link"],
+    "constraints": {
+      "date_iso": true,
+      "year_matches_date": true,
+      "path_format": "/blogs/{venue}-blogs-{year}/{slug}/",
+      "json_format": "/blogs/{venue}-blogs-{year}/{slug}/{slug}.json",
+      "image_site_root_only": true,
+      "tags_lowercase_hyphenated": true
+    }
+  },
+  "seo_mapping": {
+    "title": ["blog.seo.section_title","section.section_title"],
+    "meta_description": ["blog.seo.meta_description","section.section_meta_description"],
+    "open_graph_title": ["blog.seo.open_graph_title","section.section_open_graph_title"],
+    "open_graph_description": ["blog.seo.open_graph_description","section.section_open_graph_description"],
+    "open_graph_image": ["blog.seo.open_graph_image","section.section_open_graph_image","assets.hero.src"],
+    "search_title": ["blog.seo.search_title","section.section_search_title"],
+    "search_description": ["blog.seo.search_description","section.section_search_description"],
+    "section_link_manifest_only": true
+  },
+  "tag_recipe": [
+    "season:{spring|summer|fall|winter}",
+    "month:{01..12}",
+    "state:{XX}",
+    "city:{name}",
+    "venue:{slug}",
+    "audience:{label_slug}",
+    "duration:{single|weekend|multi-day}"
+  ],
+  "idempotence": {
+    "deterministic_outputs": true,
+    "no_wall_clock_values": true,
+    "atomic_replace_files": true
   }
 }
