@@ -1,0 +1,44 @@
+{
+  "seo": {
+    "section_title": "Test Venue — Sample Blog",
+    "open_graph_title": "Test Venue — Sample Blog",
+    "open_graph_description": "Lightweight test post to verify viewer renders JSON next to index.html.",
+    "meta_description": "Smoke test for blog viewer."
+  },
+  "hello": {
+    "intro": "Welcome to the **Test Venue** sample. This post verifies that the page renders when a JSON file sits next to `index.html`. See the repo [here](https://github.com/sportdogfood/clear-round-datasets).",
+    "outro": "That’s it. If you can read this, the viewer works."
+  },
+  "stay": {
+    "title": "Stay",
+    "paragraph": "Two simple options close to the venue. Bookable online.",
+    "items": [
+      { "name": "Sample Hotel", "url": "https://example.com/hotel", "alt": "5 min drive" },
+      { "name": "Rider Lodge", "url": "https://example.com/lodge", "alt": "Budget" }
+    ],
+    "cta": "Book early on peak weeks."
+  },
+  "dine": {
+    "title": "Dine",
+    "am": "Coffee at **Grounds & Hounds**. Quick breakfast sandwiches.",
+    "dinner": "Casual dinner at **Arena Grill**. Reservations recommended on Fridays.",
+    "items": [
+      { "name": "Grounds & Hounds", "url": "https://example.com/coffee", "alt": "Opens 6:30am" },
+      { "name": "Arena Grill", "url": "https://example.com/grill", "alt": "Family friendly" }
+    ],
+    "cta": "Check hours on event days."
+  },
+  "locale": {
+    "title": "Locale",
+    "paragraph": "Small town with easy parking. Closest airport is **TEST** (35 min). Weekend markets [info](https://example.com/market)."
+  },
+  "essentials": {
+    "title": "Essentials",
+    "paragraph": "Weather shifts quickly. Bring layers. On-site tack shop has basics.",
+    "items": [
+      { "name": "Venue Map (PDF)", "url": "https://example.com/map.pdf", "alt": "Download" },
+      { "name": "Show Office", "url": "https://example.com/show-office", "alt": "Forms and times" }
+    ],
+    "cta": "Confirm schedules day-of."
+  }
+}
