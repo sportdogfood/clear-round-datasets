@@ -1,18 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>Clear Round Travel — Blogs</title>
-    <link>https://blog.clearroundtravel.com/blogs/</link>
-    <description>Event travel briefs</description>
+    <title>{{CHANNEL_TITLE}}</title>
+    <link>{{CHANNEL_LINK}}</link>
+    <description>{{CHANNEL_DESCRIPTION}}</description>
     <language>en-us</language>
-{{#items}}
-    <item>
-      <title>{{title}}</title>
-      <link>https://blog.clearroundtravel.com{{path}}</link>
-      <guid isPermaLink="true">https://blog.clearroundtravel.com{{path}}</guid>
-      <pubDate>{{pubDate}}</pubDate>
-      <description><![CDATA[{{description}}]]></description>
-    </item>
-{{/items}}
+    <lastBuildDate>{{LAST_BUILD_DATE_RFC822}}</lastBuildDate>
+    <generator>crt-runner</generator>
+    <ttl>{{TTL_MINUTES}}</ttl>
+{{ITEMS_XML}}
   </channel>
 </rss>
