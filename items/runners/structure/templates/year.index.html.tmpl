@@ -1,27 +1,107 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Blogs — {{YEAR}}</title>
-<link rel="canonical" href="https://blog.clearroundtravel.com/blogs/{{YEAR}}/">
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <title>Blogs — {{YEAR}}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="canonical" href="/blogs/{{YEAR}}/">
+  <meta property="og:title" content="Blogs — {{YEAR}}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="/blogs/{{YEAR}}/">
+  <meta name="description" content="Year archive for {{YEAR}}.">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-white text-gray-900">
-<main class="max-w-5xl mx-auto px-4 py-10">
-  <h1 class="text-3xl font-semibold mb-6">Blogs — {{YEAR}}</h1>
-  <div id="list" class="grid gap-6 md:grid-cols-2"></div>
-</main>
-<script>
-fetch('/blogs/manifest.json').then(r=>r.json()).then(posts=>{
-  const yr='{{YEAR}}';
-  const list=document.getElementById('list');
-  const data=posts.filter(p=>String(p.year)===yr).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  list.innerHTML=data.map(p=>`<a href="${p.path}" class="block border rounded-2xl p-4 hover:shadow">
-    ${p.image?`<img src="${p.image}" alt="" class="w-full h-40 object-cover rounded-xl mb-3">`:``}
-    <div class="text-sm text-gray-600">${p.date||''}</div>
-    <h2 class="text-xl font-medium">${p.title||p.slug}</h2>
-  </a>`).join('');
-});
-</script>
+  <main class="max-w-5xl mx-auto px-4 py-10">
+    <header class="mb-8">
+      <h1 class="text-4xl md:text-5xl font-semibold tracking-tight mb-2">Blogs — {{YEAR}}</h1>
+      <p class="text-gray-700">All posts from {{YEAR}}, newest first.</p>
+    </header>
+
+    <!-- Results -->
+    <section id="results" class="grid gap-6 md:grid-cols-2"></section>
+
+    <!-- Empty state -->
+    <p id="empty" class="hidden text-gray-700">No posts found for {{YEAR}}.</p>
+
+    <!-- Back -->
+    <nav class="mt-12">
+      <a href="/blogs/" class="text-blue-700 underline">All blogs</a>
+    </nav>
+  </main>
+
+  <script>
+    const YEAR = parseInt("{{YEAR}}", 10);
+
+    // util
+    const fmt = (d) => {
+      const [y,m,day] = String(d||"").split("-");
+      const dt = new Date(`${y}-${m}-${day}T00:00:00Z`);
+      return isNaN(dt) ? d : dt.toLocaleDateString(undefined, { year:"numeric", month:"short", day:"2-digit" });
+    };
+
+    fetch('/blogs/manifest.json')
+      .then(r => r.json())
+      .then(arr => Array.isArray(arr) ? arr : [])
+      .then(arr => arr
+        .filter(x => Number(x.year) === YEAR)
+        .sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")))
+      )
+      .then(list => {
+        const wrap = document.getElementById('results');
+        const empty = document.getElementById('empty');
+        if (!list.length) { empty.classList.remove('hidden'); return; }
+
+        list.forEach(p => {
+          const card = document.createElement('article');
+          card.className = "border rounded-2xl p-5 shadow-sm hover:shadow transition";
+
+          const a = document.createElement('a');
+          a.href = p.path;
+          a.className = "block";
+
+          // image
+          const img = document.createElement('img');
+          img.src = p.image || "/assets/images/hero-placeholder.jpg";
+          img.alt = p.title || "post image";
+          img.className = "w-full h-40 object-cover rounded-xl mb-4";
+          a.appendChild(img);
+
+          // title
+          const h = document.createElement('h2');
+          h.textContent = p.title || "Untitled";
+          h.className = "text-xl font-semibold mb-1";
+          a.appendChild(h);
+
+          // meta
+          const meta = document.createElement('p');
+          const loc = [p.city, p.state].filter(Boolean).join(", ");
+          meta.textContent = [fmt(p.date), loc].filter(Boolean).join(" • ");
+          meta.className = "text-sm text-gray-600 mb-3";
+          a.appendChild(meta);
+
+          // tags (audience + venue)
+          const tags = document.createElement('div');
+          tags.className = "flex flex-wrap gap-2";
+          const show = []
+            .concat(p.audience_labels || [])
+            .concat(p.venue ? [`@${p.venue}`] : []);
+          show.slice(0,6).forEach(t => {
+            const b = document.createElement('span');
+            b.className = "text-xs border rounded-full px-2 py-1";
+            b.textContent = t;
+            tags.appendChild(b);
+          });
+          a.appendChild(tags);
+
+          card.appendChild(a);
+          wrap.appendChild(card);
+        });
+      })
+      .catch(() => {
+        document.getElementById('empty').textContent = "Failed to load year archive.";
+        document.getElementById('empty').classList.remove('hidden');
+      });
+  </script>
 </body>
 </html>
