@@ -17,6 +17,9 @@
     "enforce": false,
     "treat_text_plain_as_json": true
   },
+  "writer_guides": {
+    "hello_intro_path": "items/brand/runner_guides/hello_intro.md"
+  },
   "strict_mode": {
     "no_guessing": true,
     "fail_on_missing_signal": false,
@@ -102,10 +105,12 @@
         "logistics_lists",
         "hotel_names",
         "restaurant_names",
-        "temperatures_or_ranges"
+        "temperatures_or_ranges",
+        "logistics_semantics",
+        "cta_link_phrasing"
       ],
       "structure": "tell-write-tell",
-      "notes": "For rider_caliber_ops_quality derive from sanctioning tier and operational quality; do not use star ratings."
+      "notes": "Research on official event and venue pages only. No directions, parking, street names, or CTA phrasing. Rider caliber via range if confirmed; do not use star ratings."
     },
     "transition": {
       "emit": true,
@@ -279,7 +284,12 @@
       ],
       "min_words": 110,
       "max_words": 180,
-      "structure": "tell-write-tell"
+      "structure": "tell-write-tell",
+      "forbid_regex": [
+        "(?i)\\b(turn|take|merge|exit|left|right|gate|lot|parking|map|maps|highway|route|street|road|boulevard|blvd|avenue|ave|hwy|rt|traffic|shuttle|detour|directions)\\b",
+        "(?i)\\b(confirm|check|visit|learn more|see|read more)\\b[^\\n]{0,80}\\[[^\\]]+\\]\\([^\\)]+\\)"
+      ],
+      "notes": "Intro must be travel-brochure style. Visual and competition-first. No logistics or CTA phrasing. Two links, woven as proper nouns."
     },
     "transition_requirements": {
       "enabled": true,
@@ -352,8 +362,16 @@
           "(?i)\\b1\\*\\b",
           "(?i)\\bWEG\\b"
         ],
-        "allowed_guidance": "Describe rider caliber via sanctioning tier and operational quality only. Examples: 'A-circuit with top-level footing and efficient ring flow', 'National weeks with seasoned ops and deep fields', 'FEI-sanctioned stop with professional scheduling'. Do not mention star ratings."
+        "allowed_guidance": "Describe rider caliber via range only if confirmed on the event page (e.g., Olympians, U25). Otherwise omit. Do not mention star ratings."
+      },
+      "intro_logistics": {
+        "forbid_patterns": [
+          "(?i)\\b(turn|take|merge|exit|left|right|gate|lot|parking|map|maps|highway|route|street|road|boulevard|blvd|avenue|ave|hwy|rt|traffic|shuttle|detour|directions)\\b"
+        ]
+      },
+      "cta_links": {
+        "forbid_patterns": [
+          "(?i)\\b(confirm|check|visit|learn more|see|read more)\\b[^\\n]{0,80}\\[[^\\]]+\\]\\([^\\)]+\\)"
+        ]
       }
     }
-  }
-}
