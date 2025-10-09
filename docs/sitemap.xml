@@ -1,10 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://blog.clearroundtravel.com/blogs/</loc></url>
-  <url><loc>https://blog.clearroundtravel.com/blogs/2025/</loc></url>
-  <url><loc>https://blog.clearroundtravel.com/blogs/2026/</loc></url>
-  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2025-01-01/</loc></url>
-  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2025-05-01/</loc></url>
-  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2025-10-06/</loc></url>
-  <url><loc>https://blog.clearroundtravel.com/blogs/capc-blog-2026-10-01/</loc></url>
+  <!-- Listing -->
+  <url>
+    <loc>https://blog.clearroundtravel.com/blogs/</loc>
+    <lastmod>2025-10-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Year archive(s) -->
+  <url>
+    <loc>https://blog.clearroundtravel.com/blogs/2025/</loc>
+    <lastmod>2025-10-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Post(s) -->
+  <url>
+    <loc>https://blog.clearroundtravel.com/blogs/test-venue-blogs-2025/test-venue-blog-2025-10-09/</loc>
+    <lastmod>2025-10-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
 </urlset>
