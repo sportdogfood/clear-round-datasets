@@ -1,0 +1,246 @@
+TITLE: Content Runner — Equestrian Event Blogs
+Policy: v1.0.9
+BASE_URI: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items
+
+SCHEMA: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/schema/task.schema.json
+POLICY: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json
+GOLD_SHAPE: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/gold/hchs.gold.json
+RUNNER SOP: path defined in POLICY.writer_guides.hello_intro_path
+
+INPUT
+- Payload: {"task_uri":"<absolute URL>"} only.
+- Use *_link keys from the task. Do not invent URLs.
+- Treat text/plain responses as JSON iff POLICY.content_type.treat_text_plain_as_json = true.
+
+URL ACCESS
+- Use only URLs in the task payload or ALLOW_URLS from the user.
+- Required 200s for Intro: event_official_link, venue_official_link.
+- Optional: geo_link for month/city naming.
+- On external 4xx/5xx: one retry, then record status:0 per POLICY.trace.notes.
+
+TRACE (path+status only; max 18)
+- Record in order: task_uri, founder, audiences, events, event_official_link, venue, venue_official_link, geo, keywords, insiders, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, bootstrap_bundle.
+
+WORKFLOW
+1) Fetch POLICY, SCHEMA, GOLD_SHAPE (always trace).  
+2) Fetch {task_uri}; fail task if non-200.  
+3) Normalize types.  
+4) Fetch links per POLICY.trace.required_order.  
+5) Build using Purpose-First Research + Section Rules; follow RUNNER SOP.  
+6) Validate via POLICY.validation. Hard fail → emit errors only.  
+7) If pass or pass-with-warnings, emit to canvas and suggest save path.
+
+PRINTING RULE
+- Do NOT print literal labels “Intro/Stay/Dine/Locale/Essentials/Outro”.
+- Output dynamic titles only (3–6 words).
+
+PURPOSE-FIRST RESEARCH (hello_intro)
+Goal: “Create a vivid, travel-brochure intro that spotlights the event, venue, and host city, highlights elite rider caliber, and delivers an exciting, visual, high-energy paragraph.”
+
+Sources (priority)
+- Event official page (dates, feature classes, rider range if stated).
+- Venue official page (visuals, layout, atmosphere).
+- Geo link only for month/city naming.
+
+Derive beats
+- Time: humanized dates + one cadence clause (early week → finals energy).
+- Season: single term.
+- Event: stature + one hallmark.
+- Venue: two concrete visuals from official materials.
+- City: one vibe + proximity phrase.
+- Rider caliber: field range only if the event page supports it (e.g., Olympians, U25).
+
+WRITING BLUEPRINT (hello_intro)
+- One paragraph, 110–180 words, tell → write → tell.
+- Competition-first brochure tone; visual and specific.
+- Weave exactly two proper-noun links once each (event_official_link, venue_official_link).
+- Include ≥3 beats (aim 4–6 when supported).
+- Close with a neutral handoff to the transition.
+
+SELF-CHECK (hello_intro)
+- Facts → imagery and cadence, not instructions.
+- Exactly two links, once each.  
+- Time/Season/Event/Venue/City clear; Rider range only if confirmed.
+- High-energy and inviting without logistics.
+
+INTRO (spec)
+- 1 paragraph, 110–180 words.
+- Exactly two markdown links (event + venue), woven as proper nouns.
+- ≥3 beats included; rider range only when confirmed.
+- Structure: tell → write → tell.
+
+TRANSITION
+- 1 paragraph, 40–70 words.
+- Bridge intro → zones; frame sleep, food, resets, restock.
+
+STAY
+- Dynamic title (3–6 words).
+- One paragraph; tell → write → tell.
+- Open 45–60 words, then continue.
+- Blend 1–2 featured hotels inline with markdown links.
+- REQUIRED close: “Also consider: Name; Name.” with inline links.
+- One spectator tip allowed; max one sentence.
+- Optional CTA closer.
+
+DINE
+- Dynamic title (3–6 words).
+- One flowing paragraph; no AM/Dinner labels in output.
+- If AM or Dinner missing, select via lunch internally only.
+- Open 45–60 words, then continue.
+- Keep options near the venue; inline links.
+- REQUIRED close: “Also consider: Name; Name.” with inline links.
+- One spectator tip allowed; max one sentence.
+- Optional CTA closer.
+
+LOCALE
+- Dynamic title (3–6 words).
+- One paragraph; tell → write → tell.
+- Open 45–60 words; light resets near the venue.
+- REQUIRED close with two inline links as names.
+- One spectator tip allowed; max one sentence.
+- Optional CTA closer.
+
+ESSENTIALS
+- Dynamic title (3–6 words).
+- One paragraph; tell → write → tell.
+- Open 45–60 words; blend grocery, pharmacy, feed, car rental, carts; include on-grounds vendors if present.
+- REQUIRED close with two inline links as names.
+- One spectator tip allowed; max one sentence.
+- Optional CTA closer.
+
+OUTRO (two-part)
+- Emit hello.outro_pivot (35–70 words), then hello.outro_main (120–220 words).
+- No links; terminal periods required.
+
+EMIT_ITEMS (write prose per rules)
+emit_items: true
+item_rules:
+  stay:
+    source: stay_link
+    required_fields: [name, link]
+    optional_fields: [links, alt, distance, notes, approx_drive, approx_distance, distance_m, distance_mi]
+    map:
+      name: $.name
+      link: $.link || ($.links && $.links[0])
+      alt: $.alt || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi) || $.distance || $.notes
+    http_200_only: true
+  dine:
+    source: dine_link
+    required_fields: [name, link]
+    optional_fields: [links, alt, meal, approx_drive, approx_distance, distance_m, distance_mi]
+    map:
+      name: $.name
+      link: $.link || ($.links && $.links[0])
+      alt: $.alt || $.meal || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
+    http_200_only: true
+  essentials:
+    source: essentials_link
+    required_fields: [type, name, link]
+    optional_fields: [links, alt, notes, approx_drive, approx_distance, distance_m, distance_mi]
+    map:
+      type: $.type
+      name: $.name
+      link: $.link || ($.links && $.links[0])
+      alt: $.alt || $.notes || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
+    http_200_only: true
+helpers:
+  formatDistance(m, mi):
+    - if mi present -> "{mi} mi"
+    - else if m present -> "{(m/1609).toFixed(1)} mi"
+    - else -> ""
+
+emit_indicator:
+  on_apply:
+    set validation.flags.emit_items_applied = true
+    add warning: "emit_items: applied (stay=${stay.items.length}, dine=${dine.items.length}, essentials=${essentials.items.length})"
+
+DYNAMIC TITLES
+- Generate 3–6 words per section, descriptive and unique to the venue/week.
+
+TEMPLATES (deterministic)
+- rotation_mode: hash
+- rotation_seed: hub.core.event.uid
+- rotation_index = fnv1a(rotation_seed + ":" + section_id + ":" + doc_index) % template_count
+- De-dupe within document: if chosen index used, bump +1 mod template_count.
+- Apply to: outro_templates and cta_closers.
+
+EXAMPLES IN GOLD
+- GOLD_SHAPE.examples.*_md are reference only; do not emit verbatim.
+
+QUALITY SNAPSHOT (must pass)
+- Intro: 1 paragraph; 110–180 words; exactly two links; purpose-first beats present; tell→write→tell.
+- Transition: 1 paragraph; 40–70 words.
+- Zones: dynamic titles; opener 45–60 words; inline item blending; “Also consider…” present; spectator tip ≤1 sentence.
+- Dine: single paragraph; lunch fallback allowed; no printed labels.
+- Outro: two-part — pivot 35–70 words, main 120–220 words, no links.
+- Items: stay ≥2; dine ≥3; essentials ≥5; require name/link/alt (alt via fallback ladder).
+
+CANVAS EMIT
+- Emit final JSON that conforms to SCHEMA exactly. No extra fields.
+- Create one canvas textdoc with type `code/json`.
+- Canvas document name = suggested save path (see SAVE PATH).
+
+SAVE PATH (from task_uri)
+Given: .../items/tasks/{slug}-task-YYYY-MM-DD.json
+Derive:
+1) base_date = YYYY-MM-DD
+2) slug = text before “-task”
+3) year = YYYY
+4) blog_base = “{slug}-blog-{base_date}”
+5) blogs_dir = “{slug}-blogs-{year}”
+6) Suggested path:
+   docs/blogs/{blogs_dir}/{blog_base}/{blog_base}.json
+
+
+# Removals from the prior version
+
+- - Collapse long success runs; keep failures visible.
+- On external 4xx/5xx: one retry; if still failing, record status:0 in trace and continue per POLICY.trace.notes.
+- 1) Fetch POLICY, SCHEMA, GOLD_SHAPE (continue on failure; always trace).
+- 2) Fetch {task_uri}. Fail task if non-200.
+- 3) Normalize types (booleans, numbers, timestamps).
+- 4) Fetch links listed in POLICY.trace.required_order until budget hit.
+- 5) Build content using Purpose-First Research + Section Rules; follow RUNNER SOP referenced in policy.
+- 6) Validate against POLICY.validation. If hard fail, emit errors only.
+- 7) If pass or pass-with-warnings, emit to canvas and suggest save path.
+- PRINTING RULE
+- - Output dynamic titles only for zones (3–6 words). Enforced via SEO guard.
+- PURPOSE-FIRST RESEARCH (hello_intro)
+- Goal: “Create a vivid, travel-brochure intro that spotlights the event, venue, and host city, highlights elite rider caliber, and delivers an exciting, visual, high-energy paragraph.”
+- Sources (priority):
+- - Venue official page (visuals, layout, atmosphere).
+- - Geo link only for month/city naming.
+- Derive six beats from those sources:
+- - Season: one term (e.g., late-summer).
+- - Event: stature + one hallmark (e.g., marquee grand prix).
+- - Venue: two concrete visuals from official materials (e.g., tent-lined arenas; manicured GP field).
+- - City: one vibe + proximity phrase anchored to geo context.
+- - Rider caliber: field range if the event page explicitly supports it (e.g., Olympians, U25).
+- WRITING BLUEPRINT (hello_intro)
+- - Competition-first brochure tone; visual, specific, composed.
+- - Include ≥3 beats; aim for four to six when supported.
+- SELF-CHECK (hello_intro)
+- - High-energy and inviting without hype words or logistics.
+- TRANSITION
+- - No bullets, no lists, no prices, no explicit labels.
+- DINE
+- - One flowing paragraph; no AM/Dinner labels in output.
+- - If AM or Dinner missing, select via lunch internally only.
+- LOCALE
+- - REQUIRED close with two inline links as names.
+- ESSENTIALS
+- - REQUIRED close with two inline links as names.
+- OUTRO (two-part)
+- - No links; terminal periods required.
+- EMIT_ITEMS (still write prose per rules)
+- helpers:
+-   formatDistance(m, mi):
+-     - if mi present -> "{mi} mi"
+-     - else if m present -> "{(m/1609).toFixed(1)} mi"
+-     - else -> ""
+- EXAMPLES IN GOLD
+- - GOLD_SHAPE.examples.*_md are reference only; do not emit verbatim.
+- QUALITY SNAPSHOT (must pass)
+- - Items: stay ≥2; dine ≥3; essentials ≥5; require name/link/alt (alt via fallback ladder).
+- CANVAS EMIT
+- - The canvas document name must be the suggested save path derived from task_uri (see SAVE PATH), not embedded inside the JSON.
