@@ -8,100 +8,181 @@
   <meta property="og:title" content="Blogs — {{YEAR}}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="/blogs/{{YEAR}}/">
-  <meta name="description" content="Year archive for {{YEAR}}.">
+  <meta name="description" content="Year archive for {{YEAR}} with seasonal carousels.">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .chip{ @apply text-sm border rounded-full px-3 py-1 cursor-pointer select-none; }
+    .chip-active{ @apply bg-gray-900 text-white border-gray-900; }
+    .rail-link{ @apply block py-1 text-blue-300 underline; }
+    .carousel{ scroll-snap-type:x mandatory; }
+    .slide{ scroll-snap-align:start; }
+  </style>
 </head>
 <body class="bg-white text-gray-900">
-  <main class="max-w-5xl mx-auto px-4 py-10">
-    <header class="mb-8">
-      <h1 class="text-4xl md:text-5xl font-semibold tracking-tight mb-2">Blogs — {{YEAR}}</h1>
-      <p class="text-gray-700">All posts from {{YEAR}}, newest first.</p>
-    </header>
+  <main class="max-w-6xl mx-auto px-4 py-8 grid gap-8 md:grid-cols-[240px_1fr]">
+    <!-- Left rail -->
+    <aside>
+      <h1 class="text-2xl font-semibold mb-3">Blogs — {{YEAR}}</h1>
+      <nav class="mb-6">
+        <a href="/" class="rail-link">Home</a>
+        <a href="/blogs/" class="rail-link">All blogs</a>
+      </nav>
 
-    <!-- Results -->
-    <section id="results" class="grid gap-6 md:grid-cols-2"></section>
+      <section class="mb-8">
+        <h2 class="text-sm font-medium text-gray-600 mb-2">Years</h2>
+        <div id="years" class="flex flex-col gap-1"></div>
+      </section>
 
-    <!-- Empty state -->
-    <p id="empty" class="hidden text-gray-700">No posts found for {{YEAR}}.</p>
+      <section>
+        <h2 class="text-sm font-medium text-gray-600 mb-2">Relevant blogs</h2>
+        <div id="relevant" class="flex flex-col gap-2 text-sm"></div>
+        <p id="rel-empty" class="text-gray-500 text-sm hidden">No matches.</p>
+      </section>
+    </aside>
 
-    <!-- Back -->
-    <nav class="mt-12">
-      <a href="/blogs/" class="text-blue-700 underline">All blogs</a>
-    </nav>
+    <!-- Main -->
+    <section>
+      <!-- Chips: seasons only -->
+      <div class="flex flex-wrap items-center gap-3 mb-6">
+        <div id="chips-season" class="flex flex-wrap gap-2"></div>
+        <button id="clear" class="ml-auto text-sm underline text-blue-700 hidden">Clear</button>
+      </div>
+
+      <!-- Carousels -->
+      <div id="sections" class="space-y-10"></div>
+
+      <p id="empty" class="text-gray-700 hidden">No posts found.</p>
+    </section>
   </main>
 
   <script>
-    const YEAR = parseInt("{{YEAR}}", 10);
-
-    // util
+    const YEAR = parseInt("{{YEAR}}",10);
+    const Q = new URLSearchParams(location.search);
+    const ACTIVE = { season: (Q.get('season')||'').toLowerCase() };
+    const SEASONS = ['spring','summer','fall','winter'];
+    const SEASON_LABEL = {spring:'Spring',summer:'Summer',fall:'Fall',winter:'Winter'};
     const fmt = (d) => {
       const [y,m,day] = String(d||"").split("-");
       const dt = new Date(`${y}-${m}-${day}T00:00:00Z`);
-      return isNaN(dt) ? d : dt.toLocaleDateString(undefined, { year:"numeric", month:"short", day:"2-digit" });
+      return isNaN(dt) ? d : dt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
     };
 
-    fetch('/blogs/manifest.json')
-      .then(r => r.json())
-      .then(arr => Array.isArray(arr) ? arr : [])
-      .then(arr => arr
-        .filter(x => Number(x.year) === YEAR)
-        .sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")))
-      )
-      .then(list => {
-        const wrap = document.getElementById('results');
-        const empty = document.getElementById('empty');
-        if (!list.length) { empty.classList.remove('hidden'); return; }
+    const yearsEl = document.getElementById('years');
+    const relWrap = document.getElementById('relevant');
+    const relEmpty = document.getElementById('rel-empty');
+    const chipsSeason = document.getElementById('chips-season');
+    const sections = document.getElementById('sections');
+    const clearBtn = document.getElementById('clear');
+    const emptyMsg = document.getElementById('empty');
 
-        list.forEach(p => {
-          const card = document.createElement('article');
-          card.className = "border rounded-2xl p-5 shadow-sm hover:shadow transition";
+    fetch('/blogs/manifest.json').then(r=>r.json()).then(raw=>Array.isArray(raw)?raw:[])
+    .then(manifest=>{
+      // sort desc
+      manifest.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+
+      // years list
+      const years = Array.from(new Set(manifest.map(p=>p.year))).sort((a,b)=>b-a);
+      yearsEl.innerHTML = years.map(y=>`<a href="/blogs/${y}/" class="rail-link"${String(y)===String(YEAR)?' aria-current="page"':''}>${y}</a>`).join('');
+
+      // scope by year
+      const scope = manifest.filter(p=>String(p.year)===String(YEAR));
+      const bySeason = Object.fromEntries(SEASONS.map(s=>[s, scope.filter(p=>(p.season||'').toLowerCase()===s)]));
+
+      // chips
+      const seasonButtons = [`<button data-season="" class="chip ${ACTIVE.season?'':'chip-active'}">All seasons (${scope.length})</button>`]
+        .concat(SEASONS.filter(s=>bySeason[s].length>0).map(s=>{
+          const active = ACTIVE.season===s ? 'chip-active':'';
+          return `<button data-season="${s}" class="chip ${active}">${SEASON_LABEL[s]} (${bySeason[s].length})</button>`;
+        })).join('');
+      chipsSeason.innerHTML = seasonButtons;
+
+      // visible set
+      const visible = ACTIVE.season ? bySeason[ACTIVE.season] : scope;
+
+      // relevant
+      const rel = (visible.length?visible:scope).slice(0,6);
+      if (!rel.length){ relEmpty.classList.remove('hidden'); }
+      else {
+        relWrap.innerHTML = rel.map(p=>`<a href="${p.path}" class="underline text-blue-700">${p.title||p.slug}</a><span class="text-gray-500"> — ${fmt(p.date)}</span>`).map((line)=>`<div>${line}</div>`).join('');
+      }
+
+      // sections
+      sections.innerHTML = '';
+      let any=false;
+      const wanted = ACTIVE.season ? [ACTIVE.season] : SEASONS;
+      for (const s of wanted) {
+        const list = bySeason[s] || [];
+        if (!list.length) continue;
+        any=true;
+
+        const header = document.createElement('div');
+        header.className = 'flex items-end justify-between mb-3';
+        const h = document.createElement('h2');
+        h.className = 'text-xl font-semibold';
+        h.textContent = {spring:'Spring',summer:'Summer',fall:'Fall',winter:'Winter'}[s];
+        const see = document.createElement('a');
+        const qp = new URLSearchParams(); qp.set('season', s);
+        see.href = `?${qp.toString()}`;
+        see.className='text-blue-700 underline text-sm';
+        see.textContent='See all >';
+        header.appendChild(h); header.appendChild(see);
+        sections.appendChild(header);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'carousel flex overflow-x-auto gap-4 pb-2';
+        wrap.setAttribute('role','list');
+
+        list.slice(0,12).forEach(p=>{
+          const li = document.createElement('article');
+          li.className = 'slide min-w-[260px] w-[260px] border rounded-2xl p-3 shadow-sm';
+          li.setAttribute('role','listitem');
 
           const a = document.createElement('a');
           a.href = p.path;
-          a.className = "block";
+          a.className = 'block';
 
-          // image
           const img = document.createElement('img');
-          img.src = p.image || "/assets/images/hero-placeholder.jpg";
-          img.alt = p.title || "post image";
-          img.className = "w-full h-40 object-cover rounded-xl mb-4";
-          a.appendChild(img);
+          img.decoding='async'; img.loading='lazy';
+          img.className='w-full h-36 object-cover rounded-xl mb-2';
+          if (p.card_image_link) { img.src = p.card_image_link; img.alt = p.title || 'image'; a.appendChild(img); }
 
-          // title
-          const h = document.createElement('h2');
-          h.textContent = p.title || "Untitled";
-          h.className = "text-xl font-semibold mb-1";
-          a.appendChild(h);
+          const t = document.createElement('h3');
+          t.className='text-base font-semibold mb-1';
+          t.textContent=p.title||p.slug;
+          a.appendChild(t);
 
-          // meta
           const meta = document.createElement('p');
-          const loc = [p.city, p.state].filter(Boolean).join(", ");
-          meta.textContent = [fmt(p.date), loc].filter(Boolean).join(" • ");
-          meta.className = "text-sm text-gray-600 mb-3";
+          meta.className='text-xs text-gray-600';
+          const loc = [p.city, p.state].filter(Boolean).join(', ');
+          meta.textContent=[fmt(p.date), loc].filter(Boolean).join(' • ');
           a.appendChild(meta);
 
-          // tags (audience + venue)
-          const tags = document.createElement('div');
-          tags.className = "flex flex-wrap gap-2";
-          const show = []
-            .concat(p.audience_labels || [])
-            .concat(p.venue ? [`@${p.venue}`] : []);
-          show.slice(0,6).forEach(t => {
-            const b = document.createElement('span');
-            b.className = "text-xs border rounded-full px-2 py-1";
-            b.textContent = t;
-            tags.appendChild(b);
-          });
-          a.appendChild(tags);
-
-          card.appendChild(a);
-          wrap.appendChild(card);
+          li.appendChild(a);
+          wrap.appendChild(li);
         });
-      })
-      .catch(() => {
-        document.getElementById('empty').textContent = "Failed to load year archive.";
-        document.getElementById('empty').classList.remove('hidden');
+
+        sections.appendChild(wrap);
+      }
+
+      if(!any){ emptyMsg.classList.remove('hidden'); }
+
+      // events
+      chipsSeason.addEventListener('click',(e)=>{
+        const b=e.target.closest('button[data-season]'); if(!b) return;
+        const s=b.getAttribute('data-season');
+        const q=new URLSearchParams(location.search);
+        if(s) q.set('season',s); else q.delete('season');
+        history.replaceState(null,'',`?${q.toString()}`);
+        location.reload();
       });
+
+      clearBtn.classList.toggle('hidden', !ACTIVE.season);
+      clearBtn.addEventListener('click', ()=>{
+        history.replaceState(null,'',location.pathname);
+        location.reload();
+      });
+    })
+    .catch(()=>{ emptyMsg.textContent='Failed to load year archive.'; emptyMsg.classList.remove('hidden'); });
   </script>
 </body>
 </html>
