@@ -15,8 +15,15 @@
 
   <!-- Configure exact JSON paths -->
   <script id="post-config" type="application/json">
-    { "slug": "{{SLUG}}", "json": "{{JSON_PATH}}", "assets": "{{ASSETS_PATH}}" }
+    { "slug": "{{SLUG}}", "json": "{{JSON_PATH}}", "images": "{{IMAGES_LINK}}" }
   </script>
+  <style>
+    .prose p{margin:0 0 1rem 0}
+    .chip{font-size:.75rem;border:1px solid #e5e7eb;border-radius:9999px;padding:.25rem .5rem}
+    .aspect-16x9{position:relative;padding-top:56.25%}
+    .aspect-3x2{position:relative;padding-top:66.6667%}
+    .aspect-fill>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0.75rem}
+  </style>
 </head>
 <body class="bg-white text-gray-900">
   <main class="max-w-3xl mx-auto px-4 py-10">
@@ -24,15 +31,15 @@
       <!-- Title + Hero -->
       <header class="mb-8">
         <h1 id="title" class="text-4xl md:text-5xl font-semibold tracking-tight mb-4"></h1>
-        <img id="hero" alt="" class="w-full rounded-2xl mb-4 hidden" />
-        <p id="intro" class="text-lg leading-relaxed text-gray-800"></p>
+        <div id="heroWrap" class="aspect-16x9 aspect-fill mb-4 hidden"><img id="hero" alt=""></div>
+        <div id="intro" class="prose text-lg leading-relaxed text-gray-800"></div>
       </header>
 
       <!-- Stay -->
       <section class="mt-12 border-t pt-8">
         <h2 id="stay-title" class="text-2xl font-semibold tracking-tight mb-3">Stay</h2>
-        <img id="stay-img" alt="" class="w-full rounded-xl mb-4 hidden" />
-        <p id="stay-p" class="text-gray-800 leading-relaxed mb-3"></p>
+        <div id="stayWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="stay-img" alt=""></div>
+        <div id="stay-p" class="prose text-gray-800 leading-relaxed mb-3"></div>
         <ul id="stay-list" class="list-disc pl-6 space-y-1"></ul>
         <p id="stay-cta" class="italic text-gray-700 mt-3"></p>
       </section>
@@ -40,13 +47,11 @@
       <!-- Dine -->
       <section class="mt-12 border-t pt-8">
         <h2 id="dine-title" class="text-2xl font-semibold tracking-tight mb-3">Dine</h2>
-        <img id="dine-img" alt="" class="w-full rounded-xl mb-4 hidden" />
-        <h3 class="text-lg font-medium mt-4 mb-2">Overview</h3>
-        <p id="dine-overview" class="text-gray-800 leading-relaxed mb-3"></p>
-        <h3 class="text-lg font-medium mt-6 mb-2">Breakfast</h3>
-        <p id="dine-am" class="text-gray-800 leading-relaxed mb-3"></p>
+        <div id="dineWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="dine-img" alt=""></div>
+        <h3 class="text-lg font-medium mt-4 mb-2">AM</h3>
+        <div id="dine-am" class="prose text-gray-800 leading-relaxed mb-3"></div>
         <h3 class="text-lg font-medium mt-6 mb-2">Dinner</h3>
-        <p id="dine-dinner" class="text-gray-800 leading-relaxed mb-3"></p>
+        <div id="dine-dinner" class="prose text-gray-800 leading-relaxed mb-3"></div>
         <ul id="dine-list" class="list-disc pl-6 space-y-1"></ul>
         <p id="dine-cta" class="italic text-gray-700 mt-3"></p>
       </section>
@@ -54,22 +59,22 @@
       <!-- Locale -->
       <section class="mt-12 border-t pt-8">
         <h2 id="locale-title" class="text-2xl font-semibold tracking-tight mb-3">Locale</h2>
-        <img id="locale-img" alt="" class="w-full rounded-xl mb-4 hidden" />
-        <p id="locale-p" class="text-gray-800 leading-relaxed"></p>
+        <div id="localeWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="locale-img" alt=""></div>
+        <div id="locale-p" class="prose text-gray-800 leading-relaxed"></div>
       </section>
 
       <!-- Essentials -->
       <section class="mt-12 border-t pt-8">
         <h2 id="essentials-title" class="text-2xl font-semibold tracking-tight mb-3">Essentials</h2>
-        <img id="essentials-img" alt="" class="w-full rounded-xl mb-4 hidden" />
-        <p id="essentials-p" class="text-gray-800 leading-relaxed mb-3"></p>
+        <div id="essentialsWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="essentials-img" alt=""></div>
+        <div id="essentials-p" class="prose text-gray-800 leading-relaxed mb-3"></div>
         <ul id="essentials-list" class="list-disc pl-6 space-y-1"></ul>
         <p id="essentials-cta" class="italic text-gray-700 mt-3"></p>
       </section>
 
       <!-- Outro -->
       <section class="mt-12 border-t pt-8">
-        <p id="outro" class="text-gray-800 leading-relaxed"></p>
+        <div id="outro" class="prose text-gray-800 leading-relaxed"></div>
       </section>
 
       <!-- Tags + Neighbors -->
@@ -84,57 +89,67 @@
     </nav>
   </main>
 
-  <!-- Use site-root helper at /docs/assets/js/md.js -->
-  <script type="module">
-    import { md } from "/assets/js/md.js";
-
-    const unwrapP = (html) => String(html || "").replace(/^<p>/, "").replace(/<\/p>$/, "");
-    const setHTML = (id, s) => { const el=document.getElementById(id); if(el){ el.innerHTML = unwrapP(md(s||"")); } };
+  <script>
+    // Minimal sanitizer: escape HTML then replace Markdown links [label](url) with safe anchors (http/https only)
+    const escapeHtml = (s='') => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeUrl = (u) => /^https?:\/\//i.test(u) ? u : '#';
+    const mdInline = (s='') => {
+      const esc = escapeHtml(String(s));
+      return esc
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
+          `<a href="${safeUrl(url.trim())}" target="_blank" rel="noopener" class="underline text-blue-700">${escapeHtml(label)}</a>`
+        )
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    };
+    const setProse = (id, s) => { const el=document.getElementById(id); if(el){ el.innerHTML = s ? `<p>${mdInline(s)}</p>` : ''; } };
     const setText = (id, v, f='') => { const el=document.getElementById(id); if (el) el.textContent = v || f; };
-
-    const cfg = JSON.parse(document.getElementById('post-config').textContent);
-    const P = {
-      hero: "/assets/images/hero-placeholder.jpg",
-      stay: "/assets/images/stay-placeholder.jpg",
-      dine: "/assets/images/dine-placeholder.jpg",
-      locale: "/assets/images/place-placeholder.jpg"
+    const setImgSlot = (wrapId, imgId, link, hidden, alt) => {
+      const wrap = document.getElementById(wrapId);
+      const img  = document.getElementById(imgId);
+      if (!wrap || !img) return;
+      if (String(hidden)==='1' || !link) { wrap.classList.add('hidden'); return; }
+      img.src = link; img.alt = alt || '';
+      wrap.classList.remove('hidden');
     };
-    const setImg = (el, src, alt) => {
-      if (!el) return;
-      el.src = src; el.alt = alt || "placeholder"; el.classList.remove("hidden");
-      el.addEventListener('error', ()=>{ el.classList.add('hidden'); el.remove(); });
-    };
-    const addItems = (arr, ul, label='name') => {
-      if (!Array.isArray(arr)) return;
+    const addItems = (arr, ul) => {
+      if (!Array.isArray(arr) || !ul) return;
       arr.forEach(it => {
         const li = document.createElement('li');
-        if (it.url) {
+        const name = it.name || it.type || '';
+        const links = Array.isArray(it.links) ? it.links : (it.link ? [it.link] : []);
+        if (links.length) {
           const a = document.createElement('a');
-          a.href = it.url;
-          a.textContent = it[label] || it.name || it.type || it.url;
+          a.href = safeUrl(String(links[0]));
+          a.textContent = name || links[0];
           a.className = 'text-blue-700 underline break-all';
-          a.rel = 'noopener nofollow external';
-          a.target = '_blank';
+          a.rel='noopener'; a.target='_blank';
           li.appendChild(a);
-          if (it.alt) {
-            const s = document.createElement('span');
-            s.textContent = ` — ${it.alt}`;
-            li.appendChild(s);
-          }
         } else {
-          li.textContent = it[label] || it.name || it.type || '';
+          li.textContent = name;
+        }
+        if (it.alt) {
+          const s = document.createElement('span');
+          s.textContent = ` — ${it.alt}`;
+          li.appendChild(s);
         }
         ul.appendChild(li);
       });
     };
 
-    Promise.all([
+    const cfg = JSON.parse(document.getElementById('post-config').textContent);
+
+    Promise.allSettled([
       fetch(cfg.json).then(r=>r.json()),
-      fetch(cfg.assets).then(r=> r.ok ? r.json() : {}).catch(()=>({})),
-      fetch('/blogs/manifest.json').then(r=> r.ok ? r.json() : []).catch(()=>[])
-    ]).then(([d, a, m]) => {
+      cfg.images ? fetch(cfg.images).then(r=>r.json()) : Promise.resolve({}),
+      fetch('/blogs/manifest.json').then(r=>r.ok?r.json():[]).catch(()=>[])
+    ]).then(([pd, imd, md]) => {
+      const d = pd.value || {};
+      const images = imd.value || {};
+      const manifest = Array.isArray(md.value) ? md.value : [];
+
       // SEO + title
-      const title = d.seo?.section_title || d.seo?.open_graph_title || 'Blog';
+      const title = d.seo?.section_title || d.seo?.open_graph_title || d.title || 'Blog';
       document.title = title;
       document.getElementById('og-title').content = d.seo?.open_graph_title || title;
       document.getElementById('og-desc').content  = d.seo?.open_graph_description || d.seo?.meta_description || '';
@@ -142,61 +157,55 @@
       document.getElementById('og-url').content = location.href;
 
       // Headings
-      document.getElementById('title').textContent = title;
+      setText('title', title);
 
       // Paragraph fields with Markdown links
-      setHTML('intro', d.hello?.intro);
-      setHTML('outro', d.hello?.outro);
+      setProse('intro', d.hello?.intro);
+      setProse('outro', d.hello?.outro);
 
       setText('stay-title', d.stay?.title, 'Stay');
-      setHTML('stay-p', d.stay?.paragraph);
+      setProse('stay-p', d.stay?.paragraph);
       addItems(d.stay?.items, document.getElementById('stay-list'));
       setText('stay-cta', d.stay?.cta);
 
-      // Dine: three paragraphs (overview, breakfast, dinner)
       setText('dine-title', d.dine?.title, 'Dine');
-      setHTML('dine-overview', d.dine?.overview || '');
-      setHTML('dine-am', d.dine?.am || '');
-      setHTML('dine-dinner', d.dine?.dinner || '');
+      setProse('dine-am', d.dine?.am);
+      setProse('dine-dinner', d.dine?.dinner);
       addItems(d.dine?.items, document.getElementById('dine-list'));
       setText('dine-cta', d.dine?.cta);
 
       setText('locale-title', d.locale?.title, 'Locale');
-      setHTML('locale-p', d.locale?.paragraph);
+      setProse('locale-p', d.locale?.paragraph);
 
       setText('essentials-title', d.essentials?.title, 'Essentials');
-      setHTML('essentials-p', d.essentials?.paragraph);
+      setProse('essentials-p', d.essentials?.paragraph);
       addItems(d.essentials?.items, document.getElementById('essentials-list'));
       setText('essentials-cta', d.essentials?.cta);
 
-      // Images with fallbacks
-      setImg(document.getElementById('hero'), a.hero?.src || P.hero, a.hero?.alt);
-      setImg(document.getElementById('stay-img'), a.stay?.src || P.stay, a.stay?.alt);
-      setImg(document.getElementById('dine-img'), a.dine?.src || P.dine, a.dine?.alt);
-      setImg(document.getElementById('locale-img'), a.locale?.src || P.locale, a.locale?.alt);
-      setImg(document.getElementById('essentials-img'), a.essentials?.src || P.locale, a.essentials?.alt);
+      // Images from desc-images.json only (no global fallback)
+      const alt = (images.image_alt_text || '').trim();
+      setImgSlot('heroWrap','hero', images.hero_image_link, images.hero_image_hidden, alt);
+      setImgSlot('stayWrap','stay-img', images.stay_image_link, images.stay_image_hidden, alt);
+      setImgSlot('dineWrap','dine-img', images.dine_image_link, images.dine_image_hidden, alt);
+      setImgSlot('localeWrap','locale-img', images.locale_image_link, images.locale_image_hidden, alt);
+      setImgSlot('essentialsWrap','essentials-img', images.essentials_image_link, images.essentials_image_hidden, alt);
 
       // Tags
-      const me = (Array.isArray(m) ? m : []).find(x=>x.slug===cfg.slug);
+      const me = (Array.isArray(manifest) ? manifest : []).find(x=>x.slug===cfg.slug);
       if (me?.tags) {
         const wrap = document.getElementById('tags');
-        me.tags.forEach(t => {
-          const b=document.createElement('span');
-          b.className='text-xs border rounded-full px-2 py-1';
-          b.textContent=t;
-          wrap.appendChild(b);
-        });
+        me.tags.forEach(t => { const b=document.createElement('span'); b.className='chip'; b.textContent=t; wrap.appendChild(b); });
       }
 
       // Neighbors
-      if (Array.isArray(m) && m.length) {
-        const sorted = [...m].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      if (Array.isArray(manifest) && manifest.length) {
+        const sorted = [...manifest].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
         const i = sorted.findIndex(x=>x.slug===cfg.slug);
         const prev = sorted[i-1], next = sorted[i+1];
         const n = document.getElementById('neighbors');
-        n.innerHTML = `${next?`<a class="underline" href="${next.path}">← Next: ${next.title}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title} →</a>`:''}`;
+        n.innerHTML = `${next?`<a class="underline" href="${next.path}">← Next: ${next.title||next.slug}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title||prev.slug} →</a>`:''}`;
       }
-    });
+    }).catch(()=>{ /* silent */ });
   </script>
 </body>
 </html>
