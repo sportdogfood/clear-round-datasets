@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Blogs Manifest",
+  "description": "Array of blog post entries (sorted by date desc). One object per post.",
   "type": "array",
-  "description": "Sorted by date desc. One object per post.",
   "items": {
     "type": "object",
     "additionalProperties": false,
@@ -12,20 +12,36 @@
         "type": "string",
         "pattern": "^[a-z0-9-]+-blog-\\d{4}-\\d{2}-\\d{2}$"
       },
-      "title": { "type": "string", "minLength": 1 },
+      "title": {
+        "type": "string",
+        "minLength": 1
+      },
       "date": {
         "type": "string",
         "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
       },
-      "year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
-      "month_num": { "type": "integer", "minimum": 1, "maximum": 12 },
+      "year": {
+        "oneOf": [
+          { "type": "integer", "minimum": 2000, "maximum": 2100 },
+          { "type": "string", "pattern": "^\\d{4}$" }
+        ]
+      },
+      "month_num": {
+        "oneOf": [
+          { "type": "integer", "minimum": 1, "maximum": 12 },
+          { "type": "string", "pattern": "^(0?[1-9]|1[0-2])$" }
+        ]
+      },
       "month_name": {
         "type": "string",
-        "enum": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        "enum": [
+          "January","February","March","April","May","June","July","August","September","October","November","December",
+          "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
+        ]
       },
       "season": {
         "type": "string",
-        "enum": ["spring","summer","fall","winter"]
+        "enum": ["spring", "summer", "fall", "winter"]
       },
       "path": {
         "type": "string",
@@ -37,9 +53,12 @@
       },
       "image": {
         "type": "string",
-        "pattern": "^/assets/images/.+"
+        "pattern": "^(https?://.+|/assets/images/.+)$"
       },
-      "venue": { "type": "string", "minLength": 1 },
+      "venue": {
+        "type": "string",
+        "minLength": 1
+      },
       "city": { "type": "string" },
       "state": { "type": "string" },
       "country": { "type": "string" },
@@ -47,18 +66,9 @@
       "lng": { "type": "number" },
       "place_id": { "type": "string" },
       "timezone": { "type": "string" },
-      "start_date": {
-        "type": "string",
-        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-      },
-      "end_date": {
-        "type": "string",
-        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-      },
-      "event_duration": {
-        "type": "string",
-        "enum": ["single","weekend","multi-day"]
-      },
+      "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+      "end_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+      "event_duration": { "type": "string", "enum": ["single", "weekend", "multi-day"] },
       "audience_labels": {
         "type": "array",
         "items": { "type": "string" },
