@@ -1,205 +1,63 @@
 {
-  "meta": {
-    "run_id": "dvn-task-2025-10-02",
-    "timestamp_iso": "2025-10-10T00:00:00-04:00",
-    "task_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/tasks/dvn-task-2025-10-02.json",
-    "policy_version": "1.0.9",
-    "policy_uri": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/policy/policy.json"
-  },
-  "hello": {
-    "intro": "September 11–14 brings Devon Fall to historic Devon, PA, a tight four-day burst that moves from early-week settling to a finals-style finish by Sunday. The show’s stature is its heritage and polish, with classic rings and a spectator-forward layout that keeps the action in view. Plan class specifics via the official [Devon Fall](https://www.devonhorseshow.net/events/) page, then picture the grounds through the [Devon Show Facility](https://www.devonhorseshow.net/) itself: intimate grandstand views, vendor energy, and easy ring flow. Expect a national-caliber field across hunters, jumpers, and equitation, with clean schedules and quick resets between trips. Devon’s Main Line setting adds pace and purpose without distraction, so focus stays on rounds and results as the week builds.",
-    "transition": "With dates and ring rhythm set, dial in the support plan: sleep close, eat predictably, and keep resets short. The next sections stack lodging near the grounds, reliable food within minutes, and a simple checklist for groceries, pharmacy, feed, wheels, and carts so warm-up windows and ring flow stay clean."
-  },
-  "stay": {
-    "title": "Sleep Close on Main Line",
-    "paragraph": "Keep mornings friction-free and evenings quiet. Short drives, easy parking, and dependable late check-ins matter when orders-of-go shift. Boutique comfort sits minutes away at the [Wayne Hotel](https://waynehotel.com) for teams that want a calm base, while value-forward rooms at the [Best Western Plus The Inn at King of Prussia](https://www.bestwestern.com/en_US/book/hotel-rooms.39066.html) keep costs predictable without complicating turnarounds. Also consider: [Wayne Hotel](https://waynehotel.com); [Best Western Plus The Inn at King of Prussia](https://www.bestwestern.com/en_US/book/hotel-rooms.39066.html).",
-    "spectator_tip": "Pick rooms facing away from main roads for steadier sleep on late class nights.",
-    "cta": "Book early for September demand on the Main Line."
-  },
-  "dine": {
-    "title": "Eat Efficiently Nearby",
-    "paragraph": "Plan food like gear so schooling-ring timing never slips. For quick, farm-to-table plates close to the grounds, [White Dog Cafe Wayne](https://www.whitedog.com) covers lighter lunches or a steady dinner. Upscale midday or client lunches land at [Autograph Brasserie](https://www.autographbrasserie.com), while team-friendly history and hearty fare sit at [Black Powder Tavern](https://www.blackpowdertavern.com). When the day runs long, [Savona](https://www.savonarestaurant.com) or the garden-styled [Terrain Cafe](https://www.shopterrain.com/pages/cafe) provide seated resets that still move on time. Also consider: [Minella’s Diner](https://www.minellasdiner.com); [Christopher’s A Neighborhood Place](https://www.christophersaneighborhoodplace.com).",
-    "spectator_tip": "Outdoor tables at several spots make quick post-round debriefs simple.",
-    "cta": "Hold two reservations nightly if you expect split calls."
-  },
-  "locale": {
-    "title": "Devon Between Trips",
-    "paragraph": "Use short windows for light resets close to the grounds. A quick stroll, a coffee, and one errand keeps focus on the board without burning time. Devon stays compact and practical during show weeks, with vendor-row strolls and calm side streets for air between rounds. Save bigger detours for off-days and let easy routines carry the week. Close by, two anchors keep context steady: [Devon Horse Show](https://www.devonhorseshow.net/) and [Calendar of Events](https://www.devonhorseshow.net/events/).",
-    "spectator_tip": "Arrive to popular viewing blocks early; grandstand seats fill fast for feature classes."
-  },
-  "essentials": {
-    "title": "Barn Basics, Minutes Away",
-    "paragraph": "Lock down basics before schooling so mornings stay clear: groceries and ice, pharmacy staples and tape, on-grounds feed and tack, plus simple wheels. Enterprise handles SUVs nearby and Dever, Inc. delivers golf carts on request; on-site vendors cover feed and bedding so barn runs stay short. Finish errands in one pass and keep the jog-strip open. Also consider: [Enterprise Rent-A-Car](https://www.enterprise.com); [Acme Markets](https://www.acmemarkets.com).",
-    "spectator_tip": "Walk vendor row early for a quick scan before rings pick up.",
-    "cta": "Reserve carts in advance for peak weekends."
-  },
-  "outro": {
-    "pivot": "With sleep, food, and essentials mapped, the week runs without friction. Each choice sits close to the rings so attention stays on schooling trips, orders-of-go, and clear rounds as Devon Fall builds toward its Sunday finish.",
-    "main": "I’ll keep logistics invisible so you stay ring-side. Rooms locked, two dinner holds nightly, groceries and tape staged, carts delivered where you step off gravel. Your plan tracks warm-up windows and ring flow, not errands. September at Devon moves fast and precise. Early rounds set rhythm, traffic lanes stay open, and you arrive where you need to be with minutes to spare while the grandstand energy climbs toward the final class. Send your changes once. I will close the loops so the week reads like clean trips in sequence."
-  },
-  "stay_items": {
-    "items": [
-      {
-        "name": "Wayne Hotel",
-        "link": "https://waynehotel.com",
-        "alt": "6–10 min"
-      },
-      {
-        "name": "Best Western Plus The Inn at King of Prussia",
-        "link": "https://www.bestwestern.com/en_US/book/hotel-rooms.39066.html",
-        "alt": "14–20 min"
-      }
-    ]
-  },
-  "dine_items": {
-    "items": [
-      {
-        "name": "White Dog Cafe Wayne",
-        "link": "https://www.whitedog.com",
-        "alt": "Lunch"
-      },
-      {
-        "name": "Autograph Brasserie",
-        "link": "https://www.autographbrasserie.com",
-        "alt": "Lunch"
-      },
-      {
-        "name": "Black Powder Tavern",
-        "link": "https://www.blackpowdertavern.com",
-        "alt": "Dinner"
-      }
-    ],
-    "labels": { "am_label": "", "dinner_label": "" },
-    "fallback": { "am_used_lunch": false, "dinner_used_lunch": false }
-  },
-  "essentials_items": {
-    "items": [
-      {
-        "type": "grocery",
-        "name": "Acme Markets",
-        "link": "https://www.acmemarkets.com",
-        "alt": "Closest full grocery"
-      },
-      {
-        "type": "pharmacy",
-        "name": "CVS Pharmacy",
-        "link": "https://www.cvs.com",
-        "alt": "Open late; prescriptions"
-      },
-      {
-        "type": "feed",
-        "name": "Devon Feed & Tack",
-        "link": "https://www.devonhorseshow.net",
-        "alt": "On-grounds feed, bedding, tack"
-      },
-      {
-        "type": "car",
-        "name": "Enterprise Rent-A-Car",
-        "link": "https://www.enterprise.com",
-        "alt": "Closest rental location"
-      },
-      {
-        "type": "cart",
-        "name": "Dever, Inc. Golf Cart Rentals",
-        "link": "https://www.deverinc.com",
-        "alt": "Delivery to showgrounds"
-      }
-    ]
-  },
+  "title": "Devon Fall",
   "seo": {
     "section_title": "Devon Fall: Sleep, Eat, Essentials",
-    "meta_description": "Plan Devon Fall with close lodging, quick dining near the grounds, and essentials like groceries, pharmacy, feed, cars, and carts. Keep ring flow and warm-ups clean.",
-    "open_graph_title": "Devon Fall Week, Simplified",
-    "open_graph_description": "Sleep near the Devon rings, eat efficiently, and restock fast. A-circuit essentials to keep focus on rounds and results.",
-    "search_title": "Devon Fall Guide: Hotels, Food, Essentials",
-    "search_description": "Devon Fall travel plan with nearby hotels, dining, groceries, pharmacy, feed, car rentals, and carts so schooling and ring flow stay clean."
+    "open_graph_title": "Devon Fall",
+    "meta_description": "Hotels and restaurants near Devon Fall venue.",
+    "open_graph_description": "Places to stay, eat, and shop while at the Devon Fall equestrian event."
   },
-  "brand_usage": {
-    "keywords_used": ["a-circuit", "warm-up-ring", "ring-flow"],
-    "insiders_used": ["vendor-row", "schooling-ring"],
-    "audience_trait": "competitive-rider",
-    "intro_template_id": "",
-    "outro_template_id": "",
-    "cta_closers": { "stay": "", "dine": "", "essentials": "" },
-    "intro_outro_lockdown_used": false,
-    "intro_outro_lockdown_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/intro-outro-lockdown.json"
+  "hello": {
+    "intro": "We welcome you to Devon Fall! Find the best places to stay, eat, shop,, and make the most of your trip.",
+    "outro": "Explore event highlights or retreats when You're not at the stable."
   },
-  "word_counts": {
-    "intro": 147,
-    "transition": 43,
-    "outro_pivot": 47,
-    "outro_main": 131,
-    "stay": 74,
-    "dine_paragraph": 86,
-    "locale": 67,
-    "essentials": 67
-  },
-  "paragraph_checks": {
-    "intro_paragraphs": 1,
-    "transition_paragraphs": 1,
-    "outro_pivot_paragraphs": 1,
-    "outro_main_paragraphs": 1,
-    "link_checks": {
-      "intro_p1": {
-        "event_link_present": true,
-        "venue_link_present": true
+  "venue": "Devon Fall",
+  "city": "Devon",
+  "state": "PA",
+  "country": "US",
+  "year": "2025",
+  "date": "2025-10-02",
+  "stay": {
+    "paragraph": "Choose from charming villas and boutiques.",
+    "items": [
+      {
+        "name": "Victoria Innn",
+        "link": "https://victoriainnn.com",
+        "alt": "Beautiful beds and farm-house vibes"
+      },
+      {
+        "name": "Bridgewater Lodge",
+        "link": "https://bridgewaterlodge.com",
+        "alt": "New, boutique, riverfront with highly ratings"
       }
-    },
-    "dine_copy_checks": {
-      "am_mentions_lunch_when_fallback_true": false,
-      "dinner_mentions_lunch_when_fallback_true": false
-    }
+    ]
   },
-  "features": { "weather_normals": false },
-  "inputs_echo": {
-    "founder_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/founder.json",
-    "audiences_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/audiences.json",
-    "keywords_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/seo/keywords.json",
-    "insiders_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/insiders.json",
-    "stay_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/stay/dvn-stay.json",
-    "dine_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/dine/dvn-dine.json",
-    "essentials_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/essentials/dvn-essential.json",
-    "venue_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/dvn-venue.json",
-    "geo_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/dvn-geo.json",
-    "event_official_link": "https://www.devonhorseshow.net/events/",
-    "venue_official_link": "https://www.devonhorseshow.net/"
+  "dine": {
+    "am": "Get your java fix at these spots.",
+    "dinner": "Let dinner continue with views and cosy restaurants.",
+    "items": [
+      {
+        "name": "Devon Wayside Kitchen",
+        "link": "https://devonwaysidekitchen.com",
+        "alt": "High-rated chef's taking over the space."
+      }
+    ]
   },
-  "source_trace": [
-    { "path": "bootstrap_bundle", "status": 200 },
-    { "path": "task_uri", "status": 200 },
-    { "path": "founder", "status": 200 },
-    { "path": "audiences", "status": 200 },
-    { "path": "events", "status": 200 },
-    { "path": "event_official_link", "status": 0 },
-    { "path": "venue", "status": 200 },
-    { "path": "venue_official_link", "status": 200 },
-    { "path": "geo", "status": 200 },
-    { "path": "keywords", "status": 200 },
-    { "path": "insiders", "status": 200 },
-    { "path": "stay", "status": 200 },
-    { "path": "dine", "status": 200 },
-    { "path": "essentials", "status": 200 }
-  ],
-  "dedupe": { "content_sha256": "" },
-  "validation": {
-    "status": "pass-with-warnings",
-    "warnings": [
-      "emit_items: applied (stay=2, dine=3, essentials=5)",
-      "event_official_link fetch: non-200 recorded as status:0"
-    ],
-    "errors": [],
-    "flags": {
-      "used_founder": false,
-      "used_audiences": true,
-      "used_insiders": true,
-      "used_intro_patterns": true,
-      "used_outro_templates": true,
-      "used_cta_closers": true,
-      "used_intro_outro_lockdown": false,
-      "emit_items_applied": true,
-      "allow_lunch_as_fallback": true,
-      "am_used_lunch": false,
-      "dinner_used_lunch": false
-    }
+  "essentials": {
+    "paragraph": "From basic to handy-on.",
+    "items": [
+      {
+        "name": "Fallhuch Market",
+        "link": "https://fallhuchmarket.com"
+      }
+    ]
+  },
+  "locale": {
+    "paragraph": "Explore town and more.",
+    "items": [
+      {
+        "name": "Downtown Devon",
+        "link": "https://downtowndevon.com"
+      }
+    ]
   }
 }
