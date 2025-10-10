@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: CRT Proxy
+  version: "1.0.0"
+servers:
+  - url: https://items.clearroundtravel.com
+paths:
+  /docs/{path}:
+    get:
+      operationId: crt_get
+      summary: Read a docs file via proxy
+      parameters:
+        - in: path
+          name: path
+          required: true
+          description: Path under docs/, e.g. _healthz.json or blogs/_ping/index.html
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: string
+  /docs/commit-bulk:
+    post:
+      operationId: crt_bulk_commit
+      summary: Bulk commit multiple files under docs/
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                message:
+                  type: string
+                overwrite:
+                  type: boolean
+                files:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [path, content_base64]
+                    properties:
+                      path:
+                        type: string
+                        description: Must start with docs/
+                      content_type:
+                        type: string
+                        description: text/html, application/xml, or application/json
+                      content_base64:
+                        type: string
+                        description: Base64 of file bytes
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  commit:
+                    type: object
+                    properties:
+                      sha: { type: string }
+                      url: { type: string }
+                  committed_paths:
+                    type: array
+                    items: { type: string }
