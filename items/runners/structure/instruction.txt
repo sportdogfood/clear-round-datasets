@@ -1,107 +1,126 @@
 # items/runners/structure/instruction.txt
-
-Purpose: Structure Runner builds/updates the static blog under /docs/blogs/. It never edits post body JSON contents.
+# Purpose: Structure Runner builds/updates the static blog under /docs/blogs/.
+# It NEVER edits or overwrites the source post body JSON. It emits a separate
+# publish JSON (…-publish-…) and points manifest.json to that publish JSON.
 
 TRIGGER (message JSON)
 {
-  "add_post": "<RAW GitHub JSON URL of the post>",
-  "remove_post": "<slug>",                      // optional alternative mode
-  "rebuild_all": true|false,                    // optional mode
+  "add_post": "",                 // raw.githubusercontent.com URL of the source post JSON
+  "remove_post": "",              // optional alternative mode
+  "rebuild_all": true|false,      // optional mode
   "canonical_base": "https://blog.clearroundtravel.com",
-  "images_link": "<RAW GitHub JSON URL with desc-images.json>",   // optional per post
-  "section_link": "<RAW GitHub JSON URL with section SEO>",       // optional fallback SEO
-  "allow_urls": ["<list of https URLs the runner may fetch>"]     // include every fetch target you expect to use
+  "images_link": "",              // optional per post (desc-images.json)
+  "section_link": "",             // optional SEO fallback JSON
+  "allow_urls": [""]              // include EVERY fetch target you expect to use
 }
 
 NETWORK RULES
 - Only HTTPS.
-- May fetch: trigger.add_post, images_link, section_link, and URLs printed in allow_urls.
+- May fetch ONLY: trigger.add_post, images_link, section_link, and URLs printed in allow_urls.
 - Do not fetch any other domains.
 - 2 attempts, 5s timeout each.
 
 PATHS & SLUGS
 - Storage root: docs/blogs/{venue}-blogs-{year}/{slug}/
-- slug format: {venue}-blog-{YYYY-MM-DD} (derive date from the post JSON filename).
-- The JSON filename is kept verbatim inside the slug folder.
+- slug format: {venue}-blog-{YYYY-MM-DD} (derive the date from the post JSON filename).
+- The source post JSON filename/path is NEVER overwritten or edited.
+- Compute publish_slug by replacing "-blog-" with "-publish-".
 - Public paths in manifest and links must start with /blogs/… (site-root).
 
 INPUT SHAPES (post JSON)
-- Uses *link fields, not *.url. Examples:
-  stay.items[].link, dine.items[].link, essentials.items[].link
-- Paragraph fields allowed Markdown inline links in text only:
+- Uses *link fields, not *.url. Examples: stay.items[].link, dine.items[].link, essentials.items[].link
+- Paragraph fields allow Markdown inline links in text only:
   hello.intro, hello.outro, stay.paragraph, dine.am, dine.dinner, locale.paragraph, essentials.paragraph
 - SEO may be present on post.seo. If missing, use section_link JSON (if provided) as fallback.
+- Validate external links as http(s) only; reject non-http(s).
 
 IMAGES (desc-images.json)
-- Keys: hero_image_link, hero_image_hidden, stay_image_link, stay_image_hidden, dine_image_link, dine_image_hidden, essentials_image_link, essentials_image_hidden, locale_image_link, locale_image_hidden, card_image_link, card_image_hidden, image_alt_text.
+- Keys: hero_image_link, hero_image_hidden, stay_image_link, stay_image_hidden,
+        dine_image_link, dine_image_hidden, essentials_image_link, essentials_image_hidden,
+        locale_image_link, locale_image_hidden, card_image_link, card_image_hidden, image_alt_text.
 - Rule: If *_hidden==1 → do not render that slot. Else, use *_image_link if present. No global fallback.
 - Slots on single post page: hero, stay, dine, essentials, locale.
-- card_image_link is only for listings/cards; store in manifest.image.
+- card_image_link is only for listings/cards; store in manifest.image (else omit).
 
 MANIFEST (docs/blogs/manifest.json)
-- JSON array. Upsert by slug.
-- Fields to set on add_post:
-  slug, title, date, year, month_num, month_name, season,
-  path, json, image, venue, city, state, country,
-  tags[], sanctioning, fei_level, usef_premier, discipline[]
-- title: post.seo.section_title → post.seo.open_graph_title → post.title → slug
-- image: card_image_link from images_link (if present; else omit)
+- JSON array. Upsert by slug (manifest_upsert_key = "slug").
+- REQUIRED fields to set on add_post:
+  slug, title, date, year, path, json, venue
+- RECOMMENDED fields (populate when data is available):
+  month_num, month_name, season, image, city, state, country,
+  lat, lng, place_id, timezone, start_date, end_date, event_duration,
+  audience_labels, tags, section_link, maps_link
+- Title precedence: blog.seo.section_title → blog.seo.open_graph_title → blog.title → slug
+- Image: use card_image_link from images_link when provided; else omit (listing will use placeholder)
 - path: /blogs/{venue}-blogs-{year}/{slug}/
-- json: /blogs/{venue}-blogs-{year}/{slug}/{<post-json-filename>}
+- json: /blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json   # IMPORTANT: points to publish JSON
 - tags: derive from post if present; otherwise leave [].
-- If discipline empty, omit discipline field. If no rating data in post, omit sanctioning/fei_level/usef_premier.
-- On remove_post: delete the entry matching slug.
+- If discipline/rating fields are empty, omit them entirely.
 
 PAGE GENERATION (HTML)
-1) Single post (blog.index.html.tmpl)
-   - Build docs/blogs/{venue}-blogs-{year}/{slug}/index.html
-   - SEO precedence: post.seo.section_title → open_graph_title; description = meta_description → open_graph_description.
+1) Single post (template: items/runners/structure/templates/blog.index.html.tmpl)
+   - Emit: docs/blogs/{venue}-blogs-{year}/{slug}/index.html
+   - SEO precedence: blog.seo.section_title → open_graph_title;
+     description = meta_description → open_graph_description.
    - Canonical: {canonical_base}{manifest.path}
-   - Render paragraphs with HTML-escaped text and convert [label](https://…) to safe anchors (target=_blank rel=noopener). Reject non-http(s) links.
-   - Lists: render from items[].name and items[].link; append “ — {alt}” if alt present.
+   - Render paragraphs with HTML-escaped text and convert [label](https://…) to safe anchors
+     (target=_blank rel=noopener). Reject non-http(s) links.
+   - Lists: render from items[].name and items[].link; append “ — {alt}” when alt present.
    - Tags: from manifest entry for this slug.
-   - Neighbors: previous/next by date desc from manifest.
+   - Neighbors: previous/next by date desc from a snapshot of manifest.
 
-2) Listing page (blogs.index.html.tmpl) → docs/blogs/index.html
-   - Left column: Home link, Year links (for every year present in manifest), Season rollups (Winter/Spring/Summer/Fall) that only show when there are entries.
-   - Filters: click Year OR Season toggles visibility (hide non-relevant cards; do not remove them).
-   - Carousels by season:
-     Section header “{Season}   see all >”
-     Horizontal scroll of cards (image, title, date, venue/city). Use manifest.image; if missing, use docs/assets/images/card-placeholder.jpg.
+2) Listing page (template: items/runners/structure/templates/blogs.index.html.tmpl)
+   → docs/blogs/index.html
+   - Left column: Home link, Year links (for every year present in manifest),
+     Season rollups (Winter/Spring/Summer/Fall) that only show when there are entries.
+   - Filters: clicking Year OR Season toggles visibility (hide non-relevant cards; do not remove them).
+   - Carousels by season: Section header “{Season} see all >” with horizontal scroll of cards
+     (image, title, date, venue/city). Use manifest.image; if missing, use site-root placeholder
+     /assets/images/card-placeholder.jpg.
    - “Recent” rail: newest 4 by date.
    - All cards link to manifest.path.
 
-3) Year archive (year.index.html.tmpl) → docs/blogs/{year}/index.html
-   - Grid/list of that year’s posts in date desc order. Use card placeholder when no manifest.image.
+3) Year archive (template: items/runners/structure/templates/year.index.html.tmpl)
+   → docs/blogs/{year}/index.html
+   - Grid/list of that year’s posts in date desc order.
+   - Use card placeholder when no manifest.image.
    - Header shows {year}. Provide “All blogs” + Season chips that filter within the year.
 
-4) RSS (rss.xml.tmpl) → docs/blogs/rss.xml
+4) RSS (template: items/runners/structure/templates/rss.xml.tmpl)
+   → docs/blogs/rss.xml
    - Limit items to defaults.rss_item_limit (20). Newest first.
    - Each item uses manifest.title, link = {canonical_base}{manifest.path}, pubDate = date.
 
-5) Sitemap (sitemap.xml.tmpl) → docs/sitemap.xml
+5) Sitemap (template: items/runners/structure/templates/sitemap.xml.tmpl)
+   → docs/sitemap.xml
    - Include: /blogs/, /blogs/{year}/ for all years, and each manifest.path.
 
 TEMPLATES
-- Use the installed templates at items/runners/structure/templates/*.tmpl
-- Do not inline timestamps. Outputs must be deterministic/idempotent.
+- Use the installed templates at:
+  items/runners/structure/templates/blog.index.html.tmpl
+  items/runners/structure/templates/blogs.index.html.tmpl
+  items/runners/structure/templates/year.index.html.tmpl
+  items/runners/structure/templates/rss.xml.tmpl
+  items/runners/structure/templates/sitemap.xml.tmpl
+- Outputs must be deterministic/idempotent. Do not inline timestamps or wall-clock values.
 
 VALIDATION
 - Fetch and parse add_post JSON (200 only).
 - If images_link provided, fetch and parse; otherwise act as if all slots hidden.
-- If section_link provided, fetch and parse for SEO fallback only when post.seo missing.
-- All links you emit must be site-root absolute for internal pages and http(s) for external.
-- Manifest must remain valid JSON array.
+- If section_link provided, fetch and parse for SEO fallback only when post.seo is missing.
+- All emitted internal links must be site-root absolute; external links must be http(s).
+- Manifest must remain a valid JSON array.
 
 IDEMPOTENCE & ORDERING
-- Sort manifest by date desc only for interactive needs; keep stored as an array with upserts by slug.
+- Sort manifest by date desc for neighbor/linking needs; keep storage as an upsert-by-slug array.
 - Neighbors determined from date desc sorted snapshot.
-- Do not mutate post JSON content other than verbatim write-through.
+- NEVER mutate or overwrite the source post JSON; publish JSON is the only new JSON written per post.
+- Replace files atomically; outputs must be deterministic.
 
 OUTPUTS ON add_post
 - docs/blogs/{venue}-blogs-{year}/{slug}/index.html
-- docs/blogs/{venue}-blogs-{year}/{slug}/{<post-json-filename>.json} (verbatim copy of fetched post JSON)
-- docs/blogs/manifest.json (upsert)
+- docs/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json   # built from source post JSON
+- docs/blogs/manifest.json (upsert; manifest.json’s `json` points to publish JSON)
 - docs/blogs/index.html
 - docs/blogs/{year}/index.html
 - docs/blogs/rss.xml
@@ -113,23 +132,23 @@ OUTPUTS ON remove_post
 - Rebuild index.html, {year}/index.html (if year now empty, still emit the page with empty state), rss.xml, sitemap.xml
 
 COMMIT (single bulk operation)
-- Prepare an array:
-  files[] = { path:"docs/…", content_type:"text/html|application/xml|application/json", content_base64:"…" }
-- Call action crt_bulk_commit (POST /docs/commit-bulk)
-  { "message": "chore: add_post {slug}", "overwrite": true, "files": [ … ] }
-- Always set overwrite=true for blog outputs.
-- Return payload from the runner:
-  {
-    "writes": [ "<paths…>" ],
-    "deletes": [ "<paths…>" ],
-    "trace": [ "log lines of decisions (short)" ],
-    "commit": { "sha": "...", "url": "..." }
+- Prepare: files[] = {
+    path: "docs/…",
+    content_type: "text/html|application/xml|application/json",
+    content_base64: "…"
   }
+- POST /docs/commit-bulk
+  {
+    "message": "chore: add_post {slug}",
+    "overwrite": true,
+    "files": [ … ]
+  }
+- Always set overwrite=true for blog outputs.
 
 ERROR BEHAVIOR
-- If any required fetch fails: do not commit; return trace with which URL failed.
-- If manifest write would produce invalid JSON: do not commit; return trace.
-- If templates missing: do not commit; return trace.
+- If any required fetch fails: do NOT commit; return trace with which URL failed.
+- If manifest write would produce invalid JSON: do NOT commit; return trace.
+- If required templates are missing: do NOT commit; return trace.
 
 CONSTRAINTS
 - Max network: 2 retries, 5s timeout per fetch.
@@ -140,6 +159,5 @@ DEFAULTS (mirror policy.json)
 - canonical_base: https://blog.clearroundtravel.com
 - recent_count: 4
 - rss_item_limit: 20
-- placeholders exist under /docs/assets/images/: hero-placeholder.jpg, stay-placeholder.jpg, dine-placeholder.jpg, place-placeholder.jpg, card-placeholder.jpg (used only in listings/cards when manifest.image absent).
-
-END
+- placeholders exist under site root /assets/images/:
+  hero-placeholder.jpg, stay-placeholder.jpg, dine-placeholder.jpg, place-placeholder.jpg, card-placeholder.jpg
