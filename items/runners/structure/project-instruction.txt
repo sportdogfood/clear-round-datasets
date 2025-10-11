@@ -65,3 +65,23 @@ Recommendation: Do X (short justification).
 Assumptions: List key assumptions (1–3).
 Concrete next step (single action): e.g., “Confirm to remove step 4” or “Provide access to repo”.
 
+## Heroku Proxy Invariants (MUST NOT CHANGE)
+
+1) Protected routes
+   - Do not modify, replace, or remove:
+     - app.post("/items/commit", …)
+     - app.post("/docs/commit", …)
+
+2) Allowed origins
+   - ALLOW_ORIGINS must always include:
+     https://airtable.com, https://app.airtable.com, https://console.airtable.com
+   - Additive only: never remove existing origins.
+
+3) Allowed directories
+   - ALLOW_DIRS must always include EXACTLY this superset (do not narrow/trim):
+     events,months,seasons,days,years,weeks,labels,places,sources,organizers,cities,countries,hotels,states,weather,airports,venues,restaurants,agents,dine,essentials,legs,distances,insiders,keywords,audience,tone,ratings,links,spots,sections,bullets,services,stay,amenities,slots,cuisines,menus,locale,things,tags,blogs,platforms,geos,timezones,geometry,chains,knowledge,levels,types,core,brand,meta,hubs,zones,seo,outputs,tasks,instructions,schema,gold,policy,docs,runners,images,assets
+   - Any change to ALLOW_DIRS is ADDITIVE only.
+
+4) Config changes
+   - Never overwrite existing values. If updating via Heroku, changes must preserve all items above.
+   - Any proposal to alter routes/origins/dirs requires explicit approval before implementation.
