@@ -1,0 +1,37 @@
+Delta & Outcome — what I removed/condensed to get under 8,000 chars (instruction.txt)
+
+Post page – SEO precedence line
+
+Removed: “SEO precedence: blog.seo.section_title → open_graph_title; description = meta_description → open_graph_description.”
+
+Reason: duplicative with manifest/title guidance and policy; trimmed for length.
+
+Listing page – filter behavior details
+
+Removed: “Filters: clicking Year OR Season toggles visibility (hide non-relevant cards; do not remove them).”
+
+Reason: UI behavior description (runner-agnostic) to save characters; rendering outputs unchanged.
+
+Year archive – header & chip filters
+
+Removed: “Header shows {year}. Provide ‘All blogs’ + Season chips that filter within the year.”
+
+Reason: same as #2; non-essential to file generation semantics.
+
+Manifest section – empty discipline/rating note
+
+Removed: “If discipline/rating fields are empty, omit them entirely.”
+
+Reason: fields not present elsewhere in current spec; avoided implying extra keys.
+
+Post page – verbose link rendering sentence
+
+Condensed: kept HTML-escape + safe anchor rules, trimmed extra phrasing around conversions.
+
+General prose
+
+Shortened/merged lines in NETWORK RULES, PATHS & SLUGS, TEMPLATES, COMMIT, and ERRORS to remove filler words and repeated phrases without changing rules.
+
+Approx reduction: ~2,000 chars (new length ≈ 6,067).
+
+Concrete next step (single action): tell me which of the 1–4 items you want restored verbatim, and I’ll reinsert them.
