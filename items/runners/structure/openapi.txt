@@ -2,6 +2,7 @@ openapi: 3.1.0
 info:
   title: CRT Proxy
   version: "1.1.0"
+
 servers:
   - url: https://items.clearroundtravel.com
 
@@ -14,7 +15,8 @@ paths:
         - in: path
           name: path
           required: true
-          description: Path under docs/, e.g. _healthz.json or blogs/_ping/index.html
+          description: |
+            Path under docs/, e.g. _healthz.json or blogs/_ping/index.html
           schema:
             type: string
       responses:
@@ -33,7 +35,7 @@ paths:
     post:
       operationId: crt_bulk_commit
       summary: Bulk commit multiple files under docs/, or build from a trigger
-      description: >
+      description: >-
         Accepts EITHER a list of files to commit (classic mode), OR a minimal
         trigger payload that points at a post JSON (builder mode). In builder
         mode, the server fetches the post JSON and generates:
@@ -68,6 +70,15 @@ paths:
                   add_post: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/docs/blogs/desc-blogs-2025/desc-blog-2025-10-02/desc-blog-2025-10-02.json"
                   canonical_base: "https://blog.clearroundtravel.com"
                   images_link: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/images/desc-images.json"
+              forbiddenBlogJson:
+                summary: Forbidden attempt to write source blog JSON
+                value:
+                  message: "chore: test guard"
+                  overwrite: true
+                  files:
+                    - path: "docs/blogs/desc-blogs-2025/desc-blog-2025-10-02/desc-blog-2025-10-02.json"
+                      content_type: "application/json"
+                      content_base64: "eyAiZm9yYmlkZGVuIjogdHJ1ZSB9"
       responses:
         "200":
           description: Commit result
@@ -79,6 +90,21 @@ paths:
           description: Bad request (validation, fetch failure, etc.)
         "5XX":
           description: Server error
+      x-write-guards:
+        deny_patterns:
+          - "**/*-blog-????-??-??.json"
+        allow_patterns:
+          - "**/*-publish-????-??-??.json"
+          - "docs/blogs/index.html"
+          - "docs/blogs/[0-9][0-9][0-9][0-9]/index.html"
+          - "docs/blogs/**/index.html"
+          - "docs/blogs/rss.xml"
+          - "docs/sitemap.xml"
+          - "docs/blogs/manifest.json"
+        on_violation: halt
+      x-notes:
+        - Templates must read from publish JSON only; do not read `*-blog-*.json`.
+        - If trigger.add_post is under docs/, treat it as read-only source.
 
 components:
   schemas:
@@ -89,7 +115,7 @@ components:
         path:
           type: string
           description: Must start with docs/
-          pattern: "^docs\\/.*$"
+          pattern: "^docs/.+$"
         content_type:
           type: string
           description: text/html, application/xml, or application/json
@@ -115,9 +141,10 @@ components:
 
     TriggerRequest:
       type: object
-      description: >
-        Minimal trigger to build blog artifacts. The server will fetch the post JSON
-        (must be on raw.githubusercontent.com), derive paths, and generate output files.
+      description: >-
+        Minimal trigger to build blog artifacts. The server will fetch the post
+        JSON (must be on raw.githubusercontent.com), derive paths, and generate
+        output files.
       properties:
         # top-level (shorthand) fields
         add_post:
@@ -139,26 +166,16 @@ components:
             type: string
             format: uri
           description: Optional list of URLs the upstream runner may fetch (informational)
-
         # or nested under `trigger` for compatibility
         trigger:
           type: object
           properties:
-            add_post:
-              type: string
-              format: uri
-            canonical_base:
-              type: string
-              format: uri
-              default: "https://blog.clearroundtravel.com"
-            images_link:
-              type: string
-              format: uri
+            add_post: { type: string, format: uri }
+            canonical_base: { type: string, format: uri, default: "https://blog.clearroundtravel.com" }
+            images_link: { type: string, format: uri }
             allow_urls:
               type: array
-              items:
-                type: string
-                format: uri
+              items: { type: string, format: uri }
       oneOf:
         - required: [add_post]
         - required: [trigger]
@@ -171,12 +188,8 @@ components:
         commit:
           type: object
           properties:
-            sha:
-              type: string
-            url:
-              type: string
-              format: uri
+            sha: { type: string }
+            url: { type: string, format: uri }
         committed_paths:
           type: array
-          items:
-            type: string
+          items: { type: string }
