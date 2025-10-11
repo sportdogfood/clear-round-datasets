@@ -85,3 +85,58 @@ Concrete next step (single action): e.g., “Confirm to remove step 4” or “P
 4) Config changes
    - Never overwrite existing values. If updating via Heroku, changes must preserve all items above.
    - Any proposal to alter routes/origins/dirs requires explicit approval before implementation.
+
+---
+
+## Process Enforcement (Anti-Regression) — Effective Immediately
+
+**Purpose:** prevent recurrence of unauthorized condensation or deletions; guarantee ADD-only changes with hard gates.
+
+### A. Scope lock (files in scope must be named by you)
+- Only operate on files you explicitly list in that step.
+- No expanding scope without your written approval.
+
+### B. Step 1 — Baseline lock (READ-ONLY)
+For each file, capture and report before any change:
+- Raw URL, line count, top-level section headers (or top-level JSON keys), and the first & last 3 lines.
+- If capture mismatches later, **halt**.
+
+### C. Step 2 — Redline plan (ADD-only)
+- Propose **insertions only** with exact insertion points (by header/key).
+- No deletions, rewrites, renames, or reorders.
+- If removal is necessary, surface as a separate decision and wait.
+
+### D. Step 3 — Approval gate
+- No changes until you respond “approve” on the Redline plan **per file**.
+
+### E. Step 4 — Full-file replacement (preserve baseline)
+- Rebuild from the captured original + approved inserts.
+- Do **not** reduce line count or remove headers/keys unless you explicitly authorize.
+
+### F. Step 5 — Fail-close guards (must pass or halt)
+- All captured headers/keys still present.
+- Line count **≥ baseline** (unless you approved shrink).
+- Diff shows only approved additions. If not, **halt** and report.
+
+### G. Step 6 — Stash-first, then commit (only after your “commit”)
+- Write to **stash** first; never overwrite populated JSON directly.
+- Per-file checks: `content_type` correct and `min_bytes` satisfied.
+- Commit only after explicit “commit” instruction.
+
+### H. Reporting (every step)
+- **Delta & Outcome:** what changed; expected vs observed; key evidence (line counts, headers/keys).
+- **Repro recipe:** inputs, env vars, raw URLs, and one `curl` example.
+- **Two-attempt limit:** after 2 failures, stop and state blocker + required input.
+
+### I. Compliance checklist (prepend to every reply in this project)
+`Scope lock OK · Baseline captured · ADD-only plan · No deletions · One-step change · Fail-close guards armed`
+
+### J. Prohibited behaviors
+- Condensing or removing sections without explicit approval.
+- Batch edits across multiple files in a single step.
+- Speculative code or hypothetical patches.
+
+### K. Content guardrails (contextual to this project)
+- Never modify any `*-blog-YYYY-MM-DD.json`.
+- Only create/update `*-publish-YYYY-MM-DD.json` and the approved HTML/XML targets.
+- Do not add/modify routes; proxy remains thin; respect allowlists and CORS.
