@@ -143,5 +143,43 @@
     "venue:{slug}",
     "audience:{label_slug}",
     "duration:{single|weekend|multi-day}"
+  ],
+  "write_guards": {
+    "deny_patterns": [
+      "**/*-blog-????-??-??.json"
+    ],
+    "allow_patterns": [
+      "**/*-publish-????-??-??.json",
+      "docs/blogs/index.html",
+      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
+      "docs/blogs/**/index.html",
+      "docs/blogs/rss.xml",
+      "docs/sitemap.xml",
+      "docs/blogs/manifest.json"
+    ],
+    "on_violation": "halt"
+  },
+  "idempotency": {
+    "required": true,
+    "key_components": [
+      "normalized(add_post_link)",
+      "archive_year",
+      "event_month",
+      "event_season",
+      "mapped_event_duration",
+      "start_date",
+      "end_date"
+    ],
+    "skip_on_no_change": true
+  },
+  "commit": {
+    "endpoint": "POST /docs/commit-bulk",
+    "atomic": true,
+    "reject_non_allowlisted_paths": true
+  },
+  "enforcement_notes": [
+    "Treat any '*-blog-*.json' as read-only, even under docs/.",
+    "If 'add_post_link' points under docs/, it remains a source and must not be overwritten.",
+    "Templates must read from publish JSON only."
   ]
 }
