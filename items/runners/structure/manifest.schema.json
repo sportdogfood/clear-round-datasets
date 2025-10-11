@@ -1,86 +1,217 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Blogs Manifest",
-  "description": "Array of blog post entries (sorted by date desc). One object per post.",
+  "$id": "https://items.clearroundtravel.com/schemas/manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CRT Blog Manifest",
+  "description": "Schema for docs/blogs/manifest.json. Top-level is an array of blog manifest entries. Each entry describes a published blog page and MUST point to the publish JSON (not the authoring post JSON).",
   "type": "array",
+  "minItems": 1,
   "items": {
     "type": "object",
-    "additionalProperties": false,
+    "additionalProperties": true,
     "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "properties": {
       "slug": {
         "type": "string",
-        "pattern": "^[a-z0-9-]+-blog-\\d{4}-\\d{2}-\\d{2}$"
+        "title": "Source slug",
+        "description": "Canonical slug derived from the authoring filename, e.g. capc-blog-2025-10-05",
+        "pattern": "^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?$",
+        "minLength": 3,
+        "maxLength": 200
       },
+
+      "publish_slug": {
+        "type": "string",
+        "title": "Publish slug",
+        "description": "Derived from slug by replacing '-blog-' with '-publish-'. Example: capc-publish-2025-10-05",
+        "pattern": "^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?$",
+        "minLength": 3,
+        "maxLength": 220
+      },
+
       "title": {
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "maxLength": 240
       },
+
       "date": {
         "type": "string",
-        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        "format": "date",
+        "description": "ISO date (YYYY-MM-DD). Should match the date component embedded in slug/publish_slug."
       },
+
       "year": {
-        "oneOf": [
-          { "type": "integer", "minimum": 2000, "maximum": 2100 },
-          { "type": "string", "pattern": "^\\d{4}$" }
-        ]
+        "type": "string",
+        "pattern": "^\\d{4}$",
+        "description": "Four-digit year. Should equal date.substring(0,4)."
       },
+
       "month_num": {
-        "oneOf": [
-          { "type": "integer", "minimum": 1, "maximum": 12 },
-          { "type": "string", "pattern": "^(0?[1-9]|1[0-2])$" }
-        ]
+        "type": "string",
+        "pattern": "^(0[1-9]|1[0-2])$",
+        "description": "01..12"
       },
+
       "month_name": {
         "type": "string",
         "enum": [
-          "January","February","March","April","May","June","July","August","September","October","November","December",
-          "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
+          "January","February","March","April","May","June",
+          "July","August","September","October","November","December"
         ]
       },
+
       "season": {
         "type": "string",
-        "enum": ["spring", "summer", "fall", "winter"]
+        "enum": ["winter","spring","summer","fall"]
       },
-      "path": {
-        "type": "string",
-        "pattern": "^/blogs/[a-z0-9-]+-blogs-\\d{4}/[a-z0-9-]+/$"
-      },
-      "json": {
-        "type": "string",
-        "pattern": "^/blogs/[a-z0-9-]+-blogs-\\d{4}/[a-z0-9-]+/[a-z0-9-]+\\.json$"
-      },
-      "image": {
-        "type": "string",
-        "pattern": "^(https?://.+|/assets/images/.+)$"
-      },
+
       "venue": {
         "type": "string",
-        "minLength": 1
+        "description": "Venue short slug (e.g., capc, desc, wce, etc.)",
+        "pattern": "^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?$",
+        "minLength": 2,
+        "maxLength": 60
       },
-      "city": { "type": "string" },
-      "state": { "type": "string" },
-      "country": { "type": "string" },
-      "lat": { "type": "number" },
-      "lng": { "type": "number" },
-      "place_id": { "type": "string" },
-      "timezone": { "type": "string" },
-      "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-      "end_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-      "event_duration": { "type": "string", "enum": ["single", "weekend", "multi-day"] },
+
+      "path": {
+        "type": "string",
+        "description": "Public path to the HTML page for this post. Example: /blogs/capc-blogs-2025/capc-blog-2025-10-05/",
+        "pattern": "^/blogs/[a-z0-9-]+-blogs-\\d{4}/[a-z0-9-]+/$"
+      },
+
+      "json": {
+        "type": "string",
+        "description": "Path to the PUBLISH JSON (NOT the source authoring JSON). Example: /blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-publish-2025-10-05.json",
+        "pattern": "^/blogs/[a-z0-9-]+-blogs-\\d{4}/[a-z0-9-]+/[a-z0-9-]+\\.json$"
+      },
+
+      "image": {
+        "type": "string",
+        "description": "Card/thumbnail image. Must be site-root relative (starts with /).",
+        "pattern": "^/[a-z0-9/_\\-.]+\\.(jpg|jpeg|png|webp|avif)$"
+      },
+
+      "city": { "type": "string", "minLength": 1, "maxLength": 120 },
+      "state": { "type": "string", "minLength": 2, "maxLength": 60 },
+      "country": { "type": "string", "minLength": 2, "maxLength": 120 },
+
+      "lat": {
+        "type": "number",
+        "minimum": -90,
+        "maximum": 90
+      },
+      "lng": {
+        "type": "number",
+        "minimum": -180,
+        "maximum": 180
+      },
+
+      "place_id": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 200
+      },
+
+      "timezone": {
+        "type": "string",
+        "description": "IANA tz identifier (e.g., America/Los_Angeles)",
+        "pattern": "^[A-Za-z]+(?:/[A-Za-z_+-]+)+$"
+      },
+
+      "start_date": {
+        "type": "string",
+        "format": "date"
+      },
+      "end_date": {
+        "type": "string",
+        "format": "date"
+      },
+      "event_duration": {
+        "type": "string",
+        "enum": ["single","weekend","multi-day"]
+      },
+
       "audience_labels": {
         "type": "array",
-        "items": { "type": "string" },
-        "uniqueItems": true
+        "items": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "uniqueItems": true,
+        "maxItems": 16
       },
+
       "tags": {
         "type": "array",
-        "items": { "type": "string", "pattern": "^[a-z0-9-:]+$" },
-        "uniqueItems": true
+        "description": "Lowercase hyphenated tags only.",
+        "items": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "uniqueItems": true,
+        "maxItems": 64
       },
-      "section_link": { "type": "string", "format": "uri", "pattern": "^https?://" },
-      "maps_link": { "type": "string", "format": "uri", "pattern": "^https?://" }
-    }
-  }
+
+      "section_link": {
+        "type": "string",
+        "format": "uri",
+        "description": "Optional internal link used for SEO mapping; runner may compute it."
+      },
+
+      "maps_link": {
+        "type": "string",
+        "format": "uri",
+        "description": "External maps URL (HTTPS)."
+      }
+    },
+
+    "allOf": [
+      {
+        "if": { "required": ["publish_slug"] },
+        "then": {
+          "properties": {
+            "publish_slug": {
+              "description": "Must equal slug with '-blog-' replaced by '-publish-'. Constraint is documented; programmatic check happens in runner."
+            }
+          }
+        }
+      },
+      {
+        "description": "JSON must reference the publish JSON, not the authoring JSON.",
+        "properties": {
+          "json": {
+            "not": {
+              "pattern": "/[a-z0-9-]+-blog-[0-9]{4}-[0-9]{2}-[0-9]{2}\\.json$"
+            }
+          }
+        }
+      }
+    ]
+  },
+
+  "examples": [
+    [
+      {
+        "slug": "capc-blog-2025-10-05",
+        "publish_slug": "capc-publish-2025-10-05",
+        "title": "California Autumn Prix — Insider Weekender",
+        "date": "2025-10-05",
+        "year": "2025",
+        "month_num": "10",
+        "month_name": "October",
+        "season": "fall",
+        "venue": "capc",
+        "path": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/",
+        "json": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-publish-2025-10-05.json",
+        "image": "/assets/images/card-placeholder.jpg",
+        "city": "Temecula",
+        "state": "CA",
+        "country": "US",
+        "lat": 33.4936,
+        "lng": -117.1484,
+        "timezone": "America/Los_Angeles",
+        "audience_labels": ["spectator","family"],
+        "tags": ["fall","weekend","california"]
+      }
+    ]
+  ]
 }
