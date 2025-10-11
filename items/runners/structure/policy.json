@@ -18,8 +18,7 @@
     "seo_precedence_blog_over_section": true,
     "validate_http_urls_only": true,
 
-    /* NEW: publishing behavior — do NOT write to the original post JSON;
-       create a publish JSON using a derived slug and point manifest.json to it. */
+
     "publish_json_enabled": true,
     "publish_slug_from_slug": {
       "method": "string_replace",
@@ -27,7 +26,7 @@
       "to": "-publish-"
     },
 
-    /* Idempotence: must not depend on wall clock; replace files atomically. */
+
     "deterministic_outputs": true,
     "no_wall_clock_values": true,
     "atomic_replace_files": true
@@ -52,8 +51,8 @@
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/**",
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/images/**",
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/**",
+    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/sections/**",
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/audiences.json",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/sections/desc-section.json",
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/manifest.schema.json",
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/blog.index.html.tmpl",
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/blogs.index.html.tmpl",
@@ -62,7 +61,7 @@
     "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/sitemap.xml.tmpl"
   ],
 
-  /* Manifest entry expectations (kept aligned with manifest.schema.json). */
+
   "manifest_shape": {
     "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "recommended": [
@@ -90,14 +89,13 @@
       "year_matches_date": true,
       "path_format": "/blogs/{venue}-blogs-{year}/{slug}/",
 
-      /* CHANGED: manifest.json's `json` must point to the publish JSON, not the source post JSON. */
       "json_format": "/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json",
 
       "image_site_root_only": true,
       "tags_lowercase_hyphenated": true
     },
 
-    /* NEW: declare computed variables the runner must produce. */
+
     "computed": {
       "publish_slug": {
         "from": "slug",
@@ -107,7 +105,7 @@
     }
   },
 
-  /* How to map SEO fields from the post JSON+section context. */
+
   "seo_mapping": {
     "title": ["blog.seo.section_title", "section.section_title"],
     "meta_description": ["blog.seo.meta_description", "section.section_meta_description"],
@@ -119,7 +117,7 @@
     "section_link_manifest_only": true
   },
 
-  /* Tag recipe remains unchanged. */
+
   "tag_recipe": [
     "season:{spring|summer|fall|winter}",
     "month:{01..12}",
