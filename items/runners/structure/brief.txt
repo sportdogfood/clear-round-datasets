@@ -1,0 +1,101 @@
+Project brief — CRT Structure Runner & Heroku Proxy
+Scope & goal
+2025-10-10 21:22
+
+Use a Heroku Node proxy to read/write content in the sportdogfood/clear-round-datasets repo for blog generation.
+
+Trigger a “Structure Runner” with a single task URL to render templates, build indexes, and commit outputs back—without ever overwriting source data.
+
+Critical endpoints (must remain)
+
+POST /items/commit — Airtable writes into items/* (JSON + text).
+
+POST /docs/commit — Single JSON file under docs/*.
+
+POST /docs/commit-bulk — Multiple files under docs/* (html/xml/json).
+
+GET /docs/{path} — Read-through proxy.
+
+Non-negotiable env rules
+
+ALLOW_DIRS must include:
+events,months,seasons,days,years,weeks,labels,places,sources,organizers,cities,countries,hotels,states,weather,airports,venues,restaurants,agents,dine,essentials,legs,distances,insiders,keywords,audience,tone,ratings,links,spots,sections,bullets,services,stay,amenities,slots,cuisines,menus,locale,things,tags,blogs,platforms,geos,timezones,geometry,chains,knowledge,levels,types,core,brand,meta,hubs,zones,seo,outputs,tasks,instructions,schema,gold,policy,docs,runners,images,assets
+(i.e., always includes items and docs; never narrow this.)
+
+CORS allow must include Airtable domains (airtable.com, app.airtable.com, console.airtable.com).
+
+UPSTREAM_BASE points to raw GitHub; manifest mode should be enabled (no false “disabled” log).
+
+Inputs (current)
+
+Task: items/blogs/desc-task-2025-10-02.json (has canonical_base, add_post_link, images_link).
+
+Post data (source):
+docs/blogs/desc-blogs-2025/desc-blog-2025-10-02/desc-blog-2025-10-02.json
+
+Images: items/images/desc-images.json
+
+Templates: items/runners/structure/templates/*.tmpl
+
+Policies/schema/instructions ingested and acknowledged.
+
+Desired runner behavior
+
+Fetch task → fetch post JSON + images JSON.
+
+Generate ONLY derived outputs:
+docs/blogs/*/index.html, docs/blogs/index.html, docs/blogs/{year}/index.html, docs/blogs/manifest.json, docs/blogs/rss.xml, docs/sitemap.xml.
+
+Commit via /docs/commit-bulk; do not touch source JSON.
+
+Pain points found (root causes)
+
+Input/Output collision: source file name equals render target; accidental overwrite (including zero-byte writes).
+
+ALLOW_DIRS drift: removing items broke Airtable commits.
+
+Wrong app base used intermittently (crt vs crt-b1434e13de34) causing “No such app.”
+
+Bulk commit lacks guards: no per-file ACLs or min-bytes checks → empty writes “succeed.”
+
+Manifest toggle logging “disabled” even with raw Git base.
+
+Idempotency absent: re-runs can re-write same paths.
+
+Ambiguous task contract: task doesn’t strictly list allowed write targets.
+
+Agreed adjustments (conceptual, no code)
+
+Make source immutable: rename source to *-data.json and reserve *-*.json (without -data) for runner outputs only.
+
+Task-level write ACL: task enumerates exact paths the runner may write.
+
+Safety gates: enforce min_bytes, content_type, and path allowlist at /docs/commit-bulk.
+
+Idempotency key: include content_hash/idempotency_key to prevent duplicate or empty overwrites.
+
+Lock env: keep full ALLOW_DIRS (with items,docs) and Airtable origins always.
+
+Single app name used across scripts and tests.
+
+What works (validated via PowerShell)
+
+/docs/commit-bulk probe writes & reads back 1 KB payload intact via the proxy.
+
+Logs show repeated 200s for /items/commit when ALLOW_DIRS included items.
+
+Current blockers
+
+Source file is still at the same name as the intended output; runner can still overwrite it.
+
+Missing bulk-commit guards & task write ACLs allow accidental empty writes.
+
+Decision points you raised
+
+Rename the source to desc-blog-2025-10-02-data.json (or similar) and treat it as read-only.
+
+Decide what extra fields (e.g., write_paths, idempotency_key, min_bytes) to embed in the task JSON to harden the pipeline.
+
+One-line reminder clause (to add to project instructions)
+
+“Never remove items or Airtable origins from proxy config, never change or narrow ALLOW_DIRS from the full list, and never modify or remove the routes /items/commit and /docs/commit.”
