@@ -1,0 +1,116 @@
+# items/runners/structure/instruction.txt
+# Purpose: Structure Runner builds/updates static blog under /docs/blogs/.
+# NEVER edit or overwrite any *-blog-YYYY-MM-DD.json. Emit a sibling *-publish-YYYY-MM-DD.json in the SAME folder. Templates read PUBLISH JSON only.
+
+TRIGGER (message JSON)
+{ "add_post": "",            // raw.githubusercontent.com URL of source post JSON
+  "remove_post": "",         // optional
+  "rebuild_all": true|false, // optional
+  "canonical_base": "https://blog.clearroundtravel.com",
+  "images_link": "",         // optional (desc-images.json)
+  "section_link": "",        // optional SEO fallback JSON
+  "allow_urls": [""]         // EVERY extra fetch target to allow
+}
+
+NETWORK RULES
+- HTTPS only; fetch ONLY add_post, images_link, section_link, and entries in allow_urls.
+- No other domains. Retries: 2; timeout: 5s.
+
+PATHS & SLUGS
+- Root: docs/blogs/{venue}-blogs-{year}/{slug}/
+- slug: {venue}-blog-{YYYY-MM-DD} (derive date from source filename).
+- publish_slug = slug with "-blog-" → "-publish-".
+- Public links must start with /blogs/…
+
+WRITE GUARDS (non-negotiable)
+- FORBID writing any path matching *-blog-????-??-??.json → HALT 403 (no commits).
+- ONLY write the publish sibling JSON in the same folder as add_post.
+
+INPUT SHAPES (post JSON)
+- Use *.link fields (not *.url), e.g., stay.items[].link, dine.items[].link, essentials.items[].link.
+- Paragraphs accept inline Markdown links only for: hello.intro/outro, stay.paragraph, dine.am/dinner, locale.paragraph, essentials.paragraph.
+- SEO usually post.seo; else fallback to section_link JSON (if provided).
+- External links must be http(s).
+
+IMAGES (desc-images.json)
+- Keys: hero|stay|dine|essentials|locale _image_link/_image_hidden; card_image_link/_hidden; image_alt_text.
+- If *_hidden==1 → skip slot; else use *_image_link when present.
+- Single-post slots: hero, stay, dine, essentials, locale.
+- Card image (listing): manifest.image = card_image_link when present.
+
+EVENT METADATA (optional via event_link)
+- Extract: event_month, event_season, event_duration (free text), start_date, end_date.
+- Map event_duration → enum: single (1 day) | weekend (2–3 days) | multi-day (≥4 days).
+- archive_year = YYYY(start_date) when present; else derive from slug/date.
+- Persist these on the PUBLISH JSON for templates/manifest.
+
+MANIFEST (docs/blogs/manifest.json)
+- Array; upsert by slug.
+- REQUIRED: slug, title, date, year, path, json, venue.
+- RECOMMENDED: month_num, month_name, season, image, city, state, country, lat, lng, place_id, timezone, start_date, end_date, event_duration, audience_labels, tags, section_link, maps_link.
+- Title precedence: blog.seo.section_title → blog.seo.open_graph_title → blog.title → slug.
+- path: /blogs/{venue}-blogs-{year}/{slug}/
+- json: /blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json   # points to PUBLISH JSON (not source).
+- tags: use if present; else [].
+
+PAGE GENERATION
+1) Post page → docs/blogs/{venue}-blogs-{year}/{slug}/index.html (template: templates/blog.index.html.tmpl)
+   - Canonical: {canonical_base}{manifest.path}
+   - Render paragraphs as HTML-escaped; convert [label](https://…) to safe <a> (target=_blank rel=noopener). Reject non-http(s).
+   - Lists from items[].name + items[].link; append “ — {alt}” when alt exists.
+   - Tags from manifest; neighbors = prev/next by date desc from manifest snapshot.
+2) Blogs index → docs/blogs/index.html (templates/blogs.index.html.tmpl)
+   - Year links; Season rollups; Recent (newest 4); cards use manifest.image else /assets/images/card-placeholder.jpg.
+3) Year index → docs/blogs/{year}/index.html (templates/year.index.html.tmpl)
+4) RSS → docs/blogs/rss.xml (templates/rss.xml.tmpl; max = defaults.rss_item_limit; newest first)
+5) Sitemap → docs/sitemap.xml (templates/sitemap.xml.tmpl; include /blogs/, /blogs/{year}/, each manifest.path)
+
+TEMPLATES
+- Use installed templates:
+  items/runners/structure/templates/blog.index.html.tmpl
+  items/runners/structure/templates/blogs.index.html.tmpl
+  items/runners/structure/templates/year.index.html.tmpl
+  items/runners/structure/templates/rss.xml.tmpl
+  items/runners/structure/templates/sitemap.xml.tmpl
+- Deterministic/idempotent rendering; NO wall-clock values.
+- Read ONLY from PUBLISH JSON (never from *-blog-*.json).
+
+VALIDATION
+- Fetch & parse add_post (200 only). If images_link provided, fetch; else treat all slots as hidden. If section_link provided, fetch for SEO fallback only.
+- Internal links must be site-root absolute; external links http(s) only.
+- Manifest stays a valid JSON array.
+
+IDEMPOTENCE & ORDERING
+- Sort manifest by date desc for neighbors; store as upsert-by-slug array.
+- NEVER overwrite source post JSON; only write PUBLISH JSON.
+- Atomic file replaces; deterministic content.
+- idempotency_key = normalized(add_post) | archive_year | event_month | event_season | mapped(event_duration) | start_date | end_date (when present).
+- Per-file no-op: skip write when content hash unchanged.
+
+WRITE ALLOWLIST (only these may be written)
+- docs/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json
+- docs/blogs/{venue}-blogs-{year}/{slug}/index.html
+- docs/blogs/index.html
+- docs/blogs/{year}/index.html
+- docs/blogs/rss.xml
+- docs/sitemap.xml
+- docs/blogs/manifest.json
+
+COMMIT (single bulk op)
+- Build files[] = { path: "docs/...", content_type: "text/html|application/xml|application/json", content_base64: "..." }
+- POST /docs/commit-bulk { "message": "chore: add_post {slug}", "overwrite": true, "files": [ … ] }
+- Always set overwrite=true for blog outputs.
+
+ERRORS → HALT (no partial writes)
+- Required fetch failed.
+- Attempted write to any *-blog-*.json (403).
+- Path not in WRITE ALLOWLIST (403).
+- Manifest invalid (422).
+- Templates missing.
+
+CONSTRAINTS & DEFAULTS
+- Retries: 2; timeout: 5s; HTTPS only; no domains beyond allow_urls.
+- canonical_base: https://blog.clearroundtravel.com
+- recent_count: 4
+- rss_item_limit: 20
+- Placeholders under /assets/images/: hero-placeholder.jpg, stay-placeholder.jpg, dine-placeholder.jpg, place-placeholder.jpg, card-placeholder.jpg
