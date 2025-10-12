@@ -1,0 +1,242 @@
+```txt
+# runner-instructions.txt
+# Purpose: Structure Runner publishes static blog artifacts under /docs/blogs.
+# It NEVER edits source authoring JSON (*-blog*.json). It writes a sibling
+# publish JSON plus 6 deterministic pages. One bulk commit per post.
+
+VERSION: 2025-10-12.3 (one-point trigger, event-named slugs, 7-file contract, strict preflight)
+Compat: Additive only. Preserves prior behavior.
+
+──────────────────────────────────────────────────────────────────────────────
+TRIGGER (one-point JSON the runner starts from)
+
+Minimum:
+- canonical_base   (e.g., https://blog.clearroundtravel.com)
+- event_link       (raw GitHub URL to event JSON)
+
+Optional (raw URLs):
+- images_link, section_link
+- venue_link, geo_link, audiences_link (aux only; non-blocking)
+
+Paths (if omitted, runner derives from docs_path/slug/year):
+- blogs_publish_path               (publish JSON)
+- blogs_publish_index_path         (/…/{slug}/index.html)
+- blogs_index_path                 (/docs/blogs/index.html)
+- blogs_{YYYY}_index_path          (year archive)
+- blogs_rss_path                   (/docs/blogs/rss.xml)
+- blogs_sitemap_path               (/docs/sitemap.xml)
+- blogs_manifest_path              (/docs/blogs/manifest.json)
+
+Source content pointer (READ-ONLY):
+- docs_path (docs/…/*.json) OR content_link (raw URL) → authoring *-blog*.json
+
+──────────────────────────────────────────────────────────────────────────────
+NETWORK RULES
+- HTTPS only. Allowed host: raw.githubusercontent.com
+- Fetch ONLY: content_link/docs_path, event_link, images_link, section_link.
+- 2 attempts per URL, 5s timeout. Reject non-http(s). No other fetches.
+
+──────────────────────────────────────────────────────────────────────────────
+SOURCE vs PUBLISH MODEL
+- Any *-blog*.json is READ-ONLY.
+- Create sibling publish JSON:
+  • Dated:     -blog-YYYY-MM-DD.json → -publish-YYYY-MM-DD.json
+  • Event-named: -blog.json          → -publish.json
+- Templates/indexes MUST read from publish JSON only.
+
+──────────────────────────────────────────────────────────────────────────────
+SLUGS & DATES
+- If filename contains -blog-YYYY-MM-DD → that defines {date} and {slug}.
+- Else (event-named):
+  • slug = basename (e.g., capc-cap-challenge-blog)
+  • {date}/{year} from event.start_date if present; else from any date in content.
+- archive_year = event.start_date[0:4] if present; else from slug/filename date.
+
+──────────────────────────────────────────────────────────────────────────────
+EVENT FIELDS (from event_link)
+- Read (optional but recommended): event_month, event_season, event_duration, start_date, end_date.
+- Map event_duration → enum: single (1d) | weekend (2–3d) | multi-day (≥4d).
+- Persist into publish JSON for templates/manifest.
+
+──────────────────────────────────────────────────────────────────────────────
+IMAGES (from images_link)
+Keys (if present): hero/stay/dine/essentials/locale/card *_image_link + *_hidden (0/1), image_alt_text.
+Rules:
+- *_hidden==1 → do not render that slot.
+- card_image_link → manifest.image (else omit → UI will use placeholder).
+- No cross-slot fallbacks.
+
+──────────────────────────────────────────────────────────────────────────────
+CONTENT RULES
+- Lists: items[].name + items[].link; append “ — {alt}” when present.
+- Inline Markdown links allowed ONLY in:
+  hello.intro, hello.outro, stay.paragraph, dine.am, dine.dinner, locale.paragraph, essentials.paragraph.
+- External links must be http(s); internal links must be site-root (/…).
+- Title precedence: seo.section_title → seo.open_graph_title → title → slug.
+- Description precedence: seo.meta_description → seo.open_graph_description.
+
+──────────────────────────────────────────────────────────────────────────────
+TEMPLATES (installed)
+- items/runners/structure/templates/blog.index.html.tmpl
+- items/runners/structure/templates/blogs.index.html.tmpl
+- items/runners/structure/templates/year.index.html.tmpl
+- items/runners/structure/templates/rss.xml.tmpl
+- items/runners/structure/templates/sitemap.xml.tmpl
+Note: Outputs must be deterministic (no wall-clock values).
+
+──────────────────────────────────────────────────────────────────────────────
+REQUIRED OUTPUTS (exactly seven per post)
+1) Publish JSON            → blogs_publish_path
+2) Post page               → blogs_publish_index_path (…/{slug}/index.html)
+3) Blogs index             → blogs_index_path
+4) Year index              → blogs_{year}_index_path (or /docs/blogs/{year}/index.html)
+5) RSS                     → blogs_rss_path
+6) Sitemap                 → blogs_sitemap_path
+7) Manifest (array upsert) → blogs_manifest_path
+
+Manifest entry (see schema):
+- REQUIRED: slug, title, date, year, path, json, venue
+- RECOMMENDED when available: month_num, month_name, season, image, city, state,
+  country, lat, lng, place_id, timezone, start_date, end_date, event_duration,
+  audience_labels, tags, section_link, maps_link
+- json MUST point to the publish JSON (never to *-blog*.json)
+
+──────────────────────────────────────────────────────────────────────────────
+WRITE GUARDS (must pass before commit)
+ALLOW ONLY:
+- docs/blogs/**/index.html
+- docs/blogs/[0-9][0-9][0-9][0-9]/index.html
+- docs/blogs/index.html
+- docs/blogs/rss.xml
+- docs/sitemap.xml
+- docs/blogs/manifest.json
+- docs/blogs/**/**-publish-????-??-??.json   (dated)
+- docs/blogs/**/**-publish.json              (event-named)
+
+DENY ALWAYS:
+- **/*-blog-????-??-??.json
+- **/*-blog.json
+Any violation → HALT (no writes).
+
+──────────────────────────────────────────────────────────────────────────────
+PREFLIGHT (Definition of Done — MUST PASS)
+- Exactly 7 files present; each content_base64 decodes.
+- Min decoded bytes:
+  publish JSON ≥100; post index ≥200; blogs index ≥200;
+  year index ≥200; rss ≥80; sitemap ≥80; manifest ≥50.
+- manifest.json validates against items/runners/structure/manifest.schema.json
+
+──────────────────────────────────────────────────────────────────────────────
+COMMIT (single bulk operation)
+- POST /docs/commit-bulk with:
+  { "message": "publish {slug}", "overwrite": true,
+    "files": [{ path, content_type, content_base64 } ×7] }
+- content_type by extension: .json → application/json; .xml → application/xml; .html → text/html
+
+──────────────────────────────────────────────────────────────────────────────
+IDEMPOTENCE & ORDERING
+- Deterministic outputs; no wall-clock values.
+- Never mutate source *-blog*.json.
+- Neighbor links computed from a date-desc snapshot of manifest (after hypothetical upsert).
+
+──────────────────────────────────────────────────────────────────────────────
+ERRORS (abort without commit)
+- Fetch failure (content/event/images/section).
+- Manifest invalid vs schema.
+- Any denied path or path outside allowlist → 403.
+
+──────────────────────────────────────────────────────────────────────────────
+BACKWARD COMPATIBILITY
+- Supports both dated and event-named posts.
+- Defaults unchanged (recent_count=4, rss_item_limit=20, placeholders).
+- If trigger omits explicit paths, derive from docs_path, slug, archive_year.
+
+END OF FILE
+```
+
+```txt
+# runner-not-instructions.txt
+# Supplemental notes moved out of the core runner-instructions (kept <8k chars).
+# Purpose: retain detail for debugging and audits without bloating the contract.
+
+VERSION: 2025-10-12.3-notes
+
+──────────────────────────────────────────────────────────────────────────────
+WHY ONE-POINT TRIGGER
+- The trigger JSON is the single source of truth. It points to:
+  content (docs_path/content_link), event_link (month/season/dates), optional images/section.
+- Ensures the runner can fetch everything needed and render the 7 required outputs in one pass.
+
+──────────────────────────────────────────────────────────────────────────────
+SLUG & DATE DERIVATION (EXAMPLES)
+- Dated filename:   capc-blog-2025-10-05.json → slug=capc-blog-2025-10-05; date=2025-10-05
+- Event-named file: capc-cap-challenge-blog.json → slug=capc-cap-challenge-blog; date from event.start_date
+
+──────────────────────────────────────────────────────────────────────────────
+EVENT FIELD MAPPING
+- event_duration (free text) → enum:
+  “1 day” → single; “2–3 days” → weekend; “≥4 days” → multi-day.
+- Persist event_month, event_season (prefer lowercase in manifest), start_date, end_date in publish JSON.
+
+──────────────────────────────────────────────────────────────────────────────
+IMAGES (DETAIL)
+- Slots read on the post page: hero, stay, dine, essentials, locale.
+- *_hidden==1 suppresses rendering (no fallback).
+- card_image_link populates manifest.image (listing card); absence → UI placeholder (/assets/images/card-placeholder.jpg).
+
+──────────────────────────────────────────────────────────────────────────────
+CONTENT (DETAIL)
+- Allowed inline Markdown fields (ONLY):
+  hello.intro, hello.outro, stay.paragraph, dine.am, dine.dinner, locale.paragraph, essentials.paragraph.
+- Convert [label](https://…) to anchors: target=_blank rel=noopener; reject non-http(s).
+
+──────────────────────────────────────────────────────────────────────────────
+TEMPLATES & DETERMINISM
+- Installed templates:
+  blog.index.html.tmpl, blogs.index.html.tmpl, year.index.html.tmpl,
+  rss.xml.tmpl, sitemap.xml.tmpl
+- Outputs must be deterministic/idempotent (no timestamps or run IDs embedded).
+
+──────────────────────────────────────────────────────────────────────────────
+MANIFEST ENTRY (EXPANDED RECOMMENDED FIELDS)
+- month_num (“01”..“12”), month_name (“January”..“December”), season (lowercase),
+  city/state/country, lat/lng/place_id, timezone, start_date/end_date, event_duration,
+  audience_labels (unique, ≤16), tags (kebab-case, ≤64), section_link (URI), maps_link (URI).
+
+──────────────────────────────────────────────────────────────────────────────
+WRITE GUARDS (RATIONALE)
+- Prevent accidental overwrite of authoring data (*-blog*.json).
+- Constrain outputs to the fixed 7 targets to keep commits safe and predictable.
+
+──────────────────────────────────────────────────────────────────────────────
+PREFLIGHT LOGGING (REFERENCE FORMAT)
+- One row per file before commit:
+  path | content_type | decoded_bytes | threshold | PASS/FAIL
+- Abort on first FAIL; return the table and reason.
+
+──────────────────────────────────────────────────────────────────────────────
+IDEMPOTENCY KEY (REFERENCE)
+- Suggested composition:
+  normalized(content pointer) | archive_year | event_month | event_season |
+  mapped(event_duration) | start_date | end_date
+- Use for internal run de-duplication; never persisted to outputs.
+
+──────────────────────────────────────────────────────────────────────────────
+ERROR BEHAVIOR (DETAIL)
+- On fetch failure, report which URL failed (content/event/images/section).
+- On schema failure, include validation errors from manifest.schema.json.
+- On guard violation, state “write to source forbidden” or “path not allowed” with the offending path.
+
+──────────────────────────────────────────────────────────────────────────────
+BACKWARD COMPATIBILITY (DETAIL)
+- If explicit paths are omitted in the trigger, derive:
+  blogs_publish_path = same folder as docs_path, replacing -blog*.json → -publish*.json
+  blogs_publish_index_path = /docs/blogs/{venue}-blogs-{year}/{slug}/index.html
+  blogs_index_path = /docs/blogs/index.html
+  blogs_{year}_index_path = /docs/blogs/{year}/index.html
+  blogs_rss_path = /docs/blogs/rss.xml
+  blogs_sitemap_path = /docs/sitemap.xml
+  blogs_manifest_path = /docs/blogs/manifest.json
+
+END OF NOTES
+```
