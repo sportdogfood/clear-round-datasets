@@ -1,3 +1,4 @@
+# items/runners/structure/openapi.txt
 openapi: 3.1.0
 info:
   title: CRT Proxy
@@ -34,23 +35,17 @@ paths:
   /docs/commit-bulk:
     post:
       operationId: crt_bulk_commit
-      summary: Bulk commit multiple files under docs/, or build from a trigger
+      summary: Bulk commit multiple files under docs/
       description: >-
-        Accepts EITHER a list of files to commit (classic mode), OR a minimal
-        trigger payload that points at a post JSON (builder mode). In builder
-        mode, the server fetches the post JSON and generates:
-        - post index.html (does NOT overwrite the post JSON)
-        - blogs/manifest.json (upsert)
-        - blogs/rss.xml
-        - /sitemap.xml
+        Accepts compiled files (HTML/XML/JSON) and writes them atomically under
+        docs/. The runner compiles from a 1-point trigger. This endpoint does
+        not accept triggers; examples include a trigger payload for reference.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '#/components/schemas/FilesCommitRequest'
-                - $ref: '#/components/schemas/TriggerRequest'
+              $ref: '#/components/schemas/FilesCommitRequest'
             examples:
               filesMode:
                 summary: Commit explicit files
@@ -65,7 +60,7 @@ paths:
                       content_type: "text/html"
                       content_base64: "PCFkb2N0eXBlIGh0bWw+..."
               triggerMode:
-                summary: Build from a minimal trigger
+                summary: Informational example of a trigger payload (proxy ignores)
                 value:
                   add_post: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/docs/blogs/desc-blogs-2025/desc-blog-2025-10-02/desc-blog-2025-10-02.json"
                   canonical_base: "https://blog.clearroundtravel.com"
@@ -105,6 +100,8 @@ paths:
       x-notes:
         - Templates must read from publish JSON only; do not read `*-blog-*.json`.
         - If trigger.add_post is under docs/, treat it as read-only source.
+      x-contract:
+        runner_compiles: true
 
 components:
   schemas:
@@ -139,12 +136,12 @@ components:
           items:
             $ref: '#/components/schemas/FileItem'
 
+    # Preserved for compatibility/reference; not accepted by /docs/commit-bulk.
     TriggerRequest:
       type: object
       description: >-
-        Minimal trigger to build blog artifacts. The server will fetch the post
-        JSON (must be on raw.githubusercontent.com), derive paths, and generate
-        output files.
+        Minimal trigger to build blog artifacts. The runner uses this to fetch
+        the post JSON and compile outputs before calling /docs/commit-bulk.
       properties:
         # top-level (shorthand) fields
         add_post:
@@ -176,9 +173,6 @@ components:
             allow_urls:
               type: array
               items: { type: string, format: uri }
-      oneOf:
-        - required: [add_post]
-        - required: [trigger]
 
     CommitResponse:
       type: object
