@@ -1,225 +1,61 @@
+<!-- items/runners/structure/templates/blogs.index.html.tmpl -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Blogs</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="canonical" href="/blogs/">
-  <meta property="og:title" content="Blogs">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="/blogs/">
-  <meta name="description" content="Seasonal travel blogs by year and season.">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Clear Round Travel — Blogs</title>
+  <meta name="description" content="Browse all Clear Round Travel blogs by year and season." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    .chip{ @apply text-sm border rounded-full px-3 py-1 cursor-pointer select-none; }
-    .chip-active{ @apply bg-gray-900 text-white border-gray-900; }
-    .rail-link{ @apply block py-1 text-blue-300 underline; }
-    .carousel{ scroll-snap-type:x mandatory; }
-    .slide{ scroll-snap-align:start; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;color:#111}
+    header,main,footer{max-width:1100px;margin:0 auto;padding:16px}
+    .years,.seasons{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+    .chip{border:1px solid #ddd;border-radius:999px;padding:.35rem .7rem;text-decoration:none;color:#333}
+    .section{margin:24px 0}
+    .cards{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:700px){.cards{grid-template-columns:repeat(3,1fr)}}
+    .card{border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff}
+    .card a{color:inherit;text-decoration:none;display:block}
+    .card img{width:100%;height:auto;display:block}
+    .card .meta{padding:10px}
+    .rail{display:flex;gap:12px;overflow:auto;padding-bottom:6px}
+    .rail .card{min-width:260px;flex:0 0 auto}
   </style>
 </head>
-<body class="bg-white text-gray-900">
-  <main class="max-w-6xl mx-auto px-4 py-8 grid gap-8 md:grid-cols-[240px_1fr]">
-    <!-- Left rail -->
-    <aside>
-      <h1 class="text-2xl font-semibold mb-3">Blogs</h1>
-      <nav class="mb-6">
-        <a href="/" class="rail-link">Home</a>
-        <a href="/blogs/" class="rail-link">All blogs</a>
-      </nav>
+<body>
+<header>
+  <h1>Blogs</h1>
+  <p>Latest posts, year archives, and seasonal picks.</p>
+  <div class="years">{{year_links_html}}</div>
+  <div class="seasons">{{season_filter_chips_html}}</div>
+</header>
 
-      <section class="mb-8">
-        <h2 class="text-sm font-medium text-gray-600 mb-2">Years</h2>
-        <div id="years" class="flex flex-col gap-1"></div>
-      </section>
+<main>
+  <section class="section">
+    <h2>Recent</h2>
+    <div class="rail">
+      {{recent_cards_html}}
+      <!-- expected: <article class="card"><a href="{{path}}"><img src="{{image}}" alt=""><div class="meta"><h3>{{title}}</h3><div>{{date}} · {{venue}}</div></div></a></article> -->
+    </div>
+  </section>
 
-      <section>
-        <h2 class="text-sm font-medium text-gray-600 mb-2">Relevant blogs</h2>
-        <div id="relevant" class="flex flex-col gap-2 text-sm"></div>
-        <p id="rel-empty" class="text-gray-500 text-sm hidden">No matches.</p>
-      </section>
-    </aside>
+  <section class="section">
+    <h2>By Season</h2>
+    {{season_carousels_html}}
+    <!-- expected per season: <h3>Winter <a href="/blogs/?season=winter">see all ›</a></h3><div class="rail">…cards…</div> -->
+  </section>
 
-    <!-- Main -->
-    <section>
-      <!-- Chips -->
-      <div class="flex flex-wrap items-center gap-3 mb-6">
-        <div id="chips-year" class="flex flex-wrap gap-2"></div>
-        <div class="w-px h-6 bg-gray-200"></div>
-        <div id="chips-season" class="flex flex-wrap gap-2"></div>
-        <button id="clear" class="ml-auto text-sm underline text-blue-700 hidden">Clear</button>
-      </div>
+  <section class="section">
+    <h2>All</h2>
+    <div class="cards">
+      {{all_cards_html}}
+      <!-- optional full list -->
+    </div>
+  </section>
+</main>
 
-      <!-- Carousels -->
-      <div id="sections" class="space-y-10">
-        <!-- sections inserted here -->
-      </div>
-
-      <p id="empty" class="text-gray-700 hidden">No posts found.</p>
-    </section>
-  </main>
-
-  <script>
-    const Q = new URLSearchParams(location.search);
-    const ACTIVE = {
-      year: Q.get('year') || '',
-      season: (Q.get('season') || '').toLowerCase()
-    };
-    const SEASONS = ['spring','summer','fall','winter'];
-    const SEASON_LABEL = {spring:'Spring',summer:'Summer',fall:'Fall',winter:'Winter'};
-    const fmt = (d) => {
-      const [y,m,day] = String(d||"").split("-");
-      const dt = new Date(`${y}-${m}-${day}T00:00:00Z`);
-      return isNaN(dt) ? d : dt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
-    };
-
-    const chipsYear = document.getElementById('chips-year');
-    const chipsSeason = document.getElementById('chips-season');
-    const yearsEl = document.getElementById('years');
-    const sections = document.getElementById('sections');
-    const clearBtn = document.getElementById('clear');
-    const relWrap = document.getElementById('relevant');
-    const relEmpty = document.getElementById('rel-empty');
-    const emptyMsg = document.getElementById('empty');
-
-    fetch('/blogs/manifest.json').then(r=>r.json()).then(raw => Array.isArray(raw)?raw:[])
-    .then(manifest => {
-      // sort desc by date
-      manifest.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-
-      const years = Array.from(new Set(manifest.map(p=>p.year))).sort((a,b)=>b-a);
-      // Left rail years
-      yearsEl.innerHTML = years.map(y=>`<a href="/blogs/${y}/" class="rail-link"${String(ACTIVE.year)===String(y)?' aria-current="page"':''}>${y}</a>`).join('');
-
-      // Year chips
-      const totalCount = manifest.length;
-      const countForYear = (y)=> manifest.filter(p=>String(p.year)===String(y)).length;
-      const yrChips = [`<button data-year="" class="chip ${ACTIVE.year?'':'chip-active'}">All years (${totalCount})</button>`]
-        .concat(years.map(y=>`<button data-year="${y}" class="chip ${String(ACTIVE.year)===String(y)?'chip-active':''}">${y} (${countForYear(y)})</button>`)).join('');
-      chipsYear.innerHTML = yrChips;
-
-      // Filter by active year
-      const scope = ACTIVE.year ? manifest.filter(p=>String(p.year)===String(ACTIVE.year)) : manifest;
-
-      // Season counts present in scope
-      const bySeason = Object.fromEntries(SEASONS.map(s=>[s, scope.filter(p=> (p.season||'').toLowerCase()===s) ]));
-      const seasonButtons = [`<button data-season="" class="chip ${ACTIVE.season?'':'chip-active'}">All seasons (${scope.length})</button>`]
-        .concat(SEASONS.filter(s=>bySeason[s].length>0).map(s=>{
-          const active = ACTIVE.season===s ? 'chip-active':'';
-          return `<button data-season="${s}" class="chip ${active}">${SEASON_LABEL[s]} (${bySeason[s].length})</button>`;
-        })).join('');
-      chipsSeason.innerHTML = seasonButtons;
-
-      // Apply season filter within scope
-      const visible = ACTIVE.season ? bySeason[ACTIVE.season] : scope;
-
-      // Relevant: top 6 from visible, else from scope
-      const rel = (visible.length?visible:scope).slice(0,6);
-      if (!rel.length){ relEmpty.classList.remove('hidden'); }
-      else {
-        relWrap.innerHTML = rel.map(p=>`<a href="${p.path}" class="underline text-blue-700">${p.title||p.slug}</a><span class="text-gray-500"> — ${fmt(p.date)}</span>`).map((line)=>`<div>${line}</div>`).join('');
-      }
-
-      // Build seasonal sections (Spring→Winter) from visible set or full scope if no season selected
-      sections.innerHTML = '';
-      const scopeForSections = ACTIVE.season ? {[ACTIVE.season]: bySeason[ACTIVE.season]} : bySeason;
-
-      let any = false;
-      for (const s of SEASONS) {
-        const list = scopeForSections[s] || [];
-        if (!list.length) continue;
-        any = true;
-
-        // header
-        const header = document.createElement('div');
-        header.className = 'flex items-end justify-between mb-3';
-        const h = document.createElement('h2');
-        h.className = 'text-xl font-semibold';
-        h.textContent = SEASON_LABEL[s];
-        const see = document.createElement('a');
-        const qp = new URLSearchParams();
-        if (ACTIVE.year) qp.set('year', ACTIVE.year);
-        qp.set('season', s);
-        see.href = `/blogs/?${qp.toString()}`;
-        see.className = 'text-blue-700 underline text-sm';
-        see.textContent = 'See all >';
-        header.appendChild(h); header.appendChild(see);
-        sections.appendChild(header);
-
-        // carousel
-        const wrap = document.createElement('div');
-        wrap.className = 'carousel flex overflow-x-auto gap-4 pb-2';
-        wrap.setAttribute('role','list');
-
-        // up to 12 posts
-        list.slice(0,12).forEach(p=>{
-          const li = document.createElement('article');
-          li.className = 'slide min-w-[260px] w-[260px] border rounded-2xl p-3 shadow-sm';
-          li.setAttribute('role','listitem');
-
-          const a = document.createElement('a');
-          a.href = p.path;
-          a.className = 'block';
-
-          // image: prefer card_image_link via images_link; fallback to none if unknown
-          // Use manifest.image only if present AND known to be a card image (optional). To stay aligned with "no global fallback", we skip if absent.
-          const img = document.createElement('img');
-          img.decoding = 'async';
-          img.loading = 'lazy';
-          img.className = 'w-full h-36 object-cover rounded-xl mb-2';
-          if (p.card_image_link) { img.src = p.card_image_link; img.alt = p.title || 'image'; a.appendChild(img); }
-          // else: omit image entirely
-
-          const t = document.createElement('h3');
-          t.className = 'text-base font-semibold mb-1';
-          t.textContent = p.title || p.slug;
-          a.appendChild(t);
-
-          const meta = document.createElement('p');
-          meta.className = 'text-xs text-gray-600';
-          const loc = [p.city, p.state].filter(Boolean).join(', ');
-          meta.textContent = [fmt(p.date), loc].filter(Boolean).join(' • ');
-          a.appendChild(meta);
-
-          li.appendChild(a);
-          wrap.appendChild(li);
-        });
-
-        sections.appendChild(wrap);
-      }
-
-      if (!any){ emptyMsg.classList.remove('hidden'); }
-
-      // Clear button visibility
-      clearBtn.classList.toggle('hidden', !(ACTIVE.year || ACTIVE.season));
-
-      // Events: chips
-      chipsYear.addEventListener('click', (e)=>{
-        const b = e.target.closest('button[data-year]');
-        if (!b) return;
-        const y = b.getAttribute('data-year');
-        const q = new URLSearchParams(location.search);
-        if (y) q.set('year', y); else q.delete('year');
-        history.replaceState(null,'',`?${q.toString()}`);
-        location.reload();
-      });
-
-      chipsSeason.addEventListener('click', (e)=>{
-        const b = e.target.closest('button[data-season]');
-        if (!b) return;
-        const s = b.getAttribute('data-season');
-        const q = new URLSearchParams(location.search);
-        if (s) q.set('season', s); else q.delete('season');
-        history.replaceState(null,'',`?${q.toString()}`);
-        location.reload();
-      });
-
-      clearBtn.addEventListener('click', ()=>{
-        history.replaceState(null,'','/blogs/');
-        location.reload();
-      });
-    })
-    .catch(()=>{ emptyMsg.textContent='Failed to load blogs.'; emptyMsg.classList.remove('hidden'); });
-  </script>
+<footer>
+  <small>© {{current_year}} Clear Round Travel</small>
+</footer>
 </body>
 </html>
