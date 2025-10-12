@@ -2,15 +2,49 @@ openapi: 3.1.0
 info:
   title: CRT Proxy
   version: "1.1.0"
-
 servers:
   - url: https://items.clearroundtravel.com
-
 paths:
+  /health:
+    get:
+      operationId: crt_health
+      summary: Proxy health
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  uptime: { type: number }
+  /_manifest.json:
+    get:
+      operationId: crt_manifest_root
+      summary: Generated index of allowed dirs (root)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /items/_manifest.json:
+    get:
+      operationId: crt_manifest_items
+      summary: Generated index of allowed dirs (items)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
   /docs/{path}:
     get:
-      operationId: crt_get
-      summary: Read a docs file via proxy
+      operationId: crt_docs_get
+      summary: Read a file under docs/ via proxy
       parameters:
         - in: path
           name: path
@@ -30,15 +64,75 @@ paths:
           description: Client error
         "5XX":
           description: Server error
-
+  /docs/commit:
+    post:
+      operationId: crt_docs_commit
+      summary: Commit a single JSON file under docs/
+      description: >-
+        Accepts one JSON file path under docs/ and commits its pretty-printed
+        content in a single Git commit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocsCommitRequest'
+            examples:
+              example:
+                value:
+                  path: "docs/blogs/manifest.json"
+                  message: "chore: update manifest"
+                  json: []
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema: $ref: '#/components/schemas/CommitResponse'
+        "400": description: Bad request
+        "5XX": description: Server error
+  /items/commit:
+    post:
+      operationId: crt_items_commit
+      summary: Commit a file under items/ (json or text)
+      description: >-
+        Accepts a path under items/ and a body (JSON object or text). JSON is
+        pretty-printed; text normalized to LF with trailing newline.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemsCommitRequest'
+            examples:
+              jsonExample:
+                value:
+                  path: "items/geometry/capc-geo.json"
+                  message: "feat: add CAPC geo"
+                  json: { place_id: "abc", lat: 0, lng: 0 }
+              textExample:
+                value:
+                  path: "items/notes/readme.txt"
+                  message: "docs: add notes"
+                  json: "Hello\nWorld"
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitResponse'
+        "400":
+          description: Bad request
+        "5XX":
+          description: Server error
   /docs/commit-bulk:
     post:
       operationId: crt_bulk_commit
-      summary: Bulk commit multiple files under docs/
+      summary: Bulk commit compiled docs/ files
       description: >-
         Accepts compiled files (HTML/XML/JSON) and writes them atomically under
-        docs/. The runner compiles from a 1-point trigger. This endpoint does
-        not accept triggers; examples include a trigger payload for reference.
+        docs/. Triggers are compiled by the runner, not this endpoint.
       requestBody:
         required: true
         content:
@@ -49,30 +143,30 @@ paths:
               filesMode:
                 summary: Commit explicit files
                 value:
-                  message: "chore: add year redirects"
+                  message: "publish: CAPC 2025-10-05"
                   overwrite: true
                   files:
+                    - path: "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-publish-2025-10-05.json"
+                      content_type: "application/json"
+                      content_base64: "eyAib2siOiB0cnVlIH0="
+                    - path: "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/index.html"
+                      content_type: "text/html"
+                      content_base64: "PGh0bWw+PC9odG1sPg=="
+                    - path: "docs/blogs/index.html"
+                      content_type: "text/html"
+                      content_base64: "PGgxPkJsb2dzPC9oMT4="
                     - path: "docs/blogs/2025/index.html"
                       content_type: "text/html"
-                      content_base64: "PCFkb2N0eXBlIGh0bWw+..."
-                    - path: "docs/blogs/2026/index.html"
-                      content_type: "text/html"
-                      content_base64: "PCFkb2N0eXBlIGh0bWw+..."
-              triggerMode:
-                summary: Informational example of a trigger payload (proxy ignores)
-                value:
-                  add_post: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/docs/blogs/desc-blogs-2025/desc-blog-2025-10-02/desc-blog-2025-10-02.json"
-                  canonical_base: "https://blog.clearroundtravel.com"
-                  images_link: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/images/desc-images.json"
-              forbiddenBlogJson:
-                summary: Forbidden attempt to write source blog JSON
-                value:
-                  message: "chore: test guard"
-                  overwrite: true
-                  files:
-                    - path: "docs/blogs/desc-blogs-2025/desc-blog-2025-10-02/desc-blog-2025-10-02.json"
+                      content_base64: "PGgxPjIwMjU8L2gxPg=="
+                    - path: "docs/blogs/rss.xml"
+                      content_type: "application/xml"
+                      content_base64: "PHJzcz48L3Jzcz4="
+                    - path: "docs/sitemap.xml"
+                      content_type: "application/xml"
+                      content_base64: "PHVybHNldD48L3VybHNldD4="
+                    - path: "docs/blogs/manifest.json"
                       content_type: "application/json"
-                      content_base64: "eyAiZm9yYmlkZGVuIjogdHJ1ZSB9"
+                      content_base64: "W10="
       responses:
         "200":
           description: Commit result
@@ -87,8 +181,10 @@ paths:
       x-write-guards:
         deny_patterns:
           - "**/*-blog-????-??-??.json"
+          - "**/*-blog.json"
         allow_patterns:
           - "**/*-publish-????-??-??.json"
+          - "**/*-publish.json"
           - "docs/blogs/index.html"
           - "docs/blogs/[0-9][0-9][0-9][0-9]/index.html"
           - "docs/blogs/**/index.html"
@@ -126,11 +222,8 @@ paths:
             content_type: "application/json"
             min_bytes: 50
       x-notes:
-        - Templates must read from publish JSON only; do not read `*-blog-*.json`.
-        - If trigger.add_post is under docs/, treat it as read-only source.
-      x-contract:
-        runner_compiles: true
-
+        - Templates must read from publish JSON only; never from *-blog-*.json.
+        - If the source JSON lives under docs/, treat it as read-only.
 components:
   schemas:
     FileItem:
@@ -147,7 +240,6 @@ components:
         content_base64:
           type: string
           description: Base64 of file bytes
-
     FilesCommitRequest:
       type: object
       required: [files]
@@ -161,45 +253,37 @@ components:
         files:
           type: array
           minItems: 1
-          items:
-            $ref: '#/components/schemas/FileItem'
-
-    # Preserved for reference; NOT accepted by /docs/commit-bulk.
-    TriggerRequest:
+          items: $ref: '#/components/schemas/FileItem'
+    DocsCommitRequest:
       type: object
-      description: >-
-        Minimal trigger used by the runner to fetch inputs and compile outputs
-        before calling /docs/commit-bulk.
+      required: [path, json]
       properties:
-        add_post:
+        path:
           type: string
-          format: uri
-          description: Raw GitHub URL to the post JSON (e.g., docs/blogs/{venue}-blogs-{year}/{slug}/{slug}.json)
-        canonical_base:
+          description: Path must begin with docs/ and end with .json
+          pattern: "^docs/.+\\.json$"
+        message:
           type: string
-          format: uri
-          description: Public site origin for canonical links (e.g., https://blog.clearroundtravel.com)
-          default: "https://blog.clearroundtravel.com"
-        images_link:
+        json:
+          description: JSON object or a JSON string
+          oneOf:
+            - type: object
+            - type: string
+    ItemsCommitRequest:
+      type: object
+      required: [path, json]
+      properties:
+        path:
           type: string
-          format: uri
-          description: Optional JSON with image links; used primarily for card image
-        allow_urls:
-          type: array
-          items:
-            type: string
-            format: uri
-          description: Optional list of URLs the upstream runner may fetch (informational)
-        trigger:
-          type: object
-          properties:
-            add_post: { type: string, format: uri }
-            canonical_base: { type: string, format: uri, default: "https://blog.clearroundtravel.com" }
-            images_link: { type: string, format: uri }
-            allow_urls:
-              type: array
-              items: { type: string, format: uri }
-
+          description: Path must begin with items/
+          pattern: "^items/.+$"
+        message:
+          type: string
+        json:
+          description: JSON object (pretty-printed) or a text body
+          oneOf:
+            - type: object
+            - type: string
     CommitResponse:
       type: object
       properties:
