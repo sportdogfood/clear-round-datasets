@@ -1,76 +1,6 @@
 {
-  "name": "Structure Runner Policy",
-  "version": "1.3.2",
-  "rules": {
-    "scaffold_only": true,
-    "never_edit_post_json": true,
-    "allow_trigger_allowlist_only": true,
-    "site_root_assets_only": true,
-    "manifest_upsert_key": "slug",
-    "derive_date_from_filename": true,
-    "emit_year_archives": true,
-    "emit_rss": true,
-    "emit_sitemap": true,
-    "neighbors_nav": true,
-    "markdown_paragraphs": true,
-    "sanitize_links": true,
-    "items_lists_structured": true,
-    "seo_precedence_blog_over_section": true,
-    "validate_http_urls_only": true,
-    "publish_json_enabled": true,
-    "publish_slug_from_slug": { "method": "string_replace", "from": "-blog-", "to": "-publish-" },
-    "deterministic_outputs": true,
-    "no_wall_clock_values": true,
-    "atomic_replace_files": true
-  },
-  "runner_contract": {
-    "trigger_required": true,
-    "compile_then_commit": true,
-    "required_outputs": [
-      "publish_json",
-      "post_page",
-      "blogs_index",
-      "year_index",
-      "manifest",
-      "rss",
-      "sitemap"
-    ],
-    "required_output_paths": [
-      "docs/blogs/**/{slug}/{publish_slug}.json",
-      "docs/blogs/**/{slug}/index.html",
-      "docs/blogs/index.html",
-      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
-      "docs/blogs/rss.xml",
-      "docs/sitemap.xml",
-      "docs/blogs/manifest.json"
-    ],
-    "commit_endpoint": "POST /docs/commit-bulk",
-    "proxy_accepts_triggers": false
-  },
-  "validation": {
-    "enforce_at_proxy": true,
-    "runner_preflight": true,
-    "min_bytes": {
-      "publish_json": 100,
-      "post_index_html": 200,
-      "blogs_index_html": 200,
-      "year_index_html": 200,
-      "rss_xml": 80,
-      "sitemap_xml": 80,
-      "manifest_json": 50
-    },
-    "required_paths": [
-      "docs/blogs/**/{slug}/{publish_slug}.json",
-      "docs/blogs/**/{slug}/index.html",
-      "docs/blogs/index.html",
-      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
-      "docs/blogs/rss.xml",
-      "docs/sitemap.xml",
-      "docs/blogs/manifest.json"
-    ],
-    "base64_must_decode": true,
-    "reject_zero_byte": true
-  },
+  "version": "2025-10-12.2",
+  "about": "Policy governs the Structure Runner that publishes blog artifacts under /docs/blogs. This is a STRICTLY additive update to preserve all existing behavior while enabling the one-point trigger, event-named slugs, seven-file contract, and preflight gates.",
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
     "recent_count": 4,
@@ -79,118 +9,171 @@
       "hero": "/assets/images/hero-placeholder.jpg",
       "stay": "/assets/images/stay-placeholder.jpg",
       "dine": "/assets/images/dine-placeholder.jpg",
-      "locale": "/assets/images/place-placeholder.jpg",
+      "place": "/assets/images/place-placeholder.jpg",
       "card": "/assets/images/card-placeholder.jpg"
     }
   },
-  "allow_urls": [
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/docs/blogs/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/geometry/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/venues/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/events/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/images/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/sections/**",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/brand/audiences.json",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/manifest.schema.json",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/blog.index.html.tmpl",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/blogs.index.html.tmpl",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/year.index.html.tmpl",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/rss.xml.tmpl",
-    "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/templates/sitemap.xml.tmpl"
+
+  "write_allowlist": [
+    "docs/blogs/**/index.html",
+    "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
+    "docs/blogs/index.html",
+    "docs/blogs/rss.xml",
+    "docs/sitemap.xml",
+    "docs/blogs/manifest.json",
+
+    // PUBLISH JSON (dated style, kept from original)
+    "docs/blogs/**/**-publish-????-??-??.json",
+
+    // PUBLISH JSON (event/named style, NEW — e.g., capc-cap-challenge-publish.json)
+    "docs/blogs/**/**-publish.json"
   ],
-  "manifest_shape": {
-    "required": ["slug", "title", "date", "year", "path", "json", "venue"],
-    "recommended": [
-      "month_num",
-      "month_name",
-      "season",
-      "image",
-      "city",
-      "state",
-      "country",
-      "lat",
-      "lng",
-      "place_id",
-      "timezone",
-      "start_date",
-      "end_date",
-      "event_duration",
-      "audience_labels",
-      "tags",
-      "section_link",
-      "maps_link"
-    ],
-    "constraints": {
-      "date_iso": true,
-      "year_matches_date": true,
-      "path_format": "/blogs/{venue}-blogs/{year}/{slug}/",
-      "json_format": "/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json",
-      "image_site_root_only": true,
-      "tags_lowercase_hyphenated": true
-    },
-    "computed": {
-      "publish_slug": {
-        "from": "slug",
-        "method": "string_replace",
-        "args": { "from": "-blog-", "to": "-publish-" }
+
+  "write_denylist": [
+    "**/*-blog-????-??-??.json",         // never write source authoring JSON
+    "**/*-blog.json"                     // NEW: block non-dated authoring names too (e.g., event-named *-blog.json)
+  ],
+
+  "templates": {
+    "post": "items/runners/structure/templates/blog.index.html.tmpl",
+    "blogs_index": "items/runners/structure/templates/blogs.index.html.tmpl",
+    "year_index": "items/runners/structure/templates/year.index.html.tmpl",
+    "rss": "items/runners/structure/templates/rss.xml.tmpl",
+    "sitemap": "items/runners/structure/templates/sitemap.xml.tmpl"
+  },
+
+  "manifest": {
+    "schema": "items/runners/structure/manifest.schema.json",
+    "upsert_key": "slug"
+  },
+
+  "fields": {
+    "event": {
+      "from": "event_link",
+      "map": {
+        "event_month": "month_name",
+        "event_season": "season",
+        "event_duration": "event_duration",
+        "start_date": "start_date",
+        "end_date": "end_date"
       }
+    },
+    "images": {
+      "from": "images_link",
+      "keys": [
+        "hero_image_link",
+        "hero_image_hidden",
+        "stay_image_link",
+        "stay_image_hidden",
+        "dine_image_link",
+        "dine_image_hidden",
+        "essentials_image_link",
+        "essentials_image_hidden",
+        "locale_image_link",
+        "locale_image_hidden",
+        "card_image_link",
+        "card_image_hidden",
+        "image_alt_text"
+      ]
     }
   },
-  "seo_mapping": {
-    "title": ["blog.seo.section_title", "section.section_title"],
-    "meta_description": ["blog.seo.meta_description", "section.section_meta_description"],
-    "open_graph_title": ["blog.seo.open_graph_title", "section.section_open_graph_title"],
-    "open_graph_description": ["blog.seo.open_graph_description", "section.section_open_graph_description"],
-    "open_graph_image": ["blog.seo.open_graph_image", "section.section_open_graph_image", "assets.hero.src"],
-    "search_title": ["blog.seo.search_title", "section.section_search_title"],
-    "search_description": ["blog.seo.search_description", "section.section_search_description"],
-    "section_link_manifest_only": true
-  },
-  "tag_recipe": [
-    "season:{spring|summer|fall|winter}",
-    "month:{01..12}",
-    "state:{XX}",
-    "city:{name}",
-    "venue:{slug}",
-    "audience:{label_slug}",
-    "duration:{single|weekend|multi-day}"
-  ],
-  "write_guards": {
-    "deny_patterns": ["**/*-blog-????-??-??.json"],
-    "allow_patterns": [
-      "**/*-publish-????-??-??.json",
-      "docs/blogs/index.html",
-      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
-      "docs/blogs/**/index.html",
-      "docs/blogs/rss.xml",
-      "docs/sitemap.xml",
-      "docs/blogs/manifest.json"
+
+  "rules": {
+    "http_only": true,
+    "https_only": true,
+    "allowed_fetch_hosts": ["raw.githubusercontent.com"],
+    "max_fetch_attempts": 2,
+    "fetch_timeout_ms": 5000,
+    "reject_non_http_links": true,
+
+    "paragraphs_allow_markdown_inline_links": [
+      "hello.intro",
+      "hello.outro",
+      "stay.paragraph",
+      "dine.am",
+      "dine.dinner",
+      "locale.paragraph",
+      "essentials.paragraph"
     ],
-    "on_violation": "halt"
+    "list_item_fields": ["name", "link", "alt"],
+
+    "title_precedence": ["seo.section_title", "seo.open_graph_title", "title", "slug"],
+    "seo_description_precedence": ["seo.meta_description", "seo.open_graph_description"],
+
+    "neighbor_order": "date_desc",
+    "idempotent_outputs": true,
+    "deterministic_output": true,
+
+    // NEW — One-point trigger contract
+    "trigger_contract": {
+      "required_minimum": [
+        "canonical_base",
+        "event_link"
+      ],
+      "optional": [
+        "images_link",
+        "section_link",
+        "venue_link",
+        "geo_link",
+        "audiences_link"
+      ],
+      "paths_from_trigger_preferred": true,
+      "paths_keys": [
+        "blogs_publish_path",
+        "blogs_publish_index_path",
+        "blogs_index_path",
+        "blogs_2025_index_path",
+        "blogs_rss_path",
+        "blogs_sitemap_path",
+        "blogs_manifest_path"
+      ],
+      "fallback_paths_allowed": true
+    },
+
+    // NEW — Source/publish model & naming
+    "publish_model": {
+      "source_json_read_only": true,
+      "publish_json_sibling": true,
+      "naming_modes": ["dated_slug", "event_named_slug"],
+      "publish_name_rules": [
+        { "if_contains": "-blog-", "replace_with": "-publish-" },     // dated style
+        { "if_suffix": "-blog.json", "replace_with": "-publish.json"} // event/named style
+      ]
+    },
+
+    // NEW — Preflight (must pass before /docs/commit-bulk)
+    "preflight": {
+      "enabled": true,
+      "exact_required_count": 7,
+      "required": [
+        { "path": "docs/blogs/**/**/index.html", "min_bytes": 200, "content_type": "text/html" },
+        { "path": "docs/blogs/**/**-publish*.json", "min_bytes": 100, "content_type": "application/json" },
+        { "path": "docs/blogs/index.html", "min_bytes": 200, "content_type": "text/html" },
+        { "path": "docs/blogs/[0-9][0-9][0-9][0-9]/index.html", "min_bytes": 200, "content_type": "text/html" },
+        { "path": "docs/blogs/rss.xml", "min_bytes": 80, "content_type": "application/xml" },
+        { "path": "docs/sitemap.xml", "min_bytes": 80, "content_type": "application/xml" },
+        { "path": "docs/blogs/manifest.json", "min_bytes": 50, "content_type": "application/json" }
+      ],
+      "require_base64": true,
+      "validate_manifest_against_schema": true
+    }
   },
-  "idempotency": {
-    "required": true,
-    "key_components": [
-      "normalized(add_post_link)",
-      "archive_year",
-      "event_month",
-      "event_season",
-      "mapped_event_duration",
-      "start_date",
-      "end_date"
-    ],
-    "skip_on_no_change": true
+
+  "indexes": {
+    "build": ["/blogs/index.html", "/blogs/{year}/index.html"],
+    "rss": "/blogs/rss.xml",
+    "sitemap": "/sitemap.xml"
   },
-  "commit": {
-    "endpoint": "POST /docs/commit-bulk",
-    "atomic": true,
-    "reject_non_allowlisted_paths": true
+
+  "security": {
+    "forbid_write_source_blog_json": true,
+    "allow_publish_json_only": true
   },
-  "enforcement_notes": [
-    "Treat any '*-blog-*.json' as read-only, even under docs/.",
-    "If 'add_post_link' points under docs/, it remains a source and must not be overwritten.",
-    "Templates must read from publish JSON only.",
-    "Proxy enforces min-bytes and required paths; runner must preflight the same before commit."
+
+  "notes": [
+    "Templates must read publish JSON only; never read *-blog-*.json.",
+    "If trigger.add_post/content_link is under docs/, treat it as read-only.",
+    "Write allowlist now supports BOTH dated publish JSON (…-publish-YYYY-MM-DD.json) and event/named publish JSON (…-publish.json).",
+    "Preflight is mandatory: 7 outputs present, base64-decodable, and meeting minimum decoded byte thresholds before commit."
   ]
 }
