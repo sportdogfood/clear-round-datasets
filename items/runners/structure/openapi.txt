@@ -1,4 +1,3 @@
-# items/runners/structure/openapi.txt
 openapi: 3.1.0
 info:
   title: CRT Proxy
@@ -97,6 +96,35 @@ paths:
           - "docs/sitemap.xml"
           - "docs/blogs/manifest.json"
         on_violation: halt
+      x-validate:
+        base64_must_decode: true
+        reject_zero_byte: true
+        on_failure_status: 400
+        on_failure_body:
+          reason: validation_failed
+          include_details: true
+        required_paths:
+          - path: "docs/blogs/**/{slug}/{publish_slug}.json"
+            content_type: "application/json"
+            min_bytes: 100
+          - path: "docs/blogs/**/{slug}/index.html"
+            content_type: "text/html"
+            min_bytes: 200
+          - path: "docs/blogs/index.html"
+            content_type: "text/html"
+            min_bytes: 200
+          - path: "docs/blogs/[0-9][0-9][0-9][0-9]/index.html"
+            content_type: "text/html"
+            min_bytes: 200
+          - path: "docs/blogs/rss.xml"
+            content_type: "application/xml"
+            min_bytes: 80
+          - path: "docs/sitemap.xml"
+            content_type: "application/xml"
+            min_bytes: 80
+          - path: "docs/blogs/manifest.json"
+            content_type: "application/json"
+            min_bytes: 50
       x-notes:
         - Templates must read from publish JSON only; do not read `*-blog-*.json`.
         - If trigger.add_post is under docs/, treat it as read-only source.
@@ -136,14 +164,13 @@ components:
           items:
             $ref: '#/components/schemas/FileItem'
 
-    # Preserved for compatibility/reference; not accepted by /docs/commit-bulk.
+    # Preserved for reference; NOT accepted by /docs/commit-bulk.
     TriggerRequest:
       type: object
       description: >-
-        Minimal trigger to build blog artifacts. The runner uses this to fetch
-        the post JSON and compile outputs before calling /docs/commit-bulk.
+        Minimal trigger used by the runner to fetch inputs and compile outputs
+        before calling /docs/commit-bulk.
       properties:
-        # top-level (shorthand) fields
         add_post:
           type: string
           format: uri
@@ -163,7 +190,6 @@ components:
             type: string
             format: uri
           description: Optional list of URLs the upstream runner may fetch (informational)
-        # or nested under `trigger` for compatibility
         trigger:
           type: object
           properties:
