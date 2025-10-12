@@ -1,13 +1,20 @@
+<!-- items/runners/structure/templates/rss.xml.tmpl -->
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>{{CHANNEL_TITLE}}</title>
-    <link>{{CHANNEL_LINK}}</link>
-    <description>{{CHANNEL_DESCRIPTION}}</description>
-    <language>en-us</language>
-    <lastBuildDate>{{LAST_BUILD_DATE_RFC822}}</lastBuildDate>
-    <generator>crt-runner</generator>
-    <ttl>{{TTL_MINUTES}}</ttl>
-{{ITEMS_XML}}
+    <title>{{channel_title}}</title>
+    <link>{{channel_link}}</link>
+    <description>{{channel_description}}</description>
+    <lastBuildDate>{{last_build_date_rfc822}}</lastBuildDate>
+    {{items_xml}}
+    <!-- expected items:
+      <item>
+        <title>{{title}}</title>
+        <link>{{link}}</link>
+        <guid>{{link}}</guid>
+        <pubDate>{{pub_date_rfc822}}</pubDate>
+        <description><![CDATA[ {{summary_html}} ]]></description>
+      </item>
+    -->
   </channel>
 </rss>
