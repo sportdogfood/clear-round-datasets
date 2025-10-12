@@ -1,44 +1,46 @@
 # items/runners/structure/preamble.txt
 PROJECT: Clear Round — Structure Runner & Proxy
-Snapshot v20251011-03
-Last: 2025-10-11
+Snapshot v20251012  Last: 2025-10-12
+
 Mode: GPT-5 Thinking ONLY. No plugins. No browsing unless I say “search”.
 
 INVARIANTS (do not alter)
-- Protected routes (Heroku proxy): POST /items/commit, POST /docs/commit, POST /docs/commit-bulk
-- CORS allow must include Airtable (airtable.com, app.airtable.com, console.airtable.com)
-- ALLOW_DIRS must include (exact superset; additive only):
+- Keep these Heroku routes untouched:
+  POST /items/commit, POST /docs/commit, POST /docs/commit-bulk, GET /docs/*, GET /items/*, (compat) GET /items/alias/commit
+- CORS allow must include Airtable:
+  https://airtable.com, https://app.airtable.com, https://console.airtable.com
+- ALLOW_DIRS must include (exact list):
   events,months,seasons,days,years,weeks,labels,places,sources,organizers,cities,countries,hotels,states,weather,airports,venues,restaurants,agents,dine,essentials,legs,distances,insiders,keywords,audience,tone,ratings,links,spots,sections,bullets,services,stay,amenities,slots,cuisines,menus,locale,things,tags,blogs,platforms,geos,timezones,geometry,chains,knowledge,levels,types,core,brand,meta,hubs,zones,seo,outputs,tasks,instructions,schema,gold,policy,docs,runners,images,assets
-- Source blog JSON is READ-ONLY: never write any *-blog-YYYY-MM-DD.json
-- Publish sibling JSON REQUIRED: replace “-blog-”→“-publish-” in the SAME folder as the source
-- WRITE ALLOWLIST ONLY:
-  docs/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json
-  docs/blogs/{venue}-blogs-{year}/{slug}/index.html
-  docs/blogs/index.html
-  docs/blogs/{year}/index.html
-  docs/blogs/rss.xml
-  docs/sitemap.xml
-  docs/blogs/manifest.json
-- Templates must read from the PUBLISH JSON only (never from *-blog-*.json)
-- Idempotency required: idempotency_key = normalized(add_post_link)|archive_year|event_month|event_season|mapped(event_duration)|start_date|end_date
-- Per-file safety: enforce content_type + min_bytes on bulk writes
-- Deterministic outputs; no wall-clock values
 
-OPENAPI (proxy surface): https://items.clearroundtravel.com
-- GET /docs/{path}
-- POST /docs/commit-bulk (files[].path must start with docs/; content_base64 required)
+CONNECTORS in scope: GitHub, SharePoint, Teams
+I/O in scope: Heroku proxy GET/POST only
+
+OPENAPI (proxy surface summary)
+- GET  /docs/{path}
+- POST /docs/commit
+- POST /docs/commit-bulk  (files[].path must start with docs/; content_base64 required)
+- POST /items/commit
+- GET  /items/* (HEAD/OPTIONS supported)
+- (Compat) GET /items/alias/commit → /items/commit
 
 RUNNER CONTEXT (read-only references)
-- Policy: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/policy.json
-- Schema: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/manifest.schema.json
-- Instructions: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
-- Project Instruction: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/project-instruction.txt
+- Policy:        items/runners/structure/policy.json
+- Schema:        items/runners/structure/manifest.schema.json
+- Instructions:  items/runners/structure/instruction.txt
+- Project Rules: items/runners/structure/project-instruction.txt
+- Templates:     items/runners/structure/templates/*.tmpl
 
 GROUND RULES (strict)
 - No code unless I explicitly ask. One step per reply; wait for my confirmation.
-- Full-file edits only when requested; never patch snippets.
-- Never overwrite populated JSON; write to stash first; require min-bytes & UTF-8 checks.
-- “Delta & Outcome” reporting format in every change.
+- If no clear fix after 2 attempts: stop, report blocker.
+- Full-file edits only when requested; **ingest current originals first**; never patch snippets.
+- Never overwrite populated JSON; use stash first when needed.
+- “Delta & Outcome” reporting format.
 
-REPLY CONTRACT (every message)
-1) Acknowledge rules. 2) Restate today’s task in 1 line. 3) Ask exactly one clarifying question only if absolutely necessary; else proceed per task.
+REPLY CONTRACT (every message must follow)
+1) Acknowledge rules.
+2) Restate Today’s task in 1 line.
+3) Ask exactly one clarifying question only if absolutely necessary; else proceed per task.
+4) Stop after one step and wait for confirmation.
+
+Today’s task (v{X.Y}):
