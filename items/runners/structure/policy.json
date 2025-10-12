@@ -1,6 +1,6 @@
 {
   "name": "Structure Runner Policy",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "rules": {
     "scaffold_only": true,
     "never_edit_post_json": true,
@@ -35,8 +35,41 @@
       "rss",
       "sitemap"
     ],
+    "required_output_paths": [
+      "docs/blogs/**/{slug}/{publish_slug}.json",
+      "docs/blogs/**/{slug}/index.html",
+      "docs/blogs/index.html",
+      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
+      "docs/blogs/rss.xml",
+      "docs/sitemap.xml",
+      "docs/blogs/manifest.json"
+    ],
     "commit_endpoint": "POST /docs/commit-bulk",
     "proxy_accepts_triggers": false
+  },
+  "validation": {
+    "enforce_at_proxy": true,
+    "runner_preflight": true,
+    "min_bytes": {
+      "publish_json": 100,
+      "post_index_html": 200,
+      "blogs_index_html": 200,
+      "year_index_html": 200,
+      "rss_xml": 80,
+      "sitemap_xml": 80,
+      "manifest_json": 50
+    },
+    "required_paths": [
+      "docs/blogs/**/{slug}/{publish_slug}.json",
+      "docs/blogs/**/{slug}/index.html",
+      "docs/blogs/index.html",
+      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
+      "docs/blogs/rss.xml",
+      "docs/sitemap.xml",
+      "docs/blogs/manifest.json"
+    ],
+    "base64_must_decode": true,
+    "reject_zero_byte": true
   },
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
@@ -46,7 +79,8 @@
       "hero": "/assets/images/hero-placeholder.jpg",
       "stay": "/assets/images/stay-placeholder.jpg",
       "dine": "/assets/images/dine-placeholder.jpg",
-      "locale": "/assets/images/place-placeholder.jpg"
+      "locale": "/assets/images/place-placeholder.jpg",
+      "card": "/assets/images/card-placeholder.jpg"
     }
   },
   "allow_urls": [
@@ -68,15 +102,29 @@
   "manifest_shape": {
     "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "recommended": [
-      "month_num", "month_name", "season", "image",
-      "city", "state", "country", "lat", "lng", "place_id", "timezone",
-      "start_date", "end_date", "event_duration",
-      "audience_labels", "tags", "section_link", "maps_link"
+      "month_num",
+      "month_name",
+      "season",
+      "image",
+      "city",
+      "state",
+      "country",
+      "lat",
+      "lng",
+      "place_id",
+      "timezone",
+      "start_date",
+      "end_date",
+      "event_duration",
+      "audience_labels",
+      "tags",
+      "section_link",
+      "maps_link"
     ],
     "constraints": {
       "date_iso": true,
       "year_matches_date": true,
-      "path_format": "/blogs/{venue}-blogs-{year}/{slug}/",
+      "path_format": "/blogs/{venue}-blogs/{year}/{slug}/",
       "json_format": "/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json",
       "image_site_root_only": true,
       "tags_lowercase_hyphenated": true
@@ -142,6 +190,7 @@
   "enforcement_notes": [
     "Treat any '*-blog-*.json' as read-only, even under docs/.",
     "If 'add_post_link' points under docs/, it remains a source and must not be overwritten.",
-    "Templates must read from publish JSON only."
+    "Templates must read from publish JSON only.",
+    "Proxy enforces min-bytes and required paths; runner must preflight the same before commit."
   ]
 }
