@@ -1,82 +1,92 @@
 # items/runners/structure/brief.txt
 Project brief — CRT Structure Runner & Heroku Proxy
 Scope & goal
-Last: 2025-10-11
-Snapshot v: 2025-10-11-03
+Last: 2025-10-12  Snapshot v: 2025-10-12-01
 
-Use a Heroku Node proxy to read/write content in the sportdogfood/clear-round-datasets repo for blog generation. Trigger the “Structure Runner” with a single task URL to render templates, build indexes, and commit outputs back — without ever overwriting source data. :contentReference[oaicite:1]{index=1}
+Use a Heroku Node proxy to read/write content in the sportdogfood/clear-round-datasets repo for blog generation. Trigger the Structure Runner with a single task URL (“one-point trigger”) to fetch inputs, render templates, and commit outputs back — without ever overwriting source authoring JSON.
 
-Critical endpoints (must remain; do not modify or remove)
-- POST /items/commit — Airtable writes into items/*
-- POST /docs/commit — Single JSON file under docs/*
-- POST /docs/commit-bulk — Multiple files under docs/* (html/xml/json)
-- GET /docs/{path} — Read-through proxy
+Critical endpoints (MUST remain; do not modify/remove)
+- POST /items/commit          — Airtable writes into items/* (JSON + text)
+- POST /docs/commit           — Single JSON under docs/*
+- POST /docs/commit-bulk      — Multiple files under docs/* (.html/.xml/.json)
+- GET  /docs/{path}           — Read-through proxy (docs/*)
+- GET  /items/*               — Read-through proxy (items/*) (HEAD/OPTIONS supported)
+- (Compat) GET /items/alias/commit → routes to /items/commit (Airtable older scripts)
 
 Non-negotiable env rules
-- ALLOW_DIRS must ALWAYS include the full set (never narrowed) listed in the preamble (additive only)
-- CORS allowlist must include Airtable domains: airtable.com, app.airtable.com, console.airtable.com
-- UPSTREAM_BASE points to raw GitHub; manifest mode enabled
+- ALLOW_DIRS must ALWAYS include the full superset (never narrowed), exactly:
+  events,months,seasons,days,years,weeks,labels,places,sources,organizers,cities,countries,hotels,states,weather,airports,venues,restaurants,agents,dine,essentials,legs,distances,insiders,keywords,audience,tone,ratings,links,spots,sections,bullets,services,stay,amenities,slots,cuisines,menus,locale,things,tags,blogs,platforms,geos,timezones,geometry,chains,knowledge,levels,types,core,brand,meta,hubs,zones,seo,outputs,tasks,instructions,schema,gold,policy,docs,runners,images,assets
+- CORS allowlist must include Airtable: https://airtable.com, https://app.airtable.com, https://console.airtable.com
+- UPSTREAM_BASE points to raw.githubusercontent.com; manifest mode enabled (no false “disabled”)
 
-Inputs
-- Task: items/blogs/desc-task-2025-10-02.json (contains canonical_base, add_post_link, images_link)
-- Source post JSON (READ-ONLY): docs/blogs/.../*-blog-YYYY-MM-DD.json
-- Images JSON: items/images/desc-images.json
-- Optional datasets: events, venues, geometry, sections, brand audiences
+One-point trigger (task JSON) — minimal contract
+- Required: canonical_base, event_link (raw GitHub URL)
+- Optional: images_link, section_link, venue_link, geo_link, audiences_link
+- Source content pointer (read-only): docs_path (docs/.../*.json) or content_link (raw URL)
+- Paths (preferred; if omitted, runner derives): blogs_publish_path, blogs_publish_index_path, blogs_index_path, blogs_{YYYY}_index_path, blogs_rss_path, blogs_sitemap_path, blogs_manifest_path
 
-Decisions locked in (naming & outputs)
-- Source remains *-blog-YYYY-MM-DD.json (read-only)
-- Runner produces sibling *-publish-YYYY-MM-DD.json (replace “-blog-”→“-publish-”, same folder)
-- manifest.json’s `json` field MUST point to the publish JSON, not the source post JSON
+Immutability & publish model
+- Any *-blog*.json is READ-ONLY (never modified).
+- Runner writes a sibling publish JSON only:
+  • dated style: *-publish-YYYY-MM-DD.json
+  • event-named: *-publish.json
+- Templates & indexes must read from publish JSON only.
 
-Desired runner behavior (no wall-clock dependence)
-1) Fetch task → fetch post JSON (+ images JSON; optional event/venue/geo/section)
-2) Generate ONLY derived outputs:
-   - docs/blogs/{venue}-blogs-{year}/{slug}/index.html
-   - docs/blogs/index.html
-   - docs/blogs/{year}/index.html
-   - docs/blogs/manifest.json (upsert entry; json→publish file)
-   - docs/blogs/rss.xml
-   - docs/sitemap.xml
-   - docs/blogs/{venue}-blogs-{year}/{slug}/{publish_slug}.json (publish JSON)
-3) Commit atomically via /docs/commit-bulk
-4) Never modify or overwrite any *-blog-*.json
+Slugs & dates
+- If filename has -blog-YYYY-MM-DD → that defines {date}/{slug}.
+- Else (event-named): slug = basename; date/year from event.start_date if present; year fallback from slug.
 
-Write rules (enforced)
-- Forbid any write to paths matching *-blog-????-??-??.json → HALT 403
-- WRITE ALLOWLIST ONLY (same as above list of outputs)
-- Templates MUST read from the publish JSON only
+Event fields (from event_link)
+- Read: event_month, event_season, event_duration, start_date, end_date
+- Map duration → enum: single | weekend | multi-day
+- Persist into publish JSON and manifest entry.
 
-Event enrichment (optional but supported)
-- From event dataset: event_month, event_season, event_duration (free text), start_date, end_date
-- Map event_duration → {single|weekend|multi-day}; compute archive_year from start_date when present
-- Include these fields in the publish JSON for templates/manifest
+Images (from images_link)
+- *_image_link / *_image_hidden + card_image_link/_hidden, image_alt_text
+- *_hidden==1 → do not render that slot; card_image_link fills manifest.image if present.
 
-Idempotency & safety
-- idempotency_key = normalized(add_post_link)|archive_year|event_month|event_season|mapped(event_duration)|start_date|end_date
-- Per-file no-op: skip if content hash unchanged
-- Enforce content_type + min_bytes per file in bulk commit
-- Deterministic outputs; no wall-clock values
+Required outputs (exactly 7)
+1) publish JSON                         → blogs_publish_path
+2) post page (…/{slug}/index.html)      → blogs_publish_index_path
+3) blogs index                          → blogs_index_path
+4) year index                           → blogs_{year}_index_path
+5) rss.xml                              → blogs_rss_path
+6) sitemap.xml                          → blogs_sitemap_path
+7) manifest.json (array upsert by slug) → blogs_manifest_path
+Manifest required: slug, title, date, year, path, json, venue
+Recommended when available: month_num, month_name, season, image, city/state/country, lat/lng/place_id, timezone, start_date, end_date, event_duration, audience_labels, tags, section_link, maps_link
+IMPORTANT: manifest.json’s json field points to the publish JSON (never source).
 
-What already works
-- /docs/commit-bulk probe writes & reads back a payload when ALLOW_DIRS includes items,docs
-- /items/commit returns 200s when items is present in ALLOW_DIRS :contentReference[oaicite:2]{index=2}
+Write-guards (hard stop before commit)
+ALLOW ONLY:
+- docs/blogs/**/index.html
+- docs/blogs/[0-9][0-9][0-9][0-9]/index.html
+- docs/blogs/index.html
+- docs/blogs/rss.xml
+- docs/sitemap.xml
+- docs/blogs/manifest.json
+- docs/blogs/**/**-publish-????-??-??.json   (dated)
+- docs/blogs/**/**-publish.json              (event-named)
+DENY ALWAYS:
+- **/*-blog-????-??-??.json
+- **/*-blog.json
+Violation → HALT (no writes)
 
-Recent pain points (root causes)
-- Input/Output collision on same filename → accidental overwrite
-- ALLOW_DIRS drift removed “items” → Airtable commits broke
-- Missing bulk-commit guards → zero-byte writes “succeeded”
-- No idempotency → repeated rewrites
-- Ambiguous task contract → unclear write targets
+Preflight (Definition of Done — must pass before /docs/commit-bulk)
+- Exactly 7 files present (no extras)
+- Base64 decodes ok for each
+- Min decoded bytes: publish≥100, post≥200, blogs≥200, year≥200, rss≥80, sitemap≥80, manifest≥50
+- manifest.json validates against items/runners/structure/manifest.schema.json
+- Log table: path | type | bytes | threshold | PASS/FAIL
+Any FAIL → abort with table; no commit
 
-Policy & schema alignment (current)
-- policy.json: never_edit_post_json=true; publish_json_enabled=true; “-blog-”→“-publish-”; deterministic & atomic; manifest json_format uses {publish_slug}.json
-- manifest.schema.json: required fields (slug, title, date, year, path, json, venue); docs clarify month/season provenance; duration mapping enum
-
-Observability (minimum logs)
-- idempotency_key, add_post_link, computed publish_path
-- archive_year, event_month, event_season, mapped event_duration
-- files attempted / written / skipped_noop
+Idempotence & ordering
+- Deterministic outputs (no wall-clock)
+- Neighbor links from date-desc snapshot of manifest (post-upsert model)
+- Never mutate source *-blog*.json
+- idempotency_key: normalized(source) | archive_year | event_month | event_season | mapped(event_duration) | start_date | end_date
 
 Status
-- Rendering logic lives in runner + templates; proxy stays thin pass-through (no rendering in server.js)
-- This brief is the reference for naming, routes, guards, and safety rules
+- Rendering logic lives in Git (runner + templates)
+- Proxy remains a thin read/write pass-through (no rendering in server.js)
+- This brief is the reference snapshot for naming, routes, safety rules, and 7-file DoD
