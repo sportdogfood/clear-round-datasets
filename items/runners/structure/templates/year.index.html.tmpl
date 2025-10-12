@@ -1,188 +1,40 @@
+<!-- items/runners/structure/templates/year.index.html.tmpl -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Blogs — {{YEAR}}</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="canonical" href="/blogs/{{YEAR}}/">
-  <meta property="og:title" content="Blogs — {{YEAR}}">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="/blogs/{{YEAR}}/">
-  <meta name="description" content="Year archive for {{YEAR}} with seasonal carousels.">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Blogs {{year}}</title>
+  <meta name="description" content="All Clear Round Travel posts from {{year}}." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    .chip{ @apply text-sm border rounded-full px-3 py-1 cursor-pointer select-none; }
-    .chip-active{ @apply bg-gray-900 text-white border-gray-900; }
-    .rail-link{ @apply block py-1 text-blue-300 underline; }
-    .carousel{ scroll-snap-type:x mandatory; }
-    .slide{ scroll-snap-align:start; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;color:#111}
+    header,main,footer{max-width:1000px;margin:0 auto;padding:16px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .chip{border:1px solid #ddd;border-radius:999px;padding:.35rem .7rem;text-decoration:none;color:#333}
+    .cards{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:760px){.cards{grid-template-columns:repeat(3,1fr)}}
+    .card{border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff}
+    .card a{color:inherit;text-decoration:none;display:block}
+    .card img{width:100%;height:auto;display:block}
+    .card .meta{padding:10px}
   </style>
 </head>
-<body class="bg-white text-gray-900">
-  <main class="max-w-6xl mx-auto px-4 py-8 grid gap-8 md:grid-cols-[240px_1fr]">
-    <!-- Left rail -->
-    <aside>
-      <h1 class="text-2xl font-semibold mb-3">Blogs — {{YEAR}}</h1>
-      <nav class="mb-6">
-        <a href="/" class="rail-link">Home</a>
-        <a href="/blogs/" class="rail-link">All blogs</a>
-      </nav>
+<body>
+<header>
+  <a href="/blogs/">← All blogs</a>
+  <h1>{{year}}</h1>
+  <div class="chips">{{season_filter_chips_html}}</div>
+</header>
 
-      <section class="mb-8">
-        <h2 class="text-sm font-medium text-gray-600 mb-2">Years</h2>
-        <div id="years" class="flex flex-col gap-1"></div>
-      </section>
+<main>
+  <div class="cards">
+    {{cards_html}}
+    <!-- expected card markup same as blogs.index cards -->
+  </div>
+</main>
 
-      <section>
-        <h2 class="text-sm font-medium text-gray-600 mb-2">Relevant blogs</h2>
-        <div id="relevant" class="flex flex-col gap-2 text-sm"></div>
-        <p id="rel-empty" class="text-gray-500 text-sm hidden">No matches.</p>
-      </section>
-    </aside>
-
-    <!-- Main -->
-    <section>
-      <!-- Chips: seasons only -->
-      <div class="flex flex-wrap items-center gap-3 mb-6">
-        <div id="chips-season" class="flex flex-wrap gap-2"></div>
-        <button id="clear" class="ml-auto text-sm underline text-blue-700 hidden">Clear</button>
-      </div>
-
-      <!-- Carousels -->
-      <div id="sections" class="space-y-10"></div>
-
-      <p id="empty" class="text-gray-700 hidden">No posts found.</p>
-    </section>
-  </main>
-
-  <script>
-    const YEAR = parseInt("{{YEAR}}",10);
-    const Q = new URLSearchParams(location.search);
-    const ACTIVE = { season: (Q.get('season')||'').toLowerCase() };
-    const SEASONS = ['spring','summer','fall','winter'];
-    const SEASON_LABEL = {spring:'Spring',summer:'Summer',fall:'Fall',winter:'Winter'};
-    const fmt = (d) => {
-      const [y,m,day] = String(d||"").split("-");
-      const dt = new Date(`${y}-${m}-${day}T00:00:00Z`);
-      return isNaN(dt) ? d : dt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
-    };
-
-    const yearsEl = document.getElementById('years');
-    const relWrap = document.getElementById('relevant');
-    const relEmpty = document.getElementById('rel-empty');
-    const chipsSeason = document.getElementById('chips-season');
-    const sections = document.getElementById('sections');
-    const clearBtn = document.getElementById('clear');
-    const emptyMsg = document.getElementById('empty');
-
-    fetch('/blogs/manifest.json').then(r=>r.json()).then(raw=>Array.isArray(raw)?raw:[])
-    .then(manifest=>{
-      // sort desc
-      manifest.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-
-      // years list
-      const years = Array.from(new Set(manifest.map(p=>p.year))).sort((a,b)=>b-a);
-      yearsEl.innerHTML = years.map(y=>`<a href="/blogs/${y}/" class="rail-link"${String(y)===String(YEAR)?' aria-current="page"':''}>${y}</a>`).join('');
-
-      // scope by year
-      const scope = manifest.filter(p=>String(p.year)===String(YEAR));
-      const bySeason = Object.fromEntries(SEASONS.map(s=>[s, scope.filter(p=>(p.season||'').toLowerCase()===s)]));
-
-      // chips
-      const seasonButtons = [`<button data-season="" class="chip ${ACTIVE.season?'':'chip-active'}">All seasons (${scope.length})</button>`]
-        .concat(SEASONS.filter(s=>bySeason[s].length>0).map(s=>{
-          const active = ACTIVE.season===s ? 'chip-active':'';
-          return `<button data-season="${s}" class="chip ${active}">${SEASON_LABEL[s]} (${bySeason[s].length})</button>`;
-        })).join('');
-      chipsSeason.innerHTML = seasonButtons;
-
-      // visible set
-      const visible = ACTIVE.season ? bySeason[ACTIVE.season] : scope;
-
-      // relevant
-      const rel = (visible.length?visible:scope).slice(0,6);
-      if (!rel.length){ relEmpty.classList.remove('hidden'); }
-      else {
-        relWrap.innerHTML = rel.map(p=>`<a href="${p.path}" class="underline text-blue-700">${p.title||p.slug}</a><span class="text-gray-500"> — ${fmt(p.date)}</span>`).map((line)=>`<div>${line}</div>`).join('');
-      }
-
-      // sections
-      sections.innerHTML = '';
-      let any=false;
-      const wanted = ACTIVE.season ? [ACTIVE.season] : SEASONS;
-      for (const s of wanted) {
-        const list = bySeason[s] || [];
-        if (!list.length) continue;
-        any=true;
-
-        const header = document.createElement('div');
-        header.className = 'flex items-end justify-between mb-3';
-        const h = document.createElement('h2');
-        h.className = 'text-xl font-semibold';
-        h.textContent = {spring:'Spring',summer:'Summer',fall:'Fall',winter:'Winter'}[s];
-        const see = document.createElement('a');
-        const qp = new URLSearchParams(); qp.set('season', s);
-        see.href = `?${qp.toString()}`;
-        see.className='text-blue-700 underline text-sm';
-        see.textContent='See all >';
-        header.appendChild(h); header.appendChild(see);
-        sections.appendChild(header);
-
-        const wrap = document.createElement('div');
-        wrap.className = 'carousel flex overflow-x-auto gap-4 pb-2';
-        wrap.setAttribute('role','list');
-
-        list.slice(0,12).forEach(p=>{
-          const li = document.createElement('article');
-          li.className = 'slide min-w-[260px] w-[260px] border rounded-2xl p-3 shadow-sm';
-          li.setAttribute('role','listitem');
-
-          const a = document.createElement('a');
-          a.href = p.path;
-          a.className = 'block';
-
-          const img = document.createElement('img');
-          img.decoding='async'; img.loading='lazy';
-          img.className='w-full h-36 object-cover rounded-xl mb-2';
-          if (p.card_image_link) { img.src = p.card_image_link; img.alt = p.title || 'image'; a.appendChild(img); }
-
-          const t = document.createElement('h3');
-          t.className='text-base font-semibold mb-1';
-          t.textContent=p.title||p.slug;
-          a.appendChild(t);
-
-          const meta = document.createElement('p');
-          meta.className='text-xs text-gray-600';
-          const loc = [p.city, p.state].filter(Boolean).join(', ');
-          meta.textContent=[fmt(p.date), loc].filter(Boolean).join(' • ');
-          a.appendChild(meta);
-
-          li.appendChild(a);
-          wrap.appendChild(li);
-        });
-
-        sections.appendChild(wrap);
-      }
-
-      if(!any){ emptyMsg.classList.remove('hidden'); }
-
-      // events
-      chipsSeason.addEventListener('click',(e)=>{
-        const b=e.target.closest('button[data-season]'); if(!b) return;
-        const s=b.getAttribute('data-season');
-        const q=new URLSearchParams(location.search);
-        if(s) q.set('season',s); else q.delete('season');
-        history.replaceState(null,'',`?${q.toString()}`);
-        location.reload();
-      });
-
-      clearBtn.classList.toggle('hidden', !ACTIVE.season);
-      clearBtn.addEventListener('click', ()=>{
-        history.replaceState(null,'',location.pathname);
-        location.reload();
-      });
-    })
-    .catch(()=>{ emptyMsg.textContent='Failed to load year archive.'; emptyMsg.classList.remove('hidden'); });
-  </script>
+<footer>
+  <small>© {{year}} Clear Round Travel</small>
+</footer>
 </body>
 </html>
