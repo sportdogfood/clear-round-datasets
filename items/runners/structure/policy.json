@@ -1,6 +1,6 @@
 {
   "name": "Structure Runner Policy",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "rules": {
     "scaffold_only": true,
     "never_edit_post_json": true,
@@ -18,14 +18,25 @@
     "seo_precedence_blog_over_section": true,
     "validate_http_urls_only": true,
     "publish_json_enabled": true,
-    "publish_slug_from_slug": {
-      "method": "string_replace",
-      "from": "-blog-",
-      "to": "-publish-"
-    },
+    "publish_slug_from_slug": { "method": "string_replace", "from": "-blog-", "to": "-publish-" },
     "deterministic_outputs": true,
     "no_wall_clock_values": true,
     "atomic_replace_files": true
+  },
+  "runner_contract": {
+    "trigger_required": true,
+    "compile_then_commit": true,
+    "required_outputs": [
+      "publish_json",
+      "post_page",
+      "blogs_index",
+      "year_index",
+      "manifest",
+      "rss",
+      "sitemap"
+    ],
+    "commit_endpoint": "POST /docs/commit-bulk",
+    "proxy_accepts_triggers": false
   },
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
@@ -57,24 +68,10 @@
   "manifest_shape": {
     "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "recommended": [
-      "month_num",
-      "month_name",
-      "season",
-      "image",
-      "city",
-      "state",
-      "country",
-      "lat",
-      "lng",
-      "place_id",
-      "timezone",
-      "start_date",
-      "end_date",
-      "event_duration",
-      "audience_labels",
-      "tags",
-      "section_link",
-      "maps_link"
+      "month_num", "month_name", "season", "image",
+      "city", "state", "country", "lat", "lng", "place_id", "timezone",
+      "start_date", "end_date", "event_duration",
+      "audience_labels", "tags", "section_link", "maps_link"
     ],
     "constraints": {
       "date_iso": true,
