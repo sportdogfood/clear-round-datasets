@@ -40,10 +40,7 @@
       "month_num": { "type": "string", "pattern": "^(0[1-9]|1[0-2])$", "description": "01..12" },
       "month_name": {
         "type": "string",
-        "enum": [
-          "January","February","March","April","May","June",
-          "July","August","September","October","November","December"
-        ],
+        "enum": ["January","February","March","April","May","June","July","August","September","October","November","December"],
         "description": "Human month label; typically mirrors event metadata when present (event_month)."
       },
       "season": {
@@ -88,7 +85,7 @@
       "end_date": { "type": "string", "format": "date" },
       "event_duration": {
         "type": "string",
-        "enum": ["single","weekend","multi-day"],
+        "enum": ["single", "weekend", "multi-day"],
         "description": "Runner maps free-text durations (e.g., '12 days') to this enum."
       },
       "audience_labels": {
@@ -147,8 +144,8 @@
         "lat": 33.4936,
         "lng": -117.1484,
         "timezone": "America/Los_Angeles",
-        "audience_labels": ["spectator","family"],
-        "tags": ["fall","weekend","california"]
+        "audience_labels": ["spectator", "family"],
+        "tags": ["fall", "weekend", "california"]
       }
     ]
   ]
