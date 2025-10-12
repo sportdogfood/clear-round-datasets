@@ -1,3 +1,4 @@
+# items/runners/structure/project-instruction.txt
 ## Consolidated global project rules — full set
 ## version 202510102110
 ## Reality
@@ -88,55 +89,114 @@ Concrete next step (single action): e.g., “Confirm to remove step 4” or “P
 
 ---
 
-## Process Enforcement (Anti-Regression) — Effective Immediately
+## Amendments — Enforcement & Anti-Regression (2025-10-12)
 
-**Purpose:** prevent recurrence of unauthorized condensation or deletions; guarantee ADD-only changes with hard gates.
+### A. Scope lock (files in scope must be named)
+* Only operate on files explicitly listed for that step.
+* No scope expansion without written approval.
 
-### A. Scope lock (files in scope must be named by you)
-- Only operate on files you explicitly list in that step.
-- No expanding scope without your written approval.
+### B. Baseline capture (READ-ONLY before any edit)
+For each target file, capture and report:
+* Raw URL, byte/line count, top-level headers or JSON keys.
+* First & last 3 lines (tokens).
+* If later mismatch → **HALT**.
 
-### B. Step 1 — Baseline lock (READ-ONLY)
-For each file, capture and report before any change:
-- Raw URL, line count, top-level section headers (or top-level JSON keys), and the first & last 3 lines.
-- If capture mismatches later, **halt**.
+### C. Redline plan (ADD-only)
+* Propose insertions with exact insertion points (by header/key).
+* No deletions/renames/reorders unless explicitly approved.
+* Any removal is a separate decision gate.
 
-### C. Step 2 — Redline plan (ADD-only)
-- Propose **insertions only** with exact insertion points (by header/key).
-- No deletions, rewrites, renames, or reorders.
-- If removal is necessary, surface as a separate decision and wait.
+### D. Approval gate
+* Do nothing until owner replies **approve-to-modify** per file.
 
-### D. Step 3 — Approval gate
-- No changes until you respond “approve” on the Redline plan **per file**.
+### E. Full-file replacement (preserve baseline)
+* Rebuild from captured original + approved inserts.
+* Do **not** reduce line count or remove headers/keys unless owner approved shrink.
 
-### E. Step 4 — Full-file replacement (preserve baseline)
-- Rebuild from the captured original + approved inserts.
-- Do **not** reduce line count or remove headers/keys unless you explicitly authorize.
+### F. Fail-closed guards (must pass or halt)
+* All captured headers/keys still present.
+* Line count **≥ baseline** (unless shrink approved).
+* Diff shows only approved additions; else **HALT** and report.
 
-### F. Step 5 — Fail-close guards (must pass or halt)
-- All captured headers/keys still present.
-- Line count **≥ baseline** (unless you approved shrink).
-- Diff shows only approved additions. If not, **halt** and report.
-
-### G. Step 6 — Stash-first, then commit (only after your “commit”)
-- Write to **stash** first; never overwrite populated JSON directly.
-- Per-file checks: `content_type` correct and `min_bytes` satisfied.
-- Commit only after explicit “commit” instruction.
+### G. Stash-first then commit (after explicit “commit”)
+* Write to stash first; never overwrite populated JSON directly.
+* Per-file checks: correct `content_type`, min-bytes satisfied.
+* Commit only after explicit **commit** instruction.
 
 ### H. Reporting (every step)
-- **Delta & Outcome:** what changed; expected vs observed; key evidence (line counts, headers/keys).
-- **Repro recipe:** inputs, env vars, raw URLs, and one `curl` example.
-- **Two-attempt limit:** after 2 failures, stop and state blocker + required input.
+* **Delta & Outcome** — what changed; expected vs observed; evidence (hashes/lines).
+* **Repro recipe** — inputs, env vars, raw URLs, one `curl`.
+* **Two-attempt limit** — stop after 2 failures; report blocker + required inputs.
 
 ### I. Compliance checklist (prepend to every reply in this project)
 `Scope lock OK · Baseline captured · ADD-only plan · No deletions · One-step change · Fail-close guards armed`
 
 ### J. Prohibited behaviors
-- Condensing or removing sections without explicit approval.
-- Batch edits across multiple files in a single step.
-- Speculative code or hypothetical patches.
+* Condensing or removing sections without explicit approval.
+* Batch edits across multiple files in a single step.
+* Speculative code or hypothetical patches.
+* Dropping vendor fields (e.g., `x-*` in OpenAPI) or existing routes.
 
-### K. Content guardrails (contextual to this project)
-- Never modify any `*-blog-YYYY-MM-DD.json`.
-- Only create/update `*-publish-YYYY-MM-DD.json` and the approved HTML/XML targets.
-- Do not add/modify routes; proxy remains thin; respect allowlists and CORS.
+---
+
+## Runner DoD & Safety Contract (One-point trigger + 7-file commit)
+
+**Trigger (one point):** an object that at minimum provides:
+* `canonical_base`
+* `event_link` (raw GitHub URL to event JSON)
+* Source pointer (read-only): `docs_path` (under `docs/.../*.json`) **or** `content_link` (raw URL)
+
+**Optional inputs (raw URLs):** `images_link`, `section_link`, `venue_link`, `geo_link`, `audiences_link`.
+
+**Required outputs (exactly 7 per post):**
+1. Publish JSON (sibling to source; never touch `*-blog*.json`)
+2. Post page `/…/{slug}/index.html`
+3. `/docs/blogs/index.html`
+4. `/docs/blogs/{year}/index.html`
+5. `/docs/blogs/rss.xml`
+6. `/docs/sitemap.xml`
+7. `/docs/blogs/manifest.json` (array upsert by slug; `json` must point to publish JSON)
+
+**Write-guards (hard):**
+* **Deny** any path matching `**/*-blog-????-??-??.json` or `**/*-blog.json`
+* **Allow only** the publish JSON and the six HTML/XML/JSON targets above
+
+**Strict preflight (must pass before commit):**
+* Exactly 7 files; Base64 decodes; min bytes ≥ (100 / 200 / 200 / 200 / 80 / 80 / 50)
+* `manifest.json` validates against `items/runners/structure/manifest.schema.json`
+* If any fail → abort with a 7-row table (path | type | bytes | threshold | PASS/FAIL)
+
+**Idempotence:**
+* Deterministic outputs (no wall clock); neighbors computed from date-desc snapshot.
+* Never mutate source `*-blog*.json`.
+
+---
+
+## Proxy Invariants — Additive Extensions (do not alter the section above)
+
+1) Additional protected routes to preserve (additive; keep existing ones intact):
+   - `app.post("/docs/commit-bulk", …)`  (single Git commit for multiple `docs/*` files)
+   - `app.get("/docs/*", …)`             (proxy read)
+   - `app.get("/items/*", …)`            (proxy read; HEAD/OPTIONS supported)
+   - **Compat alias:** `app.get("/items/alias/commit", …)` → routes to `/items/commit`
+
+2) Vendor & schema fields:
+   - Preserve all OpenAPI vendor fields (e.g., `x-write-guards`, `x-notes`) — never drop them.
+   - Additive edits only to OpenAPI schemas and examples unless owner approves a breaking change.
+
+3) CORS & directories (unchanged policies):
+   - CORS origins must include Airtable trio (`airtable.com`, `app.airtable.com`, `console.airtable.com`).
+   - `ALLOW_DIRS` remains the exact superset listed above; changes are additive only.
+
+---
+
+## Assistant Reply Contract (operational gate; every step)
+
+1) ACK rules.
+2) Today’s single step (1 line).
+3) Gate 0 — proof of ingestion (each file: path, bytes/lines, top+bottom tokens, purpose).
+4) Gate 1 — delta plan (add-only bullets per file; lines + risk).
+5) Guardrails summary (✓/✗ for routes, `ALLOW_DIRS`, CORS, write-guards).
+6) Request: **approve-to-modify**.
+→ Do nothing else until owner approves.
+
