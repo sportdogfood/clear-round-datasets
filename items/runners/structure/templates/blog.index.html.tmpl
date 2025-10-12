@@ -1,211 +1,99 @@
+<!-- items/runners/structure/templates/blog.index.html.tmpl -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Loading…</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="canonical" href="{{CANONICAL}}">
-  <meta id="og-title" property="og:title" content="">
-  <meta id="og-desc"  property="og:description" content="">
-  <meta id="og-type"  property="og:type" content="article">
-  <meta id="og-url"   property="og:url" content="">
-  <meta id="tw-card"  name="twitter:card" content="summary_large_image">
-  <meta id="meta-desc" name="description" content="">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>{{title}}</title>
+  <meta name="description" content="{{meta_description}}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="canonical" href="{{canonical}}" />
 
-  <!-- Configure exact JSON paths -->
-  <script id="post-config" type="application/json">
-    { "slug": "{{SLUG}}", "json": "{{JSON_PATH}}", "images": "{{IMAGES_LINK}}" }
-  </script>
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{open_graph_title}}" />
+  <meta property="og:description" content="{{open_graph_description}}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="{{canonical}}" />
+  <meta property="og:image" content="{{open_graph_image}}" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{open_graph_title}}" />
+  <meta name="twitter:description" content="{{open_graph_description}}" />
+  <meta name="twitter:image" content="{{open_graph_image}}" />
   <style>
-    .prose p{margin:0 0 1rem 0}
-    .chip{font-size:.75rem;border:1px solid #e5e7eb;border-radius:9999px;padding:.25rem .5rem}
-    .aspect-16x9{position:relative;padding-top:56.25%}
-    .aspect-3x2{position:relative;padding-top:66.6667%}
-    .aspect-fill>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0.75rem}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;margin:0;color:#111}
+    header,main,footer{max-width:960px;margin:0 auto;padding:16px}
+    .eyebrow{color:#555;font-size:.9rem;margin:.5rem 0}
+    .hero{margin:12px 0}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
+    .tags{margin-top:16px}
+    .tags a{display:inline-block;margin:.25rem .5rem .25rem 0;padding:.25rem .5rem;border:1px solid #ddd;border-radius:999px;text-decoration:none;color:#333}
+    nav.pager{display:flex;justify-content:space-between;margin:24px 0}
+    figure{margin:0}
+    figcaption{font-size:.9rem;color:#555}
   </style>
 </head>
-<body class="bg-white text-gray-900">
-  <main class="max-w-3xl mx-auto px-4 py-10">
-    <article>
-      <!-- Title + Hero -->
-      <header class="mb-8">
-        <h1 id="title" class="text-4xl md:text-5xl font-semibold tracking-tight mb-4"></h1>
-        <div id="heroWrap" class="aspect-16x9 aspect-fill mb-4 hidden"><img id="hero" alt=""></div>
-        <div id="intro" class="prose text-lg leading-relaxed text-gray-800"></div>
-      </header>
+<body>
+<header>
+  <a href="/blogs/">← All blogs</a>
+  <h1>{{title}}</h1>
+  <div class="eyebrow">
+    <time datetime="{{date_iso}}">{{date_human}}</time>
+    · <span>{{venue_label}}</span>
+    <span class="sep">·</span>
+    <span>{{event_month}} • {{event_season}}</span>
+  </div>
+</header>
 
-      <!-- Stay -->
-      <section class="mt-12 border-t pt-8">
-        <h2 id="stay-title" class="text-2xl font-semibold tracking-tight mb-3">Stay</h2>
-        <div id="stayWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="stay-img" alt=""></div>
-        <div id="stay-p" class="prose text-gray-800 leading-relaxed mb-3"></div>
-        <ul id="stay-list" class="list-disc pl-6 space-y-1"></ul>
-        <p id="stay-cta" class="italic text-gray-700 mt-3"></p>
+<main>
+  <section class="hero">
+    {{hero_img}}
+    <!-- expected: <figure><img src="/path.jpg" alt="{{image_alt_text}}" /><figcaption>{{image_caption}}</figcaption></figure> -->
+  </section>
+
+  <article>
+    {{intro_html}}
+
+    <div class="grid">
+      <section>
+        <h2>Stay</h2>
+        {{stay_list_html}}
       </section>
-
-      <!-- Dine -->
-      <section class="mt-12 border-t pt-8">
-        <h2 id="dine-title" class="text-2xl font-semibold tracking-tight mb-3">Dine</h2>
-        <div id="dineWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="dine-img" alt=""></div>
-        <h3 class="text-lg font-medium mt-4 mb-2">AM</h3>
-        <div id="dine-am" class="prose text-gray-800 leading-relaxed mb-3"></div>
-        <h3 class="text-lg font-medium mt-6 mb-2">Dinner</h3>
-        <div id="dine-dinner" class="prose text-gray-800 leading-relaxed mb-3"></div>
-        <ul id="dine-list" class="list-disc pl-6 space-y-1"></ul>
-        <p id="dine-cta" class="italic text-gray-700 mt-3"></p>
+      <section>
+        <h2>Dine</h2>
+        {{dine_list_html}}
       </section>
-
-      <!-- Locale -->
-      <section class="mt-12 border-t pt-8">
-        <h2 id="locale-title" class="text-2xl font-semibold tracking-tight mb-3">Locale</h2>
-        <div id="localeWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="locale-img" alt=""></div>
-        <div id="locale-p" class="prose text-gray-800 leading-relaxed"></div>
+      <section>
+        <h2>Essentials</h2>
+        {{essentials_list_html}}
       </section>
-
-      <!-- Essentials -->
-      <section class="mt-12 border-t pt-8">
-        <h2 id="essentials-title" class="text-2xl font-semibold tracking-tight mb-3">Essentials</h2>
-        <div id="essentialsWrap" class="aspect-3x2 aspect-fill mb-4 hidden"><img id="essentials-img" alt=""></div>
-        <div id="essentials-p" class="prose text-gray-800 leading-relaxed mb-3"></div>
-        <ul id="essentials-list" class="list-disc pl-6 space-y-1"></ul>
-        <p id="essentials-cta" class="italic text-gray-700 mt-3"></p>
+      <section>
+        <h2>Locale</h2>
+        {{locale_html}}
       </section>
+    </div>
 
-      <!-- Outro -->
-      <section class="mt-12 border-t pt-8">
-        <div id="outro" class="prose text-gray-800 leading-relaxed"></div>
-      </section>
+    {{outro_html}}
 
-      <!-- Tags + Neighbors -->
-      <section class="mt-10">
-        <div id="tags" class="flex flex-wrap gap-2"></div>
-        <div id="neighbors" class="mt-6 flex justify-between text-sm text-blue-700 underline"></div>
-      </section>
-    </article>
+    <div class="tags">
+      {{tags_html}}
+      <!-- expected: <a href="/blogs/?tag=fall">fall</a> … -->
+    </div>
+  </article>
 
-    <nav class="mt-12">
-      <a href="/blogs/" class="text-blue-700 underline">All blogs</a>
-    </nav>
-  </main>
+  <nav class="pager">
+    <div class="prev">{{prev_link}}</div>
+    <div class="next">{{next_link}}</div>
+    <!-- expected: <a href="/blogs/.../">← Previous</a> / <a href="/blogs/.../">Next →</a> -->
+  </nav>
 
-  <script>
-    // Minimal sanitizer: escape HTML then replace Markdown links [label](url) with safe anchors (http/https only)
-    const escapeHtml = (s='') => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const safeUrl = (u) => /^https?:\/\//i.test(u) ? u : '#';
-    const mdInline = (s='') => {
-      const esc = escapeHtml(String(s));
-      return esc
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
-          `<a href="${safeUrl(url.trim())}" target="_blank" rel="noopener" class="underline text-blue-700">${escapeHtml(label)}</a>`
-        )
-        .replace(/\n{2,}/g, '</p><p>')
-        .replace(/\n/g, '<br>');
-    };
-    const setProse = (id, s) => { const el=document.getElementById(id); if(el){ el.innerHTML = s ? `<p>${mdInline(s)}</p>` : ''; } };
-    const setText = (id, v, f='') => { const el=document.getElementById(id); if (el) el.textContent = v || f; };
-    const setImgSlot = (wrapId, imgId, link, hidden, alt) => {
-      const wrap = document.getElementById(wrapId);
-      const img  = document.getElementById(imgId);
-      if (!wrap || !img) return;
-      if (String(hidden)==='1' || !link) { wrap.classList.add('hidden'); return; }
-      img.src = link; img.alt = alt || '';
-      wrap.classList.remove('hidden');
-    };
-    const addItems = (arr, ul) => {
-      if (!Array.isArray(arr) || !ul) return;
-      arr.forEach(it => {
-        const li = document.createElement('li');
-        const name = it.name || it.type || '';
-        const links = Array.isArray(it.links) ? it.links : (it.link ? [it.link] : []);
-        if (links.length) {
-          const a = document.createElement('a');
-          a.href = safeUrl(String(links[0]));
-          a.textContent = name || links[0];
-          a.className = 'text-blue-700 underline break-all';
-          a.rel='noopener'; a.target='_blank';
-          li.appendChild(a);
-        } else {
-          li.textContent = name;
-        }
-        if (it.alt) {
-          const s = document.createElement('span');
-          s.textContent = ` — ${it.alt}`;
-          li.appendChild(s);
-        }
-        ul.appendChild(li);
-      });
-    };
+  {{json_ld}}
+  <!-- optional: full JSON-LD block for Event/Article -->
+</main>
 
-    const cfg = JSON.parse(document.getElementById('post-config').textContent);
-
-    Promise.allSettled([
-      fetch(cfg.json).then(r=>r.json()),
-      cfg.images ? fetch(cfg.images).then(r=>r.json()) : Promise.resolve({}),
-      fetch('/blogs/manifest.json').then(r=>r.ok?r.json():[]).catch(()=>[])
-    ]).then(([pd, imd, md]) => {
-      const d = pd.value || {};
-      const images = imd.value || {};
-      const manifest = Array.isArray(md.value) ? md.value : [];
-
-      // SEO + title
-      const title = d.seo?.section_title || d.seo?.open_graph_title || d.title || 'Blog';
-      document.title = title;
-      document.getElementById('og-title').content = d.seo?.open_graph_title || title;
-      document.getElementById('og-desc').content  = d.seo?.open_graph_description || d.seo?.meta_description || '';
-      document.getElementById('meta-desc').content = d.seo?.meta_description || '';
-      document.getElementById('og-url').content = location.href;
-
-      // Headings
-      setText('title', title);
-
-      // Paragraph fields with Markdown links
-      setProse('intro', d.hello?.intro);
-      setProse('outro', d.hello?.outro);
-
-      setText('stay-title', d.stay?.title, 'Stay');
-      setProse('stay-p', d.stay?.paragraph);
-      addItems(d.stay?.items, document.getElementById('stay-list'));
-      setText('stay-cta', d.stay?.cta);
-
-      setText('dine-title', d.dine?.title, 'Dine');
-      setProse('dine-am', d.dine?.am);
-      setProse('dine-dinner', d.dine?.dinner);
-      addItems(d.dine?.items, document.getElementById('dine-list'));
-      setText('dine-cta', d.dine?.cta);
-
-      setText('locale-title', d.locale?.title, 'Locale');
-      setProse('locale-p', d.locale?.paragraph);
-
-      setText('essentials-title', d.essentials?.title, 'Essentials');
-      setProse('essentials-p', d.essentials?.paragraph);
-      addItems(d.essentials?.items, document.getElementById('essentials-list'));
-      setText('essentials-cta', d.essentials?.cta);
-
-      // Images from desc-images.json only (no global fallback)
-      const alt = (images.image_alt_text || '').trim();
-      setImgSlot('heroWrap','hero', images.hero_image_link, images.hero_image_hidden, alt);
-      setImgSlot('stayWrap','stay-img', images.stay_image_link, images.stay_image_hidden, alt);
-      setImgSlot('dineWrap','dine-img', images.dine_image_link, images.dine_image_hidden, alt);
-      setImgSlot('localeWrap','locale-img', images.locale_image_link, images.locale_image_hidden, alt);
-      setImgSlot('essentialsWrap','essentials-img', images.essentials_image_link, images.essentials_image_hidden, alt);
-
-      // Tags
-      const me = (Array.isArray(manifest) ? manifest : []).find(x=>x.slug===cfg.slug);
-      if (me?.tags) {
-        const wrap = document.getElementById('tags');
-        me.tags.forEach(t => { const b=document.createElement('span'); b.className='chip'; b.textContent=t; wrap.appendChild(b); });
-      }
-
-      // Neighbors
-      if (Array.isArray(manifest) && manifest.length) {
-        const sorted = [...manifest].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-        const i = sorted.findIndex(x=>x.slug===cfg.slug);
-        const prev = sorted[i-1], next = sorted[i+1];
-        const n = document.getElementById('neighbors');
-        n.innerHTML = `${next?`<a class="underline" href="${next.path}">← Next: ${next.title||next.slug}</a>`:''}<span></span>${prev?`<a class="underline" href="${prev.path}">Prev: ${prev.title||prev.slug} →</a>`:''}`;
-      }
-    }).catch(()=>{ /* silent */ });
-  </script>
+<footer>
+  <small>© {{year}} Clear Round Travel</small>
+</footer>
 </body>
 </html>
