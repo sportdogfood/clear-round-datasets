@@ -69,6 +69,26 @@ Manifest entry must include:
 - json MUST point to the publish JSON (never *-blog*.json)
 
 # -------------------------------------------------------------------------
+# MIRROR PROXY (for sandbox-safe GitHub access)
+# -------------------------------------------------------------------------
+# When a fetch target starts with:
+#     https://raw.githubusercontent.com/
+# rewrite it internally as:
+#     https://crt-b1434e13de34.herokuapp.com/mirror/github?url={original_url}
+#
+# Purpose:
+#   - Allow the Structure Runner (CustomGPT or remote environments) to read
+#     GitHub-hosted JSON, HTML, or XML files through the ClearRound proxy.
+#   - Avoid direct outbound fetches that may fail in restricted sandboxes.
+#
+# Behavior:
+#   - Apply rewrite automatically to content_link, event_link, images_link,
+#     section_link, venue_link, geo_link, and audiences_link.
+#   - No effect on /docs/... or already-proxied URLs.
+# -------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
 FETCH RULES
 - HTTPS only.
 - Two attempts per fetch; 5 s timeout each.
