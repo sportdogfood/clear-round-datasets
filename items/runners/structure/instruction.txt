@@ -94,6 +94,28 @@ FETCH RULES
 - Two attempts per fetch; 5 s timeout each.
 - If a non-required link fails → WARN (do not abort).
 - If content_link fetch fails → FAIL (cannot build publish.json).
+# -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# PROXY REWRITE RULE (required for GPT sandbox)
+# -------------------------------------------------------------------------
+# Purpose:
+#   Ensure GPT can fetch GitHub-hosted JSON, HTML, or XML files through
+#   the Heroku proxy, since direct calls to raw.githubusercontent.com are blocked.
+#
+# Behavior:
+#   - Applies only to URLs starting with "https://raw.githubusercontent.com/"
+#   - Automatically rewrites them to pass through the CRT mirror proxy.
+#   - Does NOT affect /items/... or /docs/... paths.
+#
+REWRITE:
+  - match: "^https://raw\\.githubusercontent\\.com/"
+    replace: "https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/"
+#
+# Example:
+#   Input : https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/abc.json
+#   Output: https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/abc.json
+# -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
 PREFLIGHT (LIGHT)
