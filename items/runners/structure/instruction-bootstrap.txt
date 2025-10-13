@@ -1,0 +1,19 @@
+# instruction-bootstrap.txt
+# Version: 2025-10-13.bootstrap-1
+# Purpose: This minimal loader instructs the ClearRound Structure Runner
+#          to fetch the authoritative instruction set from the GitHub repo.
+#          Keeps repo-controlled rules under versioning and removes 8K text limit.
+
+LOAD
+- source: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
+- attempts: 2
+- timeout: 5
+- checksum_policy: ignore
+- fallback_behavior: run-local-if-fail
+
+NOTES
+- The remote file (above) is the canonical instruction set.
+- If the fetch fails, the runner will fall back to this local bootstrap behavior:
+    * Require "canonical_base", "event_link", and "content_link" or "docs_path"
+    * Produce the seven standard outputs
+    * Warn: "Remote instruction fetch failed; used bootstrap defaults"
