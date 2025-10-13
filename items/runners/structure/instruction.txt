@@ -1,194 +1,130 @@
 # items/runners/structure/instruction.txt
-# Purpose: Structure Runner publishes static blog artifacts under /docs/blogs.
-# It NEVER edits source authoring JSON (*-blog*.json). It writes a sibling
-# publish JSON plus 6 deterministic pages. One bulk commit per post.
+# Version: 2025-10-13.simple-1a
+# Purpose: Authoritative instruction set for ClearRound Structure Runner.
+# Bootstrap version loaded remotely via:
+#   https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
+# -------------------------------------------------------------------------
 
-VERSION: 2025-10-12.2 (add one-point trigger, event-named slugs, 7-file contract, strict preflight)
-Compat: Additive only. Preserves all prior behavior.
+PURPOSE
+- Accept a single trigger (URL or JSON) and publish one blog post.
+- Read source content; NEVER edit *-blog*.json.
+- Produce exactly seven (7) output files and push them in one /docs/commit-bulk.
 
-──────────────────────────────────────────────────────────────────────────────
-TRIGGER (one-point JSON the runner starts from)
-Minimum required:
-- canonical_base            (e.g., https://blog.clearroundtravel.com)
-- event_link                (raw GitHub URL to event JSON)
+# -------------------------------------------------------------------------
+ACCEPTED TRIGGERS
+A) One URL (string) pointing to a JSON under:
+   https://raw.githubusercontent.com/{owner}/{repo}/{branch}/items/blogs/{anything}.json
+   → Fetch it; that JSON is the trigger.
+B) One JSON object pasted inline.
 
-Recommended optional (all raw GitHub URLs):
-- images_link               (card/hero/section images)
-- section_link              (SEO fallback when post.seo missing)
-- venue_link, geo_link, audiences_link  (aux only; non-blocking)
+# -------------------------------------------------------------------------
+REQUIRED FIELDS
+- canonical_base : e.g. https://blog.clearroundtravel.com
+- event_link     : raw GitHub URL to event JSON
+- One of:
+    • content_link : raw URL to the post’s *-blog*.json (read-only)
+    • docs_path    : path under docs/.../*.json for the SOURCE file; derive raw URL if needed.
 
-Paths (preferred; if omitted, runner derives):
-- blogs_publish_path             (PUBLISH JSON)
-- blogs_publish_index_path       (/…/{slug}/index.html)
-- blogs_index_path               (/docs/blogs/index.html)
-- blogs_{YYYY}_index_path        (year archive)
-- blogs_rss_path                 (/docs/blogs/rss.xml)
-- blogs_sitemap_path             (/docs/sitemap.xml)
-- blogs_manifest_path            (/docs/blogs/manifest.json)
+OPTIONAL FIELDS
+- images_link, section_link, venue_link, geo_link, audiences_link
+- blogs_*_path fields (publish, index, rss, sitemap, manifest, etc.)
+- commit_message
+- start_date, end_date, season, year
 
-Source content pointer (read-only):
-- docs_path (path under docs/…/*.json) OR content_link (full raw URL)
-  NOTE: This is the authoring “*-blog*.json”. The runner MUST NOT overwrite it.
+# -------------------------------------------------------------------------
+RULES OF THE ROAD
+- DO NOT write to any *-blog*.json.
+- publish.json naming:
+    * “-blog-YYYY-MM-DD.json” → “-publish-YYYY-MM-DD.json”
+    * otherwise “-blog.json” → “-publish.json”
+- Year: prefer explicit `year`; else event.start_date[0:4]; else filename date.
+- Images: use as-is; no auto-fallback.
+- Titles/SEO:
+    * title: seo.section_title → seo.open_graph_title → title → slug
+    * description: seo.meta_description → seo.open_graph_description → first paragraph
+- **CONTENT COPY RULE:**
+    When `content_link` is present, fetch that JSON and copy *all* fields into `publish.json`.
+    Do not summarize or drop nested keys. Enrich only with meta, event, and venue info.
 
-Example minimum:
-{
-  "canonical_base": "https://blog.clearroundtravel.com",
-  "event_link": "https://raw.githubusercontent.com/.../items/events/...-ev.json",
-  "docs_path": "blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-blog-2025-10-05.json",
-  "images_link": "https://raw.githubusercontent.com/.../items/images/capc-images.json",
-  "section_link": "https://raw.githubusercontent.com/.../items/sections/capc-section.json",
-  "blogs_publish_path": "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-publish.json",
-  "blogs_publish_index_path": "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/index.html",
-  "blogs_index_path": "docs/blogs/index.html",
-  "blogs_2025_index_path": "docs/blogs/2025/index.html",
-  "blogs_rss_path": "docs/blogs/rss.xml",
-  "blogs_sitemap_path": "docs/sitemap.xml",
-  "blogs_manifest_path": "docs/blogs/manifest.json"
-}
-
-──────────────────────────────────────────────────────────────────────────────
-NETWORK RULES (mirror policy)
-- HTTPS only. Allowed hosts: raw.githubusercontent.com
-- Fetch ONLY: content_link or docs_path (via raw), event_link, images_link, section_link.
-- 2 attempts per URL, 5s timeout. Reject non-http(s) links.
-- Do not invent extra fetches; no external APIs.
-
-──────────────────────────────────────────────────────────────────────────────
-SOURCE vs PUBLISH MODEL
-- Source: any file that matches *-blog*.json is READ-ONLY.
-- Publish: create a sibling publish JSON:
-  • Dated style: replace “-blog-YYYY-MM-DD.json” → “-publish-YYYY-MM-DD.json”
-  • Event-named style: replace “-blog.json” → “-publish.json”
-- Templates and indexes MUST read from the publish JSON only.
-
-──────────────────────────────────────────────────────────────────────────────
-SLUGS, DATES, YEAR
-- If the content filename contains “-blog-YYYY-MM-DD”, that defines {date} and {slug}.
-- Else (event-named), derive:
-  • slug = basename without .json (e.g., capc-cap-challenge-blog)
-  • {date}, {year} from event.start_date if present; otherwise from any date in content.
-- archive year:
-  • Prefer event.start_date[0:4]; fallback to date in slug/filename.
-
-──────────────────────────────────────────────────────────────────────────────
-EVENT FIELDS (from event_link)
-- Read (optional but recommended): event_month, event_season, event_duration, start_date, end_date.
-- Map event_duration → enum for manifest:
-  • single (1 day) | weekend (2–3 days) | multi-day (≥4 days)
-- Persist these into the publish JSON for templates and manifest use.
-
-──────────────────────────────────────────────────────────────────────────────
-IMAGES (from images_link)
-Supported keys (read if present):
-- hero_image_link/_hidden, stay_image_link/_hidden, dine_image_link/_hidden,
-  essentials_image_link/_hidden, locale_image_link/_hidden,
-  card_image_link/_hidden, image_alt_text.
-Rules:
-- *_hidden==1 → do not render that slot.
-- card_image_link (if present) populates manifest.image; else omit (UI uses placeholder).
-- No cross-slot fallbacks.
-
-──────────────────────────────────────────────────────────────────────────────
-CONTENT RULES
-- Lists: use items[].name and items[].link; append “ — {alt}” when alt present.
-- Paragraphs allow inline Markdown links ONLY in:
-  hello.intro, hello.outro, stay.paragraph, dine.am, dine.dinner, locale.paragraph, essentials.paragraph.
-- All external links must be http(s); internal links must be site-root absolute (/…).
-- Title precedence: seo.section_title → seo.open_graph_title → title → slug.
-- Description precedence: seo.meta_description → seo.open_graph_description.
-
-──────────────────────────────────────────────────────────────────────────────
-TEMPLATES (installed paths; do not inline timestamps)
+# -------------------------------------------------------------------------
+TEMPLATES (read-only)
 - items/runners/structure/templates/blog.index.html.tmpl
 - items/runners/structure/templates/blogs.index.html.tmpl
 - items/runners/structure/templates/year.index.html.tmpl
 - items/runners/structure/templates/rss.xml.tmpl
 - items/runners/structure/templates/sitemap.xml.tmpl
 
-──────────────────────────────────────────────────────────────────────────────
-REQUIRED OUTPUTS (exactly seven per post)
-1) PUBLISH JSON
-   Path: blogs_publish_path (from trigger or derived)
-2) POST PAGE
-   Path: blogs_publish_index_path (…/{slug}/index.html)
-3) BLOGS INDEX
-   Path: blogs_index_path
-4) YEAR INDEX
-   Path: blogs_{year}_index_path (explicit or derive /docs/blogs/{year}/index.html)
-5) RSS
-   Path: blogs_rss_path
-6) SITEMAP
-   Path: blogs_sitemap_path
-7) MANIFEST (array upsert by slug)
-   Path: blogs_manifest_path
+# -------------------------------------------------------------------------
+OUTPUTS (ALWAYS SEVEN)
+1) PUBLISH JSON              → blogs_publish_path
+2) POST PAGE (index.html)    → blogs_publish_index_path
+3) BLOGS INDEX               → blogs_index_path
+4) YEAR INDEX                → blogs_{year}_index_path
+5) RSS                       → blogs_rss_path
+6) SITEMAP                   → blogs_sitemap_path
+7) MANIFEST (upsert)         → blogs_manifest_path
 
-Manifest entry (see schema):
-- REQUIRED: slug, title, date, year, path, json, venue
-- RECOMMENDED: month_num, month_name, season, image, city/state/country,
-  lat/lng/place_id, timezone, start_date, end_date, event_duration, audience_labels, tags, section_link, maps_link
-- json MUST point to the publish JSON (never to *-blog*.json)
+Manifest entry must include:
+- slug, title, date, year, path, json, venue
+- json MUST point to the publish JSON (never *-blog*.json)
 
-──────────────────────────────────────────────────────────────────────────────
-WRITE GUARDS (non-negotiable; enforced before commit)
-ALLOW ONLY:
-- docs/blogs/**/index.html
-- docs/blogs/[0-9][0-9][0-9][0-9]/index.html
-- docs/blogs/index.html
-- docs/blogs/rss.xml
-- docs/sitemap.xml
-- docs/blogs/manifest.json
-- docs/blogs/**/**-publish-????-??-??.json    (dated style)
-- docs/blogs/**/**-publish.json               (event-named style)
+# -------------------------------------------------------------------------
+FETCH RULES
+- HTTPS only.
+- Two attempts per fetch; 5 s timeout each.
+- If a non-required link fails → WARN (do not abort).
+- If content_link fetch fails → FAIL (cannot build publish.json).
 
-DENY ALWAYS:
-- **/*-blog-????-??-??.json
-- **/*-blog.json
+# -------------------------------------------------------------------------
+PREFLIGHT (LIGHT)
+- Prepare exactly 7 files.
+- Base64-encode all bodies.
+- Validate extensions:
+    *.json → application/json
+    *.xml  → application/xml
+    *.html → text/html
+- WARN ONLY if decoded size < threshold:
+    publish≥100 B, post≥200 B, indexes≥200 B, rss≥80 B, sitemap≥80 B, manifest≥50 B.
+- Print table: path | type | decoded_bytes | status(OK/WARN).
 
-Any violation → HALT (no writes).
+# -------------------------------------------------------------------------
+COMMIT (SINGLE BULK)
+POST /docs/commit-bulk
+{
+  "message": commit_message or "publish {slug}",
+  "overwrite": true,
+  "files": [{path, content_type, content_base64} ×7]
+}
 
-──────────────────────────────────────────────────────────────────────────────
-PREFLIGHT (Definition of Done — MUST PASS before /docs/commit-bulk)
-- Exactly 7 files present (no extras).
-- Each file.content_base64 decodes successfully.
-- Min decoded bytes:
-  • publish JSON: ≥100
-  • post index.html: ≥200
-  • blogs index.html: ≥200
-  • year index.html: ≥200
-  • rss.xml: ≥80
-  • sitemap.xml: ≥80
-  • manifest.json: ≥50
-- manifest.json validates against items/runners/structure/manifest.schema.json
-- Log a one-row-per-file table (path | type | bytes | threshold | PASS/FAIL).
-
-If any FAIL → abort; return preflight table with reasons. No commit.
-
-──────────────────────────────────────────────────────────────────────────────
-COMMIT (single bulk operation)
-- POST /docs/commit-bulk with:
-  { "message": "publish {slug}", "overwrite": true, "files": [{ path, content_type, content_base64 } ×7] }
-- content_type by extension: .json → application/json; .xml → application/xml; .html → text/html
-- Idempotent: if computed content equals upstream, it’s still included but Git optimizes the diff.
-
-──────────────────────────────────────────────────────────────────────────────
-IDEMPOTENCE & ORDERING
-- Outputs must be deterministic and free of wall-clock values.
-- Neighbor links: compute from a date-desc snapshot of manifest (after hypothetical upsert).
-- Never mutate source *-blog*.json.
-- Build idempotency_key from:
-  normalized(content pointer) | archive_year | event_month | event_season | mapped(event_duration) | start_date | end_date
-
-──────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------------------------
 ERROR BEHAVIOR
-- Fetch failure (content/event/images/section) → abort; report which URL failed.
-- Manifest invalid vs schema → abort; include validation errors.
-- Write to any denied path → 403 “write to source forbidden”.
-- Any path outside allowlist → 403 “path not allowed”.
+Fail only if:
+- trigger URL/JSON cannot be fetched or parsed;
+- required fields missing;
+- any of the seven outputs null/undefined.
+Otherwise continue with WARN.
 
-──────────────────────────────────────────────────────────────────────────────
-BACKWARD COMPATIBILITY
-- Both dated and event-named posts are supported.
-- Existing templates and defaults (recent_count=4, rss_item_limit=20, placeholders) remain unchanged.
-- If trigger omits explicit paths, runner derives them from docs_path, slug, and archive year.
+# -------------------------------------------------------------------------
+BOOTSTRAP LINKAGE
+- This file is the canonical instruction set.
+- The runner’s local bootstrap file (instruction-bootstrap.txt) must include:
+      LOAD → this URL (two attempts, 5 s timeout).
+- If remote fetch fails, runner uses fallback defaults and warns:
+      "Remote instruction fetch failed; bootstrap rules applied."
 
+# -------------------------------------------------------------------------
+NON-NEGOTIABLES
+- Never modify Airtable routes.
+- Never exceed seven outputs.
+- Never write to *-blog*.json.
+- All commits idempotent: identical bytes re-run → no-op.
+
+# -------------------------------------------------------------------------
+RUN SUMMARY
+- "Trigger: {url or inline} — fetched ✓"
+- List of URLs fetched.
+- Preflight table (7 rows).
+- "Ready to commit /docs/commit-bulk (7 files)."
+
+# -------------------------------------------------------------------------
 END OF FILE
