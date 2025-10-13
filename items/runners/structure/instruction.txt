@@ -71,11 +71,11 @@ Manifest entry must include:
 # -------------------------------------------------------------------------
 # MIRROR PROXY (for sandbox-safe GitHub access)
 # -------------------------------------------------------------------------
-# When a fetch target starts with:
-#     https://raw.githubusercontent.com/
-# rewrite it internally as:
-#     https://crt-b1434e13de34.herokuapp.com/mirror/github?url={original_url}
-#
+
+# Apply ONLY to https://raw.githubusercontent.com/, not /items or /docs paths.
+# /items/... are read directly; /docs/... are commit destinations.
+# This ensures the runner GETs from /items and POSTs to /docs correctly.
+
 # Purpose:
 #   - Allow the Structure Runner (CustomGPT or remote environments) to read
 #     GitHub-hosted JSON, HTML, or XML files through the ClearRound proxy.
