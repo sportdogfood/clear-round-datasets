@@ -1,234 +1,80 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://items.clearroundtravel.com/items/runners/structure/manifest.schema.json",
-  "title": "Blogs Manifest (docs/blogs/manifest.json)",
-  "description": "Array of blog manifest entries. Upsert key is `slug`. This schema is ADDITIVE and backward-compatible. VERSION: 20251012-locked.",
+  "$id": "https://items.clearroundtravel.com/schema/blog-manifest.json",
+  "title": "CRT Blog Manifest",
   "type": "array",
-  "items": {
-    "$ref": "#/$defs/Entry"
-  },
   "minItems": 0,
-  "x-unique-by": ["slug"],
-  "x-notes": [
-    "This schema validates the shape of docs/blogs/manifest.json.",
-    "Upsert (application-level) key is 'slug'. Schema cannot enforce array-level uniqueness.",
-    "Both dated slugs (…-blog-YYYY-MM-DD) and event-named slugs (…-blog) are supported.",
-    "The 'json' field must point to the publish JSON (never a *-blog*.json).",
-    "Additional properties are allowed to preserve forward-compatibility."
-  ],
-  "$defs": {
-    "Slug": {
-      "type": "string",
-      "description": "URL-safe slug (lowercase letters, digits, and hyphens).",
-      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
-      "minLength": 3,
-      "maxLength": 200
-    },
-    "Date": {
-      "type": "string",
-      "description": "ISO local date YYYY-MM-DD.",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-    },
-    "Year": {
-      "description": "Year as 4 digits. Accepts string or integer for backward-compat.",
-      "oneOf": [
-        { "type": "string", "pattern": "^\\d{4}$" },
-        { "type": "integer", "minimum": 1900, "maximum": 2100 }
-      ]
-    },
-    "AbsBlogsPath": {
-      "type": "string",
-      "description": "Site-root absolute path under /blogs/…",
-      "pattern": "^/blogs/.+"
-    },
-    "PublishJsonPath": {
-      "type": "string",
-      "description": "Site-root absolute path to publish JSON (must be *-publish*.json).",
-      "pattern": "^/blogs/.+/(?:[^/]+-publish(?:-\\d{4}-\\d{2}-\\d{2})?)\\.json$"
-    },
-    "URI": {
-      "type": "string",
-      "format": "uri",
-      "minLength": 1,
-      "maxLength": 2048
-    },
-    "URIOrPath": {
-      "type": "string",
-      "description": "Either absolute URI or site-root absolute path.",
-      "anyOf": [
-        { "format": "uri" },
-        { "pattern": "^/[A-Za-z0-9_./-]+$" }
-      ],
-      "maxLength": 2048
-    },
-    "MonthName": {
-      "type": "string",
-      "enum": [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ]
-    },
-    "Season": {
-      "type": "string",
-      "enum": ["Winter", "Spring", "Summer", "Fall"]
-    },
-    "EventDuration": {
-      "type": "string",
-      "enum": ["single", "weekend", "multi-day"],
-      "description": "Mapped event duration category."
-    },
-    "Lat": { "type": "number", "minimum": -90, "maximum": 90 },
-    "Lng": { "type": "number", "minimum": -180, "maximum": 180 },
-    "PlaceId": {
-      "type": "string",
-      "description": "External place identifier (e.g., Google place_id).",
-      "minLength": 1,
-      "maxLength": 256
-    },
-    "Entry": {
-      "type": "object",
-      "additionalProperties": true,
-      "required": ["slug", "title", "date", "year", "path", "json", "venue"],
-      "properties": {
-        "slug": {
-          "$ref": "#/$defs/Slug"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200
-        },
-        "date": {
-          "$ref": "#/$defs/Date"
-        },
-        "year": {
-          "$ref": "#/$defs/Year"
-        },
-        "path": {
-          "$ref": "#/$defs/AbsBlogsPath",
-          "description": "Site-root absolute path to the post folder, e.g. /blogs/{venue}-blogs-{year}/{slug}/"
-        },
-        "json": {
-          "$ref": "#/$defs/PublishJsonPath",
-          "description": "Site-root absolute path to the publish JSON for this post."
-        },
-        "venue": {
-          "type": "string",
-          "description": "Short venue/org code (lowercase/hyphen).",
-          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
-          "minLength": 2,
-          "maxLength": 80
-        },
-
-        "month_num": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 12
-        },
-        "month_name": {
-          "$ref": "#/$defs/MonthName"
-        },
-        "season": {
-          "$ref": "#/$defs/Season"
-        },
-        "image": {
-          "$ref": "#/$defs/URIOrPath",
-          "description": "Card image (typically from images_link.card_image_link)."
-        },
-
-        "city": { "type": "string", "maxLength": 120 },
-        "state": { "type": "string", "maxLength": 120 },
-        "country": { "type": "string", "maxLength": 120 },
-
-        "lat": { "$ref": "#/$defs/Lat" },
-        "lng": { "$ref": "#/$defs/Lng" },
-        "place_id": { "$ref": "#/$defs/PlaceId" },
-        "timezone": { "type": "string", "maxLength": 80 },
-
-        "start_date": { "$ref": "#/$defs/Date" },
-        "end_date": { "$ref": "#/$defs/Date" },
-        "event_duration": { "$ref": "#/$defs/EventDuration" },
-
-        "audience_labels": {
-          "type": "array",
-          "items": { "type": "string", "maxLength": 60 },
-          "maxItems": 20
-        },
-        "tags": {
-          "type": "array",
-          "items": { "type": "string", "maxLength": 60 },
-          "maxItems": 50
-        },
-
-        "section_link": { "$ref": "#/$defs/URI" },
-        "maps_link": { "$ref": "#/$defs/URI" },
-
-        "canonical": {
-          "$ref": "#/$defs/URI",
-          "description": "Canonical URL when needed (usually {canonical_base}{path})."
-        },
-
-        "og_title": { "type": "string", "maxLength": 200 },
-        "og_description": { "type": "string", "maxLength": 400 },
-        "meta_description": { "type": "string", "maxLength": 400 },
-
-        "created_at": { "type": "string", "format": "date-time" },
-        "updated_at": { "type": "string", "format": "date-time" },
-
-        "x_source_post": {
-          "type": "string",
-          "description": "READ-ONLY: site-root path or raw URL of the original *-blog*.json (for diagnostics).",
-          "maxLength": 2048
-        },
-        "x_notes": {
-          "type": "array",
-          "items": { "type": "string", "maxLength": 400 }
-        },
-
-        "event_month": {
-          "deprecated": true,
-          "description": "Deprecated; use month_name.",
-          "type": "string",
-          "maxLength": 20
-        },
-        "event_season": {
-          "deprecated": true,
-          "description": "Deprecated; use season.",
-          "type": "string",
-          "maxLength": 20
-        }
-      }
+  "items": {
+    "type": "object",
+    "required": ["slug", "title", "date", "year", "path", "json", "venue"],
+    "additionalProperties": true,
+    "properties": {
+      "slug": {
+        "type": "string",
+        "minLength": 3
+      },
+      "title": {
+        "type": "string",
+        "minLength": 3
+      },
+      "date": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      "year": {
+        "type": "string",
+        "pattern": "^[0-9]{4}$"
+      },
+      "path": {
+        "type": "string",
+        "pattern": "^/blogs/.+/.+/$"
+      },
+      "json": {
+        "type": "string",
+        "pattern": "^/blogs/.+/(.+-publish(-\\d{4}-\\d{2}-\\d{2})?)\\.json$"
+      },
+      "venue": {
+        "type": "string",
+        "minLength": 2
+      },
+      "month_num": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12
+      },
+      "month_name": {
+        "type": "string"
+      },
+      "season": {
+        "type": "string",
+        "enum": ["Winter", "Spring", "Summer", "Fall"]
+      },
+      "image": {
+        "type": "string"
+      },
+      "city": { "type": "string" },
+      "state": { "type": "string" },
+      "country": { "type": "string" },
+      "lat": { "type": "number" },
+      "lng": { "type": "number" },
+      "place_id": { "type": "string" },
+      "timezone": { "type": "string" },
+      "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+      "end_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+      "event_duration": {
+        "type": "string",
+        "enum": ["single", "weekend", "multi-day", "unknown"]
+      },
+      "audience_labels": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "section_link": { "type": "string" },
+      "maps_link": { "type": "string" }
     }
-  },
-  "examples": [
-    [
-      {
-        "slug": "capc-blog-2025-10-05",
-        "title": "CAPC Pet Health Update: Autumn 2025",
-        "date": "2025-10-05",
-        "year": "2025",
-        "path": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/",
-        "json": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-publish.json",
-        "venue": "capc",
-        "month_num": 10,
-        "month_name": "October",
-        "season": "Fall",
-        "image": "/assets/images/card-placeholder.jpg",
-        "city": "Some City",
-        "state": "Some State",
-        "country": "USA",
-        "lat": 39.0,
-        "lng": -77.0,
-        "place_id": "ChIJxxxxxxxxxxxxxxxxx",
-        "start_date": "2025-09-24",
-        "end_date": "2025-10-05",
-        "event_duration": "multi-day",
-        "audience_labels": ["pet", "health"],
-        "tags": ["CAPC", "autumn", "2025"],
-        "section_link": "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/sections/capc-section.json",
-        "maps_link": "https://maps.example.com/someplace",
-        "canonical": "https://blog.clearroundtravel.com/blogs/capc-blogs-2025/capc-blog-2025-10-05/"
-      }
-    ]
-  ]
+  }
 }
