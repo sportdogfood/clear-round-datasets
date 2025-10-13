@@ -1,12 +1,12 @@
 # instruction-bootstrap.txt
-# Version: 2025-10-13.bootstrap-1a
+# Version: 2025-10-13.bootstrap-final
 # Purpose: Minimal loader + safe fallback.
-#          Loads the authoritative instruction set from the repo.
-#          If unreachable, executes this local fallback rule set.
+#          Loads the authoritative instruction set from the repo
+#          via the CRT Heroku proxy. Falls back only if unreachable.
 # --------------------------------------------------------------------
 
 LOAD
-- source: https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
+- source: https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
 - attempts: 2
 - timeout: 5
 - checksum_policy: ignore
@@ -17,30 +17,44 @@ LOAD
 # --------------------------------------------------------------------
 # Purpose:
 #   Provide emergency operation when remote instruction.txt cannot be fetched.
-#   Only performs essential publish logic (no templates or enrichment).
+#   Only performs essential publish logic (no templates, no enrichment).
+#
+# Behavior:
+#   Reads the content_link JSON, produces 7 minimal outputs,
+#   and commits them to /docs/ via /docs/commit-bulk.
 
 FALLBACK:
   - Require:
       canonical_base
       event_link
       (content_link OR docs_path)
+
   - Fetch `content_link` JSON (or derive from `docs_path`)
+
   - Produce seven outputs with minimal structure:
       1. publish.json   — raw copy of content_link JSON
-      2. index.html     — single-page HTML with title and paragraph summary
+      2. index.html     — simple HTML: title + paragraph summary
       3. blogs/index.html
       4. blogs/{year}/index.html
       5. blogs/rss.xml
       6. sitemap.xml
       7. manifest.json  — append entry {slug, title, date, year, path, json}
+
   - Paths:
       derive all `/docs/...` paths from provided blogs_*_path fields or defaults.
+
   - Commit:
       POST /docs/commit-bulk
-      { "message": "fallback publish {slug}", "overwrite": true, "files": [×7] }
+      {
+        "message": "fallback publish {slug}",
+        "overwrite": true,
+        "files": [×7]
+      }
+
   - Error handling:
       * Abort if content_link fetch fails.
       * Warn on any missing optional links (images, venue, geo, etc.)
+
   - Summary:
       Print table:
       | file | bytes | status |
@@ -49,8 +63,8 @@ FALLBACK:
 
 # --------------------------------------------------------------------
 NOTES
-- Remote file (above) is canonical.
-- If fetch fails, fallback publishes a plain text/HTML version only.
-- When connectivity is restored, normal publish resumes automatically.
+- The above source (Heroku mirror → GitHub raw) is canonical.
+- If fetch fails, fallback publishes plain HTML + JSON only.
+- When proxy access or GitHub returns, normal publishing resumes automatically.
 # --------------------------------------------------------------------
 END OF FILE
