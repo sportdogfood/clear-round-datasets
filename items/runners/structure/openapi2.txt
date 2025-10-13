@@ -1,0 +1,131 @@
+# items/runners/structure/openapi.txt
+openapi: 3.1.0
+info:
+  title: CRT Docs Proxy
+  version: "1.0.0"
+
+servers:
+  - url: https://items.clearroundtravel.com
+
+paths:
+  /docs/{path}:
+    get:
+      operationId: docs_get
+      summary: Read a docs file via proxy (raw passthrough)
+      parameters:
+        - in: path
+          name: path
+          required: true
+          description: Path under docs/, e.g. blogs/index.html
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: string
+        "4XX":
+          description: Client error
+        "5XX":
+          description: Server error
+
+  /docs/commit-bulk:
+    post:
+      operationId: docs_commit_bulk
+      summary: Single Git commit for multiple files under docs/
+      description: |
+        Accepts exactly the files to commit (HTML/XML/JSON). The runner should
+        pre-render the 7 required outputs and send them here in **one** request.
+        No “trigger mode” here—just files[].
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilesCommitRequest'
+            examples:
+              sevenFiles:
+                summary: Standard 7-file blog publish
+                value:
+                  message: "publish capc-2025-10-05"
+                  overwrite: true
+                  files:
+                    - path: "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-publish.json"
+                      content_type: "application/json"
+                      content_base64: "eyA..."
+                    - path: "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/index.html"
+                      content_type: "text/html"
+                      content_base64: "PDw..."
+                    - path: "docs/blogs/index.html"
+                      content_type: "text/html"
+                      content_base64: "PDw..."
+                    - path: "docs/blogs/2025/index.html"
+                      content_type: "text/html"
+                      content_base64: "PDw..."
+                    - path: "docs/blogs/rss.xml"
+                      content_type: "application/xml"
+                      content_base64: "PDw..."
+                    - path: "docs/sitemap.xml"
+                      content_type: "application/xml"
+                      content_base64: "PDw..."
+                    - path: "docs/blogs/manifest.json"
+                      content_type: "application/json"
+                      content_base64: "eyA..."
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitResponse'
+        "400":
+          description: Bad request
+        "5XX":
+          description: Server error
+
+components:
+  schemas:
+    FileItem:
+      type: object
+      required: [path, content_base64]
+      properties:
+        path:
+          type: string
+          description: Must begin with docs/
+          pattern: "^docs/.+$"
+        content_type:
+          type: string
+          description: Suggested content type (json/xml/html)
+        content_base64:
+          type: string
+          description: Base64 of the file bytes
+    FilesCommitRequest:
+      type: object
+      required: [files]
+      properties:
+        message:
+          type: string
+          description: Commit message
+        overwrite:
+          type: boolean
+          default: true
+        files:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/FileItem'
+    CommitResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        commit:
+          type: object
+          properties:
+            sha: { type: string }
+            url: { type: string, format: uri }
+        committed_paths:
+          type: array
+          items: { type: string }
