@@ -1,0 +1,50 @@
+# .github/copilot.yml
+# Purpose: Help GitHub Copilot and Codex interpret ClearRound datasets.
+# This file has NO secrets — safe to keep public.
+
+schema:
+  # Tell Copilot that this repo mixes structured data and rendered output
+  languages:
+    - json
+    - yaml
+    - html
+    - xml
+    - markdown
+
+  # Weight folders for Copilot context
+  include:
+    - items/           # canonical structured data (source of truth)
+    - docs/            # rendered outputs, blogs, manifests, RSS
+    - items/runners/   # runner logic, templates, policy, instruction sets
+    - .github/         # repo automation and metadata
+  exclude:
+    - node_modules/
+    - tmp/
+    - .env
+    - README.md
+
+  # Annotate folder semantics (helps Copilot understand relationships)
+  semantics:
+    items/: "source datasets for events, venues, blogs, and structured content"
+    docs/: "generated site outputs (HTML, RSS, sitemap, manifest)"
+    items/runners/: "runner logic + expeditor scripts to transform items → docs"
+    items/triggers/: "JSON triggers to launch Structure Runner"
+    docs/blogs/: "published blog posts and indexes for ClearRound Travel"
+    items/agents/: "AI / Codex helpers, permissions and automation rules"
+
+assistant:
+  mode: documentation
+  guidance: |
+    - Prefer describing relationships between items/* and docs/*
+    - Treat 'runners/structure' as code logic, not data
+    - When suggesting completions, maintain 7-file commit convention
+    - Prioritize canonical publish logic over fallback examples
+
+  indexing:
+    frequency: 30m       # reindex automatically after commits
+    context_depth: 3     # include related folders in completions
+
+metadata:
+  maintainer: "ClearRound Travel Data Systems"
+  version: "2025-10-13"
+  repo_role: "datasets + publishing pipeline (CRT Structure Runner)"
