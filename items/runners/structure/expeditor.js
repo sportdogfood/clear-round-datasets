@@ -2,25 +2,20 @@
  * expeditor.js — Runner-Light (fills rich blog template tokens)
  * Location: /items/runners/structure/expeditor.js
  * Purpose : Read one trigger (Items), build publish.json + index.html, commit-bulk to Docs.
+ * Lanes   : READ from Items (content/event/images), READ template from Blog, WRITE to Docs.
  * Author  : GPT-5 (2025-10-15)
  */
 
-import fs from "fs";
 import path from "path";
 import fetch from "node-fetch";
 
-/* --- Config (lanes) --- */
-const CRT_PROXY = "https://items.clearroundtravel.com"; // your Heroku server (CNAME)
-const GITHUB_RAW = "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main";
-
-/* Prefer Items template; fall back to Docs template if needed */
-const TEMPLATE_SOURCES = [
-  `${GITHUB_RAW}/items/runners/structure/templates/blog.index.html.tmpl`,
-  `${GITHUB_RAW}/docs/blogs/templates/blog.index.html.tmpl`,
-];
+/* --- Fixed endpoints (no mirrors, no raw) --- */
+const ITEMS_BASE        = "https://items.clearroundtravel.com";
+const DOCS_COMMIT_URL   = `${ITEMS_BASE}/docs/commit-bulk`;
+const BLOG_TEMPLATE_URL = "https://blog.clearroundtravel.com/blogs/templates/blog.index.html.tmpl";
 
 /* --- Small utils --- */
-const b64 = (s) => Buffer.from(s, "utf8").toString("base64");
+const b64    = (s) => Buffer.from(s, "utf8").toString("base64");
 const isHttp = (u) => typeof u === "string" && /^https:\/\//i.test(u);
 
 function htmlEscape(s = "") {
@@ -61,7 +56,7 @@ function seasonFromMonth(dateStr) {
   } catch { return ""; }
 }
 
-/* very light markdown-style [text](url) to <a> */
+/* very light markdown-style [text](url) → <a> */
 function linkify(p = "") {
   return p.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, t, u) => `<a href="${htmlEscape(u)}">${htmlEscape(t)}</a>`);
 }
@@ -101,25 +96,31 @@ async function fetchText(url, label) {
 }
 async function fetchJSON(url, label) {
   const t = await fetchText(url, label);
-  try { return JSON.parse(t); } catch (e) { throw new Error(`${label} invalid JSON`); }
+  try { return JSON.parse(t); } catch { throw new Error(`${label} invalid JSON`); }
 }
 
 /* derive publish paths */
 function derivePaths(trigger, content, event) {
-  const slug = (content?.slug || path.basename((trigger.content_link || "").replace(/\.json$/i, ""))).trim();
+  const slugBase = (trigger?.content_link || "").replace(/\.json$/i, "");
+  const fallbackSlug = path.basename(slugBase) || "post-blog";
+  const slug = (content?.slug || fallbackSlug).trim();
+
   const brand = (slug.split("-")[0] || "blog").toLowerCase();
   const eventYear = (event?.start_date || "").slice(0, 4);
   const year = String(trigger?.year || eventYear || new Date().getUTCFullYear());
-  const folder = String(trigger?.post_folder_slug || `${brand}-blog-${toISO(event?.start_date)}`);
-  const base = `docs/blogs/${brand}-blogs-${year}/${folder}/`;
+  const folder = String(trigger?.post_folder_slug || `${brand}-blog-${toISO(event?.start_date)}`).trim();
+
+  const baseDocs = `docs/blogs/${brand}-blogs-${year}/${folder}/`;
+  const basePublic = baseDocs.replace(/^docs\//, ""); // for canonical on blog domain
+
   return {
     year,
     brand,
     folder,
-    base,
-    publish_json: `${base}${slug.replace(/-blog(-\d{4}-\d{2}-\d{2})?$/i, "-publish$1")}.json`,
-    index_html:   `${base}index.html`,
-    canonical:    `https://blog.clearroundtravel.com/${base.replace(/^docs\//, "")}`,
+    baseDocs,
+    publish_json: `${baseDocs}${slug.replace(/-blog(-\d{4}-\d{2}-\d{2})?$/i, "-publish$1")}.json`,
+    index_html:   `${baseDocs}index.html`,
+    canonical:    `https://blog.clearroundtravel.com/${basePublic}`,
     slug
   };
 }
@@ -231,10 +232,10 @@ function buildTemplateMap(paths, content, event, images) {
     event_month: htmlEscape(event_month),
     event_season: htmlEscape(event_season),
 
-    /* body sections (already safe/escaped where needed) */
+    /* body sections */
     ...frags,
 
-    /* pager (leave empty until indexer provides links) */
+    /* pager (empty until an indexer provides links) */
     prev_link: "",
     next_link: "",
 
@@ -262,19 +263,15 @@ function buildPublishJSON(content, event, images, year, folder) {
   return JSON.stringify(enriched, null, 2) + "\n";
 }
 
-/* fetch first available template source */
+/* fetch blog template (single source) */
 async function getTemplate() {
-  for (const url of TEMPLATE_SOURCES) {
-    try { return await fetchText(url, "blog template"); }
-    catch { /* try next */ }
-  }
-  throw new Error("No blog template could be fetched from known locations.");
+  return await fetchText(BLOG_TEMPLATE_URL, "blog template");
 }
 
 /* Commit to Docs (bulk) */
 async function commitToDocs(message, files) {
   const body = { message, overwrite: true, files };
-  const res = await fetch(`${CRT_PROXY}/docs/commit-bulk`, {
+  const res = await fetch(DOCS_COMMIT_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -315,10 +312,10 @@ export async function runExpeditor(triggerUrlOrJson) {
     const indexHTML = renderTokens(template, map);
 
     /* preflight sizes */
-    const pubBytes = Buffer.byteLength(publishJSON, "utf8");
+    const pubBytes  = Buffer.byteLength(publishJSON, "utf8");
     const htmlBytes = Buffer.byteLength(indexHTML, "utf8");
     console.table([
-      { path: paths.publish_json, type: "application/json", bytes: pubBytes, status: pubBytes >= 100 ? "OK" : "WARN" },
+      { path: paths.publish_json, type: "application/json", bytes: pubBytes,  status: pubBytes  >= 100 ? "OK" : "WARN" },
       { path: paths.index_html,   type: "text/html",        bytes: htmlBytes, status: htmlBytes >= 200 ? "OK" : "WARN" },
     ]);
 
