@@ -1,9 +1,8 @@
 # .github/copilot.yml
-# Purpose: Help GitHub Copilot and Codex interpret ClearRound datasets.
-# This file has NO secrets — safe to keep public.
+# Purpose: Help GitHub Copilot / AI interpret the ClearRound datasets repo.
+# No secrets here—safe to keep public.
 
 schema:
-  # Tell Copilot that this repo mixes structured data and rendered output
   languages:
     - json
     - yaml
@@ -11,40 +10,39 @@ schema:
     - xml
     - markdown
 
-  # Weight folders for Copilot context
   include:
-    - items/           # canonical structured data (source of truth)
-    - docs/            # rendered outputs, blogs, manifests, RSS
-    - items/runners/   # runner logic, templates, policy, instruction sets
-    - .github/         # repo automation and metadata
+    - items/            # source datasets (content/events/venues/images/runners/...)
+    - docs/             # generated outputs (blogs, indexes, rss, sitemap, manifest)
+    - .github/          # repo metadata/config for AI context
   exclude:
     - node_modules/
     - tmp/
-    - .env
-    - README.md
+    - dist/
+    - sandbox/
+    - backup/
+    - "*.bak"
 
-  # Annotate folder semantics (helps Copilot understand relationships)
+  # Folder semantics help Copilot reason about relationships
   semantics:
-    items/: "source datasets for events, venues, blogs, and structured content"
-    docs/: "generated site outputs (HTML, RSS, sitemap, manifest)"
-    items/runners/: "runner logic + expeditor scripts to transform items → docs"
-    items/triggers/: "JSON triggers to launch Structure Runner"
-    docs/blogs/: "published blog posts and indexes for ClearRound Travel"
-    items/agents/: "AI / Codex helpers, permissions and automation rules"
+    items/: "Source-of-truth structured data for content, events, venues, images, and runner configs."
+    items/triggers/: "Launch JSONs that point to content/events/images and kick off publication."
+    items/runners/: "Structure Runner (expeditor) and policy/instruction files that transform items → docs."
+    docs/: "Published, static site artifacts (HTML pages, RSS, sitemap, blog manifests)."
+    docs/blogs/: "Per-post folders with index.html and corresponding *-publish.json."
 
 assistant:
   mode: documentation
   guidance: |
-    - Prefer describing relationships between items/* and docs/*
-    - Treat 'runners/structure' as code logic, not data
-    - When suggesting completions, maintain 7-file commit convention
-    - Prioritize canonical publish logic over fallback examples
+    - Maintain separation of concerns: items = READ, docs = WRITE, blog = PUBLISH.
+    - When generating examples, follow the 'post page + publish.json' pattern for runner output.
+    - Treat global indexes (blogs index, year index, rss, sitemap, manifest) as scheduled artifacts.
+    - Prefer paths under docs/blogs/<brand>-blogs-<year>/<post-folder>/.
 
   indexing:
-    frequency: 30m       # reindex automatically after commits
-    context_depth: 3     # include related folders in completions
+    frequency: 30m
+    context_depth: 3
 
 metadata:
-  maintainer: "ClearRound Travel Data Systems"
-  version: "2025-10-13"
+  maintainer: "ClearRound Travel"
+  version: "2025-10-14"
   repo_role: "datasets + publishing pipeline (CRT Structure Runner)"
