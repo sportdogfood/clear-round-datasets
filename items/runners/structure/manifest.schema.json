@@ -2,126 +2,146 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://items.clearroundtravel.com/schema/blog-manifest.json",
   "title": "CRT Blog Manifest",
-  "description": "Array of blog entries published to docs/blogs. One object per post.",
+  "description": "Array of published blog entries surfaced at https://blog.clearroundtravel.com. Each item describes one public post, its folder path, and its canonical publish JSON.",
   "type": "array",
   "minItems": 0,
   "items": {
     "type": "object",
-    "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "additionalProperties": true,
+    "required": ["slug", "title", "date", "year", "path", "json", "venue"],
     "properties": {
       "slug": {
         "type": "string",
-        "minLength": 3
+        "minLength": 3,
+        "description": "Post slug (e.g., capc-cap-challenge-blog-2025-10-05)."
       },
       "title": {
         "type": "string",
-        "minLength": 3
+        "minLength": 3,
+        "description": "Human-readable title."
       },
       "date": {
         "type": "string",
+        "description": "Post date (YYYY-MM-DD).",
         "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
       },
       "year": {
         "type": "string",
-        "pattern": "^[0-9]{4}$"
-      },
-      "brand": {
-        "type": "string",
-        "description": "Derived brand token, e.g. 'capc'.",
-        "pattern": "^[a-z0-9-]+$"
-      },
-      "post_folder": {
-        "type": "string",
-        "description": "Folder name of the post, e.g. 'capc-blog-2025-10-05'.",
-        "pattern": "^[a-z0-9-]+$"
+        "description": "4-digit year used for grouping (e.g., /blogs/2025/).",
+        "pattern": "^\\d{4}$"
       },
       "path": {
         "type": "string",
-        "description": "Folder path under /blogs/, ending with a trailing slash.",
-        "pattern": "^/blogs/[a-z0-9-]+-blogs-[0-9]{4}/[a-z0-9-]+/$"
+        "description": "Public folder URL path (leading and trailing slash required). Example: /blogs/capc-blogs-2025/capc-blog-2025-10-05/",
+        "pattern": "^/blogs/[^/]+-blogs-\\d{4}/[^/]+/$"
       },
       "json": {
         "type": "string",
-        "description": "Relative path to publish JSON under the same folder.",
-        "pattern": "^/blogs/[a-z0-9-]+-blogs-[0-9]{4}/[a-z0-9-]+/[a-z0-9-]+-publish(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?\\.json$"
-      },
-      "canonical_url": {
-        "type": "string",
-        "description": "Public URL for the post (blog.* preferred).",
-        "pattern": "^https://blog\\.clearroundtravel\\.com/blogs/[a-z0-9-]+-blogs-[0-9]{4}/[a-z0-9-]+/?$"
+        "description": "Public publish JSON path under the post folder. Must point to *-publish.json (optionally dated).",
+        "pattern": "^/blogs/[^/]+-blogs-\\d{4}/[^/]+/[^/]+-publish(?:-\\d{4}-\\d{2}-\\d{2})?\\.json$"
       },
       "venue": {
         "type": "string",
-        "minLength": 2
+        "minLength": 2,
+        "description": "Venue display name (e.g., “Prince George’s Equestrian Center”)."
       },
-      "month_num": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 12
-      },
-      "month_name": {
-        "type": "string"
-      },
-      "season": {
+
+      "canonical": {
         "type": "string",
-        "enum": ["Winter", "Spring", "Summer", "Fall"]
+        "format": "uri",
+        "description": "Absolute canonical URL for the post page (e.g., https://blog.clearroundtravel.com/blogs/.../)."
       },
       "image": {
         "type": "string",
-        "format": "uri"
+        "description": "Hero/card image URL (absolute or site-relative)."
       },
-      "city": { "type": "string" },
-      "state": { "type": "string" },
-      "country": { "type": "string" },
-      "lat": { "type": "number", "minimum": -90, "maximum": 90 },
-      "lng": { "type": "number", "minimum": -180, "maximum": 180 },
-      "place_id": { "type": "string" },
-      "timezone": {
+
+      "city": { "type": "string", "description": "City for the venue/event." },
+      "state": { "type": "string", "description": "State/province code or name." },
+      "country": { "type": "string", "description": "Country code or name." },
+      "lat": { "type": "number", "description": "Latitude in WGS84." },
+      "lng": { "type": "number", "description": "Longitude in WGS84." },
+      "place_id": { "type": "string", "description": "Provider-specific place id (optional)." },
+      "timezone": { "type": "string", "description": "IANA timezone (e.g., America/New_York)." },
+
+      "start_date": {
         "type": "string",
-        "description": "IANA timezone, e.g. America/New_York",
-        "pattern": "^[A-Za-z_]+\\/[A-Za-z_]+(?:\\/[A-Za-z_]+)?$"
+        "description": "Event start date (YYYY-MM-DD).",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
       },
-      "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-      "end_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+      "end_date": {
+        "type": "string",
+        "description": "Event end date (YYYY-MM-DD).",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
       "event_duration": {
         "type": "string",
+        "description": "High-level duration classification.",
         "enum": ["single", "weekend", "multi-day", "unknown"]
       },
+
+      "month_num": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12,
+        "description": "Numeric month (1–12) derived from date."
+      },
+      "month_name": {
+        "type": "string",
+        "description": "Month name (e.g., October)."
+      },
+      "season": {
+        "type": "string",
+        "enum": ["Winter", "Spring", "Summer", "Fall"],
+        "description": "Season classification for grouping."
+      },
+
       "audience_labels": {
         "type": "array",
+        "description": "Audience tags (e.g., competitive-rider).",
         "items": { "type": "string" }
       },
       "tags": {
         "type": "array",
+        "description": "Keyword tags for site filtering.",
         "items": { "type": "string" }
       },
-      "section_link": { "type": "string", "format": "uri" },
-      "maps_link": { "type": "string", "format": "uri" },
-      "language": {
+
+      "section_link": {
         "type": "string",
-        "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
-        "default": "en"
+        "description": "Optional section/collection link relevant to the post."
       },
-      "status": {
+      "maps_link": {
         "type": "string",
-        "enum": ["published", "draft", "archived"],
-        "default": "published"
+        "description": "Optional external map link."
       },
-      "generated_at": {
+
+      "brand": {
         "type": "string",
-        "format": "date-time",
-        "description": "Timestamp when this manifest entry was generated."
+        "description": "Brand/site section for grouping (e.g., capc)."
       },
-      "updated_at": {
+      "post_folder_slug": {
         "type": "string",
-        "format": "date-time",
-        "description": "Last update time for this entry."
-      },
-      "id": {
-        "type": "string",
-        "description": "Optional unique identifier for the entry."
+        "description": "Folder slug within the brand+year collection (e.g., capc-blog-2025-10-05)."
       }
-    }
+    },
+    "examples": [
+      {
+        "slug": "capc-cap-challenge-blog-2025-10-05",
+        "title": "CAPC CAP: Challenge 2025",
+        "date": "2025-10-05",
+        "year": "2025",
+        "path": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/",
+        "json": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-publish.json",
+        "venue": "Prince George’s Equestrian Center",
+        "canonical": "https://blog.clearroundtravel.com/blogs/capc-blogs-2025/capc-blog-2025-10-05/",
+        "city": "Upper Marlboro",
+        "state": "MD",
+        "country": "US",
+        "season": "Fall",
+        "tags": ["capital-challenge", "fall"],
+        "audience_labels": ["competitive-rider"]
+      }
+    ]
   }
 }
