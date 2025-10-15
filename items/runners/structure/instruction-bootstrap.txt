@@ -1,70 +1,118 @@
 # instruction-bootstrap.txt
-# Version: 2025-10-13.bootstrap-final
+# Version: 2025-10-15.runner-light-bootstrap-1b
 # Purpose: Minimal loader + safe fallback.
-#          Loads the authoritative instruction set from the repo
-#          via the CRT Heroku proxy. Falls back only if unreachable.
-# --------------------------------------------------------------------
+#          Loads the authoritative instruction set for the CRT Structure Runner (LIGHT).
+#          If remote cannot be fetched, run a 2-file publish fallback (no indexes).
+# ------------------------------------------------------------------------------------
 
 LOAD
-- source: https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
-- attempts: 2
-- timeout: 5
-- checksum_policy: ignore
-- fallback_behavior: run-local-if-fail
+# Try Items lane first (canonical), then direct RAW as a backup.
+# The third source (mirror) is optional; use only if your environment blocks RAW.
+- sources:
+    - https://items.clearroundtravel.com/items/runners/structure/instruction.txt
+    - https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
+    - https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
+  attempts: 2
+  timeout_seconds: 5
+  checksum_policy: ignore
+  fallback_behavior: run-local-if-fail
 
-# --------------------------------------------------------------------
-# MINIMAL FALLBACK BEHAVIOR
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------------
+# MINIMAL FALLBACK BEHAVIOR (RUNNER-LIGHT)
+# ------------------------------------------------------------------------------------
 # Purpose:
-#   Provide emergency operation when remote instruction.txt cannot be fetched.
-#   Only performs essential publish logic (no templates, no enrichment).
+#   Provide emergency operation when instruction.txt cannot be fetched.
+#   Performs essential publish logic only (NO global indexes, NO RSS, NO sitemap, NO manifest).
 #
-# Behavior:
-#   Reads the content_link JSON, produces 7 minimal outputs,
-#   and commits them to /docs/ via /docs/commit-bulk.
+# Contract:
+#   INPUT  : a single trigger URL (Items lane) with fields:
+#              - content_link (required, Items lane URL)
+#              - event_link   (required, Items lane URL)
+#              - images_link  (optional, Items lane URL)
+#              - post_folder_slug (optional)
+#              - year (optional)
+#              - commit_message (optional)
+#   OUTPUT : exactly TWO files committed via /docs/commit-bulk:
+#              1) <base>/<slug>-publish.json
+#              2) <base>/index.html
+# ------------------------------------------------------------------------------------
 
 FALLBACK:
   - Require:
-      canonical_base
-      event_link
-      (content_link OR docs_path)
+      trigger_url          # e.g., https://items.clearroundtravel.com/items/triggers/<something>.json
+  - Steps:
+      1) GET trigger_url (HTTPS only; 2 attempts; 5s timeout).
+      2) Validate presence of:
+           - content_link (HTTPS, Items lane)
+           - event_link   (HTTPS, Items lane)
+         (images_link is optional)
+      3) GET content_link (MUST succeed) and event_link (MUST succeed)
+         GET images_link if present (WARN-only if fails).
+      4) Derive paths:
+           - brand := (content.slug prefix before first "-") || "blog"
+           - year  := trigger.year || event.start_date[0:4] || current_utc_year
+           - post_folder := trigger.post_folder_slug ||
+                            `${brand}-blog-${(event.start_date || todayIso).slice(0,10)}`
+           - base := `docs/blogs/${brand}-blogs-${year}/${post_folder}/`
+           - publish_json := `${base}${content.slug || "post"}-publish.json`
+           - index_html   := `${base}index.html`
+      5) Build outputs (minimal):
+           - publish_json: copy ALL fields from content JSON unchanged,
+                           then enrich with:
+                              meta.generated_at (ISO),
+                              meta.year (derived),
+                              meta.post_folder (post_folder),
+                              event (full object),
+                              images (object or {}).
+           - index.html  : minimal page:
+                              <html>
+                                <head><title>{{seo.section_title|title|slug}}</title></head>
+                                <body>
+                                  <h1>{{title}}</h1>
+                                  <p class="date">{{event.start_date || todayIso}}</p>
+                                  <!-- naive section rendering of hello/stay/dine/locale/essentials/outro if present -->
+                                </body>
+                              </html>
+      6) Preflight:
+           - publish_json decoded bytes ≥ 100 (WARN if less)
+           - index.html   decoded bytes ≥ 200 (WARN if less)
+      7) Commit (one bulk):
+           POST https://items.clearroundtravel.com/docs/commit-bulk
+           {
+             "message": trigger.commit_message || `publish ${content.slug || "post"} (${year})`,
+             "overwrite": true,
+             "files": [
+               { "path": publish_json, "content_type": "application/json", "content_base64": "<...>" },
+               { "path": index_html,   "content_type": "text/html",        "content_base64": "<...>" }
+             ]
+           }
+      8) Log summary:
+           - "Fallback mode: instruction fetch failed — proceeding with runner-light."
+           - Table: path | content_type | decoded_bytes | OK/WARN
+           - "Commit: <sha or status>"
 
-  - Fetch `content_link` JSON (or derive from `docs_path`)
+# ------------------------------------------------------------------------------------
+GUARDS & SAFETY
+- NEVER write to any /items/** paths in fallback.
+- NEVER attempt to build blogs index, year index, RSS, sitemap, or manifest in fallback.
+- HTTPS only; do not follow non-HTTPS links.
+- If content_link OR event_link fetch fails → ABORT with error.
+- images_link failures are WARN-only (continue with {}).
 
-  - Produce seven outputs with minimal structure:
-      1. publish.json   — raw copy of content_link JSON
-      2. index.html     — simple HTML: title + paragraph summary
-      3. blogs/index.html
-      4. blogs/{year}/index.html
-      5. blogs/rss.xml
-      6. sitemap.xml
-      7. manifest.json  — append entry {slug, title, date, year, path, json}
+# ------------------------------------------------------------------------------------
+RUNTIME DEFAULTS
+- canonical_base (for display only): https://blog.clearroundtravel.com
+- timezone for display: America/New_York
+- fetch policy: 2 attempts, 5s timeout per request
 
-  - Paths:
-      derive all `/docs/...` paths from provided blogs_*_path fields or defaults.
-
-  - Commit:
-      POST /docs/commit-bulk
-      {
-        "message": "fallback publish {slug}",
-        "overwrite": true,
-        "files": [×7]
-      }
-
-  - Error handling:
-      * Abort if content_link fetch fails.
-      * Warn on any missing optional links (images, venue, geo, etc.)
-
-  - Summary:
-      Print table:
-      | file | bytes | status |
-      followed by:
-      "Fallback mode complete — remote instruction unavailable."
-
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------------
 NOTES
-- The above source (Heroku mirror → GitHub raw) is canonical.
-- If fetch fails, fallback publishes plain HTML + JSON only.
-- When proxy access or GitHub returns, normal publishing resumes automatically.
-# --------------------------------------------------------------------
+- Items lane is the authoritative read surface:
+    https://items.clearroundtravel.com/items/...
+- Docs lane is the write surface (via the commit-bulk endpoint on the Items server):
+    https://items.clearroundtravel.com/docs/commit-bulk
+- When LOAD succeeds, the fetched instruction.txt fully defines behavior and
+  supersedes this fallback. This file is only a bootstrap + emergency plan.
+
+# ------------------------------------------------------------------------------------
 END OF FILE
