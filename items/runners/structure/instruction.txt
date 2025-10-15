@@ -1,8 +1,8 @@
 # items/runners/structure/instruction.txt
-# Version: 2025-10-13.simple-1a
-# Purpose: Authoritative instruction set for ClearRound Structure Runner.
+# Version: 2025-10-15.go-live-1
+# Purpose: Authoritative instruction set for ClearRound Structure Runner (DOCS/BLOG ONLY).
 # Bootstrap version loaded remotely via:
-#   https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
+#   https://items.clearroundtravel.com/items/runners/structure/instruction.txt
 # -------------------------------------------------------------------------
 
 PURPOSE
@@ -13,23 +13,23 @@ PURPOSE
 # -------------------------------------------------------------------------
 ACCEPTED TRIGGERS
 A) One URL (string) pointing to a JSON under:
-   https://raw.githubusercontent.com/{owner}/{repo}/{branch}/items/blogs/{anything}.json
+   https://items.clearroundtravel.com/items/triggers/{anything}.json
    → Fetch it; that JSON is the trigger.
 B) One JSON object pasted inline.
 
 # -------------------------------------------------------------------------
 REQUIRED FIELDS
 - canonical_base : e.g. https://blog.clearroundtravel.com
-- event_link     : raw GitHub URL to event JSON
+- event_link     : https://items.clearroundtravel.com/items/events/{...}.json
 - One of:
-    • content_link : raw URL to the post’s *-blog*.json (read-only)
-    • docs_path    : path under docs/.../*.json for the SOURCE file; derive raw URL if needed.
+    • content_link : https://items.clearroundtravel.com/items/content/{...-blog[-YYYY-MM-DD]?.json} (read-only)
+    • docs_path    : path under docs/.../*.json for the SOURCE file; derive items URL if needed.
 
 OPTIONAL FIELDS
 - images_link, section_link, venue_link, geo_link, audiences_link
+- post_folder_slug, year, season, start_date, end_date
 - blogs_*_path fields (publish, index, rss, sitemap, manifest, etc.)
 - commit_message
-- start_date, end_date, season, year
 
 # -------------------------------------------------------------------------
 RULES OF THE ROAD
@@ -48,11 +48,15 @@ RULES OF THE ROAD
 
 # -------------------------------------------------------------------------
 TEMPLATES (read-only)
-- items/runners/structure/templates/blog.index.html.tmpl
-- items/runners/structure/templates/blogs.index.html.tmpl
-- items/runners/structure/templates/year.index.html.tmpl
-- items/runners/structure/templates/rss.xml.tmpl
-- items/runners/structure/templates/sitemap.xml.tmpl
+- docs/blogs/templates/blog.index.html.tmpl
+- docs/blogs/templates/blogs.index.html.tmpl
+- docs/blogs/templates/year.index.html.tmpl
+- docs/blogs/templates/rss.xml.tmpl
+- docs/blogs/templates/sitemap.xml.tmpl
+
+Fetch templates via one of:
+- https://items.clearroundtravel.com/docs/blogs/templates/{name}.tmpl  (preferred for runner fetches)
+- https://blog.clearroundtravel.com/blogs/templates/{name}.tmpl        (public location)
 
 # -------------------------------------------------------------------------
 OUTPUTS (ALWAYS SEVEN)
@@ -69,53 +73,11 @@ Manifest entry must include:
 - json MUST point to the publish JSON (never *-blog*.json)
 
 # -------------------------------------------------------------------------
-# MIRROR PROXY (for sandbox-safe GitHub access)
-# -------------------------------------------------------------------------
-
-# Apply ONLY to https://raw.githubusercontent.com/, not /items or /docs paths.
-# /items/... are read directly; /docs/... are commit destinations.
-# This ensures the runner GETs from /items and POSTs to /docs correctly.
-
-# Purpose:
-#   - Allow the Structure Runner (CustomGPT or remote environments) to read
-#     GitHub-hosted JSON, HTML, or XML files through the ClearRound proxy.
-#   - Avoid direct outbound fetches that may fail in restricted sandboxes.
-#
-# Behavior:
-#   - Apply rewrite automatically to content_link, event_link, images_link,
-#     section_link, venue_link, geo_link, and audiences_link.
-#   - No effect on /docs/... or already-proxied URLs.
-# -------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------
 FETCH RULES
 - HTTPS only.
 - Two attempts per fetch; 5 s timeout each.
 - If a non-required link fails → WARN (do not abort).
 - If content_link fetch fails → FAIL (cannot build publish.json).
-# -------------------------------------------------------------------------
-
-# -------------------------------------------------------------------------
-# PROXY REWRITE RULE (required for GPT sandbox)
-# -------------------------------------------------------------------------
-# Purpose:
-#   Ensure GPT can fetch GitHub-hosted JSON, HTML, or XML files through
-#   the Heroku proxy, since direct calls to raw.githubusercontent.com are blocked.
-#
-# Behavior:
-#   - Applies only to URLs starting with "https://raw.githubusercontent.com/"
-#   - Automatically rewrites them to pass through the CRT mirror proxy.
-#   - Does NOT affect /items/... or /docs/... paths.
-#
-REWRITE:
-  - match: "^https://raw\\.githubusercontent\\.com/"
-     replace: "https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/$1"
-#
-# Example:
-#   Input : https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/abc.json
-#   Output: https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/abc.json
-# -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
 PREFLIGHT (LIGHT)
@@ -150,13 +112,13 @@ Otherwise continue with WARN.
 BOOTSTRAP LINKAGE
 - This file is the canonical instruction set.
 - The runner’s local bootstrap file (instruction-bootstrap.txt) must include:
-      LOAD → this URL (two attempts, 5 s timeout).
+      LOAD → https://items.clearroundtravel.com/items/runners/structure/instruction.txt (two attempts, 5 s timeout).
 - If remote fetch fails, runner uses fallback defaults and warns:
       "Remote instruction fetch failed; bootstrap rules applied."
 
 # -------------------------------------------------------------------------
 NON-NEGOTIABLES
-- Never modify Airtable routes.
+- Stay in lanes: READ from /items, WRITE only to /docs.
 - Never exceed seven outputs.
 - Never write to *-blog*.json.
 - All commits idempotent: identical bytes re-run → no-op.
