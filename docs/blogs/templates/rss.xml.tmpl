@@ -1,20 +1,11 @@
-<!-- items/runners/structure/templates/rss.xml.tmpl -->
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>{{channel_title}}</title>
-    <link>{{channel_link}}</link>
-    <description>{{channel_description}}</description>
+    <title>ClearRound Travel — Blog</title>
+    <link>https://blog.clearroundtravel.com/blogs/</link>
+    <description>Latest ClearRound Travel posts.</description>
+    <language>en-us</language>
     <lastBuildDate>{{last_build_date_rfc822}}</lastBuildDate>
     {{items_xml}}
-    <!-- expected items:
-      <item>
-        <title>{{title}}</title>
-        <link>{{link}}</link>
-        <guid>{{link}}</guid>
-        <pubDate>{{pub_date_rfc822}}</pubDate>
-        <description><![CDATA[ {{summary_html}} ]]></description>
-      </item>
-    -->
   </channel>
 </rss>
