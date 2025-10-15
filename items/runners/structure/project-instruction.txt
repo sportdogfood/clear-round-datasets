@@ -200,3 +200,50 @@ For each target file, capture and report:
 6) Request: **approve-to-modify**.
 → Do nothing else until owner approves.
 
+# project-misses.txt
+
+# Project Misses & Guardrails (Merged)
+
+## Misses we must not repeat
+- Didn’t ingest the current files before proposing edits.
+- Drifted from **DOCS/BLOG-only** scope; mentioned mirrors and **ITEMS writes** from runner.
+- Omitted **GET /items/{path}** in the runner OpenAPI (runner must read Items).
+- Mixed up **blog** vs **docs** public URLs and GitHub Pages single custom-domain rule.
+- Pointed templates to **raw.git** / mirrors instead of stable `docs/blogs/templates/` (read-only).
+- Overwrote the runner-light decision (2-file commit) with legacy 7-file expectations.
+- Broke XML (RSS/Sitemap) with comments/BOM before `<?xml ...?>`.
+- Sent large unsolicited code drops; hard to trace/test step-wise.
+- Confused Airtable lanes: `/items/commit` (data) vs `/docs/commit-bulk` (publish).
+- Ignored the “ACK only until DONE” workflow; multi-step drift.
+
+## Guardrails to enforce (from consolidated project rules)
+- **Scope lock:** Operate **only** on named files and the DOCS/BLOG lane unless explicitly expanded.
+- **Ingest first:** Capture baseline (raw URL, size, top/bottom tokens) before any change.
+- **ADD-only plan:** No deletions/renames/reorders without explicit approval.
+- **Full-file replacement:** When editing, submit complete files, preserving patterns/behavior.
+- **Two-attempt limit:** After 2 failed tries, stop and report blockers + required inputs.
+- **Routes in stone:** Keep `/items/commit`, `/docs/commit`, `/docs/commit-bulk`, `GET /items/*`, `GET /docs/*` intact.
+- **CORS & dirs:** Airtable origins stay whitelisted; allowed directories remain the established superset.
+- **Write-guards (runner-light):**
+  - **Deny:** `**/*-blog*.json`
+  - **Allow:** `docs/blogs/**/index.html`, `docs/blogs/**/**-publish.json` (including dated variants)
+- **Min-bytes & types:** Enforce UTF-8 and size thresholds; correct `content_type` per file.
+- **Idempotence:** Deterministic outputs; never mutate source `*-blog*.json`.
+
+## Runner-Light contract (publication)
+- **Input:** One trigger with `content_link`, `event_link` (both HTTPS under **items**), optional `images_link`, plus `year`, `post_folder_slug`, `commit_message`.
+- **Work:** Render a full post page using the tokenized `blog.index.html.tmpl` and copy-through enriched publish JSON.
+- **Output (exactly 2 files):**
+  1) `docs/blogs/<brand>-blogs-<year>/<post-folder>/<slug>-publish(.json|-YYYY-MM-DD.json)`
+  2) `docs/blogs/<brand>-blogs-<year>/<post-folder>/index.html`
+- **Writes:** Single `POST /docs/commit-bulk` only.
+- **Reads:** `GET /items/{path}` (triggers, content, events, images) and optional `GET /docs/{path}` for verification.
+- **Canonical:** `https://blog.clearroundtravel.com` everywhere.
+
+## One-step working protocol (operational gate)
+1) **ACK** scope and file list.
+2) **Gate 0 — Baseline proof:** path, bytes/lines, top+bottom tokens, purpose.
+3) **Gate 1 — Delta (ADD-only):** explicit changes, risk, and expected outcome.
+4) **Guardrail check:** routes, allowed dirs, CORS, write-guards all ✓.
+5) **Approval gate:** wait for `approve-to-modify` before any commit.
+6) **Report:** Delta & Outcome,
