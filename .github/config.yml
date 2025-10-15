@@ -1,26 +1,32 @@
 # .github/config.yml
-# Purpose: Configure GitHub Codex (indexing + AI visibility)
-# Ensures CRT repo JSON + HTML are discoverable and refreshed automatically.
-# ---------------------------------------------------------------------------
+# Purpose: Nudge indexing to include CRT’s data & outputs (safe, public).
 
 codex:
   include:
-    # Include all content and structured data used by CRT
     - "items/**/*.json"
+    - "items/**/*.ndjson"
+    - "items/**/*.yaml"
+    - "items/**/*.yml"
     - "items/**/*.txt"
     - "items/**/*.md"
     - "docs/**/*.json"
+    - "docs/**/*.ndjson"
+    - "docs/**/*.yaml"
+    - "docs/**/*.yml"
     - "docs/**/*.html"
     - "docs/**/*.xml"
     - "docs/**/*.txt"
   exclude:
-    # Exclude build caches, node modules, temp, and backup dirs
     - "node_modules/**"
     - "tmp/**"
     - "dist/**"
     - "sandbox/**"
     - "backup/**"
+    - ".vscode/**"
+    - ".idea/**"
+    - ".DS_Store"
     - "*.bak"
+    - "*.map"
   reindex_interval: 30m
   max_file_size_mb: 5
   enable_ai_search: true
