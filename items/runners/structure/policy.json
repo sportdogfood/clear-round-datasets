@@ -1,11 +1,16 @@
 {
-  "version": "20251012-locked",
+  "version": "20251015",
   "notes": [
-    "ADD-ONLY policy. Do not mutate *-blog*.json. Runner commits exactly 7 outputs.",
-    "Light guards to avoid blocking; tighten later post-launch."
+    "RUNNER-LIGHT policy: one trigger URL → GET content/event/[images] → build exactly 2 outputs (post index.html + *-publish.json) → single /docs/commit-bulk.",
+    "Global indexes (blogs index, year index, RSS, sitemap, manifest) are built by a scheduled indexer job, not by the runner.",
+    "ADD-ONLY for content sources: never mutate *-blog*.json in items/; runner writes only under docs/blogs/."
   ],
+  "mode": "runner_light",
   "hosts": {
-    "allow": ["raw.githubusercontent.com"]
+    "allow": [
+      "items.clearroundtravel.com",
+      "raw.githubusercontent.com"
+    ]
   },
   "cors": {
     "allow_origins": [
@@ -19,47 +24,36 @@
     "events","months","seasons","days","years","weeks","labels","places","sources","organizers","cities","countries","hotels","states","weather","airports","venues","restaurants","agents","dine","essentials","legs","distances","insiders","keywords","audience","tone","ratings","links","spots","sections","bullets","services","stay","amenities","slots","cuisines","menus","locale","things","tags","blogs","platforms","geos","timezones","geometry","chains","knowledge","levels","types","core","brand","meta","hubs","zones","seo","outputs","tasks","instructions","schema","gold","policy","docs","runners","images","assets"
   ],
   "templates": [
-    "items/runners/structure/templates/blog.index.html.tmpl",
-    "items/runners/structure/templates/blogs.index.html.tmpl",
-    "items/runners/structure/templates/year.index.html.tmpl",
-    "items/runners/structure/templates/rss.xml.tmpl",
-    "items/runners/structure/templates/sitemap.xml.tmpl"
+    "docs/blogs/templates/blog.index.html.tmpl",
+    "docs/blogs/templates/blogs.index.html.tmpl",
+    "docs/blogs/templates/year.index.html.tmpl",
+    "docs/blogs/templates/rss.xml.tmpl",
+    "docs/blogs/templates/sitemap.xml.tmpl"
   ],
   "write_guards": {
-    "deny": ["**/*-blog-????-??-??.json", "**/*-blog.json"],
+    "deny": [
+      "**/*-blog-????-??-??.json",
+      "**/*-blog.json"
+    ],
     "allow": [
-      "docs/blogs/**/index.html",
-      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
-      "docs/blogs/index.html",
-      "docs/blogs/rss.xml",
-      "docs/sitemap.xml",
-      "docs/blogs/manifest.json",
-      "docs/blogs/**/**-publish-????-??-??.json",
-      "docs/blogs/**/**-publish.json"
+      "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/index.html",
+      "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/*-publish-????-??-??.json",
+      "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/*-publish.json"
     ],
     "on_violation": "halt"
   },
   "required_outputs": [
     "PUBLISH_JSON",
-    "POST_INDEX",
-    "BLOGS_INDEX",
-    "YEAR_INDEX",
-    "RSS_XML",
-    "SITEMAP_XML",
-    "MANIFEST_JSON"
+    "POST_INDEX"
   ],
   "min_bytes": {
     "PUBLISH_JSON": 100,
-    "POST_INDEX": 200,
-    "BLOGS_INDEX": 200,
-    "YEAR_INDEX": 200,
-    "RSS_XML": 80,
-    "SITEMAP_XML": 80,
-    "MANIFEST_JSON": 50
+    "POST_INDEX": 200
   },
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
     "rss_item_limit": 20,
-    "recent_count": 4
+    "recent_count": 4,
+    "timezone": "America/New_York"
   }
 }
