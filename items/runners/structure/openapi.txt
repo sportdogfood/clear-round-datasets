@@ -1,108 +1,182 @@
 # items/runners/structure/openapi.txt
 openapi: 3.1.0
 info:
-  title: CRT Proxy
-  version: "1.1.1"
+  title: CRT Items & Docs Proxy (Runner-Light)
+  version: "1.2.0"
+  description: |
+    Minimal API surface used by the CRT Structure Runner and manual ops.
+    - READ from Items and Docs lanes
+    - WRITE to Docs via single-commit bulk endpoint
+    - Runner-Light produces exactly TWO files per publish (publish.json + index.html).
 servers:
   - url: https://items.clearroundtravel.com
 
 paths:
-  /docs/{path}:
+  /health:
     get:
-      operationId: crt_get
-      summary: Read a docs file via proxy
-      description: Fetches a file under docs/ from the upstream repository and returns its raw contents. The path is relative to docs/.
+      operationId: health
+      summary: Health check
+      responses:
+        "200":
+          description: OK (plain text)
+          content:
+            text/plain:
+              schema: { type: string, example: "OK" }
+
+  /items/{path}:
+    get:
+      operationId: items_get
+      summary: Read a file from Items (READ lane)
+      description: |
+        Proxies a GET to the upstream repository under `items/`. Use this to fetch triggers,
+        content, events, images, etc. The `path` is **relative to `items/`**.
       parameters:
         - in: path
           name: path
           required: true
-          description: Path under docs/, e.g. blogs/index.html or blogs/2025/index.html
+          description: Path under items/, e.g. `triggers/capc-cap-challenge-trigger-2025-10-05.json`
           schema: { type: string }
       responses:
         "200":
-          description: OK
+          description: Raw file contents
           content:
             "*/*":
               schema: { type: string }
         "4XX": { description: Client error }
         "5XX": { description: Server error }
 
-  /docs/commit-bulk:
+  /docs/{path}:
+    get:
+      operationId: docs_get
+      summary: Read a file from Docs (READ-only mirror)
+      description: |
+        Fetches a file under `docs/` from the upstream repository and returns its raw contents.
+        The `path` is **relative to `docs/`**.
+      parameters:
+        - in: path
+          name: path
+          required: true
+          description: Path under docs/, e.g. `blogs/2025/index.html` or `blogs/rss.xml`
+          schema: { type: string }
+      responses:
+        "200":
+          description: Raw file contents
+          content:
+            "*/*":
+              schema: { type: string }
+        "4XX": { description: Client error }
+        "5XX": { description: Server error }
+
+  /items/commit:
     post:
-      operationId: crt_bulk_commit
-      summary: Bulk commit multiple docs/* files (single Git commit)
-      description: Creates one commit containing multiple docs/* files. Supports classic files mode and builder hints via trigger. At least one of "files" or "trigger" must be present.
+      operationId: items_commit
+      summary: Create or update a single file under items/ (for Airtable writes)
+      description: |
+        Writes a single file to the `items/` directory in the upstream repo using GitHub's
+        Contents API (creates or updates based on existing SHA). **Use with care** — Items is
+        a READ lane for the runner; only use this for data maintenance (Airtable, admin).
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  description: Commit message
-                overwrite:
-                  type: boolean
-                  description: Force update the ref
-                  default: true
-                files:
-                  type: array
-                  minItems: 1
-                  description: Classic mode — explicit files to write under docs/
-                  items:
-                    $ref: "#/components/schemas/FileItem"
-                trigger:
-                  $ref: "#/components/schemas/TriggerRequest"
-              description: One object; include either "files" or "trigger".
+              $ref: "#/components/schemas/ItemsCommitRequest"
             examples:
-              filesMode:
-                summary: Commit explicit files
+              jsonFile:
                 value:
-                  message: "chore: add year index"
-                  overwrite: true
-                  files:
-                    - path: "docs/blogs/2025/index.html"
-                      content_type: "text/html"
-                      content_base64: "PCEtLSBodG1sIC0tPg=="
-                    - path: "docs/blogs/rss.xml"
-                      content_type: "application/xml"
-                      content_base64: "PD94bWwgdmVyc2lvbj0iMS4wIj8+"
-              triggerMode:
-                summary: Builder hints (one-point trigger)
+                  path: "items/sections/hva-section.json"
+                  json: { "name": "Horseback Vacation Adventures" }
+                  message: "update hva section"
+              textFile:
                 value:
-                  message: "publish capc 2025-10-05"
-                  overwrite: true
-                  trigger:
-                    add_post: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/blogs/capc-cap-challenge-blog-2025-10-05.json"
-                    canonical_base: "https://blog.clearroundtravel.com"
-                    images_link: "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/images/capc-images.json"
+                  path: "items/notes/readme.md"
+                  json: "# Notes\n\nThis is a markdown note.\n"
+                  message: "add readme"
       responses:
         "200":
           description: Commit result
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/CommitResponse"
-        "400": { description: Bad request (validation, fetch failure, etc.) }
-        "5XX": { description: Server error }
+              schema: { $ref: "#/components/schemas/CommitResponse" }
+        "400": { description: Bad request (validation) }
+        "5XX": { description: Server/GitHub error }
+
+  /docs/commit:
+    post:
+      operationId: docs_commit
+      summary: Create or update a single JSON file under docs/ (rare; prefer bulk)
+      description: |
+        Writes a single **JSON** file to the `docs/` directory via GitHub's Contents API.
+        Prefer `/docs/commit-bulk` for normal publishes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocsCommitRequest"
+            examples:
+              singleJson:
+                value:
+                  path: "docs/blogs/manifest.json"
+                  json: [{ "slug": "capc-cap-challenge", "title": "Capital Challenge", "date": "2025-10-05", "year": "2025", "path": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/", "json": "/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-publish.json", "venue": "PGEC" }]
+                  message: "seed manifest"
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommitResponse" }
+        "400": { description: Bad request (validation) }
+        "5XX": { description: Server/GitHub error }
+
+  /docs/commit-bulk:
+    post:
+      operationId: docs_bulk_commit
+      summary: Bulk commit multiple docs/* files (single Git commit)
+      description: |
+        Creates one commit containing multiple `docs/*` files. **Runner-Light** uses this to
+        publish exactly **two** outputs per post:
+          1) `<base>/<slug>-publish.json`
+          2) `<base>/index.html`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCommitRequest"
+            examples:
+              runnerLightTwoFiles:
+                summary: Standard publish (2 files)
+                value:
+                  message: "publish capc 2025-10-05"
+                  overwrite: true
+                  files:
+                    - path: "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/capc-cap-challenge-publish.json"
+                      content_type: "application/json"
+                      content_base64: "ewogICJzZXQiOiAicHVibGlzaCIsIC4uLn0K"
+                    - path: "docs/blogs/capc-blogs-2025/capc-blog-2025-10-05/index.html"
+                      content_type: "text/html"
+                      content_base64: "PCEtLSBIVE1MIC0tPgo8aHRtbD4uLi48L2h0bWw+"
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommitResponse" }
+        "400": { description: Bad request (validation) }
+        "5XX": { description: Server/GitHub error }
       x-write-guards:
         deny_patterns:
           - "**/*-blog-????-??-??.json"
           - "**/*-blog.json"
         allow_patterns:
-          - "**/*-publish-????-??-??.json"
-          - "**/*-publish.json"
-          - "docs/blogs/index.html"
-          - "docs/blogs/[0-9][0-9][0-9][0-9]/index.html"
-          - "docs/blogs/**/index.html"
-          - "docs/blogs/rss.xml"
-          - "docs/sitemap.xml"
-          - "docs/blogs/manifest.json"
+          - "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/index.html"
+          - "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/*-publish.json"
+          - "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/*-publish-????-??-??.json"
         on_violation: halt
       x-notes:
-        - Templates must read from publish JSON only; do not read "*-blog*.json".
-        - If trigger.add_post points under docs/, treat it strictly read-only.
+        - Runner-Light writes exactly 2 files per publish; global indexes are produced by a scheduled indexer.
+        - Templates must read from publish JSON only; never from "*-blog*.json".
 
 components:
   schemas:
@@ -112,48 +186,80 @@ components:
       properties:
         path:
           type: string
-          description: Must start with docs/
+          description: Must begin with `docs/`
           pattern: "^docs/.+$"
         content_type:
           type: string
-          description: "text/html, application/xml, or application/json"
+          description: MIME type of the file
+          enum:
+            - text/html
+            - application/json
+            - application/xml
         content_base64:
           type: string
-          description: Base64 of file bytes
+          description: Base64 of file bytes (no data: prefix)
 
-    TriggerRequest:
+    BulkCommitRequest:
       type: object
-      description: Minimal hints used by an upstream runner to build outputs.
+      required: [files]
       properties:
-        add_post:
+        message:
           type: string
-          format: uri
-          description: Raw GitHub URL to source or trigger JSON
-        canonical_base:
-          type: string
-          format: uri
-          description: Site origin for canonical links
-          default: "https://blog.clearroundtravel.com"
-        images_link:
-          type: string
-          format: uri
-          description: Optional JSON for image slots (hero/card/sections)
-        allow_urls:
+          description: Commit message
+        overwrite:
+          type: boolean
+          description: Force update the ref
+          default: true
+        files:
           type: array
+          minItems: 1
+          description: Explicit files to write under docs/
           items:
-            type: string
-            format: uri
-          description: Optional allow-list the runner may fetch (informational)
+            $ref: "#/components/schemas/FileItem"
+
+    ItemsCommitRequest:
+      type: object
+      required: [path, json]
+      properties:
+        path:
+          type: string
+          description: Must begin with `items/` or will be normalized to that prefix
+          pattern: "^items/.+$"
+        json:
+          description: File body. For `.json` files provide an object or a JSON string; for text/markdown, provide a string.
+          oneOf:
+            - type: object
+            - type: string
+        message:
+          type: string
+          description: Commit message
+
+    DocsCommitRequest:
+      type: object
+      required: [path, json]
+      properties:
+        path:
+          type: string
+          description: Must begin with `docs/` and end with `.json`
+          pattern: "^docs/.+\\.json$"
+        json:
+          description: JSON body (object or JSON string)
+          oneOf:
+            - type: object
+            - type: string
+        message:
+          type: string
+          description: Commit message
 
     CommitResponse:
       type: object
       properties:
-        ok: { type: boolean }
+        ok: { type: boolean, example: true }
         commit:
           type: object
           properties:
-            sha: { type: string }
-            url: { type: string, format: uri }
+            sha: { type: string, example: "abc123..." }
+            url: { type: string, format: uri, example: "https://github.com/sportdogfood/clear-round-datasets/commit/abc123" }
         committed_paths:
           type: array
           items: { type: string }
