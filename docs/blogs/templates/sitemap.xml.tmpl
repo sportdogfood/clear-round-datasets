@@ -1,11 +1,10 @@
-<!-- items/runners/structure/templates/sitemap.xml.tmpl -->
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  {{urls_xml}}
-  <!-- expected urls:
-    <url><loc>{{origin}}/blogs/</loc></url>
-    <url><loc>{{origin}}/blogs/{{year}}/</loc></url>
-    <url><loc>{{origin}}{{path}}</loc></url>
-  -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://blog.clearroundtravel.com/blogs/</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  {{post_urls_xml}}
 </urlset>
+
