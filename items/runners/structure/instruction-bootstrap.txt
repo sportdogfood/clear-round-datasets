@@ -1,118 +1,203 @@
-# instruction-bootstrap.txt
-# Version: 2025-10-15.runner-light-bootstrap-1b
-# Purpose: Minimal loader + safe fallback.
-#          Loads the authoritative instruction set for the CRT Structure Runner (LIGHT).
-#          If remote cannot be fetched, run a 2-file publish fallback (no indexes).
-# ------------------------------------------------------------------------------------
+// items/runners/structure/expeditor.js
+// Runner-Light — DOCS/BLOG lane only (no mirrors)
+// Purpose: Read one trigger (Items), build publish.json + index.html, commit-bulk to Docs.
+// Author: CRT — 2025-10-15
 
-LOAD
-# Try Items lane first (canonical), then direct RAW as a backup.
-# The third source (mirror) is optional; use only if your environment blocks RAW.
-- sources:
-    - https://items.clearroundtravel.com/items/runners/structure/instruction.txt
-    - https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
-    - https://crt-b1434e13de34.herokuapp.com/mirror/github?url=https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main/items/runners/structure/instruction.txt
-  attempts: 2
-  timeout_seconds: 5
-  checksum_policy: ignore
-  fallback_behavior: run-local-if-fail
+import path from "path";
+import fetch from "node-fetch";
 
-# ------------------------------------------------------------------------------------
-# MINIMAL FALLBACK BEHAVIOR (RUNNER-LIGHT)
-# ------------------------------------------------------------------------------------
-# Purpose:
-#   Provide emergency operation when instruction.txt cannot be fetched.
-#   Performs essential publish logic only (NO global indexes, NO RSS, NO sitemap, NO manifest).
-#
-# Contract:
-#   INPUT  : a single trigger URL (Items lane) with fields:
-#              - content_link (required, Items lane URL)
-#              - event_link   (required, Items lane URL)
-#              - images_link  (optional, Items lane URL)
-#              - post_folder_slug (optional)
-#              - year (optional)
-#              - commit_message (optional)
-#   OUTPUT : exactly TWO files committed via /docs/commit-bulk:
-#              1) <base>/<slug>-publish.json
-#              2) <base>/index.html
-# ------------------------------------------------------------------------------------
+/* ---------------------------
+   Lanes & Endpoints (fixed)
+----------------------------*/
+const ITEMS_BASE = "https://items.clearroundtravel.com"; // READ triggers/content/events/images
+const DOCS_BULK  = `${ITEMS_BASE}/docs/commit-bulk`;    // WRITE 2-file commit
+const BLOG_TPL   = "https://blog.clearroundtravel.com/blogs/templates/blog.index.html.tmpl";
+// Fallback template path via Items proxy (allowed by server.js if .tmpl enabled)
+const ITEMS_TPL  = `${ITEMS_BASE}/docs/blogs/templates/blog.index.html.tmpl`;
 
-FALLBACK:
-  - Require:
-      trigger_url          # e.g., https://items.clearroundtravel.com/items/triggers/<something>.json
-  - Steps:
-      1) GET trigger_url (HTTPS only; 2 attempts; 5s timeout).
-      2) Validate presence of:
-           - content_link (HTTPS, Items lane)
-           - event_link   (HTTPS, Items lane)
-         (images_link is optional)
-      3) GET content_link (MUST succeed) and event_link (MUST succeed)
-         GET images_link if present (WARN-only if fails).
-      4) Derive paths:
-           - brand := (content.slug prefix before first "-") || "blog"
-           - year  := trigger.year || event.start_date[0:4] || current_utc_year
-           - post_folder := trigger.post_folder_slug ||
-                            `${brand}-blog-${(event.start_date || todayIso).slice(0,10)}`
-           - base := `docs/blogs/${brand}-blogs-${year}/${post_folder}/`
-           - publish_json := `${base}${content.slug || "post"}-publish.json`
-           - index_html   := `${base}index.html`
-      5) Build outputs (minimal):
-           - publish_json: copy ALL fields from content JSON unchanged,
-                           then enrich with:
-                              meta.generated_at (ISO),
-                              meta.year (derived),
-                              meta.post_folder (post_folder),
-                              event (full object),
-                              images (object or {}).
-           - index.html  : minimal page:
-                              <html>
-                                <head><title>{{seo.section_title|title|slug}}</title></head>
-                                <body>
-                                  <h1>{{title}}</h1>
-                                  <p class="date">{{event.start_date || todayIso}}</p>
-                                  <!-- naive section rendering of hello/stay/dine/locale/essentials/outro if present -->
-                                </body>
-                              </html>
-      6) Preflight:
-           - publish_json decoded bytes ≥ 100 (WARN if less)
-           - index.html   decoded bytes ≥ 200 (WARN if less)
-      7) Commit (one bulk):
-           POST https://items.clearroundtravel.com/docs/commit-bulk
-           {
-             "message": trigger.commit_message || `publish ${content.slug || "post"} (${year})`,
-             "overwrite": true,
-             "files": [
-               { "path": publish_json, "content_type": "application/json", "content_base64": "<...>" },
-               { "path": index_html,   "content_type": "text/html",        "content_base64": "<...>" }
-             ]
-           }
-      8) Log summary:
-           - "Fallback mode: instruction fetch failed — proceeding with runner-light."
-           - Table: path | content_type | decoded_bytes | OK/WARN
-           - "Commit: <sha or status>"
+/* ---------------------------
+   Small utils
+----------------------------*/
+const b64 = (s) => Buffer.from(s, "utf8").toString("base64");
+const isHttps = (u) => typeof u === "string" && /^https:\/\//i.test(u);
 
-# ------------------------------------------------------------------------------------
-GUARDS & SAFETY
-- NEVER write to any /items/** paths in fallback.
-- NEVER attempt to build blogs index, year index, RSS, sitemap, or manifest in fallback.
-- HTTPS only; do not follow non-HTTPS links.
-- If content_link OR event_link fetch fails → ABORT with error.
-- images_link failures are WARN-only (continue with {}).
+async function fetchJSON(url, label) {
+  if (!isHttps(url)) throw new Error(`${label} must be https URL`);
+  const r = await fetch(url, { method: "GET" });
+  if (!r.ok) throw new Error(`${label} fetch failed: ${r.status}`);
+  return r.json();
+}
+async function fetchText(url, label) {
+  if (!isHttps(url)) throw new Error(`${label} must be https URL`);
+  const r = await fetch(url, { method: "GET" });
+  if (!r.ok) throw new Error(`${label} fetch failed: ${r.status}`);
+  return r.text();
+}
 
-# ------------------------------------------------------------------------------------
-RUNTIME DEFAULTS
-- canonical_base (for display only): https://blog.clearroundtravel.com
-- timezone for display: America/New_York
-- fetch policy: 2 attempts, 5s timeout per request
+function safeYear(triggerYear, eventStart) {
+  if (triggerYear && /^\d{4}$/.test(triggerYear)) return triggerYear;
+  const y = (eventStart || "").slice(0, 4);
+  return /^\d{4}$/.test(y) ? y : String(new Date().getUTCFullYear());
+}
 
-# ------------------------------------------------------------------------------------
-NOTES
-- Items lane is the authoritative read surface:
-    https://items.clearroundtravel.com/items/...
-- Docs lane is the write surface (via the commit-bulk endpoint on the Items server):
-    https://items.clearroundtravel.com/docs/commit-bulk
-- When LOAD succeeds, the fetched instruction.txt fully defines behavior and
-  supersedes this fallback. This file is only a bootstrap + emergency plan.
+function slugBaseFromContentSlug(slug = "") {
+  // turn "capc-cap-challenge-blog-2025-10-05" -> "capc-cap-challenge"
+  const m = String(slug).match(/^(.*?)(?:-blog(?:-\d{4}-\d{2}-\d{2})?)?$/i);
+  return (m && m[1]) ? m[1] : (slug || "post");
+}
 
-# ------------------------------------------------------------------------------------
-END OF FILE
+function brandFromSlug(slug = "") {
+  const base = slugBaseFromContentSlug(slug);
+  return (base.split("-")[0] || "blog").toLowerCase();
+}
+
+function humanDateISO(d) {
+  try {
+    const iso = (d && /^\d{4}-\d{2}-\d{2}/.test(d))
+      ? d.slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+    const dt = new Date(iso + "T00:00:00Z");
+    const human = dt.toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric", timeZone: "America/New_York"
+    });
+    return { iso, human };
+  } catch {
+    const iso = new Date().toISOString().slice(0, 10);
+    return { iso, human: iso };
+  }
+}
+
+function fill(str, map) {
+  return String(str || "").replace(/{{\s*([a-z0-9_]+)\s*}}/gi, (_m, k) => {
+    const v = map[k];
+    return v == null ? "" : String(v);
+  });
+}
+
+/* ---------------------------
+   Build minimal post HTML
+----------------------------*/
+async function loadTemplate() {
+  try {
+    return await fetchText(BLOG_TPL, "blog template");
+  } catch {
+    return await fetchText(ITEMS_TPL, "items-proxied blog template");
+  }
+}
+
+function buildHTML(tmpl, { title, date_iso, date_human, venue_label, tags_html = "", intro_html = "", stay_list_html = "", dine_list_html = "", essentials_list_html = "", locale_html = "", json_ld = "" }) {
+  return fill(tmpl, {
+    title,
+    date_iso,
+    date_human,
+    venue_label,
+    event_month: (new Date(date_iso)).toLocaleDateString("en-US", { month: "long", timeZone: "America/New_York" }),
+    event_season: (() => {
+      const m = (new Date(date_iso)).getUTCMonth() + 1;
+      if ([12,1,2].includes(m)) return "Winter";
+      if ([3,4,5].includes(m)) return "Spring";
+      if ([6,7,8].includes(m)) return "Summer";
+      return "Fall";
+    })(),
+    tags_html,
+    intro_html,
+    stay_list_html,
+    dine_list_html,
+    essentials_list_html,
+    locale_html,
+    json_ld,
+    open_graph_title: title,
+    open_graph_description: title,
+    open_graph_image: "",
+    canonical: `https://blog.clearroundtravel.com/blogs/`
+  });
+}
+
+/* ---------------------------
+   Paths
+----------------------------*/
+function derivePaths(trigger, content, event) {
+  const year = safeYear(trigger.year, event.start_date);
+  const brand = brandFromSlug(content.slug || "");
+  const postFolder = trigger.post_folder_slug || `${brand}-blog-${(event.start_date || new Date().toISOString().slice(0,10))}`;
+  const baseDir = `docs/blogs/${brand}-blogs-${year}/${postFolder}`;
+  const fileSlug = slugBaseFromContentSlug(content.slug || "");
+  return {
+    publish_json: `${baseDir}/${fileSlug}-publish.json`,
+    index_html: `${baseDir}/index.html`,
+  };
+}
+
+/* ---------------------------
+   Commit (bulk, 2 files)
+----------------------------*/
+async function commitToDocs(message, files) {
+  const res = await fetch(DOCS_BULK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, overwrite: true, files })
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`commit-bulk failed: ${res.status} ${JSON.stringify(j)}`);
+  return j;
+}
+
+/* ---------------------------
+   Main
+----------------------------*/
+export async function runExpeditor(triggerUrlOrJson) {
+  // 1) Load trigger (Items lane if URL)
+  const trigger = (typeof triggerUrlOrJson === "string")
+    ? await fetchJSON(triggerUrlOrJson, "trigger")
+    : triggerUrlOrJson;
+
+  // 2) Fetch content/event/images from Items lane
+  const [content, event, images] = await Promise.all([
+    fetchJSON(trigger.content_link, "content"),
+    fetchJSON(trigger.event_link,   "event"),
+    trigger.images_link ? fetchJSON(trigger.images_link, "images") : Promise.resolve({})
+  ]);
+
+  // 3) Derive paths
+  const paths = derivePaths(trigger, content, event);
+
+  // 4) Prepare publish.json (copy-all + enrich)
+  const publishObj = {
+    ...content,
+    event,
+    images,
+    meta: {
+      ...(content.meta || {}),
+      generated_at: new Date().toISOString(),
+      year: safeYear(trigger.year, event.start_date),
+      post_folder: path.basename(path.dirname(paths.index_html))
+    }
+  };
+  const publishB64 = b64(JSON.stringify(publishObj, null, 2) + "\n");
+
+  // 5) Build HTML (minimal token fill)
+  const title = content?.seo?.section_title || content?.title || slugBaseFromContentSlug(content.slug || "Post");
+  const { iso: date_iso, human: date_human } = humanDateISO(event.start_date);
+  const venue_label = event?.venue_official_name || event?.venue || "";
+
+  const tmpl = await loadTemplate();
+  const html = buildHTML(tmpl, {
+    title, date_iso, date_human, venue_label
+  });
+  const htmlB64 = b64(html);
+
+  // 6) Commit (exactly 2 files)
+  const files = [
+    { path: paths.publish_json, content_type: "application/json", content_base64: publishB64 },
+    { path: paths.index_html,   content_type: "text/html",        content_base64: htmlB64 }
+  ];
+
+  return await commitToDocs(trigger.commit_message || `publish ${content.slug || "post"}`, files);
+}
+
+// CLI helper
+if (process.argv[2]) {
+  runExpeditor(process.argv[2])
+    .then(r => { console.log("OK", r?.commit?.url || ""); process.exit(0); })
+    .catch(e => { console.error("FAIL", e.message); process.exit(1); });
+}
