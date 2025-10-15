@@ -1,229 +1,156 @@
 /**
- * expeditor.js
- * Location: /items/runners/structure/expeditor.js
- * Purpose: Orchestrates blog publication using the ClearRound structure model.
- * Mode: Lightweight by default (post page + publish.json). Flip INCLUDE_INDEXES to true to also build RSS/sitemap/indexes/manifest.
- * Author: CRT / 2025-10-14
+ * STRICT ENTRYPOINT: one trigger URL in, GET only.
+ * - GET <trigger_url>  -> { content_link, event_link, [images_link], post_folder_slug, year, commit_message }
+ * - GET content_link
+ * - GET event_link
+ * - GET images_link (optional)
+ * - Build outputs (post page + publish.json)
+ * - POST /docs/commit-bulk (one commit)
  */
 
-import fs from "fs";
-import path from "path";
 import fetch from "node-fetch";
 
-// ===== CONFIG =====
-const CRT_PROXY = process.env.CRT_PROXY || "https://items.clearroundtravel.com";
-const GITHUB_RAW = "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main";
-const TEMPLATE_PATH = `${GITHUB_RAW}/docs/blogs/templates`;
+const CRT_PROXY   = process.env.CRT_PROXY || "https://items.clearroundtravel.com";
+const GITHUB_RAW  = "https://raw.githubusercontent.com/sportdogfood/clear-round-datasets/main";
+const TEMPLATES   = `${GITHUB_RAW}/docs/blogs/templates`;
 
-// Toggle: runner builds indexes (true) vs. Codex indexer builds them on schedule (false)
-const INCLUDE_INDEXES = false;
+// ---- tiny helpers ----
+const b64 = (s) => Buffer.from(s, "utf-8").toString("base64");
+const must = (cond, msg) => { if (!cond) throw new Error(msg); };
 
-// ===== UTILS =====
-async function fetchJSON(url, label) {
-  console.log(`→ Fetching ${label}: ${url}`);
+async function getJson(url, label) {
   const r = await fetch(url);
-  if (!r.ok) throw new Error(`${label} fetch failed: ${r.status}`);
+  if (!r.ok) throw new Error(`${label} GET failed: ${r.status} ${url}`);
   return r.json();
 }
-
-async function fetchText(url, label) {
-  console.log(`→ Fetching ${label}: ${url}`);
+async function getText(url, label) {
   const r = await fetch(url);
-  if (!r.ok) throw new Error(`${label} fetch failed: ${r.status}`);
+  if (!r.ok) throw new Error(`${label} GET failed: ${r.status} ${url}`);
   return r.text();
 }
 
-const b64 = (s) => Buffer.from(s, "utf-8").toString("base64");
-
-function pickYear(trigger, event) {
-  return (
-    trigger.year ||
-    (event?.start_date && String(event.start_date).slice(0, 4)) ||
-    new Date().toISOString().slice(0, 4)
-  );
+// --- very small renderer: we keep template simple: {{title}}, {{date}}, {{body}}
+function esc(s=""){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function li(items=[]){
+  if(!Array.isArray(items)||!items.length) return "";
+  return "<ul>" + items.map(i=>{
+    const name = esc(i.name||i.title||"");
+    const alt  = i.alt ? ` <span class="alt">— ${esc(i.alt)}</span>`:"";
+    const a    = i.link ? `<a href="${esc(i.link)}" target="_blank" rel="noopener">${name}</a>` : name;
+    return `<li>${a}${alt}</li>`;
+  }).join("") + "</ul>";
+}
+function section(id, t){ return `<section id="${id}">${t}</section>`; }
+function block({title, paragraph, spectator_tip, cta, items}){
+  let out = [];
+  if(title) out.push(`<h2>${esc(title)}</h2>`);
+  if(paragraph) out.push(`<p>${paragraph}</p>`); // allow inline links already present
+  if(spectator_tip) out.push(`<p class="tip"><strong>Spectator Tip:</strong> ${esc(spectator_tip)}</p>`);
+  if(cta) out.push(`<p class="cta">${esc(cta)}</p>`);
+  if(items) out.push(li(items));
+  return out.join("\n");
+}
+function renderBody(content={}){
+  const parts = [];
+  if(content.hello){
+    parts.push(section("hello",
+      `${content.hello.intro?`<p>${content.hello.intro}</p>`:""}${content.hello.transition?`<p>${content.hello.transition}</p>`:""}`
+    ));
+  }
+  for(const key of ["stay","dine","locale","essentials"]){
+    const s = content[key]; if(!s) continue;
+    parts.push(section(key, block(s)));
+  }
+  if(content.outro){
+    parts.push(section("outro",
+      `${content.outro.pivot?`<p class="pivot">${esc(content.outro.pivot)}</p>`:""}${content.outro.main?`<p>${content.outro.main.replace(/\n\n/g,"</p><p>")}</p>`:""}`
+    ));
+  }
+  return parts.join("\n\n");
 }
 
-/**
- * Derive canonical paths from your model:
- *  Folder: docs/blogs/<brand>-blogs-<year>/<post-folder-slug>/
- *  Files:  index.html, <content-slug>-publish.json
- *
- * Assumptions:
- *  - content.slug is a human slug like "capc-cap-challenge"
- *  - trigger.post_folder_slug or trigger.docs_path can predefine the folder "capc-blog-2025-10-05"
- *  - If missing, we derive post-folder from brand + "-blog-" + date
- */
-function derivePaths(trigger, content, event) {
-  const year = pickYear(trigger, event);
-
-  // brand: everything before "-blog" in post folder or first token of content slug
+// ---- path derivation (matches your pattern) ----
+function derivePaths(trigger, content, event){
+  const year = trigger.year || (event?.start_date||"").slice(0,4) || new Date().toISOString().slice(0,4);
   const contentSlug = content.slug || "post";
-  const brandGuess = (contentSlug.split("-")[0] || "blog").toLowerCase();
-
-  // post folder slug: prefer trigger.docs_path folder name or explicit trigger.post_folder_slug
-  const triggerPath = trigger.docs_path || trigger.content_link || "";
-  const fromDocsPath = triggerPath
-    .split("/")
-    .filter(Boolean)
-    .slice(-2, -1)[0]; // takes folder if docs/.../<folder>/<file>
-
-  const postFolderSlug =
-    trigger.post_folder_slug ||
-    fromDocsPath ||
-    `${brandGuess}-blog-${(event?.start_date || new Date().toISOString()).slice(0, 10)}`;
-
-  const yearFolder = `${brandGuess}-blogs-${year}`;
-  const baseDir = `docs/blogs/${yearFolder}/${postFolderSlug}`;
-
-  // publish file name is based on content slug
-  const publishJson = `${baseDir}/${contentSlug}-publish.json`;
-
-  // global indices/feeds
-  const blogsIndex = "docs/blogs/index.html";
-  const yearIndex = `docs/blogs/${year}/index.html`;
-  const rss = "docs/blogs/rss.xml";
-  const sitemap = "docs/sitemap.xml";
-  const manifest = "docs/blogs/manifest.json";
-
+  const brand = (contentSlug.split("-")[0] || "blog").toLowerCase();
+  const postFolder = trigger.post_folder_slug || `${brand}-blog-${(event?.start_date||new Date().toISOString()).slice(0,10)}`;
+  const baseDir = `docs/blogs/${brand}-blogs-${year}/${postFolder}`;
   return {
     baseDir,
-    publish_json: publishJson,
-    index_html: `${baseDir}/index.html`,
-    blogs_index: blogsIndex,
-    year_index: yearIndex,
-    rss,
-    sitemap,
-    manifest,
     year,
-    brand: brandGuess,
-    post_folder_slug: postFolderSlug
+    publish_json: `${baseDir}/${contentSlug}-publish.json`,
+    index_html:   `${baseDir}/index.html`
   };
 }
 
-function renderPostHTML(tmpl, { title, date, body }) {
-  return tmpl
-    .replace(/{{\s*title\s*}}/g, title)
-    .replace(/{{\s*date\s*}}/g, date)
-    .replace(/{{\s*body\s*}}/g, body || "");
-}
-
-async function buildOutputs(trigger, content, event, images) {
-  const paths = derivePaths(trigger, content, event);
-  const title = content.seo?.section_title || content.title || "Untitled Post";
-  const date = event?.start_date || new Date().toISOString().slice(0, 10);
-
-  // single-post HTML
-  const blogTemplate = await fetchText(`${TEMPLATE_PATH}/blog.index.html.tmpl`, "blog template");
-  const postHTML = renderPostHTML(blogTemplate, {
-    title,
-    date,
-    body: content.body || ""
-  });
-
-  const publishJSON = JSON.stringify(
-    {
-      ...content,
-      event,
-      images,
-      meta: {
-        generated_at: new Date().toISOString(),
-        year: paths.year,
-        brand: paths.brand,
-        post_folder: paths.post_folder_slug
-      }
-    },
-    null,
-    2
-  );
-
-  // Minimal default: publish JSON + post page
-  const files = [
-    { path: paths.publish_json, content_type: "application/json", content_base64: b64(publishJSON) },
-    { path: paths.index_html,  content_type: "text/html",         content_base64: b64(postHTML) }
-  ];
-
-  if (INCLUDE_INDEXES) {
-    const [rss, sitemap, blogsIndex, yearIndex] = await Promise.all([
-      fetchText(`${TEMPLATE_PATH}/rss.xml.tmpl`, "rss"),
-      fetchText(`${TEMPLATE_PATH}/sitemap.xml.tmpl`, "sitemap"),
-      fetchText(`${TEMPLATE_PATH}/blogs.index.html.tmpl`, "blogs index"),
-      fetchText(`${TEMPLATE_PATH}/year.index.html.tmpl`, "year index")
-    ]);
-    const manifest = JSON.stringify(
-      [{ slug: content.slug || "post", title, date, json: paths.publish_json }],
-      null,
-      2
-    );
-
-    files.push(
-      { path: paths.blogs_index, content_type: "text/html",         content_base64: b64(blogsIndex) },
-      { path: paths.year_index,  content_type: "text/html",         content_base64: b64(yearIndex) },
-      { path: paths.rss,         content_type: "application/xml",   content_base64: b64(rss) },
-      { path: paths.sitemap,     content_type: "application/xml",   content_base64: b64(sitemap) },
-      { path: paths.manifest,    content_type: "application/json",  content_base64: b64(manifest) }
-    );
-  }
-
-  return { files, paths, title, date };
-}
-
-async function commitToDocs(message, files) {
-  const body = { message, overwrite: true, files };
-  console.log(`→ Committing ${files.length} files via /docs/commit-bulk`);
+// ---- commit bulk (one request) ----
+async function commitBulk(message, files){
   const res = await fetch(`${CRT_PROXY}/docs/commit-bulk`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ message, overwrite:true, files })
   });
-  const result = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Commit failed: ${JSON.stringify(result)}`);
-  console.log("✓ Commit successful:", result.commit?.url || "No URL");
-  return result;
+  const j = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(`Commit failed: ${JSON.stringify(j)}`);
+  console.log("✓ commit", j.commit?.sha, j.commit?.url || "");
+  return j;
 }
 
-export async function runExpeditor(triggerUrlOrJson) {
-  try {
-    // 1) Load trigger (URL or object)
-    const trigger =
-      typeof triggerUrlOrJson === "string"
-        ? await fetchJSON(triggerUrlOrJson, "trigger")
-        : triggerUrlOrJson;
+// ---- PUBLIC ENTRYPOINT: one URL ----
+export async function runExpeditorFromUrl(triggerUrl){
+  must(/^https?:\/\//i.test(triggerUrl), "Trigger must be a URL");
+  console.log("→ GET trigger", triggerUrl);
 
-    // 2) Load linked inputs (content, event, images)
-    if (!trigger.content_link || !trigger.event_link) {
-      throw new Error("Trigger must include content_link and event_link");
+  const trigger = await getJson(triggerUrl, "trigger");
+  must(trigger.content_link, "trigger.content_link required");
+  must(trigger.event_link,   "trigger.event_link required");
+
+  const [content, event, images] = await Promise.all([
+    getJson(trigger.content_link, "content"),
+    getJson(trigger.event_link,   "event"),
+    trigger.images_link ? getJson(trigger.images_link, "images") : Promise.resolve({})
+  ]);
+
+  // build post (title/date/body) with your structured content
+  const title = content.seo?.section_title || content.title || "Untitled Post";
+  const date  = event?.start_date || new Date().toISOString().slice(0,10);
+  const body  = renderBody(content);
+
+  const tmpl = await getText(`${TEMPLATES}/blog.index.html.tmpl`, "blog template");
+  const html = tmpl
+    .replace(/{{\s*title\s*}}/g, title)
+    .replace(/{{\s*date\s*}}/g,  date)
+    .replace(/{{\s*body\s*}}/g,  body);
+
+  const paths = derivePaths(trigger, content, event);
+
+  // publish JSON (include meta you asked for)
+  const publish = JSON.stringify({
+    ...content,
+    event,
+    images,
+    meta: {
+      ...(content.meta || {}),
+      generated_at: new Date().toISOString(),
+      year: paths.year,
+      post_folder: paths.baseDir.split("/").slice(-1)[0]
     }
-    const [content, event, images] = await Promise.all([
-      fetchJSON(trigger.content_link, "content"),
-      fetchJSON(trigger.event_link, "event"),
-      trigger.images_link ? fetchJSON(trigger.images_link, "images") : Promise.resolve({})
-    ]);
+  }, null, 2);
 
-    // 3) Build outputs (post+publish; optional indexes)
-    const { files, paths } = await buildOutputs(trigger, content, event, images);
+  const files = [
+    { path: paths.publish_json, content_type:"application/json", content_base64: b64(publish) },
+    { path: paths.index_html,   content_type:"text/html",        content_base64: b64(html) }
+  ];
 
-    // 4) Log a compact table
-    console.table(
-      files.map((f) => ({
-        path: f.path,
-        type: f.content_type,
-        bytes: Buffer.from(f.content_base64, "base64").length
-      }))
-    );
+  console.table(files.map(f=>({ path:f.path, bytes: Buffer.from(f.content_base64,"base64").length })));
 
-    // 5) Commit
-    const msg =
-      trigger.commit_message ||
-      `publish ${content.slug || paths.post_folder_slug} (${paths.year})`;
-    await commitToDocs(msg, files);
-  } catch (err) {
-    console.error("✗ Expeditor failed:", err.message);
-    process.exitCode = 1;
-  }
+  const msg = trigger.commit_message || `publish ${content.slug || "post"} (${paths.year})`;
+  await commitBulk(msg, files);
+  console.log("✓ done");
 }
 
-// If run directly from CLI
-if (process.argv[2]) {
-  const arg = process.argv[2];
-  runExpeditor(arg);
+// CLI usage (node expeditor.js <trigger-url>)
+if (process.argv[1] && process.argv[1].endsWith("expeditor.js") && process.argv[2]) {
+  runExpeditorFromUrl(process.argv[2]).catch(e => { console.error("✗", e.message); process.exitCode = 1; });
 }
