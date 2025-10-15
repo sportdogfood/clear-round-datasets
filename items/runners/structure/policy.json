@@ -1,17 +1,23 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "version": "20251015",
   "notes": [
-    "RUNNER-LIGHT policy: one trigger URL → GET content/event/[images] → build exactly 2 outputs (post index.html + *-publish.json) → single /docs/commit-bulk.",
-    "Global indexes (blogs index, year index, RSS, sitemap, manifest) are built by a scheduled indexer job, not by the runner.",
-    "ADD-ONLY for content sources: never mutate *-blog*.json in items/; runner writes only under docs/blogs/."
+    "DOCS/BLOG ONLY policy. This file governs the Structure Runner’s READ/WRITE lanes for go-live.",
+    "READS: source data from https://items.clearroundtravel.com/items/** and read-only template files under docs/blogs/templates/**.",
+    "WRITES: final, public artifacts only under docs/** via POST /docs/commit-bulk.",
+    "ADD-ONLY for content sources: never mutate any *-blog*.json. Publish to *-publish*.json.",
+    "No mirrors. No raw.githubusercontent.com. No cross-domain fetches beyond the hosts.allow list.",
+    "Seven (7) outputs per publish: PUBLISH_JSON, POST_INDEX, BLOGS_INDEX, YEAR_INDEX, RSS_XML, SITEMAP_XML, MANIFEST_JSON."
   ],
-  "mode": "runner_light",
+
   "hosts": {
     "allow": [
       "items.clearroundtravel.com",
-      "raw.githubusercontent.com"
-    ]
+      "blog.clearroundtravel.com"
+    ],
+    "deny": []
   },
+
   "cors": {
     "allow_origins": [
       "https://airtable.com",
@@ -20,9 +26,28 @@
       "https://blog.clearroundtravel.com"
     ]
   },
+
+  "fetch_rules": {
+    "https_only": true,
+    "max_attempts": 2,
+    "timeout_ms": 7000,
+    "warn_noncritical_failures": true,
+    "fail_on_content_link_error": true
+  },
+
   "allow_dirs": [
-    "events","months","seasons","days","years","weeks","labels","places","sources","organizers","cities","countries","hotels","states","weather","airports","venues","restaurants","agents","dine","essentials","legs","distances","insiders","keywords","audience","tone","ratings","links","spots","sections","bullets","services","stay","amenities","slots","cuisines","menus","locale","things","tags","blogs","platforms","geos","timezones","geometry","chains","knowledge","levels","types","core","brand","meta","hubs","zones","seo","outputs","tasks","instructions","schema","gold","policy","docs","runners","images","assets"
+    "docs",
+    "docs/blogs",
+    "docs/blogs/templates",
+    "items",
+    "items/content",
+    "items/events",
+    "items/images",
+    "items/triggers",
+    "items/runners",
+    "items/runners/structure"
   ],
+
   "templates": [
     "docs/blogs/templates/blog.index.html.tmpl",
     "docs/blogs/templates/blogs.index.html.tmpl",
@@ -30,30 +55,114 @@
     "docs/blogs/templates/rss.xml.tmpl",
     "docs/blogs/templates/sitemap.xml.tmpl"
   ],
+
   "write_guards": {
     "deny": [
       "**/*-blog-????-??-??.json",
       "**/*-blog.json"
     ],
     "allow": [
-      "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/index.html",
-      "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/*-publish-????-??-??.json",
-      "docs/blogs/*-blogs-[0-9][0-9][0-9][0-9]/*/*-publish.json"
+      "docs/blogs/**/index.html",
+      "docs/blogs/[0-9][0-9][0[0-9]]/index.html",
+      "docs/blogs/[0-9][0-9][0-9][0-9]/index.html",
+      "docs/blogs/index.html",
+      "docs/blogs/**/**-publish-????-??-??.json",
+      "docs/blogs/**/**-publish.json",
+      "docs/blogs/rss.xml",
+      "docs/sitemap.xml",
+      "docs/blogs/manifest.json"
     ],
     "on_violation": "halt"
   },
+
   "required_outputs": [
     "PUBLISH_JSON",
-    "POST_INDEX"
+    "POST_INDEX",
+    "BLOGS_INDEX",
+    "YEAR_INDEX",
+    "RSS_XML",
+    "SITEMAP_XML",
+    "MANIFEST_JSON"
   ],
+
   "min_bytes": {
     "PUBLISH_JSON": 100,
-    "POST_INDEX": 200
+    "POST_INDEX": 200,
+    "BLOGS_INDEX": 200,
+    "YEAR_INDEX": 200,
+    "RSS_XML": 80,
+    "SITEMAP_XML": 80,
+    "MANIFEST_JSON": 50
   },
+
   "defaults": {
     "canonical_base": "https://blog.clearroundtravel.com",
     "rss_item_limit": 20,
     "recent_count": 4,
-    "timezone": "America/New_York"
+    "year_fallback": "from_event_or_filename",
+    "manifest_strategy": "upsert"
+  },
+
+  "paths": {
+    "read": {
+      "items_root": "/items/",
+      "content": "/items/content/",
+      "events": "/items/events/",
+      "images": "/items/images/",
+      "triggers": "/items/triggers/",
+      "templates": "/docs/blogs/templates/"
+    },
+    "write": {
+      "root": "/docs/",
+      "blogs_root": "/docs/blogs/"
+    }
+  },
+
+  "publish_rules": {
+    "naming": {
+      "from_blog_to_publish": {
+        "pattern_dated": "-blog-YYYY-MM-DD.json → -publish-YYYY-MM-DD.json",
+        "pattern_nodate": "-blog.json → -publish.json"
+      }
+    },
+    "title_priority": [
+      "seo.section_title",
+      "seo.open_graph_title",
+      "title",
+      "slug"
+    ],
+    "description_priority": [
+      "seo.meta_description",
+      "seo.open_graph_description",
+      "intro|hello.intro (first paragraph)"
+    ],
+    "enrichment": {
+      "copy_all_fields_from_content_link": true,
+      "attach_event_object": true,
+      "attach_images_object_when_present": true
+    }
+  },
+
+  "validation": {
+    "required_fields_in_manifest_entry": [
+      "slug",
+      "title",
+      "date",
+      "year",
+      "path",
+      "json",
+      "venue"
+    ],
+    "manifest_path_patterns": {
+      "path": "^/blogs/.+/.+/$",
+      "json": "^/blogs/.+/(.+-publish(-\\d{4}-\\d{2}-\\d{2})?)\\.json$"
+    }
+  },
+
+  "run_summary": {
+    "print_fetches": true,
+    "print_table": true,
+    "table_columns": ["path", "content_type", "decoded_bytes", "status"],
+    "final_message": "Ready to commit /docs/commit-bulk (7 files)."
   }
 }
