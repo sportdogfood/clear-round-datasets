@@ -1,1 +1,43 @@
-<html><head><title>Clear Round Travel blogs</title></head><body><h1>Clear Round Travel Blogs</h1><p>Latest post: CAP Challenge 2025</p></body></html>
+<!-- docs/blogs/index.html -->
+<!doctype html><html lang="en"><meta charset="utf-8">
+<title>ClearRound Travel — Blog</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="canonical" href="https://blog.clearroundtravel.com/blogs/">
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;margin:0;color:#111}
+  main{max-width:960px;margin:0 auto;padding:24px}
+  h1{margin:0 0 12px}
+  ul{list-style:none;padding:0;margin:12px 0}
+  li{margin:10px 0;padding:10px 0;border-bottom:1px solid #eee}
+  a{color:#0b5fff;text-decoration:underline}
+  .meta{color:#666;font-size:.9rem}
+</style>
+<main>
+  <h1>Blog</h1>
+  <p class="meta">Latest posts will appear here automatically.</p>
+  <ul id="list"><li>Loading…</li></ul>
+</main>
+<script>
+(async () => {
+  const el = document.getElementById('list');
+  try {
+    const res = await fetch('./manifest.json', {cache:'no-store'});
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      el.innerHTML = '<li>No posts yet — check back soon.</li>';
+      return;
+    }
+    data.sort((a,b) => String(b.date||'').localeCompare(String(a.date||'')));
+    el.innerHTML = data.map(x => {
+      const path = x.path || '/blogs/';
+      const title = x.title || x.slug || 'Untitled';
+      const date = x.date || '';
+      const venue = x.venue ? ` · ${x.venue}` : '';
+      return `<li><a href="${path}">${title}</a><div class="meta">${date}${venue}</div></li>`;
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<li>Could not load posts.</li>';
+  }
+})();
+</script>
+</html>
