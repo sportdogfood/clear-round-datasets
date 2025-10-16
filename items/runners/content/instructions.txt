@@ -1,47 +1,55 @@
-TITLE: Content Runner — Deterministic content + SR trigger
-Version: 2025-10-16.CR-v1
-Purpose: Single URL → GET task → fetch items/* → generate content package → write SR trigger → stop. No mirrors. No SR calls.
+TITLE: Content Runner — Equestrian Event Blogs
+Version: 2025-10-16.v1
+BASE_URI: https://items.clearroundtravel.com/items
+
+SCHEMA: https://items.clearroundtravel.com/items/runners/content/task.schema.json
+POLICY: https://items.clearroundtravel.com/items/runners/content/policy.json
+GOLD_SHAPE: https://items.clearroundtravel.com/items/gold/hchs.gold.json
+RUNNER SOP: policy.writer_guides.hello_intro_path (if present)
 
 INPUT
-- One payload: {"task_uri":"https://items.clearroundtravel.com/items/tasks/{slug}-task-YYYY-MM-DD.json"}
+- Invocation payload: {"task_uri":"<absolute URL under items/tasks/>"} only.
+- Runner performs a single GET for {task_uri}. All other reads use *_link fields within the task. No raw.githubusercontent.com.
+- The task MUST include "output_path" (items/content/{slug}-content-YYYY-MM-DD.json).
 
-LOAD
-- policy.json: https://items.clearroundtravel.com/items/runners/content/policy.json
-- task.schema.json: https://items.clearroundtravel.com/items/runners/content/task.schema.json
-- generator.rules.json: https://items.clearroundtravel.com/items/runners/content/generator.rules.json
+URL ACCESS
+- Allowed: items/* links found in the task payload.
+- Optional externals (event_official_link, venue_official_link, city_profile_link, seasonal_context_link) are DISPLAY-ONLY unless policy.external_fetch.enabled=true.
+- If external fetch is enabled later, only those exact hosts are eligible per policy. No crawling.
 
-FETCH POLICY
-- Only GET https://items.clearroundtravel.com/items/** found in task fields ending *_link or *_links[].
-- External links (event_official_link, venue_official_link) are display-only. Never fetch.
-
-TRACE (path,status; collapse successes; max 18)
-task_uri, policy, schema, rules, audiences, venue, event, geo, section, stay, dine, essentials, patterns, outros, ctas, libs_bundle, content_write, trigger_write
+TRACE (path+status; collapse successes)
+Order: task_uri, policy, schema, rules, event, venue, geo, section, audiences, insiders, keywords, stay, dine, essentials, bootstrap_bundle, content_write, content_verify, trigger_write.
+Max 18 entries.
 
 WORKFLOW
-1) GET policy, schema, rules (trace).
-2) GET task_uri. Fail-close on non-200.
-3) Normalize types: coerce CSV *_links → arrays; parse booleans and integers.
-4) Build ALLOW_URLS from *_link and *_links[]; enforce items/* only.
-5) GET required items: event_link, venue_link, geo_link, section_link; then optional libs if present.
-6) Build context for generator: {event, venue, geo, section, libs, curated, externals, knobs, flags}.
-7) Call generator (pure): returns {sections, seo, metrics}. Generator enforces all prose rules from generator.rules.json.
-8) Assemble content package: {manifest, sections, provenance, quality, validation}.
-9) Validate IO gates (policy): UTF-8, min-bytes, path regex, absolute http(s) images, arrays minima. Fail-close on miss.
-10) Commit content package to output_path (default: items/content/{slug}-content-{YYYY-MM-DD}.json) via /items/commit-bulk. Verify by GET.
-11) Commit SR trigger to items/triggers/{slug}-trigger-{YYYY-MM-DD}.json with fields: content_link, year, post_folder_slug, commit_message, event_link?, images_link?.
-12) Stop. Do not call SR.
+1) Load POLICY, SCHEMA, generator rules (continue on failure; always trace).
+2) GET {task_uri}. Hard-fail if non-200.
+3) Normalize types (booleans from "true"/"false", numeric strings to numbers, CSV link fields to arrays).
+4) Build allowlist from *_link fields that start with BASE_URI. Enforce items-only for fetches.
+5) Fetch required items: event_link, venue_link, geo_link, section_link. Fetch optional libs: audiences, insiders, keywords, templates, ctas, gold. Fetch curated lists: stay, dine, essentials.
+6) Compose context and call generator (pure; no I/O). Generator MUST be evidence-driven (facts → microplans → syntax transforms → novelty checks). No canned paragraph templates.
+7) Validate output: path regex, min-bytes, OG images http(s), items minima (stay≥2, dine≥3, essentials≥5 if present).
+8) Commit ONE file to output_path (application/json) under items/content/.
+9) Verify by GET.
+10) Park SR trigger JSON under items/triggers/{slug}-trigger-{date}.json. Do not invoke SR.
 
-DERIVATIONS
-- slug = task_uid without “-task-YYYY-MM-DD”
-- base_date = from task_uid or output_path
-- year = YYYY from base_date
-- post_folder_slug = {slug}-content-{base_date}
-- Default output_path = items/content/{slug}-content-{base_date}.json
+PRINTING RULES
+- Do NOT emit literal labels (“Intro”, “Stay”, “Dine”, “Locale”, “Essentials”, “Outro”).
+- Use dynamic 3–6 word section titles.
+- Exactly two proper-noun links inside the intro (event + venue) if available.
+- No logistics in intro (no directions/parking/tickets/temps).
+- Outro has no links.
 
-OUTPUTS
-- Content package JSON → items/content/{slug}-content-{base_date}.json
-- SR trigger JSON → items/triggers/{slug}-trigger-{base_date}.json
-- Both via /items/commit-bulk (see openapi.txt)
+QUALITY
+- Intro 110–180 words; one paragraph; ≥3 evidence beats.
+- Transition 40–70 words; one paragraph.
+- Zones openers 45–60 words; inline items blended; “Also consider: …” when ≥2 extras exist.
+- One spectator tip per zone max; optional CTAs gated by novelty and entropy.
+- Local de-dup Jaccard(3/4/5-gram) ≤ 0.65 across sections; paragraph type-token ratio ≥ 0.35.
 
-NOTES
-- No canvas emit. No docs writes from CR. All quality rules live in generator.rules.json.
+SAVE PATH
+- Use output_path provided in task. Example: items/content/{slug}-content-YYYY-MM-DD.json
+- SR trigger is derived automatically: items/triggers/{slug}-trigger-YYYY-MM-DD.json
+
+FAIL-CLOSE
+- If validations fail, do not commit. Return errors + trace.
