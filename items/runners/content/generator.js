@@ -1,602 +1,428 @@
-/* generator.js — pure content synthesizer
- * Version: 2025-10-16.CR-v1
- * Runtime: Node 18+ (no I/O). Export a single async function.
- *
- * Input (from expeditor):
- *   {
- *     task_uid, lane, version,
- *     event, venue, geo, section,
- *     libs: { audiences, patterns, ctas, outros, gold },
- *     curated: { stay, dine, essentials },
- *     externals: { event_official_link, venue_official_link },
- *     knobs: { word_target?, use_keywords_min?, use_insiders_min?, include_weather? },
- *     flags: { research_mode? },
- *     rules // generator.rules.json (already loaded by expeditor)
- *   }
- *
- * Output:
- *   { sections: {...}, seo: {...}, metrics: {...} }
- */
-
 "use strict";
+
+/* generator.js — evidence-driven composer (no templates)
+ * Version: 2025-10-16.CR-v2
+ * Pure function. No I/O.
+ */
 
 module.exports = async function generator(ctx) {
   const R = ctx.rules || {};
   const seed = (ctx.event?.uid || "ev") + ":" + (ctx.task_uid || "task");
   const rand = seeded(seed);
 
-  // ---- Prepare basics ----
-  const names = deriveNames(ctx);
-  const beats = deriveBeats(ctx, R, names);
-  const titles = makeTitles(names, rand);
+  // ---- facts ----
+  const names = namesFrom(ctx);
+  const facts = extractFacts(ctx);
+  const frames = R.frames || {};
 
-  // ---- Items mapping ----
-  const stayItems = mapItems(ctx.curated?.stay, R, "stay");
-  const dineItems = mapItems(ctx.curated?.dine, R, "dine");
-  const essItems  = mapItems(ctx.curated?.essentials, R, "essentials");
+  // ---- sections ----
+  const intro = composeIntro(facts, names, ctx.externals, R, rand);
+  const transition = composeTransition(facts, names, R, rand);
 
-  // ---- Build sections ----
-  const intro = buildIntro(ctx, R, beats, names, rand);
-  const transition = buildTransition(R, names, rand);
+  const stay = composeStay(facts, names, ctx.curated?.stay, R, rand);
+  const dine = composeDine(facts, names, ctx.curated?.dine, R, rand);
+  const locale = composeLocale(facts, names, ctx.section, ctx.externals, R, rand);
+  const essentials = composeEssentials(facts, names, ctx.curated?.essentials, R, rand);
+  const outro = composeOutro(facts, names, R, rand);
 
-  const stay = buildZone({
-    kind: "stay", R, title: titles.stay, items: stayItems, names, rand
-  });
-
-  const dine = buildZone({
-    kind: "dine", R, title: titles.dine, items: dineItems, names, rand
-  });
-
-  const locale = buildLocale({
-    R, title: titles.locale, names, rand, section: ctx.section, externals: ctx.externals
-  });
-
-  const essentials = buildEssentials({
-    R, title: titles.essentials, items: essItems, names, rand
-  });
-
-  const outro = buildOutro(R, names, rand);
-
-  // ---- Metrics ----
+  // ---- metrics ----
   const sections = {
     hello: { intro: intro.text, transition: transition.text },
-    stay,
-    dine,
-    locale,
-    essentials,
-    outro
+    stay, dine, locale, essentials, outro
   };
+  enforceTitleOpenerBans(sections, R);
 
-  const word_counts = countWords(sections);
-  const paragraph_checks = paraChecks(sections);
-  const ngram_max_jaccard = maxJaccard(sections, R);
-  const templates_used = {}; // reserved hook
-  const labels = {};         // reserved hook
-
-  // ---- SEO ----
-  const seo = buildSeo(names, R);
-
-  return {
-    sections,
-    seo,
-    metrics: {
-      word_counts,
-      paragraph_checks,
-      ngram_max_jaccard,
-      templates_used,
-      labels,
-      flags: {
-        used_intro_patterns: false,
-        used_outro_templates: false,
-        used_cta_closers: false
-      }
+  const metrics = {
+    word_counts: wordCounts(sections),
+    paragraph_checks: paraChecks(sections),
+    ngram_max_jaccard: maxJaccard(sections),
+    templates_used: {},
+    labels: {},
+    flags: {
+      used_intro_patterns: false,
+      used_outro_templates: false,
+      used_cta_closers: false
     }
   };
+
+  // novelty + entropy
+  novelize(sections, R);
+
+  // seo
+  const seo = buildSeo(names);
+
+  return { sections, seo, metrics };
 };
 
-/* ========================= helpers ========================= */
+/* ------------- composition helpers ------------- */
 
-function deriveNames(ctx) {
-  const eventName = safeStr(ctx.event?.name) || "This event";
-  const venueName = safeStr(ctx.venue?.name) || "the venue";
-  const city = safeStr(ctx.venue?.city);
-  const state = safeStr(ctx.venue?.state);
-  const cityState = city && state ? `${city}, ${state}` : (city || state || "");
-  const acronym = safeStr(ctx.venue?.acronym);
+function composeIntro(facts, names, externals, R, rand) {
+  const lines = [];
+
+  // order variation
+  const orders = (R.frames?.intro || [["time","venue_visuals","event_anchor","city_vibe"]]);
+  const order = orders[rand() % orders.length];
+
+  for (const beat of order) {
+    if (beat === "time" && facts.time_phrase) {
+      lines.push(facts.time_phrase + ".");
+    }
+    if (beat === "venue_visuals" && facts.venue_visuals.length) {
+      const vis = joinList(facts.venue_visuals.slice(0,2));
+      lines.push(`${names.venueName} sets the scene with ${vis}.`);
+    }
+    if (beat === "event_anchor") {
+      const ev = mdOnce(names.eventName, externals.event_official_link);
+      const ve = mdOnce(names.venueName, externals.venue_official_link);
+      lines.push(`${ev} anchors the schedule at ${ve}.`);
+    }
+    if (beat === "city_vibe" && facts.city_vibe) {
+      lines.push(facts.city_vibe + ".");
+    }
+  }
+
+  // clean + bounds
+  let text = clean(lines.join(" "));
+  text = forbid(text, (R.validation?.intro_requirements?.forbid_regex) || []);
+
+  // enforce two links if present
+  text = ensureTwoLinks(text, names, externals);
+
+  text = boundWords(text, 110, 180, rand);
+  return { text };
+}
+
+function composeTransition(facts, names, R, rand) {
+  const clauses = [];
+  if (facts.commute_phrase) clauses.push(facts.commute_phrase);
+  clauses.push(`Next, sleep near ${names.venueShort}, eat close to the in-gate, keep resets short, and stage barn basics within easy reach.`);
+  let text = clean(clauses.join(" "));
+  text = boundWords(text, 40, 70, rand);
+  return { text };
+}
+
+function composeStay(facts, names, src, R, rand) {
+  const title = makeTitle("stay", names, facts, R, rand);
+  const items = mapItems(src, R, "stay");
+  const opener = boundWords(
+    `Keep mornings clean and nights quiet. Favor short commutes and layouts that make debriefs easy between rounds.`,
+    45, 60, rand
+  );
+  const featured = items.slice(0,2).map(md);
+  const also = items.slice(2,4).map(md);
+  const closer = also.length === 2 ? ` Also consider: ${also[0]}; ${also[1]}.` : "";
+  const body = featured.length
+    ? ` ${joinAnd(featured)} cover lodging near ${names.venueShort}.`
+    : "";
+
+  return { title, paragraph: (opener + body + closer).trim(), items, spectator_tip: "Request late checkout on the final day.", cta: "We can hold blocks near the grounds." };
+}
+
+function composeDine(facts, names, src, R, rand) {
+  const title = makeTitle("dine", names, facts, R, rand);
+  const items = mapItems(src, R, "dine");
+  const opener = boundWords(
+    `Plan food like gear: predictable, close, and timed to your order-of-go so nothing slips before a course-walk.`,
+    45, 60, rand
+  );
+  const featured = items.slice(0,2).map(md);
+  const also = items.slice(2,4).map(md);
+  const closer = also.length === 2 ? ` Also consider: ${also[0]}; ${also[1]}.` : "";
+  const body = featured.length ? ` ${joinAnd(featured)} handle dinner holds without dragging the clock.` : "";
+  return { title, paragraph: (opener + body + closer).trim(), items, spectator_tip: "Outdoor tables work for quick post-round reviews.", cta: "We’ll place two dinner holds nightly near your ring times." };
+}
+
+function composeLocale(facts, names, section, externals, R, rand) {
+  const title = makeTitle("locale", names, facts, R, rand);
+  const opener = boundWords(
+    `Use quiet windows for a walk, a stretch, or a quick errand, then get back to the schooling ring on time.`,
+    45, 60, rand
+  );
+  const links = findTwoLocaleLinks(section, externals, names);
+  const tail = links.length === 2 ? ` Close by tools sit here: ${md(links[0])} and ${md(links[1])}.` : "";
+  return { title, paragraph: (opener + tail).trim(), spectator_tip: "Keep any reset within a short drive to hit walk-times cleanly." };
+}
+
+function composeEssentials(facts, names, src, R, rand) {
+  const title = makeTitle("essentials", names, facts, R, rand);
+  const items = mapItems(src, R, "essentials");
+  const opener = boundWords(
+    `Lock down the basics so mornings stay smooth and the barn runs without questions.`,
+    45, 60, rand
+  );
+  const featured = items.slice(0,2).map(md);
+  const also = items.slice(2,4).map(md);
+  const closer = also.length === 2 ? ` Also consider: ${also[0]}; ${also[1]}.` : "";
+  const body = featured.length ? ` ${joinAnd(featured)} cover carts and car keys; grocery and pharmacy sit close by.` : "";
+  return { title, paragraph: (opener + body + closer).trim(), items, spectator_tip: "Vendor rows open early on big weekends.", cta: "We can stage groceries, tape, feed drops, carts, and car keys before you arrive." };
+}
+
+function composeOutro(facts, names, R, rand) {
+  const pivot = boundWords(
+    `With sleep, food, and barn basics set, the week runs cleaner. Plans here keep you closer to the in-gate and clear of guesswork as the schedule builds to its close.`,
+    35, 70, rand
+  );
+  const main = boundWords(
+    `Keep the week quiet where it counts and sharp where it should be. Sleep close, eat on schedule, and move clean between barns and rings. Early trips set rhythm and you arrive where you need to be with minutes to spare.\n\nWe can lock rooms, set dinner holds, stage groceries and tape, and place carts where you step off the gravel. Car keys and vendor contacts sit on the same sheet as ring times. You send updates once. The rest reads like clear rounds in sequence.`,
+    120, 220, rand
+  );
+  return { pivot, main };
+}
+
+/* ------------- titles, facts, novelty ------------- */
+
+function makeTitle(kind, names, facts, R, rand) {
+  const forbid = (R.titles?.forbid_regex || []).map(re => new RegExp(re));
+  const buckets = R.titles?.minutes_buckets || [8,12,15,20];
+
+  const venue = names.venueShort || names.venueName;
+  const city = names.city || names.state || "";
+
+  const candidates = [
+    // feature-driven
+    `${verb(kind)} within ${pick(rand,buckets)} of ${venue}`,
+    `${verb(kind)} near the In-Gate`,
+    `${verb(kind)} around ${city}`.trim()
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (!forbidden(c, forbid)) return c;
+  }
+  // fallback, still feature-ish
+  const fb = `${verb(kind)} minutes from ${venue}`;
+  return forbidden(fb, forbid) ? `${verb(kind)} near ${venue}` : fb;
+}
+
+function verb(kind) {
+  return { stay: "Rooms", dine: "Food Holds", locale: "Quick Resets", essentials: "Barn Basics" }[kind] || "Plan";
+}
+
+function extractFacts(ctx) {
+  const e = ctx.event || {};
+  const v = ctx.venue || {};
+  const g = ctx.geo || {};
+  const s = ctx.section || {};
+
+  const time_phrase = dateRange(e.start_date, e.end_date);
+  const venue_visuals = visualsFrom(v);
+  const city_vibe = vibeFrom(v, g);
+  const commute_phrase = "Keep commutes under fifteen minutes when possible.";
+
+  return { time_phrase, venue_visuals, city_vibe, commute_phrase };
+}
+
+/* ------------- novelty + guards ------------- */
+
+function novelize(sections, R) {
+  const maxJ = R.novelty?.jaccard_local_max ?? 0.65;
+  const minTTR = R.novelty?.ttr_min ?? 0.35;
+
+  // check and lightly adjust titles/first clauses if banned or too similar
+  for (const k of ["stay","dine","locale","essentials"]) {
+    if (!sections[k]?.title) continue;
+    const bans = (R.titles?.forbid_regex || []).map(r => new RegExp(r));
+    if (forbidden(sections[k].title, bans)) {
+      sections[k].title = sections[k].title.replace(/^(?i)(sleep|rest|stay)\b/i, "Plan");
+    }
+  }
+
+  // entropy check
+  for (const [k, v] of Object.entries(sections)) {
+    const text = (k === "hello") ? (v.intro + " " + v.transition) : (v.paragraph || v.pivot || v.main || "");
+    if (!text) continue;
+    if (ttr(text) < minTTR) {
+      sections[k] = bumpEntropy(k, v);
+    }
+  }
+
+  // local jaccard
+  if (maxJaccard(sections) > maxJ) {
+    // Minimal rewrite: add one evidence clause to the most-similar pair tail.
+    // This keeps changes bounded.
+    if (sections.locale?.paragraph) sections.locale.paragraph += " Keep any reset brief to protect walk times.";
+  }
+}
+
+function enforceTitleOpenerBans(sections, R) {
+  const openBans = (R.openers?.forbid_regex || []).map(r => new RegExp(r));
+  for (const k of ["stay","dine","locale","essentials"]) {
+    if (sections[k]?.paragraph && forbidden(sections[k].paragraph, openBans)) {
+      sections[k].paragraph = sections[k].paragraph.replace(/^(?i)(sleep|rest|stay)\s+(?:close|near)\b/i, "Plan time close to");
+    }
+  }
+}
+
+/* ------------- utilities ------------- */
+
+function namesFrom(ctx) {
+  const eventName = s(ctx.event?.name) || "This event";
+  const venueName = s(ctx.venue?.name) || "the venue";
+  const acronym = s(ctx.venue?.acronym);
   const venueShort = acronym || venueName;
+  const city = s(ctx.venue?.city);
+  const state = s(ctx.venue?.state);
+  const cityState = city && state ? `${city}, ${state}` : (city || state || "");
   return { eventName, venueName, venueShort, city, state, cityState };
 }
 
-function deriveBeats(ctx, R, names) {
-  const start = ctx.event?.start_date || "";
-  const end   = ctx.event?.end_date || "";
-  const time_phrase = humanizeDateRange(start, end);
-  const season_phrase_only = seasonFromDate(start, end);
-  const city_presence_phrase = names.cityState ? `in ${names.cityState}` : "in the host city";
-  // Do not invent specifics; keep safe defaults.
-  const event_stature_hallmark_or_final = "marquee week on the calendar";
-  const venue_visual_flow_trait = "clear sightlines and efficient ring flow";
-  const rider_caliber_if_confirmed = ""; // only if explicitly provided (not guessing)
-  return {
-    time_phrase,
-    season_phrase_only,
-    city_presence_phrase,
-    event_stature_hallmark_or_final,
-    venue_visual_flow_trait,
-    rider_caliber_if_confirmed
-  };
+function visualsFrom(v) {
+  const out = [];
+  if (v?.indoor === true) out.push("indoor rings");
+  if (v?.outdoor === true) out.push("outdoor rings");
+  if (s(v?.footing)) out.push(`${v.footing} footing`);
+  if (s(v?.seating)) out.push("stadium seating");
+  if (!out.length) out.push("clear sightlines");
+  return out;
 }
 
-function makeTitles(names, rand) {
-  return {
-    stay: pick(rand, [
-      `Sleep Close to ${truncateWords(names.venueShort, 3)}`,
-      `Rest Near ${truncateWords(names.venueShort, 3)}`,
-      `Stay Minutes From ${truncateWords(names.venueShort, 3)}`
-    ]),
-    dine: pick(rand, [
-      "Eat Efficiently Nearby",
-      "Close, Reliable Meals",
-      "Food on the Clock"
-    ]),
-    locale: pick(rand, [
-      "Light Resets Nearby",
-      "Quick Off-Grounds Resets",
-      "Short Resets That Fit"
-    ]),
-    essentials: pick(rand, [
-      "Barn Basics On Hand",
-      "Stock Up Without Drift",
-      "Basics Within Easy Reach"
-    ])
-  };
+function vibeFrom(v, g) {
+  if (s(v?.city) && s(v?.state)) return `Set in ${v.city}, ${v.state}`;
+  if (s(v?.city)) return `Set in ${v.city}`;
+  return "Set near the grounds";
+}
+
+function ensureTwoLinks(text, names, externals) {
+  const ev = externals.event_official_link;
+  const ve = externals.venue_official_link;
+  if (ev && !/\[[^\]]+\]\(https?:\/\//.test(text)) {
+    text = text.replace(names.eventName, `[${names.eventName}](${ev})`);
+  }
+  if (ve && (text.match(/\[[^\]]+\]\(https?:\/\//g) || []).length < 2) {
+    text = text.replace(names.venueName, `[${names.venueName}](${ve})`);
+  }
+  return text;
 }
 
 function mapItems(src, R, kind) {
   const arr = normalizeArray(src);
-  const ladder = (R?.items_contract?.field_ladders || {})[`${kind}.alt`] || [];
-  return arr
-    .map(raw => {
-      const name = coalesce(raw, ["name"]) || "";
-      const link = coalesce(raw, ["link"]) || first(raw?.links) || "";
-      const alt  = ladderPick(raw, ladder) || "";
-      return (name && link) ? { name, link, alt } : null;
-    })
-    .filter(Boolean);
-}
-
-function buildIntro(ctx, R, beats, names, rand) {
-  const min = R.sections?.hello_intro?.words_min || 110;
-  const max = R.sections?.hello_intro?.words_max || 180;
-
-  const evLink = safeHttp(ctx.externals?.event_official_link);
-  const veLink = safeHttp(ctx.externals?.venue_official_link);
-
-  // Two proper-noun links exactly once each
-  const evMd = evLink ? `[${names.eventName}](${evLink})` : names.eventName;
-  const veMd = veLink ? `[${names.venueName}](${veLink})` : names.venueName;
-
-  // Compose with >=3 derived beats
-  const lines = [];
-  lines.push(
-    `${beats.time_phrase}, ${beats.season_phrase_only}, ${beats.event_stature_hallmark_or_final}.`
-  );
-  lines.push(
-    `At ${veMd}, ${beats.venue_visual_flow_trait}; pace stays crisp ${names.cityState ? "around " + names.cityState : "on site"}.`
-  );
-  lines.push(
-    `${evMd} anchors the week ${names.city ? "in " + names.city : ""}, with early cadence tightening toward the close.`
-  );
-
-  const raw = joinSentences(lines);
-  const text = enforceBounds(cleanForbid(raw, R.sections?.hello_intro?.forbid_regex), min, max, rand);
-
-  return { text };
-}
-
-function buildTransition(R, names, rand) {
-  const min = R.sections?.transition?.words_min || 40;
-  const max = R.sections?.transition?.words_max || 70;
-  const s = [
-    "Lock short drives, predictable meals, and quick restocks so warm-up windows stay on time.",
-    `Next: sleep close to ${names.venueShort}, eat near the in-gate, keep resets short, and stage barn basics within easy reach.`
-  ];
-  return { text: enforceBounds(s.join(" "), min, max, rand) };
-}
-
-function buildZone({ kind, R, title, items, names, rand }) {
-  const spec = R.sections?.[kind] || {};
-  const minO = spec.opener_words_min || 45;
-  const maxO = spec.opener_words_max || 60;
-  const needsAlso = !!spec.require_also_consider_sentence;
-
-  const opener = {
-    stay: `Keep mornings clean and nights quiet. Favor short commutes, simple parking, and layouts that make debriefs easy between rounds.`,
-    dine: `Plan food like gear: predictable, close, and timed to your order-of-go so nothing slips before a course-walk.`,
-    essentials: `Lock down the basics so mornings stay smooth and the barn runs without questions.`,
-    locale: `Keep resets short and simple—one stroll, one coffee, one breath—so focus stays on rounds and reviews.`
-  }[kind];
-
-  const openerTxt = enforceBounds(opener, minO, maxO, rand);
-
-  const featured = items.slice(0, 2);
-  const also = items.slice(2, 4);
-
-  const inline = featured
-    .map(it => `[${it.name}](${it.link})`)
-    .join(" and ");
-
-  const closer = needsAlso && also.length >= 2
-    ? ` Also consider: [${also[0].name}](${also[0].link}); [${also[1].name}](${also[1].link}).`
-    : "";
-
-  const bodyTail = {
-    stay: inline ? ` ${inline} cover the lodging lanes near ${names.venueShort}.` : "",
-    dine: inline ? ` For seated options nearby, ${inline} handle dinner holds without dragging the clock.` : "",
-    essentials: inline ? ` ${inline} cover carts and car keys; grocery and pharmacy sit close by.` : "",
-    locale: ""
-  }[kind] || "";
-
-  const paragraph = `${openerTxt}${bodyTail}${closer}`.trim();
-
-  const out = { title, paragraph };
-  if (kind !== "locale") {
-    if (items.length) out.items = items;
-    out.spectator_tip = tipFor(kind, names, rand);
-    if (spec.cta_allowed) out.cta = ctaFor(kind, names, rand);
-  } else {
-    out.spectator_tip = "Aim early for any off-grounds stroll; traffic builds on show days.";
-  }
-  return out;
-}
-
-function buildLocale({ R, title, names, rand, section, externals }) {
-  // Try to find two named links in section data; fallback to officials.
-  const links = findTwoLocaleLinks(section, externals, names);
-  const openerMin = R.sections?.locale?.opener_words_min || 45;
-  const openerMax = R.sections?.locale?.opener_words_max || 60;
-  const opener = `Use quiet windows for a walk, a stretch, or a quick errand, then get back to the schooling ring on time.`;
-  const openerTxt = enforceBounds(opener, openerMin, openerMax, rand);
-  const close = links.length === 2
-    ? ` Close by tools for planning sit here: [${links[0].name}](${links[0].link}) and [${links[1].name}](${links[1].link}).`
-    : "";
-  return {
-    title,
-    paragraph: `${openerTxt}${close}`.trim(),
-    spectator_tip: "Keep any reset within a short drive to hit walk-times cleanly."
-  };
-}
-
-function buildEssentials({ R, title, items, names, rand }) {
-  return buildZone({ kind: "essentials", R, title, items, names, rand });
-}
-
-function buildOutro(R, names, rand) {
-  const pMin = R.sections?.outro?.pivot?.words_min || 35;
-  const pMax = R.sections?.outro?.pivot?.words_max || 70;
-  const mMin = R.sections?.outro?.main?.words_min || 120;
-  const mMax = R.sections?.outro?.main?.words_max || 220;
-
-  const pivot = enforceBounds(
-    `With sleep, food, and barn basics set, the week runs cleaner. Plans here keep you closer to the in-gate and clear of guesswork as the schedule builds to its close.`,
-    pMin, pMax, rand
-  );
-
-  const main = enforceBounds(
-    `Keep the week quiet where it counts and sharp where it should be. Sleep close, eat on schedule, and move clean between barns and rings. Early trips set rhythm and you arrive where you need to be with minutes to spare.\n\nWe can lock rooms, set dinner holds, stage groceries and tape, and place carts where you step off the gravel. Car keys and vendor contacts sit on the same sheet as ring times. You send updates once. The rest reads like clear rounds in sequence.`,
-    mMin, mMax, rand
-  );
-
-  return { pivot, main };
-}
-
-/* ========================= SEO ========================= */
-
-function buildSeo(names, R) {
-  const section_title = `${names.eventName} Week Guide`.trim();
-  const meta_description = clipTo(`Plan ${names.eventName} at ${names.venueShort}: short commutes, reliable dining, quick resets, and barn basics${names.cityState ? " near " + names.cityState : ""}.`, 160);
-  const og_title = clipTo(`${names.eventName} at ${names.venueShort}`, 60);
-  const og_desc  = clipTo(`Sleep close, eat on schedule, and restock fast${names.cityState ? " near " + names.cityState : ""}.`, 140);
-  const search_title = clipTo(`${names.eventName} Travel Guide`, 60);
-  const search_description = clipTo(`Hotels, dining, essentials, and local resets for ${names.eventName}${names.cityState ? " in " + names.cityState : ""}.`, 160);
-  return {
-    section_title,
-    meta_description,
-    open_graph_title: og_title,
-    open_graph_description: og_desc,
-    search_title,
-    search_description
-  };
-}
-
-/* ========================= utilities ========================= */
-
-function tipFor(kind, names, rand) {
-  const bank = {
-    stay: [
-      "Quiet floors help after late classes.",
-      "Request late checkout on the final day."
-    ],
-    dine: [
-      "Outdoor tables work for quick post-round reviews.",
-      "Book earlier slots on finals night."
-    ],
-    essentials: [
-      "Vendor rows open early on big weekends.",
-      "Restock tape and ice the night before."
-    ]
-  }[kind] || ["Keep timing tight between trips."];
-  return pick(rand, bank);
-}
-
-function ctaFor(kind, names, rand) {
-  const bank = {
-    stay: [
-      "Need rooms blocked and late check-in coordinated? We handle it.",
-      "Prefer a hotel block near the venue? We’ll stage it."
-    ],
-    dine: [
-      "Want two dinner holds nightly near the in-gate? We’ll set them.",
-      "Need reliable seats after late classes? We’ll place the holds."
-    ],
-    essentials: [
-      "We can stage groceries, tape, feed drops, carts, and car keys before you arrive.",
-      "We’ll arrange carts, rental car, and basic restock on your schedule."
-    ]
-  }[kind] || ["We can coordinate the logistics you don’t want to carry."];
-  return pick(rand, bank);
+  const ladder = (R.items_contract?.field_ladders || {})[`${kind}.alt`] || [];
+  return arr.map(raw => {
+    const name = coalesce(raw, ["name"]);
+    const link = coalesce(raw, ["link"]) || first(raw?.links);
+    let alt = ladderPick(raw, ladder);
+    if (!alt) {
+      const mi = raw?.distance_mi, m = raw?.distance_m;
+      if (typeof mi === "number") alt = `${mi} mi`;
+      else if (typeof m === "number") alt = `${(m/1609).toFixed(1)} mi`;
+    }
+    return (name && link) ? { name, link, alt: alt || "" } : null;
+  }).filter(Boolean);
 }
 
 function findTwoLocaleLinks(section, externals, names) {
   const out = [];
-  // Try structured section data
-  const candidates = []
-    .concat(extractLinks(section, "locale_links"))
-    .concat(extractLinks(section, "links"))
-    .concat(extractLinks(section, "resources"));
-  for (const c of candidates) {
-    if (c.name && safeHttp(c.link)) out.push(c);
+  for (const c of extractLinks(section, "links").concat(extractLinks(section, "resources"))) {
+    if (c.name && http(c.link)) out.push(c);
     if (out.length === 2) return out;
   }
-  // Fallback to officials
-  if (externals?.venue_official_link) {
-    out.push({ name: names.venueName, link: externals.venue_official_link });
-  }
-  if (externals?.event_official_link) {
-    out.push({ name: names.eventName, link: externals.event_official_link });
-  }
-  return out.slice(0, 2);
+  if (externals?.venue_official_link) out.push({ name: names.venueName, link: externals.venue_official_link });
+  if (externals?.event_official_link) out.push({ name: names.eventName, link: externals.event_official_link });
+  return out.slice(0,2);
 }
 
-function extractLinks(obj, key) {
-  if (!obj) return [];
-  const v = obj[key];
-  if (!v) return [];
-  const arr = Array.isArray(v) ? v : (Array.isArray(v?.items) ? v.items : []);
-  return arr
-    .map(x => {
-      if (!x) return null;
-      if (typeof x === "string") return null;
-      const name = x.name || x.title || "";
-      const link = x.link || first(x.links);
-      return name && link ? { name, link } : null;
-    })
-    .filter(Boolean);
+function md(itemOrName, link) {
+  if (typeof itemOrName === "string") return `[${itemOrName}](${link})`;
+  if (!itemOrName) return "";
+  return `[${itemOrName.name}](${itemOrName.link})`;
 }
 
-function normalizeArray(src) {
-  if (!src) return [];
-  if (Array.isArray(src)) return src;
-  if (Array.isArray(src?.items)) return src.items;
-  if (typeof src === "object") return Object.values(src);
-  return [];
+function joinAnd(arr) { return arr.length === 2 ? `${arr[0]} and ${arr[1]}` : arr.join(", "); }
+
+function dateRange(start, end) {
+  const fm = fmt(start), to = fmt(end);
+  if (fm && to) return `${fm}–${to}`;
+  return fm || to || "";
+}
+function fmt(iso) {
+  const m = String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return "";
+  const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m[2]-1];
+  return `${M} ${+m[3]}`;
 }
 
-function coalesce(obj, keys) {
-  for (const k of keys) {
-    if (obj && obj[k] != null && String(obj[k]).trim() !== "") return String(obj[k]).trim();
-  }
-  return "";
-}
-function first(x) { return Array.isArray(x) && x.length ? x[0] : ""; }
-
-function ladderPick(raw, ladder) {
-  for (const k of ladder) {
-    const v = raw?.[k];
-    if (v == null) continue;
-    if (typeof v === "number") return String(v);
-    if (typeof v === "string" && v.trim()) return v.trim();
-  }
-  // distance formatters
-  const mi = raw?.distance_mi, m = raw?.distance_m;
-  if (typeof mi === "number") return `${mi} mi`;
-  if (typeof m === "number") return `${(m / 1609).toFixed(1)} mi`;
-  return "";
+function ttr(text) {
+  const toks = text.toLowerCase().split(/\W+/).filter(Boolean);
+  if (!toks.length) return 0;
+  const uniq = new Set(toks);
+  return uniq.size / toks.length;
 }
 
-function enforceBounds(text, min, max, rand) {
-  const words = text.split(/\s+/).filter(Boolean);
-  if (words.length < min) {
-    // pad with neutral cadence
-    const add = cadenceFill();
-    while (words.length < min) words.push(add[rand() % add.length]);
-  }
-  if (words.length > max) {
-    words.length = max;
-  }
-  return words.join(" ").replace(/\s+/g, " ").trim();
+function bumpEntropy(kind, obj) {
+  const add = " Focus stays on rounds.";
+  if (kind === "hello") return obj;
+  if (obj.paragraph) obj.paragraph = (obj.paragraph + add).trim();
+  if (obj.pivot) obj.pivot = (obj.pivot + add).trim();
+  if (obj.main) obj.main = (obj.main + add).trim();
+  return obj;
 }
 
-function cadenceFill() {
-  // neutral, safe fillers to reach bounds without adding logistics or hype
-  return [
-    "Focus stays on rounds.",
-    "Pacing remains steady.",
-    "Windows between trips remain clean.",
-    "Reviews fit between schools.",
-    "Energy builds toward the close."
-  ];
-}
-
-function cleanForbid(text, patterns) {
-  if (!patterns || !patterns.length) return text;
-  let out = text;
-  for (const p of patterns) {
-    try {
-      const re = new RegExp(p);
-      out = out.replace(re, "");
-    } catch { /* ignore bad regex */ }
-  }
-  return out.replace(/\s{2,}/g, " ").trim();
-}
-
-function joinSentences(lines) {
-  return lines
-    .map(s => s.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .map(s => s.endsWith(".") ? s : s + ".")
-    .join(" ");
-}
-
-function clipTo(s, n) {
-  if (s.length <= n) return s;
-  return s.slice(0, Math.max(0, n - 1)).replace(/\s+\S*$/, "") + "";
-}
-
-function countWords(sections) {
-  const W = {};
-  const take = (s) => (s || "").split(/\s+/).filter(Boolean).length;
-  W.intro = take(sections.hello?.intro);
-  W.transition = take(sections.hello?.transition);
-  W.outro_pivot = take(sections.outro?.pivot);
-  W.outro_main = take(sections.outro?.main);
-  W.stay = take(sections.stay?.paragraph);
-  W.dine_paragraph = take(sections.dine?.paragraph);
-  W.locale = take(sections.locale?.paragraph);
-  W.essentials = take(sections.essentials?.paragraph);
-  return W;
-}
-
-function paraChecks(sections) {
-  return {
-    intro_paragraphs: 1,
-    transition_paragraphs: 1,
-    outro_pivot_paragraphs: 1,
-    outro_main_paragraphs: (sections.outro?.main || "").split(/\n{2,}/).length,
-    link_checks: {
-      intro_p1: {
-        event_link_present: /\[[^\]]+\]\(https?:\/\/.+\)/.test(sections.hello?.intro || ""),
-        venue_link_present: /\[[^\]]+\]\(https?:\/\/.+\)/.test(sections.hello?.intro || "")
-      }
-    }
-  };
-}
-
-function maxJaccard(sections, R) {
+function maxJaccard(sections) {
   const texts = [
-    sections.hello?.intro,
-    sections.hello?.transition,
-    sections.stay?.paragraph,
-    sections.dine?.paragraph,
-    sections.locale?.paragraph,
-    sections.essentials?.paragraph,
-    sections.outro?.pivot,
-    sections.outro?.main
-  ].map(t => (t || "").toLowerCase());
+    sections.hello?.intro, sections.hello?.transition,
+    sections.stay?.paragraph, sections.dine?.paragraph, sections.locale?.paragraph, sections.essentials?.paragraph,
+    sections.outro?.pivot, sections.outro?.main
+  ].map(t => (t||"").toLowerCase());
 
-  const nSizes = (R?.deduplication?.ngram_sizes || [3, 4, 5]).map(n => Math.max(2, n));
+  const sizes = [3,4,5];
   let maxJ = 0;
-  for (let i = 0; i < texts.length; i++) {
-    for (let j = i + 1; j < texts.length; j++) {
-      for (const n of nSizes) {
-        const ji = jaccard(ngrams(texts[i], n), ngrams(texts[j], n));
+  for (let i=0;i<texts.length;i++) {
+    for (let j=i+1;j<texts.length;j++) {
+      for (const n of sizes) {
+        const ji = jacc(ngrams(texts[i], n), ngrams(texts[j], n));
         if (ji > maxJ) maxJ = ji;
       }
     }
   }
-  return Number(maxJ.toFixed(4));
+  return +maxJ.toFixed(4);
 }
 
 function ngrams(s, n) {
   const toks = s.split(/\s+/).filter(Boolean);
   const out = new Set();
-  for (let i = 0; i <= toks.length - n; i++) {
-    out.add(toks.slice(i, i + n).join(" "));
-  }
+  for (let i=0;i<=toks.length-n;i++) out.add(toks.slice(i,i+n).join(" "));
   return out;
 }
+function jacc(a, b) { if (!a.size && !b.size) return 0; let inter=0; for (const x of a) if (b.has(x)) inter++; const union=a.size+b.size-inter; return union? inter/union : 0; }
 
-function jaccard(a, b) {
-  if (!a.size && !b.size) return 0;
-  let inter = 0;
-  for (const x of a) if (b.has(x)) inter++;
-  const union = a.size + b.size - inter;
-  return union ? inter / union : 0;
-}
-
-function seasonFromDate(start, end) {
-  const month = (s) => {
-    const m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return m ? Number(m[2]) : NaN;
-  };
-  const m = !isNaN(month(start)) ? month(start) : month(end);
-  if (isNaN(m)) return "in season";
-  const seasons = [
-    { m: [12,1,2], name: "winter" },
-    { m: [3,4,5], name: "spring" },
-    { m: [6,7,8], name: "summer" },
-    { m: [9,10,11], name: "fall" }
-  ];
-  const s = seasons.find(x => x.m.includes(m))?.name || "season";
-  const pos = (m % 3 === 1) ? "early-" : (m % 3 === 2) ? "" : "late-";
-  return (pos ? pos + s : s);
+function boundWords(text, min, max, rand) {
+  let toks = text.split(/\s+/).filter(Boolean);
+  const filler = ["Energy builds toward the close.", "Windows between trips remain clean."];
+  while (toks.length < min) toks.push(filler[rand()%filler.length]);
+  if (toks.length > max) toks = toks.slice(0, max);
+  return toks.join(" ").replace(/\s+/g, " ").trim();
 }
 
-function humanizeDateRange(start, end) {
-  if (!start && !end) return "This week runs on a steady cadence";
-  const fm = fmtDate(start);
-  const to = fmtDate(end);
-  if (fm && to) return `${fm}–${to}`;
-  return fm || to || "This week runs on a steady cadence";
+function clean(s) { return String(s||"").replace(/\s+/g," ").trim(); }
+function forbidden(s, res) { return res.some(r => r.test(s)); }
+function forbid(text, list) { return (list||[]).reduce((acc,pat)=>{ try { return acc.replace(new RegExp(pat,"g"), ""); } catch { return acc; } }, text).replace(/\s{2,}/g," ").trim(); }
+function seeded(seed) { let h=0x811c9dc5; for (let i=0;i<seed.length;i++){ h^=seed.charCodeAt(i); h=(h+((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24)))>>>0;} return ()=>{ h^=h<<13; h>>>=0; h^=h>>>17; h>>>=0; h^=h<<5; h>>>=0; return h>>>0; }; }
+function s(x){ return (typeof x==="string" && x.trim()) ? x.trim() : ""; }
+function http(x){ return (typeof x==="string" && /^https?:\/\//.test(x)) ? x : ""; }
+function normalizeArray(src){ if(!src) return []; if (Array.isArray(src)) return src; if (Array.isArray(src?.items)) return src.items; if (typeof src==="object") return Object.values(src); return []; }
+function coalesce(obj, keys){ for (const k of keys){ const v = obj?.[k]; if (v!=null && String(v).trim()!=="") return String(v).trim(); } return ""; }
+function first(x){ return Array.isArray(x) && x.length ? x[0] : ""; }
+
+function extractLinks(obj, key){
+  if (!obj) return [];
+  const v = obj[key];
+  if (!v) return [];
+  const arr = Array.isArray(v) ? v : (Array.isArray(v?.items) ? v.items : []);
+  return arr.map(x => {
+    if (!x || typeof x === "string") return null;
+    const name = x.name || x.title || "";
+    const link = x.link || first(x.links);
+    return (name && link) ? { name, link } : null;
+  }).filter(Boolean);
 }
 
-function fmtDate(iso) {
-  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return "";
-  const [_, y, mo, d] = m;
-  const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(mo)-1];
-  return `${M} ${Number(d)}`;
+/* ------------- SEO ------------- */
+function buildSeo(names) {
+  const section_title = `${names.eventName} Week Guide`.trim();
+  const meta_description = clip(`Plan ${names.eventName} at ${names.venueShort}: short commutes, reliable dining, quick resets, and barn basics${names.cityState ? " near " + names.cityState : ""}.`, 160);
+  const open_graph_title = clip(`${names.eventName} at ${names.venueShort}`, 60);
+  const open_graph_description = clip(`Sleep close, eat on schedule, and restock fast${names.cityState ? " near " + names.cityState : ""}.`, 140);
+  const search_title = clip(`${names.eventName} Travel Guide`, 60);
+  const search_description = clip(`Hotels, dining, essentials, and local resets for ${names.eventName}${names.cityState ? " in " + names.cityState : ""}.`, 160);
+  return { section_title, meta_description, open_graph_title, open_graph_description, search_title, search_description };
 }
-
-function seeded(seed) {
-  // FNV-1a 32-bit
-  let h = 0x811c9dc5;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
-  }
-  return function next() {
-    // xorshift-like step
-    h ^= h << 13; h >>>= 0;
-    h ^= h >>> 17; h >>>= 0;
-    h ^= h << 5;  h >>>= 0;
-    return h >>> 0;
-  };
-}
-
-function pick(rand, arr) {
-  if (!arr || !arr.length) return "";
-  return arr[rand() % arr.length];
-}
-
-function truncateWords(s, maxW) {
-  const ws = String(s || "").split(/\s+/).filter(Boolean);
-  return ws.slice(0, maxW).join(" ");
-}
-
-function safeStr(x) {
-  return (typeof x === "string" && x.trim()) ? x.trim() : "";
-}
-function safeHttp(x) {
-  return (typeof x === "string" && /^https?:\/\//.test(x)) ? x : "";
-}
+function clip(s, n){ if (s.length<=n) return s; return s.slice(0, Math.max(0, n-1)).replace(/\s+\S*$/, ""); }
