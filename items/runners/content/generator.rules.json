@@ -1,162 +1,51 @@
 {
-  "version": "1.0.0",
-  "updated_iso": "2025-10-16T00:00:00-04:00",
-  "templates": {
-    "rotation_mode": "hash",
-    "seed_expr": "event.uid + ':' + section + ':' + task_uid",
-    "dedupe_within_doc": true
+  "version": "1.1.0",
+  "novelty": {
+    "jaccard_local_max": 0.65,
+    "ttr_min": 0.35
   },
-  "deduplication": {
-    "ngram_sizes": [3, 4, 5],
-    "cross_section_jaccard_max": 0.85,
-    "phrase_banlist": [
-      "plan ahead",
-      "hidden gem",
-      "must-try",
-      "nestled in",
-      "offers something for everyone",
-      "conveniently located",
-      "bustling",
-      "vibrant",
-      "picturesque",
-      "perfect for"
+  "titles": {
+    "forbid_regex": ["^(?i)(sleep|rest|stay)\\s+(close|near)\\b"],
+    "minutes_buckets": [8, 12, 15, 20]
+  },
+  "openers": {
+    "forbid_regex": [
+      "^(?i)(sleep|rest|stay)\\s+(close|near)\\b",
+      "^(?i)(plan ahead|hidden gem|vibrant|picturesque)\\b"
     ]
   },
-  "sections": {
-    "hello_intro": {
-      "words_min": 110,
-      "words_max": 180,
-      "paragraphs": 1,
-      "structure": "tell-write-tell",
-      "links_required": ["event_official_link", "venue_official_link"],
-      "derived_beats_required_min": 3,
-      "derived_beats": [
-        "time_phrase",
-        "season_phrase_only",
-        "event_stature_hallmark_or_final",
-        "venue_visual_flow_trait",
-        "city_presence_phrase",
-        "rider_caliber_if_confirmed"
-      ],
-      "forbid_regex": [
-        "(?i)\\b(turn|take|merge|exit|left|right|gate|lot|parking|map|maps|highway|route|street|road|boulevard|blvd|avenue|ave|hwy|rt|traffic|shuttle|detour|directions)\\b",
-        "(?i)\\b(confirm|check|visit|learn more|see|read more)\\b[^\\n]{0,80}\\[[^\\]]+\\]\\([^\\)]+\\)"
-      ]
-    },
-    "transition": {
-      "emit": true,
-      "paragraphs": 1,
-      "words_min": 40,
-      "words_max": 70
-    },
-    "stay": {
-      "dynamic_title": true,
-      "paragraphs": 1,
-      "opener_words_min": 45,
-      "opener_words_max": 60,
-      "inline_items_blend": true,
-      "require_also_consider_sentence": true,
-      "spectator_tip_allowed": true,
-      "spectator_tip_max_sentences": 1,
-      "cta_allowed": true,
-      "items_min": 2
-    },
-    "dine": {
-      "dynamic_title": true,
-      "paragraphs": 1,
-      "opener_words_min": 45,
-      "opener_words_max": 60,
-      "inline_items_blend": true,
-      "require_also_consider_sentence": true,
-      "spectator_tip_allowed": true,
-      "spectator_tip_max_sentences": 1,
-      "cta_allowed": true,
-      "fallbacks": { "use_lunch_when_short": true },
-      "items_min": 3
-    },
-    "locale": {
-      "dynamic_title": true,
-      "paragraphs": 1,
-      "opener_words_min": 45,
-      "opener_words_max": 60,
-      "inline_items_blend": true,
-      "require_also_consider_sentence": true,
-      "spectator_tip_allowed": true,
-      "spectator_tip_max_sentences": 1
-    },
-    "essentials": {
-      "dynamic_title": true,
-      "paragraphs": 1,
-      "opener_words_min": 45,
-      "opener_words_max": 60,
-      "inline_items_blend": true,
-      "require_also_consider_sentence": true,
-      "spectator_tip_allowed": true,
-      "spectator_tip_max_sentences": 1,
-      "cta_allowed": true,
-      "items_min": 5
-    },
-    "outro": {
-      "two_part": true,
-      "pivot": { "paragraphs": 1, "words_min": 35, "words_max": 70 },
-      "main": { "allow_multi_paragraphs": true, "words_min": 120, "words_max": 220 },
-      "no_links": true
-    }
+  "frames": {
+    "intro": [
+      ["time", "venue_visuals", "event_anchor", "city_vibe"],
+      ["venue_visuals", "time", "event_anchor", "city_vibe"]
+    ],
+    "stay": [
+      ["commute", "quiet", "featured_hotels", "also_consider"],
+      ["featured_hotels", "commute", "quiet", "also_consider"]
+    ],
+    "dine": [
+      ["proximity", "rhythm", "featured_dinner", "also_consider"],
+      ["rhythm", "proximity", "featured_dinner", "also_consider"]
+    ],
+    "locale": [["reset", "nearby_tools", "time_guard"]],
+    "essentials": [["barn_ops", "inventory", "vendors", "also_consider"]],
+    "outro": [["pivot", "logistics_close"]]
+  },
+  "syntax_variation": {
+    "fronting": true,
+    "apposition": true,
+    "coordination": true,
+    "participial": true
+  },
+  "lexicon": {
+    "forbid": ["plan ahead", "hidden gem", "must-try", "nestled in", "conveniently located", "offers something for everyone"],
+    "prefer": ["in-gate", "course-walk", "warm-up ring", "holds", "reset"]
   },
   "items_contract": {
     "field_ladders": {
-      "stay.alt": ["alt", "approx_drive", "approx_distance", "distance", "notes", "distance_mi", "distance_m"],
-      "dine.alt": ["alt", "meal", "approx_drive", "approx_distance", "distance_mi", "distance_m"],
-      "essentials.alt": ["alt", "notes", "approx_drive", "approx_distance", "distance_mi", "distance_m"]
-    },
-    "formatters": {
-      "formatDistance": {
-        "mi_first": true,
-        "mi_suffix": " mi",
-        "m_to_mi_precision": 1
-      }
-    },
-    "required_types_essentials": ["grocery", "pharmacy", "feed", "car", "cart"]
-  },
-  "seo": {
-    "emit": true,
-    "rules": {
-      "section_title_words_3_6": true,
-      "meta_description_chars_150_160": true,
-      "open_graph_title_max_60": true,
-      "open_graph_description_110_140": true,
-      "search_title_max_60": true,
-      "search_description_150_160": true,
-      "no_insider_terms_in_seo": true
+      "stay.alt": ["alt", "approx_drive", "approx_distance", "distance", "notes"],
+      "dine.alt": ["alt", "meal", "approx_drive", "approx_distance"],
+      "essentials.alt": ["alt", "notes", "approx_drive", "approx_distance"]
     }
-  },
-  "link_quotas": {
-    "intro_exactly_two": ["event_official_link", "venue_official_link"],
-    "outro_zero": true
-  },
-  "quality_snapshot": {
-    "require": [
-      "intro.words_between_bounds",
-      "transition.present",
-      "sections.dynamic_titles_present",
-      "zones.opener_bounds_respected",
-      "zones.also_consider_present",
-      "zones.spectator_tip_lte_1_sentence",
-      "dine.single_paragraph",
-      "outro.two_part_bounds",
-      "items.minima_met"
-    ]
-  },
-  "metrics_emit": {
-    "word_counts": true,
-    "paragraph_checks": true,
-    "templates_used": true,
-    "labels": true,
-    "duplicates": true
-  },
-  "naming": {
-    "use_acronym_if_present": true,
-    "rule": "first_full_then_acronym",
-    "notes": "Apply to prose only; never mutate official data."
   }
 }
