@@ -1,29 +1,56 @@
 {
-  "version": "1.2.0",
+  "version": "1.1.0",
   "updated_iso": "2025-10-16T00:00:00-04:00",
   "runner": "content-runner",
   "link_access": {
     "allow_from_task_links": true,
-    "allow_base_uris": ["https://items.clearroundtravel.com"],
-    "externals_display_only": true
+    "allow_base_uris": [
+      "https://items.clearroundtravel.com"
+    ],
+    "allow_event_official_external": true,
+    "allow_venue_official_external": true,
+    "no_user_message_presence_required": true
   },
   "content_type": {
     "enforce": false,
-    "treat_text_plain_as_json": true,
-    "require_utf8": true,
-    "reject_bom": true
+    "treat_text_plain_as_json": true
+  },
+  "writer_guides": {
+    "hello_intro_path": "items/brand/runner_guides/hello_intro.md"
   },
   "strict_mode": {
     "no_guessing": true,
-    "fail_on_missing_url": true,
-    "fail_on_missing_link": true,
+    "fail_on_missing_signal": false,
+    "fail_on_missing_url": false,
+    "fail_on_missing_link": false,
     "fail_on_4xx_required_links": true
   },
   "fetch": {
     "response_length": "long",
-    "retry_on_http_error": 1
+    "retry_on_http_error": 1,
+    "record_skipped_external": true,
+    "timeout_ms": 8000
+  },
+  "external_fetch": {
+    "enabled": false,
+    "allowed_from_fields": [
+      "event_official_link",
+      "venue_official_link",
+      "city_profile_link",
+      "seasonal_context_link"
+    ],
+    "domains_mode": "from_task_hosts_only",
+    "domains_static": [],
+    "methods": ["GET"],
+    "max_total_requests": 6,
+    "content_types": ["text/html", "text/plain", "application/json"],
+    "max_bytes_per_response": 524288,
+    "follow_redirects": true,
+    "disallow_subresource_fetch": true,
+    "strip_scripts_styles": true
   },
   "trace": {
+    "only_required": true,
     "collapse_success": true,
     "max_entries": 18,
     "fields": ["path", "status"],
@@ -32,41 +59,79 @@
       "policy",
       "schema",
       "rules",
-      "audiences",
-      "venue",
       "event",
+      "venue",
       "geo",
       "section",
+      "audiences",
+      "insiders",
+      "keywords",
       "stay",
       "dine",
       "essentials",
-      "patterns",
-      "outros",
-      "ctas",
-      "libs_bundle",
       "content_write",
+      "content_verify",
       "trigger_write"
     ]
   },
-  "allowlist_policy": {
-    "from_task_keys": ["*_link", "*_links[]"],
-    "enforce_items_domain": true
+  "features": {
+    "weather_normals": false,
+    "suppress_section_titles_in_output": true,
+    "use_ratings": false
+  },
+  "naming": {
+    "use_acronym_if_present_or_confirmed": true,
+    "venue_acronym_source": "hub.core.venue.acronym or venue_official_link",
+    "rule": "first_full_then_acronym"
   },
   "io_guards": {
-    "min_bytes": 256,
-    "images_must_be_http": true,
-    "content_path_regex": "^items/content/[a-z0-9-]+-content-\\d{4}-\\d{2}-\\d{2}\\.json$",
-    "trigger_path_regex": "^items/triggers/[a-z0-9-]+-trigger-\\d{4}-\\d{2}-\\d{2}\\.json$",
-    "content_max_bytes": 262144,
-    "trigger_max_bytes": 4096
+    "min_bytes": 512,
+    "content_path_regex": "^items\\/content\\/[a-z0-9-]+-content-\\d{4}-\\d{2}-\\d{2}\\.json$",
+    "trigger_path_regex": "^items\\/triggers\\/[a-z0-9-]+-trigger-\\d{4}-\\d{2}-\\d{2}\\.json$"
   },
-  "endpoints": {
-    "reads": ["/items/{path}"],
-    "writes": ["/items/commit-bulk"]
+  "output_contract": {
+    "stay.items[]": { "name": "string", "link": "uri", "links": "uri[]", "alt": "string" },
+    "dine.items[]": { "name": "string", "link": "uri", "links": "uri[]", "alt": "string" },
+    "essentials.items[]": { "type": "string", "name": "string", "link": "uri", "links": "uri[]", "alt": "string" }
   },
-  "commit_contract": {
-    "overwrite": true,
-    "files_required_per_commit": ">=1",
-    "content_type_hint_optional": true
+  "output_guards": {
+    "arrays_min": { "stay.items": 2, "dine.items": 3, "essentials.items": 5 },
+    "require_fields": ["name", "link", "alt"],
+    "link_field_rules": { "prefer": "link", "fallback_to_links_index": 0 },
+    "reject_single_line_placeholders": true
+  },
+  "validation": {
+    "intro_requirements": {
+      "paragraphs": 1,
+      "links_required": ["event_official_link", "venue_official_link"],
+      "min_words": 110,
+      "max_words": 180,
+      "structure": "tell-write-tell",
+      "forbid_regex": [
+        "(?i)\\b(turn|take|merge|exit|left|right|gate|lot|parking|map|maps|highway|route|street|road|boulevard|blvd|avenue|ave|hwy|rt|traffic|shuttle|detour|directions)\\b",
+        "(?i)\\b(confirm|check|visit|learn more|see|read more)\\b[^\\n]{0,80}\\[[^\\]]+\\]\\([^\\)]+\\)"
+      ]
+    },
+    "transition_requirements": { "enabled": true, "paragraphs": 1, "min_words": 40, "max_words": 70 },
+    "dine_requirements": { "single_paragraph": true, "structure": "tell-write-tell", "opener_words_min": 45, "opener_words_max": 60 },
+    "outro_two_part_requirements": {
+      "enabled": true,
+      "pivot": { "paragraphs": 1, "min_words": 35, "max_words": 70 },
+      "main": { "allow_multi_paragraphs": true, "min_words": 120, "max_words": 220 },
+      "links_forbidden": true
+    },
+    "items_requirements": {
+      "stay_items_min": 2,
+      "dine_items_min": 3,
+      "essentials_items_min": 5,
+      "fields_required_per_item": ["name", "link", "alt"],
+      "inline_items_blend_required": true,
+      "also_consider_sentence_required": true
+    },
+    "spectator_tip_requirements": { "allowed": true, "max_sentences": 1, "zones": ["stay","dine","locale","essentials"] },
+    "language_guards": {
+      "intro_logistics": { "forbid_patterns": ["(?i)\\b(turn|take|merge|exit|left|right|gate|lot|parking)\\b"] },
+      "cta_links": { "forbid_patterns": ["(?i)\\b(confirm|check|visit|learn more|see|read more)\\b[^\\n]{0,80}\\[[^\\]]+\\]\\([^\\)]+\\)"] }
+    }
   }
 }
