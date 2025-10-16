@@ -1,0 +1,15 @@
+# instruction-bootstrap.txt
+# Version: 2025-10-16.bootstrap-CR-v1
+# Purpose: Load canonical CR instructions via CRT ITEMS domain (no mirrors). Fallback disabled.
+# --------------------------------------------------------------------
+
+LOAD
+- source: https://items.clearroundtravel.com/items/runners/content/instructions.txt
+- attempts: 3
+- timeout: 10
+- checksum_policy: ignore
+- fallback_behavior: none
+
+# --------------------------------------------------------------------
+# Fallback disabled: canonical instructions must load successfully.
+# --------------------------------------------------------------------
