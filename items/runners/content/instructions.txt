@@ -1,176 +1,47 @@
-TITLE: Content Runner — Equestrian Event Blogs
-Policy: v1.0.9
-
-SCHEMA: https://items.clearroundtravel.com/items/runners/content/task.schema.json
-POLICY: https://items.clearroundtravel.com/items/runners/content/policy.json
-GOLD_SHAPE: https://items.clearroundtravel.com/items/runners/content/gold.json
-RUNNER SOP: path defined in POLICY.writer_guides.hello_intro_path
-OUTPUT: Single JSON content package under items/, plus an SR trigger under items/triggers/. CR stops after writing the trigger.
+TITLE: Content Runner — Deterministic content + SR trigger
+Version: 2025-10-16.CR-v1
+Purpose: Single URL → GET task → fetch items/* → generate content package → write SR trigger → stop. No mirrors. No SR calls.
 
 INPUT
-- Payload: {"task_uri":"<absolute URL>"} only.
-- Use *_link keys from the task. Do not invent URLs.
-- Normalize types (real booleans/numbers; parse comma-delimited *_links into arrays).
-- Treat text/plain as JSON only if POLICY.content_type.treat_text_plain_as_json = true.
+- One payload: {"task_uri":"https://items.clearroundtravel.com/items/tasks/{slug}-task-YYYY-MM-DD.json"}
 
-URL ACCESS
-- Fetch only https://items.clearroundtravel.com/items/** links from the task payload.
-- Do not fetch external official links; use them as display-only strings in prose.
-- Any URL outside items/ → fail-close with actionable error.
+LOAD
+- policy.json: https://items.clearroundtravel.com/items/runners/content/policy.json
+- task.schema.json: https://items.clearroundtravel.com/items/runners/content/task.schema.json
+- generator.rules.json: https://items.clearroundtravel.com/items/runners/content/generator.rules.json
 
-TRACE (path+status only; max 18)
-- Record, in order: task_uri, policy, schema, gold, audiences, venue, event, geo, section, stay, dine, essentials, intro_closing_patterns, outro_templates, cta_closers_library, libs_bundle, content_package_write, sr_trigger_write.
-- Collapse long success runs; keep failures visible.
+FETCH POLICY
+- Only GET https://items.clearroundtravel.com/items/** found in task fields ending *_link or *_links[].
+- External links (event_official_link, venue_official_link) are display-only. Never fetch.
+
+TRACE (path,status; collapse successes; max 18)
+task_uri, policy, schema, rules, audiences, venue, event, geo, section, stay, dine, essentials, patterns, outros, ctas, libs_bundle, content_write, trigger_write
 
 WORKFLOW
-1) Fetch POLICY, SCHEMA, GOLD_SHAPE (continue on failure; always trace).
-2) Fetch {task_uri}. Fail task if non-200.
-3) Normalize types; build ALLOW_URLS from all *_link and *_links[] present.
-4) GET each allowlisted items/ URL via proxy (no mirrors).
-5) expeditor.js: build deterministic context, map legacy keys (outro.* → hello_outro_*), select libs, call generator.js.
-6) generator.js: synthesize sections (hello, stay, dine, locale, essentials) per rules; return {sections, metrics}.
-7) Validate: UTF-8, min-bytes, path regex, absolute http(s) images, allowlist coverage; soft-fill allowlisted fields (""/null) and log counts.
-8) Commit artifacts:
-   8a) Write content package JSON to output_path (items/content/{slug}-content-{YYYY-MM-DD}.json by default) via /items/commit-bulk.
-   8b) Write SR trigger JSON to items/triggers/{slug}-trigger-{YYYY-MM-DD}.json via /items/commit-bulk.
-9) Stop. CR does not call SR.
+1) GET policy, schema, rules (trace).
+2) GET task_uri. Fail-close on non-200.
+3) Normalize types: coerce CSV *_links → arrays; parse booleans and integers.
+4) Build ALLOW_URLS from *_link and *_links[]; enforce items/* only.
+5) GET required items: event_link, venue_link, geo_link, section_link; then optional libs if present.
+6) Build context for generator: {event, venue, geo, section, libs, curated, externals, knobs, flags}.
+7) Call generator (pure): returns {sections, seo, metrics}. Generator enforces all prose rules from generator.rules.json.
+8) Assemble content package: {manifest, sections, provenance, quality, validation}.
+9) Validate IO gates (policy): UTF-8, min-bytes, path regex, absolute http(s) images, arrays minima. Fail-close on miss.
+10) Commit content package to output_path (default: items/content/{slug}-content-{YYYY-MM-DD}.json) via /items/commit-bulk. Verify by GET.
+11) Commit SR trigger to items/triggers/{slug}-trigger-{YYYY-MM-DD}.json with fields: content_link, year, post_folder_slug, commit_message, event_link?, images_link?.
+12) Stop. Do not call SR.
 
-PRINTING RULE
-- Do NOT print literal labels “Intro”, “Stay”, “Dine”, “Locale”, “Essentials”, “Outro”.
-- Output dynamic titles only for zones (3–6 words). Enforced via SEO guard.
-
-PURPOSE-FIRST RESEARCH (hello_intro)
-Goal: “Create a vivid, travel-brochure intro that spotlights the event, venue, and host city, highlights elite rider caliber, and delivers an exciting, visual, high-energy paragraph.”
-Sources (priority):
-- event.json (dates, stature, classes), venue.json (visuals, layout), geo.json (month/city naming).
-Derived beats:
-- Time (humanized) + cadence clause; Season term; Event stature + hallmark; Venue visuals (2); City vibe + proximity; Rider caliber only if explicitly supported.
-
-WRITING BLUEPRINT (hello_intro)
-- Single paragraph, 110–180 words, tell → write → tell.
-- Competition-first brochure; visual and specific.
-- Exactly two markdown links (event_official_link, venue_official_link) as proper nouns.
-- ≥3 derived beats; rider range only when confirmed.
-- Close with neutral handoff to planning sections.
-
-SELF-CHECK (hello_intro)
-- Imagery over instructions; two proper-noun links exactly once; clear Time/Season/Event/Venue/City; rider range only if confirmed; high-energy without hype.
-
-INTRO (spec)
-- 110–180 words; competitor-first brochure tone.
-- Exactly two links (event + venue).
-- ≥3 derived beats; tell → write → tell.
-
-TRANSITION
-- One paragraph, 40–70 words; bridge intro → zones.
-
-STAY
-- Dynamic title (3–6 words).
-- One paragraph; opener 45–60 words, then continue.
-- Blend 1–2 featured hotels inline with markdown links.
-- REQUIRED close: “Also consider: Name; Name.” with inline links.
-- One spectator tip allowed; max one sentence.
-- Optional CTA closer at paragraph end.
-
-DINE
-- Dynamic title (3–6 words).
-- One flowing paragraph; no AM/Dinner labels in output.
-- If AM or Dinner missing, select via lunch internally only.
-- Opener 45–60 words; keep options near the venue; inline links.
-- REQUIRED close: “Also consider: Name; Name.” with inline links.
-- One spectator tip allowed; max one sentence.
-- Optional CTA closer.
-
-LOCALE
-- Dynamic title (3–6 words).
-- One paragraph; opener 45–60 words; light resets near the venue.
-- REQUIRED close with two inline links as names.
-- One spectator tip allowed; max one sentence.
-- Optional CTA closer.
-
-ESSENTIALS
-- Dynamic title (3–6 words).
-- One paragraph; opener 45–60 words; blend grocery, pharmacy, feed, car rental, carts; include on-grounds vendors if present.
-- REQUIRED close with two inline links as names.
-- One spectator tip allowed; max one sentence.
-- Optional CTA closer.
-
-OUTRO (two-part)
-- hello.outro_pivot (35–70 words), then hello.outro_main (120–220 words). No links; terminal periods required.
-
-EMIT_ITEMS (still write prose per rules)
-emit_items: true
-item_rules:
-  stay:
-    source: stay_link
-    required_fields: [name, link]
-    optional_fields: [links, alt, distance, notes, approx_drive, approx_distance, distance_m, distance_mi]
-    map:
-      name: $.name
-      link: $.link || ($.links && $.links[0])
-      alt: $.alt || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi) || $.distance || $.notes
-  dine:
-    source: dine_link
-    required_fields: [name, link]
-    optional_fields: [links, alt, meal, approx_drive, approx_distance, distance_m, distance_mi]
-    map:
-      name: $.name
-      link: $.link || ($.links && $.links[0])
-      alt: $.alt || $.meal || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
-  essentials:
-    source: essentials_link
-    required_fields: [type, name, link]
-    optional_fields: [links, alt, notes, approx_drive, approx_distance, distance_m, distance_mi]
-    map:
-      type: $.type
-      name: $.name
-      link: $.link || ($.links && $.links[0])
-      alt: $.alt || $.notes || $.approx_drive || $.approx_distance || formatDistance($.distance_m, $.distance_mi)
-helpers:
-  formatDistance(m, mi):
-    - if mi present -> "{mi} mi"
-    - else if m present -> "{(m/1609).toFixed(1)} mi"
-    - else -> ""
-
-emit_indicator:
-  on_apply:
-    set validation.flags.emit_items_applied = true
-    add warning: "emit_items: applied (stay=${stay.items.length}, dine=${dine.items.length}, essentials=${essentials.items.length})"
-
-DYNAMIC TITLES
-- Generate 3–6 words per section, descriptive and unique to the venue/week.
-
-TEMPLATES (deterministic)
-- rotation_mode: hash
-- rotation_seed: hub.core.event.uid
-- rotation_index = fnv1a(rotation_seed + ":" + section_id + ":" + doc_index) % template_count
-- De-dupe within document: if chosen index used, bump +1 mod template_count.
-- Apply to: outro_templates and cta_closers.
-
-EXAMPLES IN GOLD
-- GOLD_SHAPE.examples.*_md are reference only; do not emit verbatim.
-
-QUALITY SNAPSHOT (must pass)
-- Intro: 1 paragraph; 110–180 words; exactly two links; purpose-first beats present; tell→write→tell.
-- Transition: 1 paragraph; 40–70 words.
-- Zones: dynamic titles; opener 45–60 words; inline item blending; “Also consider…” present; spectator tip ≤1 sentence.
-- Dine: single paragraph; lunch fallback allowed; no printed labels.
-- Outro: two-part — pivot 35–70 words, main 120–220 words, no links.
-- Items: stay ≥2; dine ≥3; essentials ≥5; require name/link/alt (alt via fallback ladder).
-- De-dup: cross-section 3–5-gram Jaccard ≤ 0.85; banlist applied; template rotation enforced.
+DERIVATIONS
+- slug = task_uid without “-task-YYYY-MM-DD”
+- base_date = from task_uid or output_path
+- year = YYYY from base_date
+- post_folder_slug = {slug}-content-{base_date}
+- Default output_path = items/content/{slug}-content-{base_date}.json
 
 OUTPUTS
-- Content package JSON → items/content/{slug}-content-{YYYY-MM-DD}.json.
-- SR Trigger JSON → items/triggers/{slug}-trigger-{YYYY-MM-DD}.json.
-- Commit via /items/commit-bulk. CR stops after writing the trigger.
+- Content package JSON → items/content/{slug}-content-{base_date}.json
+- SR trigger JSON → items/triggers/{slug}-trigger-{base_date}.json
+- Both via /items/commit-bulk (see openapi.txt)
 
-SAVE PATH (derive defaults from task_uri)
-Given: .../items/tasks/{slug}-task-YYYY-MM-DD.json
-Derive:
-1) base_date = YYYY-MM-DD
-2) slug = text before "-task"
-3) year = YYYY
-4) output_path (default):
-   items/content/{slug}-content-{base_date}.json
-5) sr_trigger_path:
-   items/triggers/{slug}-trigger-{base_date}.json
+NOTES
+- No canvas emit. No docs writes from CR. All quality rules live in generator.rules.json.
