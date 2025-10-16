@@ -1,7 +1,7 @@
 "use strict";
 
-/* expeditor.js — Content Runner orchestrator (CR → park SR trigger)
- * Version: 2025-10-16.CR-v2
+/* expeditor.js — Content Runner orchestrator (CR → park SR trigger + corpus ledger)
+ * Version: 2025-10-16.CR-v3
  * Node 18+ (global fetch). CommonJS export.
  */
 
@@ -14,6 +14,9 @@ const POLICY_URL = `${ITEMS_PREFIX}runners/content/policy.json`;
 const SCHEMA_URL = `${ITEMS_PREFIX}runners/content/task.schema.json`;
 const RULES_URL  = `${ITEMS_PREFIX}runners/content/generator.rules.json`;
 
+const LEDGER_REL = `runners/content/corpus_fingerprint.ndjson`;
+const LEDGER_URL = READ_ITEMS(LEDGER_REL);
+
 const { createHash } = require("node:crypto");
 
 module.exports = async function expeditor(input) {
@@ -24,8 +27,12 @@ module.exports = async function expeditor(input) {
   try {
     const taskUri = extractTaskUri(input);
     const policy = await getJson(POLICY_URL, T, "policy");
-    const schema = await getJson(SCHEMA_URL, T, "schema"); // reserved
+    await getJson(SCHEMA_URL, T, "schema"); // reserved
     const rules  = await getJson(RULES_URL,  T, "rules");
+
+    // Read ledger (best-effort)
+    const ledgerText = await getText(LEDGER_URL, T, "ledger_read");
+    const ledger = parseLedger(ledgerText);
 
     const task = await getJson(taskUri, T, "task_uri");
     if (!task || typeof task !== "object") throw fail("Task JSON missing");
@@ -37,7 +44,7 @@ module.exports = async function expeditor(input) {
 
     const { slug, date: baseDate, year } = derive(outputPath);
 
-    const links = mergeLinks(task.links || {}, task); // support both shapes
+    const links = mergeLinks(task.links || {}, task);
     const plan = fetchPlan(links);
 
     const allow = buildAllow(plan);
@@ -94,12 +101,22 @@ module.exports = async function expeditor(input) {
     const gen = await generator(context); // { sections, seo, metrics }
     if (!gen || !gen.sections) throw fail("generator returned no sections");
 
+    // -------- corpus similarity check (pre-commit) --------
+    const curText = concatSections(gen.sections);
+    const curTri = ngrams(normalize(curText), 3);
+    const curTTR = ttr(curText);
+    const { maxScore, matchPath } = jaccardAgainstLedger(curTri, ledger);
+    const corpusWarnings = [];
+    if (maxScore >= 0.72) corpusWarnings.push(`corpus_similarity: ${maxScore.toFixed(3)} vs ${matchPath}`);
+
+    // -------- assemble + validate --------
     const content = assemble({
-      slug, baseDate, year, taskUri, task, fetched, gen, policy
+      slug, baseDate, year, taskUri, task, fetched, gen, policy, corpusWarnings
     });
 
     ioValidate(content, policy);
 
+    // -------- commit content --------
     const contentJson = JSON.stringify(content, null, 2);
     await commitItems({
       message: task.commit_message || `content ${slug} ${baseDate}`,
@@ -110,6 +127,7 @@ module.exports = async function expeditor(input) {
     const verify = await getText(READ_ITEMS(rel), T, "content_verify");
     if (!verify || verify.length < (policy.io_guards.min_bytes || 512)) throw fail("verify too small");
 
+    // -------- park SR trigger --------
     const triggerPath = `items/triggers/${slug}-trigger-${baseDate}.json`;
     assertRegex(triggerPath, new RegExp(policy.io_guards.trigger_path_regex), "trigger_path");
 
@@ -127,7 +145,29 @@ module.exports = async function expeditor(input) {
       files: [{ path: triggerPath, content_type: "application/json", content_base64: b64(JSON.stringify(trigger, null, 2)) }]
     }, T, "trigger_write");
 
-    return { ok: true, ms: Date.now() - t0, content_path: outputPath, trigger_path: triggerPath, trace };
+    // -------- append to corpus ledger (best-effort) --------
+    const ledgerEntry = {
+      ts_iso: new Date().toISOString(),
+      content_path: outputPath,
+      sha256: sha256(curText),
+      ttr: +curTTR.toFixed(4),
+      tri: sampleSet(curTri, 200),      // cap size
+      max_sim_prev: +maxScore.toFixed(4),
+      similar_to: matchPath || ""
+    };
+    const newLedgerText = (ledgerText || "") + JSON.stringify(ledgerEntry) + "\n";
+    await commitItems({
+      message: `ledger append ${slug} ${baseDate}`,
+      files: [{ path: `items/${LEDGER_REL}`, content_type: "text/plain", content_base64: b64(newLedgerText) }]
+    }, T, "ledger_write");
+
+    return {
+      ok: true,
+      ms: Date.now() - t0,
+      content_path: outputPath,
+      trigger_path: triggerPath,
+      trace
+    };
   } catch (e) {
     return { ok: false, error: String(e.message || e), trace };
   }
@@ -234,7 +274,7 @@ function derive(outputPath) {
   return { slug: m[1], date: m[2], year: m[2].slice(0,4) };
 }
 
-function assemble({ slug, baseDate, year, taskUri, task, fetched, gen, policy }) {
+function assemble({ slug, baseDate, year, taskUri, task, fetched, gen, policy, corpusWarnings }) {
   const { sections, seo, metrics } = gen;
   const manifest = {
     slug, date: baseDate, year,
@@ -255,7 +295,7 @@ function assemble({ slug, baseDate, year, taskUri, task, fetched, gen, policy })
     rules_uri: RULES_URL,
     sources: echoSources(task),
     allowlist_hash: sha256(JSON.stringify(Object.keys(task).filter(k => k.endsWith("_link")).sort())),
-    expeditor_version: "2025-10-16.CR-v2",
+    expeditor_version: "2025-10-16.CR-v3",
     generator_version: String(task.version || "")
   };
   const validation = { status: "pass", flags: metrics?.flags || {} };
@@ -265,7 +305,7 @@ function assemble({ slug, baseDate, year, taskUri, task, fetched, gen, policy })
     templates_used: metrics?.templates_used || {},
     labels: metrics?.labels || {},
     duplicates: { ngram_max_jaccard: metrics?.ngram_max_jaccard ?? 0 },
-    warnings: [],
+    warnings: Array.isArray(corpusWarnings) ? corpusWarnings.slice() : [],
     errors: []
   };
   return { manifest, sections, quality, validation, provenance };
@@ -315,4 +355,73 @@ function requireSafe(p) {
     if (!fn) throw new Error("generator export must be a function");
     return fn;
   } catch (e) { throw fail(`generator load failed: ${e.message}`); }
+}
+
+/* ---------- corpus ledger helpers ---------- */
+
+function parseLedger(text) {
+  if (!text) return [];
+  const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
+  const out = [];
+  for (const ln of lines) {
+    try {
+      const j = JSON.parse(ln);
+      if (Array.isArray(j.tri)) out.push({ path: j.content_path || "", tri: new Set(j.tri) });
+    } catch {}
+  }
+  return out;
+}
+
+function jaccardAgainstLedger(curTri, ledger) {
+  let maxScore = 0;
+  let matchPath = "";
+  for (const e of ledger) {
+    const score = jacc(curTri, e.tri || new Set());
+    if (score > maxScore) { maxScore = score; matchPath = e.path; }
+  }
+  return { maxScore, matchPath };
+}
+
+function concatSections(sections) {
+  const parts = [];
+  if (sections.hello?.intro) parts.push(sections.hello.intro);
+  if (sections.hello?.transition) parts.push(sections.hello.transition);
+  for (const k of ["stay","dine","locale","essentials"]) if (sections[k]?.paragraph) parts.push(sections[k].paragraph);
+  if (sections.outro?.pivot) parts.push(sections.outro.pivot);
+  if (sections.outro?.main) parts.push(sections.outro.main);
+  return parts.join(" ").trim();
+}
+
+function normalize(s) { return String(s||"").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim(); }
+
+function ngrams(s, n) {
+  const toks = s.split(/\s+/).filter(Boolean);
+  const out = new Set();
+  for (let i=0;i<=toks.length-n;i++) out.add(toks.slice(i,i+n).join(" "));
+  return out;
+}
+
+function jacc(a, b) {
+  if (!a.size && !b.size) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const union = a.size + b.size - inter;
+  return union ? inter / union : 0;
+}
+
+function ttr(text) {
+  const toks = text.toLowerCase().split(/\W+/).filter(Boolean);
+  if (!toks.length) return 0;
+  const uniq = new Set(toks);
+  return uniq.size / toks.length;
+}
+
+function sampleSet(set, cap) {
+  const arr = Array.from(set);
+  if (arr.length <= cap) return arr;
+  // simple reservoir-like downsample
+  const step = Math.ceil(arr.length / cap);
+  const out = [];
+  for (let i=0; i<arr.length; i+=step) out.push(arr[i]);
+  return out.slice(0, cap);
 }
