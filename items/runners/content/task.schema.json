@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://items.clearroundtravel.com/items/runners/content/task.schema.json",
+  "title": "content-runner.task.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_uid",
+    "lane",
+    "version",
+    "timestamp_iso",
+    "commit_message",
+    "event_link",
+    "venue_link",
+    "geo_link",
+    "section_link",
+    "output_path"
+  ],
+  "properties": {
+    "task_uid": { "type": "string", "minLength": 1 },
+    "lane": { "type": "string", "enum": ["blog"] },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "timestamp_iso": { "type": "string", "format": "date-time" },
+    "source": { "type": "string" },
+    "commit_message": { "type": "string", "minLength": 1 },
+    "task_link": { "$ref": "#/definitions/itemsUri" },
+
+    /* ---- Required items/ sources ---- */
+    "event_link": { "$ref": "#/definitions/itemsUri" },
+    "venue_link": { "$ref": "#/definitions/itemsUri" },
+    "geo_link":   { "$ref": "#/definitions/itemsUri" },
+    "section_link": { "$ref": "#/definitions/itemsUri" },
+
+    /* ---- Optional libraries (items/ only) ---- */
+    "audiences_link": { "$ref": "#/definitions/itemsUri" },
+    "intro_closing_patterns_link": { "$ref": "#/definitions/itemsUri" },
+    "cta_closers_library_link": { "$ref": "#/definitions/itemsUri" },
+    "outro_templates_link": { "$ref": "#/definitions/itemsUri" },
+    "gold_link": { "$ref": "#/definitions/itemsUri" },
+    "founder_link": { "$ref": "#/definitions/itemsUri" },
+    "keywords_link": { "$ref": "#/definitions/itemsUri" },
+    "insiders_link": { "$ref": "#/definitions/itemsUri" },
+
+    /* ---- Items data for zones ---- */
+    "stay_link": { "$ref": "#/definitions/itemsUri" },
+    "dine_link": { "$ref": "#/definitions/itemsUri" },
+    "essentials_link": { "$ref": "#/definitions/itemsUri" },
+
+    /* ---- External display-only links (not fetched) ---- */
+    "event_official_link": { "$ref": "#/definitions/externalUri" },
+    "venue_official_link": { "$ref": "#/definitions/externalUri" },
+
+    /* ---- Curated preview links (prefer arrays; accept CSV strings) ---- */
+    "food_preview_am_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "food_preview_lunch_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "food_preview_dinner_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "hotel_premium_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "hotel_preview_standard_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "spot_grocery_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "spot_pharmacy_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "spot_feed_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "spot_cart_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+    "spot_car_links": { "$ref": "#/definitions/uriArrayOrCsv" },
+
+    /* ---- Knobs and flags (typed; accept legacy string booleans/ints) ---- */
+    "knobs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "word_target": { "$ref": "#/definitions/intLike" },
+        "use_keywords_min": { "$ref": "#/definitions/intLike" },
+        "use_insiders_min": { "$ref": "#/definitions/intLike" },
+        "include_weather": { "type": "string", "enum": ["none", "season_averages"] }
+      }
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "research_mode": { "$ref": "#/definitions/boolLike" },
+        "strict_rating_check": { "$ref": "#/definitions/boolLike" }
+      }
+    },
+
+    /* ---- Optional prompts/overrides (back-compat) ---- */
+    "intro": { "type": "string" },
+    "outro": { "type": "string" },
+
+    /* ---- Contract + paths ---- */
+    "policy_link": { "$ref": "#/definitions/itemsUri" },
+    "schema_link": { "$ref": "#/definitions/itemsUri" },
+
+    "output_path": {
+      "type": "string",
+      "pattern": "^items/content/[a-z0-9-]+-content-\\d{4}-\\d{2}-\\d{2}\\.json$",
+      "description": "CR content package destination under items/."
+    }
+  },
+
+  "definitions": {
+    "itemsUri": {
+      "type": "string",
+      "pattern": "^https://items\\.clearroundtravel\\.com/items(?:/[a-z0-9._\\-/]+)?\\.(json|txt)$"
+    },
+    "externalUri": {
+      "type": "string",
+      "pattern": "^https?://[^\\s]+$"
+    },
+    "uriArrayOrCsv": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": { "$ref": "#/definitions/itemsUri" }
+        },
+        {
+          "type": "string",
+          "pattern": "^https://items\\.clearroundtravel\\.com/items/[a-z0-9._\\-/]+\\.json(\\s*,\\s*https://items\\.clearroundtravel\\.com/items/[a-z0-9._\\-/]+\\.json)*$"
+        }
+      ]
+    },
+    "boolLike": {
+      "anyOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["true", "false"] }
+      ]
+    },
+    "intLike": {
+      "anyOf": [
+        { "type": "integer" },
+        { "type": "string", "pattern": "^[0-9]+$" }
+      ]
+    }
+  }
+}
