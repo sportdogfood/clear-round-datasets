@@ -1,0 +1,162 @@
+// USEF competitions crawler with Name (title-cased) added.
+// Outputs objects and downloads CSV: CompID,CompYear,StartDate,EndDate,State,CompMgtID,LinkID,Name
+(async () => {
+  const MAX_PAGES = 50;
+  const SLEEP_MS_INDEX = 600;
+  const DETAIL_CONCURRENCY = 5;
+  const DETAIL_RETRIES = 3;
+  const DETAIL_PAUSE_MS = 300;
+
+  const rxDates  = /(\d{1,2}\/\d{1,2}\/\d{4})\s*-\s*(\d{1,2}\/\d{1,2}\/\d{4})/;
+  const rxCompID = /Comp ID:\s*(\d+)/i;
+  const rxState  = /,\s*([A-Z]{2})\s*\(Zone\b/;
+  const rxMgtID  = /Licensee:\s*.+?\((\d{4,})\)/i;
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const pageUrl = p => { const u = new URL(location.href); u.searchParams.set('page', String(p)); return u.href; };
+  const displayUrl = id => `${location.origin}/search/competitions/display/${id}`;
+
+  // Title-case: words to "Xxxx", keep all-numeric tokens, keep roman numerals <=4 chars uppercase.
+  function toTitle(s){
+    return String(s||'').trim()
+      .replace(/\s+/g,' ')
+      .split(' ')
+      .map(w=>{
+        if (!w) return w;
+        if (/^[0-9]+$/.test(w)) return w;                            // numbers
+        if (/^(i|ii|iii|iv|vi|vii|viii|ix|x)$/i.test(w)) return w.toUpperCase(); // roman numerals common
+        const lower = w.toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      })
+      .join(' ');
+  }
+
+  async function fetchDoc(url){
+    const r = await fetch(url, {credentials:'include'});
+    if (!r.ok) return null;
+    const html = await r.text();
+    return new DOMParser().parseFromString(html, 'text/html');
+  }
+
+  const items = new Map(); // linkID -> row
+
+  function extractIndex(doc){
+    let added=0, rows=0;
+    doc.querySelectorAll('table tbody tr').forEach(tr=>{
+      rows++;
+      const a = tr.querySelector('a[href*="/search/competitions/display/"]');
+      if (!a) return;
+      const href = new URL(a.getAttribute('href'), location.origin).href;
+      const linkID = href.split('/').pop();
+
+      const rawName = (a.textContent||'').trim();
+      const name = rawName ? toTitle(rawName) : '';
+
+      // Use the whole row text for CompID/State matching
+      const textRow = (tr.textContent||'').replace(/\s+/g,' ').trim();
+      const compID = (textRow.match(rxCompID)||[])[1];
+      const state = (textRow.match(rxState)||[])[1] || '';
+
+      if (!compID || !linkID) return;
+
+      if (!items.has(linkID)) {
+        items.set(linkID, {
+          CompID: compID,
+          CompYear: '',
+          StartDate: '',
+          EndDate: '',
+          State: state,
+          CompMgtID: '',
+          LinkID: linkID,
+          Name: name
+        });
+        added++;
+      }
+    });
+    return {added, rows};
+  }
+
+  // Index crawl: stop after two pages in a row add nothing
+  let noGainStreak = 0;
+  for (let p=1; p<=MAX_PAGES && noGainStreak<2; p++){
+    const doc = await fetchDoc(pageUrl(p));
+    if (!doc) { noGainStreak++; continue; }
+    const {added, rows} = extractIndex(doc);
+    console.log(`[USEF][index] page ${p}: rows=${rows}, added=${added}, total=${items.size}`);
+    noGainStreak = (rows===0 || added===0) ? noGainStreak+1 : 0;
+    await sleep(SLEEP_MS_INDEX);
+  }
+
+  // Detail fetch with retries, concurrency
+  const linkIDs = [...items.keys()];
+  let done = 0;
+
+  async function fetchDisplayWithRetry(id){
+    const url = displayUrl(id);
+    for (let k=0; k<DETAIL_RETRIES; k++){
+      const d = await fetchDoc(url);
+      if (d) return d;
+      await sleep(DETAIL_PAUSE_MS*(k+1));
+    }
+    return null;
+  }
+
+  async function processOne(id){
+    const doc = await fetchDisplayWithRetry(id);
+    if (doc){
+      const text = (doc.body?.textContent||'').replace(/\s+/g,' ').trim();
+      const row = items.get(id);
+
+      const mDates = text.match(rxDates);
+      if (mDates){
+        row.StartDate = mDates[1];
+        row.EndDate   = mDates[2];
+        row.CompYear  = (mDates[1].match(/\d{4}$/)||[''])[0];
+      }
+      if (!row.State){
+        const mState = text.match(rxState);
+        if (mState) row.State = mState[1];
+      }
+      const mMgt = text.match(rxMgtID);
+      if (mMgt) row.CompMgtID = mMgt[1];
+
+      // If Name missing from index, try header anchor on detail
+      if (!row.Name){
+        const nameNode = doc.querySelector('h1,h2,.page-title,.title, a[href*="/search/competitions/display/"]');
+        const raw = nameNode ? nameNode.textContent.trim() : '';
+        if (raw) row.Name = toTitle(raw.replace(/^\d+\s*-\s*/,''));
+      }
+    }
+    done++;
+    if (done%10===0) console.log(`[USEF][detail] ${done}/${linkIDs.length}`);
+  }
+
+  async function runPool(){
+    const q = linkIDs.slice();
+    await Promise.all(Array.from({length: Math.min(DETAIL_CONCURRENCY, q.length)}, async ()=>{
+      while(q.length){
+        const id = q.shift();
+        await processOne(id);
+      }
+    }));
+  }
+
+  await runPool();
+
+  const rows = [...items.values()];
+  console.log('USEF objects:', rows);
+  console.table(rows);
+
+  const headers = ['CompID','CompYear','StartDate','EndDate','State','CompMgtID','LinkID','Name'];
+  const csv = [headers.join(',')].concat(
+    rows.map(r => headers.map(h=>{
+      const v = String(r[h]??'').replace(/"/g,'""');
+      return /[",\n]/.test(v) ? `"${v}"` : v;
+    }).join(','))
+  ).join('\n');
+
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'usef-competitions-details.csv'});
+  document.body.appendChild(a); a.click(); a.remove();
+  console.log(`[USEF] done. ${rows.length} rows -> usef-competitions-details.csv`);
+})();
