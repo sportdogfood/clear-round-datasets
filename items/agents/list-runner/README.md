@@ -30,7 +30,6 @@ items/agents/list-runner/
 │
 └─ users/ # Device registry
 └─ user_registry.json
----
 
 ### ⚙️ Commands
 
