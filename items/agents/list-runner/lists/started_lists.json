@@ -9,7 +9,7 @@
             "status": "to_take",
             "packed_take": false,
             "packed_home": false,
-            "source": "user",          // optional: user|default|import
+            "source": "user",
             "created_ts": "2025-11-09T17:10:00Z"
           }
         ],
@@ -17,8 +17,8 @@
         "feed": []
       },
       "meta": {
-        "show_ids": [200000035],       // optional: from show_schedule mapping
-        "label": "Week of 2025-11-10", // optional display label
+        "show_ids": [200000035],
+        "label": "Week of 2025-11-10",
         "created_ts": "2025-11-09T17:00:00Z",
         "last_updated_ts": "2025-11-09T17:10:00Z"
       }
