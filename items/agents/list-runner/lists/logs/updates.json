@@ -1,3 +1,41 @@
 {
-  "updates": []
+  "version": "1.0",
+  "events": [
+    {
+      "ts": "2025-11-09T17:10:00Z",
+      "device_id": "dev-123",
+      "week_start": "2025-11-10",
+      "command_raw": "add thisbit to tack",
+      "action": "add_item",
+      "list": "tack",
+      "item": "thisbit",
+      "direction": "to_take",
+      "status_before": null,
+      "status_after": "to_take",
+      "files_touched": [
+        "items/agents/list-runner/lists/started_lists.json",
+        "items/agents/list-runner/state.json",
+        "items/agents/list-runner/logs/updates.json"
+      ],
+      "success": true
+    },
+    {
+      "ts": "2025-11-09T17:12:00Z",
+      "device_id": "dev-123",
+      "week_start": "2025-11-10",
+      "command_raw": "make sure this week’s lists are packed to take to the show",
+      "action": "bulk_pack_take",
+      "list": null,
+      "item": null,
+      "direction": "to_take",
+      "status_before": null,
+      "status_after": null,
+      "files_touched": [
+        "items/agents/list-runner/lists/started_lists.json",
+        "items/agents/list-runner/state.json",
+        "items/agents/list-runner/logs/updates.json"
+      ],
+      "success": true
+    }
+  ]
 }
