@@ -1,23 +1,4 @@
 {
   "version": "1.0",
-  "events": [
-    {
-      "ts": "2025-11-09T17:10:00Z",
-      "device_id": "dev-123",
-      "week_start": "2025-11-10",
-      "command_raw": "add liverpool to equipment",
-      "action": "add_item",
-      "list": "equipment",
-      "item": "liverpool",
-      "direction": "to_take",
-      "status_before": null,
-      "status_after": "to_take",
-      "files_touched": [
-        "items/agents/list-runner/lists/started_lists.json",
-        "items/agents/list-runner/state.json",
-        "items/agents/list-runner/logs/updates.json"
-      ],
-      "success": true
-    }
-  ]
+  "updates": []
 }
