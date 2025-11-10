@@ -1,20 +1,24 @@
 {
   "version": "1.0",
-  "list_registry": {
+  "lists": {
     "tack": {
-      "canonical": "tack",
-      "aliases": ["tack list"],
-      "misspells": ["tak", "tcak"]
+      "name": "tack",
+      "aliases": [],
+      "mispells": [],
+      "default": true
     },
     "equipment": {
-      "canonical": "equipment",
-      "aliases": ["gear", "equipment list"],
-      "misspells": ["equiptment", "equipement"]
+      "name": "equipment",
+      "aliases": [],
+      "mispells": [],
+      "default": true
     },
     "feed": {
-      "canonical": "feed",
-      "aliases": ["grain", "hay", "feed list"],
-      "misspells": ["fead"]
+      "name": "feed",
+      "aliases": [],
+      "mispells": [],
+      "default": true
     }
   }
 }
+
