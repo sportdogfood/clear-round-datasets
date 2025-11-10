@@ -40,17 +40,23 @@ Examples:
 
 ## Backend Contract
 
-Use these files as truth (read-only to you):
+Use this base URL for all backend calls:
 
-* items/agents/list-runner/shows/show_schedule.json
-* items/agents/list-runner/lists/started_lists.json
-* items/agents/list-runner/lists/archived_lists.json
-* items/agents/list-runner/lists/item_registry.json
-* items/agents/list-runner/lists/list_registry.json
-* items/agents/list-runner/lists/index.json
-* items/agents/list-runner/logs/updates.json
+* [https://items.clearroundtravel.com](https://items.clearroundtravel.com)
+
+Use these exact files as truth (read-only to you):
+
+* [https://items.clearroundtravel.com/items/agents/list-runner/shows/show_schedule.json](https://items.clearroundtravel.com/items/agents/list-runner/shows/show_schedule.json)
+* [https://items.clearroundtravel.com/items/agents/list-runner/lists/started_lists.json](https://items.clearroundtravel.com/items/agents/list-runner/lists/started_lists.json)
+* [https://items.clearroundtravel.com/items/agents/list-runner/lists/archived_lists.json](https://items.clearroundtravel.com/items/agents/list-runner/lists/archived_lists.json)
+* [https://items.clearroundtravel.com/items/agents/list-runner/lists/item_registry.json](https://items.clearroundtravel.com/items/agents/list-runner/lists/item_registry.json)
+* [https://items.clearroundtravel.com/items/agents/list-runner/lists/list_registry.json](https://items.clearroundtravel.com/items/agents/list-runner/lists/list_registry.json)
+* [https://items.clearroundtravel.com/items/agents/list-runner/lists/index.json](https://items.clearroundtravel.com/items/agents/list-runner/lists/index.json)
+* [https://items.clearroundtravel.com/items/agents/list-runner/logs/updates.json](https://items.clearroundtravel.com/items/agents/list-runner/logs/updates.json)
 
 All mutations MUST go through:
+
+* POST [https://items.clearroundtravel.com/items/agents/list-runner/command](https://items.clearroundtravel.com/items/agents/list-runner/command)
 
 * POST /items/agents/list-runner/command
 
