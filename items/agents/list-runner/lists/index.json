@@ -1,12 +1,47 @@
 {
   "summary": {
-    "last_updated": "2025-11-09T15:10:00Z",
+    "last_updated": "2025-11-09T17:15:00Z",
     "total_active_weeks": 1,
-    "total_archived_weeks": 0
+    "total_archived_weeks": 1
   },
-  "weeks": {},
+  "weeks": {
+    "2025-11-10": {
+      "lists": {
+        "tack": {
+          "to_take": { "packed": 1, "unpacked": 1 },
+          "to_bring_home": { "packed": 0, "unpacked": 0 }
+        },
+        "equipment": {
+          "to_take": { "packed": 0, "unpacked": 1 },
+          "to_bring_home": { "packed": 0, "unpacked": 0 }
+        },
+        "feed": {
+          "to_take": { "packed": 0, "unpacked": 1 },
+          "to_bring_home": { "packed": 0, "unpacked": 0 }
+        }
+      },
+      "archive_ready": false
+    },
+    "2025-10-06": {
+      "lists": {
+        "tack": {
+          "to_take": { "packed": 0, "unpacked": 0 },
+          "to_bring_home": { "packed": 1, "unpacked": 0 }
+        },
+        "equipment": {
+          "to_take": { "packed": 0, "unpacked": 0 },
+          "to_bring_home": { "packed": 0, "unpacked": 0 }
+        },
+        "feed": {
+          "to_take": { "packed": 0, "unpacked": 0 },
+          "to_bring_home": { "packed": 0, "unpacked": 0 }
+        }
+      },
+      "archive_ready": true
+    }
+  },
   "totals": {
-    "to_take": {},
-    "to_bring_home": {}
+    "to_take_unpacked": 2,
+    "to_bring_home_unpacked": 0
   }
 }
