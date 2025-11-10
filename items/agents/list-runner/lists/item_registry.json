@@ -1,20 +1,86 @@
 {
   "version": "1.0",
-  "item_registry": {
-    "bluebit": {
-      "aliases": ["blue bit"],
-      "nicknames": [],
-      "misspells": ["blubit"]
-    },
+  "items": {
     "thisbit": {
-      "aliases": ["this bit"],
-      "nicknames": [],
-      "misspells": []
+      "name": "thisbit",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "bits",
+      "note": null
     },
     "thatbit": {
-      "aliases": ["that bit"],
-      "nicknames": [],
-      "misspells": []
+      "name": "thatbit",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "bits",
+      "note": null
+    },
+    "Girth1": {
+      "name": "Girth1",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
+    },
+    "Girth2": {
+      "name": "Girth2",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
+    },
+    "Girth3": {
+      "name": "Girth3",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
+    },
+    "Girth4": {
+      "name": "Girth4",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
+    },
+    "Senior": {
+      "name": "Senior",
+      "aliases": [],
+      "mispells": [],
+      "type": "feed",
+      "subtype": null,
+      "note": null
+    },
+    "liverpool": {
+      "name": "liverpool",
+      "aliases": [],
+      "mispells": [],
+      "type": "equipment",
+      "subtype": "large",
+      "note": "the big blue one"
+    },
+    "saddlepad1": {
+      "name": "saddlepad1",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "saddlepads",
+      "note": null
+    },
+    "saddlepad2": {
+      "name": "saddlepad2",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "saddlepads",
+      "note": null
     }
   }
 }
+
