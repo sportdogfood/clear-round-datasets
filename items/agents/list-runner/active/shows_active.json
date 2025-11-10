@@ -1,22 +1,11 @@
 {
   "version": "1.0",
   "shows": [
-    {
-      "show_id": 200000035,
-      "show_name": "2025 ESP Pre-Charity (#316789/343747)",
-      "aliases": ["Pre-Charity"],
-      "start_date": "2025-11-12T00:00:00.000Z",
-      "end_date": "2025-11-16T00:00:00.000Z",
-      "home_location_id": "home",
-      "away_location_id": "WEF",
-      "sanctions": ["316789", "343747"]
-    }
+    { "show_id": 200000034, "active": true },
+    { "show_id": 200000035, "active": true },
+    { "show_id": 200000038, "active": true },
+    { "show_id": 200000040, "active": true },
+    { "show_id": 200000042, "active": true }
   ],
-  "by_week_start": {
-    "2025-11-10": [200000035]
-  },
-  "by_sanction": {
-    "316789": [200000035],
-    "343747": [200000035]
-  }
+  "last_updated": "2025-11-09T21:54:00Z"
 }
