@@ -1,13 +1,15 @@
 {
   "version": "1.0",
   "items": [
-    {
-      "item_id": "waterbuckets",
-      "item_name": "Water Buckets",
-      "aliases": ["water bucket"],
-      "list_id_default": "stalls",
-      "type": "equipment",
-      "sub_type": "bucket"
-    }
-  ]
+    { "item_id": "waterbuckets", "state": "home" },
+    { "item_id": "feedbuckets", "state": "home" },
+    { "item_id": "muckbuckets", "state": "home" },
+    { "item_id": "saddles", "state": "home" },
+    { "item_id": "romeo-saddle", "state": "home", "horse_id": 149535 },
+    { "item_id": "delorean-saddle", "state": "home", "horse_id": 138724 },
+    { "item_id": "grain", "state": "home" },
+    { "item_id": "firstaidkitequine", "state": "home" },
+    { "item_id": "speakerformusic", "state": "home" }
+  ],
+  "last_updated": "2025-11-09T21:54:00Z"
 }
