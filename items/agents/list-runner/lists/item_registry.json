@@ -1,65 +1,86 @@
 {
   "version": "1.0",
-  "item_registry": {
+  "items": {
     "thisbit": {
-      "canonical": "thisbit",
-      "category": "tack",
-      "default_lists": ["tack"],
-      "default_status": "to_take",
-      "aliases": ["this bit"],
-      "misspells": ["thsbit"],
-      "tags": ["bit"],
-      "notes": ""
+      "name": "thisbit",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "bits",
+      "note": null
     },
     "thatbit": {
-      "canonical": "thatbit",
-      "category": "tack",
-      "default_lists": ["tack"],
-      "default_status": "to_take",
-      "aliases": ["that bit"],
-      "misspells": [],
-      "tags": ["bit"],
-      "notes": ""
+      "name": "thatbit",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "bits",
+      "note": null
     },
     "Girth1": {
-      "canonical": "Girth1",
-      "category": "tack",
-      "default_lists": ["tack"],
-      "default_status": "to_take",
+      "name": "Girth1",
       "aliases": [],
-      "misspells": [],
-      "tags": ["girth"],
-      "notes": ""
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
     },
     "Girth2": {
-      "canonical": "Girth2",
-      "category": "tack",
-      "default_lists": ["tack"],
-      "default_status": "to_take",
+      "name": "Girth2",
       "aliases": [],
-      "misspells": [],
-      "tags": ["girth"],
-      "notes": ""
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
     },
     "Girth3": {
-      "canonical": "Girth3",
-      "category": "tack",
-      "default_lists": ["tack"],
-      "default_status": "to_take",
+      "name": "Girth3",
       "aliases": [],
-      "misspells": [],
-      "tags": ["girth"],
-      "notes": ""
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
     },
     "Girth4": {
-      "canonical": "Girth4",
-      "category": "tack",
-      "default_lists": ["tack"],
-      "default_status": "to_take",
+      "name": "Girth4",
       "aliases": [],
-      "misspells": [],
-      "tags": ["girth"],
-      "notes": ""
+      "mispells": [],
+      "type": "tack",
+      "subtype": "girths",
+      "note": null
+    },
+    "Senior": {
+      "name": "Senior",
+      "aliases": [],
+      "mispells": [],
+      "type": "feed",
+      "subtype": null,
+      "note": null
+    },
+    "liverpool": {
+      "name": "liverpool",
+      "aliases": [],
+      "mispells": [],
+      "type": "equipment",
+      "subtype": "large",
+      "note": "the big blue one"
+    },
+    "saddlepad1": {
+      "name": "saddlepad1",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "saddlepads",
+      "note": null
+    },
+    "saddlepad2": {
+      "name": "saddlepad2",
+      "aliases": [],
+      "mispells": [],
+      "type": "tack",
+      "subtype": "saddlepads",
+      "note": null
     }
   }
 }
+

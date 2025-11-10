@@ -1,35 +1,24 @@
 {
   "version": "1.0",
-  "list_registry": {
+  "lists": {
     "tack": {
-      "canonical": "tack",
-      "type": "tack",
-      "aliases": ["tack list"],
-      "misspells": ["tak", "tcak"],
-      "default_status": "to_take",
-      "allowed_status": ["to_take", "to_bring_home"],
-      "direction_scope": "both",
-      "notes": "Saddles, bridles, bits, girths, pads, boots."
+      "name": "tack",
+      "aliases": [],
+      "mispells": [],
+      "default": true
     },
     "equipment": {
-      "canonical": "equipment",
-      "type": "equipment",
-      "aliases": ["gear", "equipment list"],
-      "misspells": ["equiptment", "equipement"],
-      "default_status": "to_take",
-      "allowed_status": ["to_take", "to_bring_home"],
-      "direction_scope": "both",
-      "notes": "Trunks, tools, grooming, barn gear."
+      "name": "equipment",
+      "aliases": [],
+      "mispells": [],
+      "default": true
     },
     "feed": {
-      "canonical": "feed",
-      "type": "feed",
-      "aliases": ["grain", "hay", "feed list"],
-      "misspells": ["fead"],
-      "default_status": "to_take",
-      "allowed_status": ["to_take", "to_bring_home"],
-      "direction_scope": "both",
-      "notes": "Grain, hay, supplements, water, buckets."
+      "name": "feed",
+      "aliases": [],
+      "mispells": [],
+      "default": true
     }
   }
 }
+
