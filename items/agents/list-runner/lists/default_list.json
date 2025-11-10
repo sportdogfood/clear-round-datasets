@@ -1,7 +1,17 @@
 {
-  "default_list": {
-    "tack": ["thisbit", "thatbit", "Girth1"],
-    "equipment": ["liverpool"],
-    "feed": ["Senior"]
+  "version": "1.0",
+  "defaults": {
+    "tack": [
+      {
+        "name": "thisbit",
+        "status": "to_take"
+      },
+      {
+        "name": "thatbit",
+        "status": "to_take"
+      }
+    ],
+    "equipment": [],
+    "feed": []
   }
 }
