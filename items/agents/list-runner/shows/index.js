@@ -1,22 +1,45 @@
 #!/usr/bin/env node
 /**
  * shows/index.js
- * Build index fields for shows/show_schedule.json without changing show records.
  *
- * - Input:  shows/show_schedule.json
- *   { "shows": [ { show_id, start_date, ... }, ... ] }
+ * Build indexes for shows/show_schedule.json without altering show records.
  *
- * - Output: shows/show_schedule.json
+ * Input:
+ *   shows/show_schedule.json
  *   {
- *     "version": "1.0",
- *     "shows": [ ...original objects, unchanged order... ],
+ *     "shows": [
+ *       {
+ *         "show_id": ...,
+ *         "show_name": "2025 ESP Spring 2 (#233850)",
+ *         "start_date": "2025-04-09T00:00:00.000Z",
+ *         "end_date": "...",
+ *         ...
+ *       },
+ *       ...
+ *     ]
+ *   }
+ *
+ * Output (same file):
+ *   {
+ *     "version": "1.1",
+ *     "shows": [ ...unchanged... ],
  *     "by_week_start": {
  *       "<YYYY-MM-DD>": [show_id, ...],
+ *       ...
+ *     },
+ *     "by_sanction": {
+ *       "233850": [show_id, ...],
+ *       "6880": [show_id, ...],
+ *       "343029": [show_id, ...],
  *       ...
  *     }
  *   }
  *
- * Week start = Monday (UTC) of each show's start_date.
+ * Rules:
+ * - Do not drop or rewrite any show fields.
+ * - Week start = Monday (UTC) for each show's start_date.
+ * - Sanction ids are parsed from show_name occurrences of "#<digits>".
+ * - Both indexes use arrays (sanctions or weeks may map to multiple shows).
  */
 
 const fs = require("fs");
@@ -25,26 +48,40 @@ const path = require("path");
 const ROOT = __dirname;
 const SCHEDULE_PATH = path.join(ROOT, "show_schedule.json");
 
-/** Read JSON or fail hard (this is a build-time script). */
+// Read JSON (fail hard, this is a build tool)
 function readJson(p) {
   const txt = fs.readFileSync(p, "utf8");
   return JSON.parse(txt);
 }
 
-/** Write JSON with trailing newline. */
+// Write JSON with trailing newline
 function writeJson(p, obj) {
   const out = JSON.stringify(obj, null, 2) + "\n";
   fs.writeFileSync(p, out, "utf8");
 }
 
-/** Given ISO date/time string, return Monday week start (YYYY-MM-DD) in UTC. */
+// Monday week start (YYYY-MM-DD) from ISO date/time (UTC-based)
 function weekStartFromISO(iso) {
+  if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   const day = d.getUTCDay(); // 0=Sun..6=Sat
-  const diff = (day + 6) % 7; // 0 if Monday, 1 if Tue, ... 6 if Sun
+  const diff = (day + 6) % 7; // 0 if Monday, 1 if Tue, ..., 6 if Sun
   d.setUTCDate(d.getUTCDate() - diff);
   return d.toISOString().slice(0, 10);
+}
+
+// Extract sanction ids from show_name occurrences of "#<digits>"
+function extractSanctions(showName) {
+  if (!showName || typeof showName !== "string") return [];
+  const ids = [];
+  const re = /#(\d{3,})/g;
+  let m;
+  while ((m = re.exec(showName)) !== null) {
+    const id = m[1];
+    if (!ids.includes(id)) ids.push(id);
+  }
+  return ids;
 }
 
 function buildShowsIndex() {
@@ -56,36 +93,56 @@ function buildShowsIndex() {
 
   const shows = data.shows;
   const by_week_start = {};
+  const by_sanction = {};
 
   for (const show of shows) {
-    const id = show.show_id;
+    const showId = show.show_id;
     const start = show.start_date;
 
-    if (id == null || !start) continue;
+    // week_start index
+    if (showId != null && start) {
+      const ws = weekStartFromISO(start);
+      if (ws) {
+        if (!by_week_start[ws]) by_week_start[ws] = [];
+        by_week_start[ws].push(showId);
+      }
+    }
 
-    const ws = weekStartFromISO(start);
-    if (!ws) continue;
-
-    if (!by_week_start[ws]) by_week_start[ws] = [];
-    by_week_start[ws].push(id);
+    // sanction index from show_name
+    const sanctions = extractSanctions(show.show_name);
+    if (showId != null && sanctions.length) {
+      for (const s of sanctions) {
+        if (!by_sanction[s]) by_sanction[s] = [];
+        by_sanction[s].push(showId);
+      }
+    }
   }
 
-  // Optionally keep IDs sorted for determinism
-  for (const k of Object.keys(by_week_start)) {
-    by_week_start[k].sort((a, b) => {
-      if (typeof a === "number" && typeof b === "number") return a - b;
-      return String(a).localeCompare(String(b));
-    });
+  // Deterministic ordering
+  for (const key of Object.keys(by_week_start)) {
+    by_week_start[key].sort((a, b) =>
+      typeof a === "number" && typeof b === "number"
+        ? a - b
+        : String(a).localeCompare(String(b))
+    );
+  }
+  for (const key of Object.keys(by_sanction)) {
+    by_sanction[key].sort((a, b) =>
+      typeof a === "number" && typeof b === "number"
+        ? a - b
+        : String(a).localeCompare(String(b))
+    );
   }
 
   const out = {
-    version: data.version || "1.0",
+    version: data.version || "1.1",
     shows, // unchanged
-    by_week_start
+    by_week_start,
+    by_sanction
   };
 
   writeJson(SCHEDULE_PATH, out);
-  console.log("shows/show_schedule.json indexed (by_week_start updated).");
+  console.log("shows/show_schedule.json indexed (by_week_start, by_sanction).");
 }
 
 if (require.main === module) {
