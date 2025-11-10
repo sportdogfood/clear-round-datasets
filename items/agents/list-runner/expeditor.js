@@ -1,154 +1,108 @@
 #!/usr/bin/env node
-/**
- * expeditor.js
- * Self-contained coordinator for items/agents/list-runner
- * Handles index rebuild, daily backup, and /health endpoints.
- */
-
 const fs = require("fs");
-const http = require("http");
 const path = require("path");
 
 const ROOT = __dirname;
-const LISTS = path.join(ROOT, "lists");
-const LOGS = path.join(ROOT, "logs");
-const STATE = path.join(ROOT, "state.json");
-const INDEX = path.join(LISTS, "index.json");
-const STARTED = path.join(LISTS, "started_lists.json");
-const ARCHIVED = path.join(LISTS, "archived_lists.json");
-const UPDATES = path.join(LOGS, "updates.json");
+const LISTS_DIR = path.join(ROOT, "lists");
+const STARTED = path.join(LISTS_DIR, "started_lists.json");
+const ARCHIVED = path.join(LISTS_DIR, "archived_lists.json");
+const INDEX = path.join(LISTS_DIR, "index.json");
 
-// ---------- utilities ----------
-const readJSON = (p, d = {}) => {
-  try { return JSON.parse(fs.readFileSync(p, "utf8")); }
-  catch { return d; }
-};
-const writeJSON = (p, obj) =>
-  fs.writeFileSync(p, JSON.stringify(obj, null, 2));
+function readJson(p, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
 
-const now = () => new Date().toISOString();
-const today = () => new Date().toISOString().slice(0, 10);
+function writeJson(p, data) {
+  fs.writeFileSync(p, JSON.stringify(data, null, 2));
+}
 
-// ---------- index rebuild ----------
-function rebuildIndex() {
-  const started = readJSON(STARTED, { started_lists: {} });
-  const index = { summary: {}, weeks: {}, totals: { to_take: {}, to_bring_home: {} } };
-
-  let totalActive = 0, totalArchived = 0, totalToTake = 0, totalToBring = 0;
-
-  for (const [week, data] of Object.entries(started.started_lists || {})) {
-    totalActive++;
-    const packedCounts = {};
-    let archiveReady = true;
-
-    for (const [list, items] of Object.entries(data.lists || {})) {
-      packedCounts[list] = { to_take: { packed: 0, unpacked: 0 }, to_bring_home: { packed: 0, unpacked: 0 } };
-      for (const item of items) {
-        const { status, packed } = item;
-        if (!status) continue;
-        const s = packedCounts[list][status];
-        s[packed ? "packed" : "unpacked"]++;
-        if (status === "to_take" || packed === false) archiveReady = false;
-        if (status === "to_take") totalToTake++;
-        if (status === "to_bring_home") totalToBring++;
-      }
+function countStatuses(items, field, allowed) {
+  const counts = {};
+  for (const v of allowed) counts[v] = 0;
+  for (const it of items) {
+    const v = it[field];
+    if (v && Object.prototype.hasOwnProperty.call(counts, v)) {
+      counts[v] += 1;
     }
+  }
+  return counts;
+}
 
-    index.weeks[week] = {
-      show_name: data.show_name || "",
-      packed_counts: packedCounts,
-      archive_ready: archiveReady
+function isReadyAway(list) {
+  if (list.state !== "home") return false;
+  if (!list.items.length) return false;
+  for (const it of list.items) {
+    if (!["packed", "not_needed", "missing", "broken"].includes(it.to_take)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isReadyComplete(list) {
+  if (list.state !== "away") return false;
+  if (!list.items.length) return false;
+  for (const it of list.items) {
+    if (!["packed", "missing", "broken", "sent_back_early", "left_over"].includes(it.to_bring_home)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function buildIndex() {
+  const started = readJson(STARTED, { version: "1.0", lists: [] });
+  const archived = readJson(ARCHIVED, { version: "1.0", lists: [] });
+
+  const index = {
+    version: "1.0",
+    generated_at: new Date().toISOString(),
+    lists: {}
+  };
+
+  function addList(list, scope) {
+    const id = list.list_id;
+    const items = Array.isArray(list.items) ? list.items : [];
+
+    const toTakeCounts = countStatuses(
+      items,
+      "to_take",
+      ["not_packed", "packed", "not_needed", "missing", "broken"]
+    );
+    const toBringCounts = countStatuses(
+      items,
+      "to_bring_home",
+      ["not_packed", "packed", "missing", "broken", "sent_back_early", "left_over"]
+    );
+
+    index.lists[id] = {
+      scope,
+      show_id: list.show_id,
+      list_type: list.list_type,
+      name: list.name,
+      state: list.state,
+      total_items: items.length,
+      to_take: toTakeCounts,
+      to_bring_home: toBringCounts,
+      ready_to_mark_away: isReadyAway(list),
+      ready_to_mark_complete: isReadyComplete(list)
     };
   }
 
-  const archived = readJSON(ARCHIVED, { archived_lists: {} });
-  totalArchived = Object.keys(archived.archived_lists || {}).length;
+  for (const l of started.lists) addList(l, "started");
+  for (const l of archived.lists) addList(l, "archived");
 
-  index.summary = {
-    last_updated: now(),
-    total_active_weeks: totalActive,
-    total_archived_weeks: totalArchived
-  };
-  index.totals = {
-    to_take: totalToTake,
-    to_bring_home: totalToBring
-  };
-
-  writeJSON(INDEX, index);
+  writeJson(INDEX, index);
   return index;
 }
 
-// ---------- daily backup ----------
-function dailyBackup() {
-  const backupDir = path.join(LOGS, "backups");
-  if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
-  const file = path.join(backupDir, `${today()}-index.json`);
-  if (fs.existsSync(file)) return;
-  const index = readJSON(INDEX, {});
-  writeJSON(file, index);
-
-  const updates = readJSON(UPDATES, { updates: [] });
-  updates.updates.push({
-    timestamp: now(),
-    action: "daily_backup",
-    source: "expeditor",
-    target: `/logs/backups/${today()}-index.json`
-  });
-  writeJSON(UPDATES, updates);
-
-  // Keep 7 most recent backups
-  const files = fs.readdirSync(backupDir)
-    .filter(f => f.endsWith("-index.json"))
-    .sort().reverse();
-  files.slice(7).forEach(f => fs.unlinkSync(path.join(backupDir, f)));
+if (require.main === module) {
+  buildIndex();
+  console.log("index.json updated");
 }
 
-// ---------- health endpoints ----------
-function serveHealth(port = 8080) {
-  http.createServer((req, res) => {
-    res.setHeader("Content-Type", "application/json");
-    const state = readJSON(STATE, {});
-    const updates = readJSON(UPDATES, { updates: [] });
-    const lastUpdate = updates.updates.at(-1);
-    const index = readJSON(INDEX, {});
-    const archived = readJSON(ARCHIVED, { archived_lists: {} });
-
-    if (req.url === "/items/agents/health" || req.url === "/items/agents/health/") {
-      const body = {
-        ok: true,
-        last_update: lastUpdate ? lastUpdate.timestamp : null,
-        active_week: state.active_week || null,
-        current_mode: state.current_mode || null,
-        archived_weeks: Object.keys(archived.archived_lists || {}).length,
-        pending_packs: index.totals?.to_take ?? 0,
-        index_version: index.summary?.last_updated ?? null
-      };
-      res.end(JSON.stringify(body, null, 2));
-    } else if (req.url === "/items/agents/health/compact") {
-      const body = {
-        ok: true,
-        mode: state.current_mode || null,
-        active_week: state.active_week || null,
-        updated: lastUpdate ? lastUpdate.timestamp : null
-      };
-      res.end(JSON.stringify(body, null, 2));
-    } else {
-      res.statusCode = 404;
-      res.end(JSON.stringify({ ok: false, error: "not_found" }));
-    }
-  }).listen(port, () => console.log(`expeditor health server running on ${port}`));
-}
-
-// ---------- CLI ----------
-const cmd = process.argv[2];
-if (cmd === "update") {
-  rebuildIndex();
-  dailyBackup();
-  console.log("Index rebuilt and backup checked.");
-} else if (cmd === "serve") {
-  rebuildIndex();
-  dailyBackup();
-  serveHealth(8080);
-} else {
-  console.log("Usage:\n  node expeditor.js update   # rebuild index + backup\n  node expeditor.js serve    # run health server");
-}
+module.exports = { buildIndex };
