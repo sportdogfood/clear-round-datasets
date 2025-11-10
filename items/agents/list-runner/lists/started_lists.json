@@ -1,19 +1,63 @@
 {
   "version": "1.0",
-  "weeks": {
-    "2025-11-10": {
-      "lists": {
-        "tack": [
-          {
-            "name": "thisbit",
-            "status": "to_take",
-            "packed_take": false,
-            "packed_home": false
-          }
-        ],
-        "equipment": [],
-        "feed": []
-      }
+  "lists": [
+    {
+      "list_id": "200000034:tack",
+      "show_id": 200000034,
+      "list_type": "tack",
+      "name": "Tack",
+      "state": "away",
+      "items": []
+    },
+    {
+      "list_id": "200000034:equipment",
+      "show_id": 200000034,
+      "list_type": "equipment",
+      "name": "Equipment",
+      "state": "away",
+      "items": []
+    },
+    {
+      "list_id": "200000034:feed",
+      "show_id": 200000034,
+      "list_type": "feed",
+      "name": "Feed",
+      "state": "away",
+      "items": []
+    },
+    {
+      "list_id": "200000035:tack",
+      "show_id": 200000035,
+      "list_type": "tack",
+      "name": "Tack",
+      "state": "home",
+      "items": [
+        {
+          "item_uid": "itm-bluebit-1",
+          "name": "bluebit",
+          "to_take": "not_packed",
+          "to_bring_home": "not_packed",
+          "created_at": "2025-11-09T21:54:00Z",
+          "created_by_device": "device-unknown",
+          "created_by_name": null
+        }
+      ]
+    },
+    {
+      "list_id": "200000035:equipment",
+      "show_id": 200000035,
+      "list_type": "equipment",
+      "name": "Equipment",
+      "state": "home",
+      "items": []
+    },
+    {
+      "list_id": "200000035:feed",
+      "show_id": 200000035,
+      "list_type": "feed",
+      "name": "Feed",
+      "state": "home",
+      "items": []
     }
-  }
+  ]
 }
