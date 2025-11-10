@@ -1,30 +1,81 @@
 {
+  "version": "1.0",
   "summary": {
     "last_updated": "2025-11-09T17:15:00Z",
-    "total_active_weeks": 1,
-    "total_archived_weeks": 1
+    "total_active_shows": 1,
+    "total_archived_shows": 1
   },
-  "weeks": {
-    "2025-11-10": {
+  "shows": {
+    "200000035": {
+      "show_id": 200000035,
+      "show_name": "2025 ESP Pre-Charity (#316789/343747)",
+      "start_date": "2025-11-12T00:00:00.000Z",
+      "end_date": "2025-11-16T00:00:00.000Z",
       "lists": {
         "tack": {
-          "to_take": { "packed": 0, "unpacked": 1 },
-          "to_bring_home": { "packed": 0, "unpacked": 0 }
+          "state": "home",
+          "to_take": {
+            "not_packed": 3,
+            "packed": 7,
+            "not_needed": 1
+          },
+          "to_bring_home": {
+            "not_packed": 0,
+            "packed": 0,
+            "missing": 0,
+            "broken": 0,
+            "left_over": 0,
+            "sent_back_early": 0
+          }
         },
         "equipment": {
-          "to_take": { "packed": 0, "unpacked": 0 },
-          "to_bring_home": { "packed": 0, "unpacked": 0 }
+          "state": "home",
+          "to_take": {
+            "not_packed": 2,
+            "packed": 5,
+            "not_needed": 0
+          },
+          "to_bring_home": {
+            "not_packed": 0,
+            "packed": 0,
+            "missing": 0,
+            "broken": 0,
+            "left_over": 0,
+            "sent_back_early": 0
+          }
         },
         "feed": {
-          "to_take": { "packed": 0, "unpacked": 0 },
-          "to_bring_home": { "packed": 0, "unpacked": 0 }
+          "state": "home",
+          "to_take": {
+            "not_packed": 1,
+            "packed": 3,
+            "not_needed": 0
+          },
+          "to_bring_home": {
+            "not_packed": 0,
+            "packed": 0,
+            "missing": 0,
+            "broken": 0,
+            "left_over": 0,
+            "sent_back_early": 0
+          }
         }
-      },
-      "archive_ready": false
+      }
     }
   },
   "totals": {
-    "to_take_unpacked": 1,
-    "to_bring_home_unpacked": 0
+    "to_take": {
+      "not_packed": 6,
+      "packed": 15,
+      "not_needed": 1
+    },
+    "to_bring_home": {
+      "not_packed": 0,
+      "packed": 0,
+      "missing": 0,
+      "broken": 0,
+      "left_over": 0,
+      "sent_back_early": 0
+    }
   }
 }
