@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "kits": [
+    {
+      "kit_id": "hunter-kit",
+      "kit_name": "Standard Hunter Kit",
+      "scope": "show",
+      "tags": ["suggestion"],
+      "items": [
+        { "item_id": "saddles", "per": "horse", "quantity": 1 },
+        { "item_id": "bridles", "per": "horse", "quantity": 1 },
+        { "item_id": "polos", "per": "horse", "quantity": 2 }
+      ]
+    },
+    {
+      "kit_id": "jumper-kit",
+      "kit_name": "Standard Jumper Kit",
+      "scope": "show",
+      "tags": ["suggestion"],
+      "items": [
+        { "item_id": "saddles", "per": "horse", "quantity": 1 },
+        { "item_id": "girths", "per": "horse", "quantity": 1 },
+        { "item_id": "jumpboots", "per": "horse", "quantity": 1 }
+      ]
+    },
+    {
+      "kit_id": "romeo-kit",
+      "kit_name": "Romeo Specific Kit",
+      "scope": "horse",
+      "horse_id": 149535,
+      "tags": ["horse-specific"],
+      "items": [
+        { "item_id": "romeo-saddle", "per": "horse", "quantity": 1 }
+      }
+    }
+  ]
+}
