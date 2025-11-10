@@ -1,8 +1,25 @@
 {
   "version": "1.0",
-  "defaults": {
-    "tack": [],
-    "equipment": [],
-    "feed": []
-  }
+  "lists": [
+    {
+      "list_type": "stalls",
+      "name": "Stalls",
+      "from_kits": ["stalls-kit"]
+    },
+    {
+      "list_type": "tack",
+      "name": "Tack",
+      "from_kits": ["tack-kit"]
+    },
+    {
+      "list_type": "feed",
+      "name": "Feed",
+      "from_kits": []
+    },
+    {
+      "list_type": "groom",
+      "name": "Groom",
+      "from_kits": ["groom-kit"]
+    }
+  ]
 }

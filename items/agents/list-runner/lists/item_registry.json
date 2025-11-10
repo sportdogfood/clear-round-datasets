@@ -1,86 +1,19 @@
 {
   "version": "1.0",
   "items": {
-    "thisbit": {
-      "name": "thisbit",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "bits",
-      "note": null
-    },
-    "thatbit": {
-      "name": "thatbit",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "bits",
-      "note": null
-    },
-    "Girth1": {
-      "name": "Girth1",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "girths",
-      "note": null
-    },
-    "Girth2": {
-      "name": "Girth2",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "girths",
-      "note": null
-    },
-    "Girth3": {
-      "name": "Girth3",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "girths",
-      "note": null
-    },
-    "Girth4": {
-      "name": "Girth4",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "girths",
-      "note": null
-    },
-    "Senior": {
-      "name": "Senior",
-      "aliases": [],
-      "mispells": [],
-      "type": "feed",
-      "subtype": null,
-      "note": null
-    },
-    "liverpool": {
-      "name": "liverpool",
-      "aliases": [],
-      "mispells": [],
-      "type": "equipment",
-      "subtype": "large",
-      "note": "the big blue one"
-    },
-    "saddlepad1": {
-      "name": "saddlepad1",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "saddlepads",
-      "note": null
-    },
-    "saddlepad2": {
-      "name": "saddlepad2",
-      "aliases": [],
-      "mispells": [],
-      "type": "tack",
-      "subtype": "saddlepads",
-      "note": null
-    }
+    "saddles":        { "aliases": ["saddle"],           "misspells": ["sadles"] },
+    "girths":         { "aliases": ["girth"],            "misspells": [] },
+    "bridles":        { "aliases": ["bridle"],           "misspells": [] },
+    "water_buckets":  { "aliases": ["water bucket"],     "misspells": [] },
+    "feed_buckets":   { "aliases": ["feed bucket"],      "misspells": [] },
+    "hay_nets":       { "aliases": ["hay net"],          "misspells": [] },
+    "grain":          { "aliases": [],                   "misspells": [] },
+    "supplements":    { "aliases": ["supps"],            "misspells": [] },
+    "brushes":        { "aliases": ["brush"],            "misspells": [] },
+    "hoof_picks":     { "aliases": ["hoof pick"],        "misspells": [] },
+    "fly_spray":      { "aliases": ["flyspray"],         "misspells": [] },
+    "first_aid_equine": { "aliases": ["equine first aid"], "misspells": [] },
+    "first_aid_human":  { "aliases": ["human first aid"], "misspells": [] },
+    "speaker_music":  { "aliases": ["speaker"],          "misspells": [] }
   }
 }
-

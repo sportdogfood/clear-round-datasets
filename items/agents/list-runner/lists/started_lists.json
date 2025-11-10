@@ -2,28 +2,24 @@
   "version": "1.0",
   "lists": [
     {
-      "list_id": "200000034:tack",
-      "show_id": 200000034,
-      "list_type": "tack",
-      "name": "Tack",
-      "state": "away",
-      "items": []
-    },
-    {
-      "list_id": "200000034:equipment",
-      "show_id": 200000034,
-      "list_type": "equipment",
-      "name": "Equipment",
-      "state": "away",
-      "items": []
-    },
-    {
-      "list_id": "200000034:feed",
-      "show_id": 200000034,
-      "list_type": "feed",
-      "name": "Feed",
-      "state": "away",
-      "items": []
+      "list_id": "200000035:stalls",
+      "show_id": 200000035,
+      "list_type": "stalls",
+      "name": "Stalls",
+      "state": "home",
+      "items": [
+        {
+          "item_uid": "itm-200000035-water_buckets-1",
+          "item_id": "water_buckets",
+          "name": "Water Buckets",
+          "horse_id": null,
+          "to_take": "not_packed",
+          "to_bring_home": "not_packed",
+          "created_at": "2025-11-09T20:00:00Z",
+          "created_by_device": "seed",
+          "created_by_name": null
+        }
+      ]
     },
     {
       "list_id": "200000035:tack",
@@ -33,23 +29,17 @@
       "state": "home",
       "items": [
         {
-          "item_uid": "itm-bluebit-1",
-          "name": "bluebit",
+          "item_uid": "itm-200000035-saddles-1",
+          "item_id": "saddles",
+          "name": "Saddles",
+          "horse_id": null,
           "to_take": "not_packed",
           "to_bring_home": "not_packed",
-          "created_at": "2025-11-09T21:54:00Z",
-          "created_by_device": "device-unknown",
+          "created_at": "2025-11-09T20:00:00Z",
+          "created_by_device": "seed",
           "created_by_name": null
         }
       ]
-    },
-    {
-      "list_id": "200000035:equipment",
-      "show_id": 200000035,
-      "list_type": "equipment",
-      "name": "Equipment",
-      "state": "home",
-      "items": []
     },
     {
       "list_id": "200000035:feed",
