@@ -1,0 +1,114 @@
+
+{
+  "version": "1.0.0",
+  "scope": "crt-list-runner-small-world",
+  "deny_outside": [
+    "weather",
+    "news",
+    "stocks",
+    "politics",
+    "restaurant",
+    "sports",
+    "general chat"
+  ],
+
+  "intents": [
+    {
+      "type": "add_line",
+      "phrases": [
+        "add {item} to {list}",
+        "put {item} on {list}",
+        "we need {item} on {list}"
+      ]
+    },
+    {
+      "type": "set_status",
+      "phrases": [
+        "mark {item} {status}",
+        "set {item} to {status}",
+        "{item} is {status}"
+      ]
+    },
+    {
+      "type": "show_list",
+      "phrases": [
+        "show {list} list",
+        "what's on {list}",
+        "what's left on {list}"
+      ]
+    },
+    {
+      "type": "summary",
+      "phrases": [
+        "summary",
+        "what's left to pack",
+        "how are we looking"
+      ]
+    },
+    {
+      "type": "add_comment",
+      "phrases": [
+        "note {text}",
+        "add comment {text}",
+        "log that {text}"
+      ]
+    },
+    {
+      "type": "apply_kit",
+      "phrases": [
+        "apply {kit}",
+        "load {kit} kit"
+      ]
+    }
+  ],
+
+  "status_words": [
+    {
+      "canonical": "packed",
+      "variants": ["packed", "done", "in", "loaded"]
+    },
+    {
+      "canonical": "not_packed",
+      "variants": ["not packed", "out", "still here", "not done"]
+    },
+    {
+      "canonical": "not_needed",
+      "variants": ["skip", "not needed", "leave it"]
+    },
+    {
+      "canonical": "missing",
+      "variants": ["missing", "cannot find", "gone"]
+    },
+    {
+      "canonical": "broken",
+      "variants": ["broken", "damaged", "busted"]
+    },
+    {
+      "canonical": "left_over",
+      "variants": ["left over", "stays", "leave it there"]
+    },
+    {
+      "canonical": "sent_back_early",
+      "variants": ["sent back", "sent home early"]
+    },
+    {
+      "canonical": "reset",
+      "variants": ["found it", "it's fine", "reset"]
+    }
+  ],
+
+  "list_words": [
+    {
+      "canonical": "tack",
+      "variants": ["tack", "tack list"]
+    },
+    {
+      "canonical": "equipment",
+      "variants": ["equipment", "gear", "equipment list"]
+    },
+    {
+      "canonical": "feed",
+      "variants": ["feed", "grain", "hay", "feed list"]
+    }
+  ]
+}
