@@ -1,487 +1,123 @@
-Session timestamp: `2025-11-11T09:44:34-05:00` (America/New_York). Treat this as the anchor for this design pass.
+SESSION_TS_2025-11-11T00:00:00Z
 
-Here is the consolidated standard. No code. No guesses.
+Overview:
 
----
+Scope
 
-## 1. Core goals
+One small world: packing for a few shows, horses, locations, lists, items.
 
-Single, tight system:
+Voice-first, mobile-first, zero drift. No weather, no chat, no extra domains.
 
-* Domain: show packing only.
-* Scope: ≤10 active shows, ~20 horses, ~5 locations, ~10 lists, ~200 items.
-* Interface: mobile-first, voice-first, zero-noise.
-* Backend: JSON over `/items/*` for reads, `/items/commit*` for writes via your proxy.
-* Brain: small-world assistant that:
+HTTP surfaces
 
-  * only speaks “packing + inventory”,
-  * uses your libs as truth,
-  * rejects “weather / stocks / random” with “sorry, not my lane.”
+Read any data file:
 
-Everything below is to make that precise and consistent.
+GET /items/{path}
 
----
+Git-backed writes:
 
-## 2. Canonical entity layer (`lib/*.json`)
+POST /items/commit
 
-These are your “outside lane” truth tables.
-They do not depend on workflow state.
-They power recognition, validation, and voice understanding.
+POST /items/commit-bulk
 
-Shared shape across libs (plus domain-specific keys):
+List-Runner only:
 
-Common fields:
+POST /items/agents/list-runner/command (single write surface)
 
-* `_active`: `true | false`
-* `*_name`: canonical label (e.g. `show_name`, `horse_name`, `item_name`, etc.)
-* `aliases`: `string[]`
-* `misspells`: `string[]`
-* `spanish_translate`: `string[] | string`
-* `tags`: `string[]`
-* `bin_home`: string or null
-* `bin_away`: string or null
-* `type`: string (coarse category)
-* `sub_type`: string or null
-* `_inactive_reason`: `"missing" | "broken" | "retired" | "moved" | "duplicate" | "manual" | null`
-* `_inactive_at`: ISO timestamp or null
-* `_created_by`: device/user label
-* `_created_at`: ISO timestamp
+GET /items/agents/list-runner/state (read-only snapshot)
 
-Domain-specific:
+Canonical data (truth)
 
-1. `shows_lib.json`
+items/agents/list-runner/lib/locations_lib.json
 
-   * `show_id`
-   * `show_name`
-   * `home_location_id` (staging / barn)
-   * `away_location_id` (show grounds)
-   * `start_date`, `end_date`
-   * Optional: `default_lists` (e.g. `["tack","equipment","feed"]`)
+items/agents/list-runner/lib/shows_lib.json
 
-2. `locations_lib.json`
+items/agents/list-runner/lib/horses_lib.json
 
-   * `location_id`
-   * `formatted_address`
-   * `kind`: `"home" | "show" | "storage" | "other"`
+items/agents/list-runner/lib/items_lib.json
 
-3. `horses_lib.json`
+items/agents/list-runner/lib/lists_lib.json
 
-   * `horse_id`
-   * `horse_name`
-   * `number` or show number
-   * `owner`, `trainer` (optional)
-   * `default_items`: `item_id[]` (Romeo’s saddle etc., optional)
-   * `default_tags`: e.g. `["hunter"]`
+items/agents/list-runner/lib/kits_lib.json
 
-4. `items_lib.json`
+items/agents/list-runner/lib/language_lib.json (outside language lane)
 
-   * `item_id`
-   * `item_name`
-   * `for_horse_id` (nullable; set for Romeo-only gear)
-   * `default_type` / `default_sub_type`
-   * `unit`: `"each" | ...`
-   * `per_horse`: boolean (for “1 per horse” logic)
-   * `per_show`: number or null (flat qty per show)
-   * `block_if_missing_or_broken`: boolean (for re-use rules)
+items/agents/list-runner/lib/voice_profile.json (assistant voice config)
 
-5. `lists_lib.json`
+Operational state
 
-   * `list_id`
-   * `list_name` (tack, equipment, feed, etc.)
-   * `purpose`: `"packing" | "feed" | "meds" | ...`
-   * `default_scope`: e.g. `"per_show"`, `"per_horse"`, `"global"`
+items/agents/list-runner/lists/started_lists.json
 
-6. `kits_lib.json` (optional)
+Active lists, lines, statuses, comments.
 
-   * If you keep it: define “suggested bundles” only.
-   * `kit_id`
-   * `kit_name`
-   * `items`: `item_id[]`
-   * No magic. Pure suggestion surface. Core logic must not depend on kits.
+items/agents/list-runner/lists/archived_lists.json
 
-All “intelligence” for names, nicknames, language, fuzzy mapping comes from these libs. That is the outside lane.
+Archived lists (e.g. 3+ days post show).
 
----
+items/agents/list-runner/lists/index.json
 
-## 3. Runtime layer: packing workflow
+Derived index for quick lookup.
 
-This is where state lives.
-Minimal, predictable.
+items/agents/list-runner/state.json
 
-Key runtime files (under `/items/agents/list-runner/`):
+Thin global state: last device, last actor, last command, current focus.
 
-* `lists/started_lists.json`
-* `lists/archived_lists.json`
-* `lists/index.json` (derived summary)
-* `state.json` (recent show, devices, etc.)
-* `logs/updates.json` (append-only events)
+Logs
 
-### 3.1 Packing list = order / invoice analogy
+items/agents/list-runner/logs/updates.json
 
-For each show:
+Every command, parsed intent, affected list, result.
 
-A “packing list” instance = one logical “order” with:
+items/agents/list-runner/logs/transactions.json
 
-* `show_id` (from `shows_lib`)
-* `home_location_id`, `away_location_id` (from libs)
-* `horses`: `horse_id[]` attending this show
-* `lists`: keyed by `list_id` or `list_name`
+Thin, explicit movements and adjustments per item and list.
 
-  * each list has:
+List-Runner command behavior
 
-    * `state`: `"home" | "away | "complete"`
-    * `items`: array of line items
+Input: device_id, optional actor, command text and/or structured intent.
 
-Line item fields (conceptual):
+Uses only the lib files above to resolve:
 
-* `item_id` (if from `items_lib`)
-* `name`
-* `for_horse_id` (nullable)
-* `qty_planned`
-* `qty_packed_to_take`
-* `qty_packed_to_return`
-* `to_take`: `"not_packed" | "packed" | "not_needed"`
-* `to_bring_home`: `"not_packed" | "packed" | "missing" | "broken" | "left_over" | "sent_back_early"`
-* `bin_home`, `bin_away` (resolved from libs)
-* `history`: [{ ts, action, by, from, to }]
+shows, locations, lists, horses, items, kits, aliases, nicknames, language.
 
-Transitions:
+Applies one atomic action:
 
-* While list `state="home"`:
+add_line (inventory or misc)
 
-  * user marks `to_take`.
-  * when all are `packed` or `not_needed` you can propose `mark list away`.
-* While `state="away"`:
+set_status (to_take / to_bring_home and special states)
 
-  * user marks `to_bring_home`.
-  * when all resolved (`packed/missing/broken/left_over/sent_back_early`) you can propose `mark list complete`.
-* No “in transit” state needed.
-* Horse roster matters because:
+add_comment (note line)
 
-  * horse-specific items only appear if that horse is in the show’s `horses[]`.
-  * when a horse is “sent home early,” it just affects which items need to be present later, not the global mechanics.
+apply_kit (expand to normal lines, no persistent binding)
 
-You end up with:
+summary or show_list (read-only)
 
-> `thisList` contains `{thisItem, thatItem, romeos_saddle}`, plus metadata to know which belong to Romeo, which are global, and their pack/return states.
+Writes:
 
-No kits required for correctness. Kits only pre-fill suggestions.
+started_lists.json
 
----
+archived_lists.json (when archiving rules hit)
 
-## 4. Transactions, adjustments, logs (thin but explicit)
+state.json
 
-You do not need full WMS complexity. You only need enough structure so nothing is “mystery teleported.”
+updates.json
 
-Conceptual:
+transactions.json
 
-* `transactions` (internal representation or future file)
+All persisted via /items/commit-bulk. Expeditor runs to refresh index.json.
 
-  * `type`: `"transfer" | "adjustment"`
-  * `context`: show_id, list_id, location_from, location_to
-  * `lines`: item_id, qty, reason
-* `adjustments` are specific logs:
+Outside language lane
 
-  * `damage`, `new`, `silent_missing`
-* `logs/updates.json`:
+language_lib.json:
 
-  * single append-only event stream:
+Maps phrases, intents, aliases, misspells, Spanish, barn slang to this small world.
 
-    * `list_new`, `list_archived`
-    * `item_added`, `item_packed`, `item_status_change`
-    * `item_inactive`, `item_inactive_reason`
-    * etc.
+voice_profile.json:
 
-You can derive history and reports without bloating the runtime schema.
+Tone, brevity, first-person rules for TTS responses.
 
----
+Frontend may use Fuse.js or similar locally for fuzzy match.
 
-## 5. Outside language lane
+Server endpoints stay simple JSON; no CDN coupling required.
 
-This is your intent + vocabulary brain.
-It does not mutate workflow state directly.
-It only helps map “what the human said” → clean commands that do.
-
-Sources:
-
-1. Lib fields:
-
-   * `aliases`, `misspells`, `spanish_translate`, `tags` in all `*_lib.json`.
-   * These cover items, horses, shows, lists, locations.
-
-2. Intent lexicon (small JSON, e.g. `lang/intent_lib.json`):
-
-   * Groups of verbs/phrases per intent:
-
-     * `add_item`: “add”, “put”, “throw in”
-     * `set_status`: “mark”, “set”, “call”
-     * `bulk_pack_to_take`: “make sure everything is packed to go”, etc.
-     * `bulk_pack_to_bring_home`: “make sure everything is ready to leave”, etc.
-     * `show_list`, `summary`, `use_show`, etc.
-   * This is where you encode:
-
-     * “create a new list”
-     * “mark romeos saddle packed”
-     * “what is left to pack”
-   * All strictly scoped to packing semantics.
-
-3. Fuzzy + phonetic helpers:
-
-   * You can load Fuse.js or similar in the client or a dedicated micro-service.
-   * Apply only against:
-
-     * ids/names/aliases from `*_lib.json`
-     * known intents from `intent_lib`
-   * No global web search. No guessing outside defined vocab.
-
-Pipeline:
-
-speech → ASR text → language lane:
-
-* normalize (lowercase, strip filler)
-* detect intent using `intent_lib`
-* resolve entities using libs + fuzzy
-* emit a small canonical command:
-
-  * e.g. `mark {item_id} packed`, `show {list_id}`, `add {item_id} to {list_id}`
-
-Then send that canonical command through your `/items/agents/list-runner/command` (once you define it) or directly via `/items/commit-bulk` wrappers.
-
----
-
-## 6. Small-world assistant behavior
-
-Rules:
-
-1. Hard domain fence:
-
-   * If input does not match:
-
-     * known intents, or
-     * known entities from libs,
-   * respond with a short rejection:
-
-     * “Sorry, I only handle show packing and gear.”
-   * No drift into weather, news, etc.
-
-2. Deterministic over creative:
-
-   * Always prefer explicit entity matches from libs.
-   * Use fuzzy only as tie-breaker, and if still ambiguous, ask:
-
-     * “Blue saddle pad or white saddle pad?”
-   * Never invent shows/horses/items.
-
-3. External lane separation:
-
-   * Language lane knows many phrases.
-   * Only a tiny, stable set of canonical actions are allowed to hit data:
-
-     * `add_item`, `set_status`, `bulk_pack`, `show_list`, `summary`, `switch_show`, etc.
-
-This keeps it fast, safe, predictable.
-
----
-
-## 7. Proxy + OpenAPI alignment
-
-You already have a clean proxy:
-
-* `GET /items/*` → reads from Git (via UPSTREAM_BASE)
-* `POST /items/commit` → single-file write
-* `POST /items/commit-bulk` → multi-file write
-* `GET /docs/*`, `POST /docs/*` are unrelated to List-Runner.
-
-Optimal usage for this design:
-
-* Reads:
-
-  * Assistant and expeditor use only `GET /items/agents/list-runner/...`
-  * That includes:
-
-    * libs: `lib/*.json`
-    * runtime: `lists/*.json`, `state.json`, `logs/updates.json`
-* Writes:
-
-  * One commit-bulk per logical operation:
-
-    * update `state.json`, `lists/started_lists.json`, `logs/updates.json`, and derived `lists/index.json` together.
-  * No direct GitHub; only via your proxy.
-
-OpenAPI:
-
-* Only needs to expose the real, minimal surface:
-
-  * `/health`
-  * `/items/{path}` (GET)
-  * `/items/commit` (POST)
-  * `/items/commit-bulk` (POST)
-  * (Optionally) `/items/agents/list-runner/command` once you define it, as the canonical NL → action endpoint.
-* No references to `shows/show_schedule.json` or any removed legacy file unless you reintroduce them.
-
----
-
-## 8. Preventing future drift
-
-Concrete constraints to follow going forward:
-
-1. All entity recognition must come from:
-
-   * `shows_lib.json`
-   * `locations_lib.json`
-   * `horses_lib.json`
-   * `items_lib.json`
-   * `lists_lib.json`
-   * `kits_lib.json` (if used)
-   * `lang/intent_lib.json` (intent only)
-2. Workflow state only in:
-
-   * `lists/started_lists.json`
-   * `lists/archived_lists.json`
-   * `lists/index.json` (derived)
-   * `state.json`
-   * `logs/updates.json`
-3. No code or logic may:
-
-   * depend on nonexistent legacy files,
-   * invent file paths,
-   * reinterpret schema that is not explicitly defined.
-4. Voice / NL:
-
-   * runs entirely off the outside lane + intents,
-   * outputs only whitelisted canonical commands into the runtime layer.
-
-If you want next step text (not code): I can outline the exact JSON shapes for each lib and each runtime file so you can seed them cleanly.
-
-
-We handle both with two simple patterns layered on what we already defined. No new magic, no schema chaos.
-
----
-
-## 1. Notes / comments on a packing list
-
-Concept: comments are runtime-only annotations. They never change inventory. They do not touch libs.
-
-Use two levels:
-
-1. **Show-level comments**
-
-Attach to the show container in `started_lists.json`:
-
-* Use to capture global notes: “Second truck leaves Wednesday 3pm”, “Vet check at 7:00”.
-
-Shape (conceptual, not code):
-
-* `show.comments: [ comment ]`
-
-Where each `comment`:
-
-* `id`: stable id
-* `ts`: ISO
-* `by`: short label (“Sam”, “Groom1”, device)
-* `text`: comment body
-* `scope`: `"show"`
-* `pinned`: optional `true | false` if you want “always show this”
-
-2. **List-level comments**
-
-Attach to a specific list within that show:
-
-* For notes like “Use soft shipping boots for Romeo” on the tack list.
-
-Shape:
-
-* `show.lists[list_name].comments: [ comment ]`
-
-Fields same, but:
-
-* `scope`: `"list"`
-* Maybe `list_name` duplicated in the comment for clarity.
-
-3. **Item-level quick notes**
-
-For “this specific item needs special handling” you have two clean options:
-
-* Inline: `item.note` (short, overwriteable description).
-* Threaded: `item.comments: [ comment ]` if you need multiple remarks.
-
-Voice examples:
-
-* “Add a comment to this packing list: second rig Friday at noon.”
-
-  * → append a list-level comment on the active list.
-* “Note on Romeo’s saddle: use show pad only.”
-
-  * → set `item.note` or add an item-level comment.
-
-No effect on counts or states. Pure metadata.
-
----
-
-## 2. Non-inventory line items on a packing list
-
-These are “things to remember” that behave list-like but are not part of `items_lib`. They must:
-
-* Be visible in the list.
-* Be trackable (packed / not / skipped) if you want.
-* Never silently pollute the global catalog.
-
-Pattern: treat them as items with `is_custom: true` and no `item_id`.
-
-Shape:
-
-For each list’s `items[]` you already have normal entries. Add support for:
-
-* `item_id`: `null` (not from `items_lib`)
-* `name`: free text label from the user
-* `is_custom`: `true`
-* `source`: `"manual"` (vs `"lib"` or `"kit"`)
-* Same status fields:
-
-  * `to_take`, `to_bring_home`
-  * optional `qty_planned`, `qty_packed_to_take`, etc.
-* Optional `note` / `comments[]` like any other item.
-* Optional `for_horse_id` if the custom line is horse-specific.
-
-Voice examples:
-
-* “Add a non-inventory line: pick up stall cards from office.”
-
-  * → add one `is_custom: true` item on the active list.
-* “Add ‘reserve golf cart’ to this packing list.”
-
-  * → same: a custom line, can be checked off when done.
-* “Mark ‘pick up stall cards’ packed.”
-
-  * → set its `to_take` or `to_bring_home` like a normal item.
-
-Rules to keep it clean:
-
-* Custom lines:
-
-  * Do not auto-sync into `items_lib.json`.
-  * Only become canonical if there is an explicit action later (“promote this to standard item”), which is a separate, deliberate operation.
-* They appear in summaries (e.g. “left to pack: 3 items, including: pick up stall cards”).
-* They respect the same list state transitions if you choose (you can require they be resolved before `away/complete`).
-
----
-
-## 3. How this fits the model
-
-* Libs stay strict: all canonical names, aliases, language, etc. No comments, no ad hoc lines.
-* Runtime (`started_lists.json` etc.) owns:
-
-  * comments (show / list / item),
-  * custom line-items (non-inventory),
-  * full pack/return state.
-* Voice layer:
-
-  * “add a comment…” → append to `comments`.
-  * “add X to list”:
-
-    * if matches `items_lib` → normal inventory item.
-    * if not, and user phrasing indicates note/task → create `is_custom: true` line-item.
-    * stays inside this small domain; no outside topics.
-
-If you want, next step I can specify the exact fields for `comment` objects and `custom item` entries so your expeditor and command route can treat them predictably, still without code.
-
+This is the locked model. Anything not backed by these files or routes is out of bounds.
