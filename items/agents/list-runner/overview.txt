@@ -352,3 +352,136 @@ Concrete constraints to follow going forward:
    * outputs only whitelisted canonical commands into the runtime layer.
 
 If you want next step text (not code): I can outline the exact JSON shapes for each lib and each runtime file so you can seed them cleanly.
+
+
+We handle both with two simple patterns layered on what we already defined. No new magic, no schema chaos.
+
+---
+
+## 1. Notes / comments on a packing list
+
+Concept: comments are runtime-only annotations. They never change inventory. They do not touch libs.
+
+Use two levels:
+
+1. **Show-level comments**
+
+Attach to the show container in `started_lists.json`:
+
+* Use to capture global notes: “Second truck leaves Wednesday 3pm”, “Vet check at 7:00”.
+
+Shape (conceptual, not code):
+
+* `show.comments: [ comment ]`
+
+Where each `comment`:
+
+* `id`: stable id
+* `ts`: ISO
+* `by`: short label (“Sam”, “Groom1”, device)
+* `text`: comment body
+* `scope`: `"show"`
+* `pinned`: optional `true | false` if you want “always show this”
+
+2. **List-level comments**
+
+Attach to a specific list within that show:
+
+* For notes like “Use soft shipping boots for Romeo” on the tack list.
+
+Shape:
+
+* `show.lists[list_name].comments: [ comment ]`
+
+Fields same, but:
+
+* `scope`: `"list"`
+* Maybe `list_name` duplicated in the comment for clarity.
+
+3. **Item-level quick notes**
+
+For “this specific item needs special handling” you have two clean options:
+
+* Inline: `item.note` (short, overwriteable description).
+* Threaded: `item.comments: [ comment ]` if you need multiple remarks.
+
+Voice examples:
+
+* “Add a comment to this packing list: second rig Friday at noon.”
+
+  * → append a list-level comment on the active list.
+* “Note on Romeo’s saddle: use show pad only.”
+
+  * → set `item.note` or add an item-level comment.
+
+No effect on counts or states. Pure metadata.
+
+---
+
+## 2. Non-inventory line items on a packing list
+
+These are “things to remember” that behave list-like but are not part of `items_lib`. They must:
+
+* Be visible in the list.
+* Be trackable (packed / not / skipped) if you want.
+* Never silently pollute the global catalog.
+
+Pattern: treat them as items with `is_custom: true` and no `item_id`.
+
+Shape:
+
+For each list’s `items[]` you already have normal entries. Add support for:
+
+* `item_id`: `null` (not from `items_lib`)
+* `name`: free text label from the user
+* `is_custom`: `true`
+* `source`: `"manual"` (vs `"lib"` or `"kit"`)
+* Same status fields:
+
+  * `to_take`, `to_bring_home`
+  * optional `qty_planned`, `qty_packed_to_take`, etc.
+* Optional `note` / `comments[]` like any other item.
+* Optional `for_horse_id` if the custom line is horse-specific.
+
+Voice examples:
+
+* “Add a non-inventory line: pick up stall cards from office.”
+
+  * → add one `is_custom: true` item on the active list.
+* “Add ‘reserve golf cart’ to this packing list.”
+
+  * → same: a custom line, can be checked off when done.
+* “Mark ‘pick up stall cards’ packed.”
+
+  * → set its `to_take` or `to_bring_home` like a normal item.
+
+Rules to keep it clean:
+
+* Custom lines:
+
+  * Do not auto-sync into `items_lib.json`.
+  * Only become canonical if there is an explicit action later (“promote this to standard item”), which is a separate, deliberate operation.
+* They appear in summaries (e.g. “left to pack: 3 items, including: pick up stall cards”).
+* They respect the same list state transitions if you choose (you can require they be resolved before `away/complete`).
+
+---
+
+## 3. How this fits the model
+
+* Libs stay strict: all canonical names, aliases, language, etc. No comments, no ad hoc lines.
+* Runtime (`started_lists.json` etc.) owns:
+
+  * comments (show / list / item),
+  * custom line-items (non-inventory),
+  * full pack/return state.
+* Voice layer:
+
+  * “add a comment…” → append to `comments`.
+  * “add X to list”:
+
+    * if matches `items_lib` → normal inventory item.
+    * if not, and user phrasing indicates note/task → create `is_custom: true` line-item.
+    * stays inside this small domain; no outside topics.
+
+If you want, next step I can specify the exact fields for `comment` objects and `custom item` entries so your expeditor and command route can treat them predictably, still without code.
+
