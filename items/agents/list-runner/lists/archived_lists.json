@@ -1,14 +1,29 @@
 {
-  "version": "1.0",
   "lists": [
     {
-      "list_id": "200000034:tack",
-      "show_id": 200000034,
-      "list_type": "tack",
-      "name": "Tack",
-      "state": "archived",
-      "items": [],
-      "archived_at": "2025-11-12T00:00:00Z"
+      "list_id": "lst_7001_tack",
+      "_active": false,
+      "_inactive_reason": "archived",
+      "_inactive_at": "2025-11-01T12:00:00Z",
+      "_created_by": "system",
+      "_created_at": "2025-10-20T10:00:00Z",
+      "name": "tack",
+      "aliases": [],
+      "misspells": [],
+      "spanish_translate": null,
+      "tags": [],
+      "nicknames": [],
+      "notes": "",
+      "show_id": 7001,
+      "home_location_id": "barn_main",
+      "away_location_id": "wec_ocala",
+      "horse_ids": ["romeo"],
+      "kind": "packing",
+      "phase": "complete",
+      "status": "archived",
+      "lines": []
     }
-  ]
+  ],
+  "generated_at": "2025-11-11T18:05:05Z"
 }
+
