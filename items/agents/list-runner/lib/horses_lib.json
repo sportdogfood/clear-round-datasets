@@ -1,73 +1,133 @@
 {
   "version": "1.0",
-  "horses": [
-    {
-      "horse_id": 149535,
-      "horse_name": "ROMEO",
-      "aliases": null,
-      "misspells": ["ROMO", "ROMOEO"],
-      "spanish": null,
-      "tags": ["string", "show"],
-      "bin_home": "H-ROMEO",
-      "bin_away": "H-ROMEO-AWAY",
-      "type": "horse",
-      "sub_type": "jumper",
-      "created_at": "2025-11-01T00:00:00.000Z",
-      "inactive_at": null,
-      "active": true,
-      "reason": null,
-      "by_user": null
-    },
-    {
-      "horse_id": 138724,
-      "horse_name": "DE LOREAN",
-      "aliases": ["DELOREAN"],
-      "misspells": ["DELORIAN"],
-      "spanish": null,
-      "tags": ["show"],
-      "bin_home": "H-DELOREAN",
-      "bin_away": "H-DELOREAN-AWAY",
-      "type": "horse",
-      "sub_type": "jumper",
-      "created_at": "2025-11-01T00:00:00.000Z",
-      "inactive_at": null,
-      "active": true,
-      "reason": null,
-      "by_user": null
-    },
-    {
-      "horse_id": 200000906,
-      "horse_name": "KBS BANNA STRAND",
-      "aliases": ["BANNA STRAND"],
-      "misspells": null,
-      "spanish": null,
-      "tags": ["show"],
-      "bin_home": "H-BANNA",
-      "bin_away": "H-BANNA-AWAY",
-      "type": "horse",
-      "sub_type": "jumper",
-      "created_at": "2025-11-01T00:00:00.000Z",
-      "inactive_at": null,
-      "active": true,
-      "reason": null,
-      "by_user": null
-    },
-    {
-      "horse_id": 149416,
-      "horse_name": "QUIDAM'S REVEAL",
-      "aliases": ["QUIDAMS REVEAL"],
-      "misspells": ["QUIDAMS"],
-      "spanish": null,
-      "tags": ["show"],
-      "bin_home": "H-QUIDAM",
-      "bin_away": "H-QUIDAM-AWAY",
-      "type": "horse",
-      "sub_type": "jumper",
-      "created_at": "2025-11-01T00:00:00.000Z",
-      "inactive_at": null,
-      "active": true,
-      "reason": null,
-      "by_user": null
-    }
-  ]
+  "horses": 
+  
+  [
+  {
+    "horse_id": "romeo",
+    "_active": true,
+    "_inactive_reason": null,
+    "_inactive At": null,
+    "_created By": "sys_seed",
+    "_created At": "2025-10-14T12:00:00",
+    "name": "Romeo",
+    "aliases": "romeo",
+    "misspells": [
+      "romeu",
+      "romeo"
+    ],
+    "spanish_translate": "Romeo",
+    "tags": [
+      "jumper",
+      "class-horse",
+      "name-len-5"
+    ],
+    "nicknames": null,
+    "notes": "Optional roster record keyed by horse_id.",
+    "show_name": "ROMEO",
+    "barn_name": "Romeo",
+    "rider_ids": null,
+    "riders": null,
+    "back_numbers": 123.0,
+    "pid": null,
+    "sid": null,
+    "hid": 149535,
+    "tid": 19676,
+    "cid": null
+  },
+  {
+    "horse_id": "delorean",
+    "_active": true,
+    "_inactive_reason": null,
+    "_inactive At": null,
+    "_created By": null,
+    "_created At": "2025-10-14T12:00:00",
+    "name": "De Lorean",
+    "aliases": "delorean",
+    "misspells": [
+      "delorean",
+      "deolrean"
+    ],
+    "spanish_translate": null,
+    "tags": [
+      "class-horse",
+      "name-len-8"
+    ],
+    "nicknames": null,
+    "notes": null,
+    "show_name": "DE LOREAN",
+    "barn_name": "De Lorean",
+    "rider_ids": null,
+    "riders": null,
+    "back_numbers": null,
+    "pid": null,
+    "sid": null,
+    "hid": 138724,
+    "tid": 19676,
+    "cid": null
+  },
+  {
+    "horse_id": "strand",
+    "_active": true,
+    "_inactive_reason": null,
+    "_inactive At": null,
+    "_created By": null,
+    "_created At": "2025-10-14T12:00:00",
+    "name": "Strand",
+    "aliases": "strand",
+    "misspells": [
+      "strand",
+      "starnd"
+    ],
+    "spanish_translate": null,
+    "tags": [
+      "class-horse",
+      "name-len-6"
+    ],
+    "nicknames": null,
+    "notes": null,
+    "show_name": "KBS BANNA STRAND",
+    "barn_name": "Strand",
+    "rider_ids": null,
+    "riders": null,
+    "back_numbers": null,
+    "pid": null,
+    "sid": null,
+    "hid": 200000906,
+    "tid": 19676,
+    "cid": null
+  },
+  {
+    "horse_id": "quid",
+    "_active": true,
+    "_inactive_reason": null,
+    "_inactive At": null,
+    "_created By": null,
+    "_created At": "2025-10-14T12:00:00",
+    "name": "Quid",
+    "aliases": "quid",
+    "misspells": [
+      "quid",
+      "qiud"
+    ],
+    "spanish_translate": null,
+    "tags": [
+      "class-horse",
+      "name-len-4"
+    ],
+    "nicknames": null,
+    "notes": null,
+    "show_name": "QUIDAM'S REVEAL",
+    "barn_name": "Quid",
+    "rider_ids": null,
+    "riders": null,
+    "back_numbers": null,
+    "pid": null,
+    "sid": null,
+    "hid": 149416,
+    "tid": 19676,
+    "cid": null
+  }
+]
+  
 }
