@@ -1,26 +1,29 @@
 {
-  "summary": {
-    "last_updated": "2025-11-09T20:00:00Z",
-    "total_active_lists": 3,
-    "total_archived_lists": 1
-  },
-  "by_show": {
-    "200000035": {
-      "stalls": {
-        "state": "home",
-        "to_take": { "packed": 0, "not_packed": 1, "not_needed": 0 },
-        "to_bring_home": { "packed": 0, "open": 1 }
-      },
-      "tack": {
-        "state": "home",
-        "to_take": { "packed": 0, "not_packed": 1, "not_needed": 0 },
-        "to_bring_home": { "packed": 0, "open": 1 }
-      },
-      "feed": {
-        "state": "home",
-        "to_take": { "packed": 0, "not_packed": 0, "not_needed": 0 },
-        "to_bring_home": { "packed": 0, "open": 0 }
-      }
+  "lists": [
+    {
+      "list_id": "lst_7129_tack",
+      "show_id": 7129,
+      "list_name": "tack",
+      "status": "open",
+      "counts": { "total": 2, "to_take_remaining": 2, "to_bring_home_remaining": 0 },
+      "updated_at": "2025-11-11T18:05:00Z"
+    },
+    {
+      "list_id": "lst_7129_equipment",
+      "show_id": 7129,
+      "list_name": "equipment",
+      "status": "open",
+      "counts": { "total": 2, "to_take_remaining": 2, "to_bring_home_remaining": 0 },
+      "updated_at": "2025-11-11T18:05:00Z"
+    },
+    {
+      "list_id": "lst_7129_feed",
+      "show_id": 7129,
+      "list_name": "feed",
+      "status": "open",
+      "counts": { "total": 2, "to_take_remaining": 1, "to_bring_home_remaining": 0 },
+      "updated_at": "2025-11-11T18:05:00Z"
     }
-  }
+  ],
+  "generated_at": "2025-11-11T18:05:10Z"
 }
