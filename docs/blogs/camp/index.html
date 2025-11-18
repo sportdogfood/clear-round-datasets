@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Custom Group Adventures for Summer Camps | Clear Round Travel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="Custom group travel planning for summer camps: accommodations, activities, cruises, and all-inclusive resorts, arranged by an experienced camp travel planner."
+  />
+  <style>
+    :root {
+      --crt-primary: #0c2340;
+      --crt-accent: #f4a300;
+      --crt-bg-light: #f7f7f9;
+      --crt-text: #222222;
+      --crt-muted: #6b6b6b;
+      --crt-max-width: 960px;
+      --crt-radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      color: var(--crt-text);
+      background: #ffffff;
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    /* Header */
+
+    header {
+      border-bottom: 1px solid #e3e3e8;
+      background: #ffffff;
+    }
+
+    .crt-header-inner {
+      max-width: var(--crt-max-width);
+      margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .crt-logo-text {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      color: var(--crt-primary);
+    }
+
+    .crt-tagline {
+      font-size: 0.8rem;
+      color: var(--crt-muted);
+    }
+
+    /* Hero */
+
+    .crt-hero {
+      background: radial-gradient(circle at top left, #f8efe4, #ffffff);
+      padding: 48px 20px 40px;
+    }
+
+    .crt-hero-inner {
+      max-width: var(--crt-max-width);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      gap: 32px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .crt-hero-inner {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .crt-kicker {
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      color: var(--crt-accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .crt-hero h1 {
+      margin: 0 0 16px;
+      font-size: 2.1rem;
+      line-height: 1.2;
+      color: var(--crt-primary);
+    }
+
+    .crt-hero p {
+      margin: 0 0 20px;
+      font-size: 0.98rem;
+      color: var(--crt-text);
+    }
+
+    .crt-hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--crt-primary);
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .crt-hero-cta:hover {
+      background: #081529;
+    }
+
+    .crt-hero-note {
+      font-size: 0.8rem;
+      color: var(--crt-muted);
+      margin-top: 6px;
+    }
+
+    .crt-hero-card {
+      background: #ffffff;
+      border-radius: var(--crt-radius);
+      padding: 20px 20px 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid #ececf2;
+    }
+
+    .crt-hero-card h2 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      color: var(--crt-primary);
+    }
+
+    .crt-hero-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--crt-muted);
+    }
+
+    /* Main sections */
+
+    main {
+      padding: 40px 20px 60px;
+    }
+
+    .crt-section {
+      max-width: var(--crt-max-width);
+      margin: 0 auto 40px;
+    }
+
+    .crt-section:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .crt-section h2 {
+      margin: 0 0 16px;
+      font-size: 1.4rem;
+      color: var(--crt-primary);
+    }
+
+    .crt-section p {
+      margin: 0 0 12px;
+      font-size: 0.96rem;
+    }
+
+    .crt-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    @media (min-width: 640px) {
+      .crt-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .crt-card {
+      background: var(--crt-bg-light);
+      border-radius: var(--crt-radius);
+      padding: 18px 18px 16px;
+      border: 1px solid #e4e4ec;
+    }
+
+    .crt-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+      color: var(--crt-primary);
+    }
+
+    .crt-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--crt-text);
+    }
+
+    /* Instagram section */
+
+    .crt-ig-box {
+      background: #ffffff;
+      border-radius: var(--crt-radius);
+      border: 1px dashed #d5d5e0;
+      padding: 16px 16px 14px;
+      font-size: 0.9rem;
+      color: var(--crt-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .crt-ig-box a {
+      color: var(--crt-primary);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Footer */
+
+    footer {
+      border-top: 1px solid #e3e3e8;
+      background: #fafafc;
+      padding: 20px 20px 24px;
+      font-size: 0.8rem;
+      color: var(--crt-muted);
+    }
+
+    .crt-footer-inner {
+      max-width: var(--crt-max-width);
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .crt-footer-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .crt-footer-links a {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Simple vanilla header (no site-wide nav) -->
+  <header>
+    <div class="crt-header-inner">
+      <div>
+        <div class="crt-logo-text">Clear Round Travel</div>
+        <div class="crt-tagline">Group travel planning for summer camps</div>
+      </div>
+      <!-- Optional: add a very small “Back to main site” link -->
+      <div class="crt-tagline">
+        <a href="https://clearroundtravel.com">Back to main site</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="crt-hero">
+    <div class="crt-hero-inner">
+      <div>
+        <div class="crt-kicker">Summer camp group travel</div>
+        <h1>Custom Group Adventures for Summer Camps</h1>
+        <p>
+          Planning summer camp travel is time consuming. Juggling budgets,
+          itineraries, and multiple vendors requires patience, knowledge of each
+          location, and trusted connections. As a certified travel planner and
+          former teen travel director for over 20 years, I know first-hand what
+          goes into planning. Let me take one thing off your plate while you
+          prepare for the upcoming summer.
+        </p>
+        <a
+          class="crt-hero-cta"
+          href="mailto:info@clearroundtravel.com?subject=Camp%20Group%20Travel%20Inquiry"
+        >
+          Start a camp trip inquiry
+        </a>
+        <div class="crt-hero-note">
+          No planning fee for camps – my commission is paid by the vendors.
+        </div>
+      </div>
+      <aside class="crt-hero-card">
+        <h2>How this works</h2>
+        <p>
+          Share your camp dates, age groups, budget range, and a rough idea of
+          where you’d like to go. I’ll build options, compare vendors, and help
+          you lock in a trip that fits your schedule and risk tolerance.
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <main>
+    <!-- What we can book -->
+    <section class="crt-section" id="services">
+      <h2>What we can book</h2>
+      <div class="crt-grid crt-grid-2">
+        <article class="crt-card">
+          <h3>Accommodations</h3>
+          <p>
+            From luxury resorts and villas to value-driven hotels, I work with
+            properties that understand camp groups, rooming lists, curfews, and
+            supervision needs – and help negotiate group rates and inclusions.
+          </p>
+        </article>
+
+        <article class="crt-card">
+          <h3>Activities &amp; Tours</h3>
+          <p>
+            Private city tours, hands-on museums, national parks, adventure
+            parks, and more. Whether you’re in DC, Tennessee, or beyond, I’ll
+            build age-appropriate, high-impact itineraries that keep counselors
+            and parents comfortable.
+          </p>
+        </article>
+
+        <article class="crt-card">
+          <h3>Cruises</h3>
+          <p>
+            Five-day Bahamas cruise with 50 teens? We’ll plan cabin blocks,
+            private events on board, and the logistics before and after the
+            sailing so the experience is smooth from bus to ship and back.
+          </p>
+        </article>
+
+        <article class="crt-card">
+          <h3>All-Inclusive Resorts</h3>
+          <p>
+            Beach Olympics, snorkeling, and large-group meals all under one
+            roof. I’ll match your camp’s budget and risk profile to the right
+            resort partners and help secure the dates you need.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Instagram / social -->
+    <section class="crt-section" id="instagram">
+      <h2>Instagram</h2>
+      <div class="crt-ig-box">
+        <span>
+          Follow along as we share camp-style itineraries, packing tips, and
+          behind-the-scenes travel planning.
+        </span>
+        <!-- Replace href with your actual handle -->
+        <a href="https://www.instagram.com/" target="_blank" rel="noreferrer">
+          View on Instagram
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Simple footer -->
+  <footer>
+    <div class="crt-footer-inner">
+      <div>Copyright © 2025 Clear Round Travel - All Rights Reserved.</div>
+      <div class="crt-footer-links">
+        <!-- Optional privacy/cookie links if you want them later -->
+        <!-- <a href="#">Privacy</a>
+        <a href="#">Cookies</a> -->
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
