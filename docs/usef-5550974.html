@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>USEF Dashboard – 5550974</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 1.5rem;
+      background: #111827;
+      color: #e5e7eb;
+    }
+    h1, h2 {
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.9rem;
+    }
+    .card {
+      background: #020617;
+      border: 1px solid #1f2937;
+      border-radius: 0.75rem;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+    .card-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #9ca3af;
+      margin-bottom: 0.15rem;
+    }
+    .card-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    .card-sub {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-top: 0.2rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 0.75rem;
+      border: 1px solid #1f2937;
+      background: #020617;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+      font-size: 0.85rem;
+    }
+    thead {
+      background: #030712;
+    }
+    th, td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #111827;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      font-weight: 600;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tbody tr:nth-child(even) td {
+      background: #020617;
+    }
+    tbody tr:nth-child(odd) td {
+      background: #020617;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      border: 1px solid #374151;
+      background: #111827;
+      color: #e5e7eb;
+      white-space: nowrap;
+    }
+    .pill-win { border-color: #22c55e; color: #bbf7d0; }
+    .pill-top3 { border-color: #fbbf24; color: #fef3c7; }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.08rem 0.4rem;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      color: #9ca3af;
+      margin-right: 0.2rem;
+      margin-bottom: 0.15rem;
+      white-space: nowrap;
+    }
+
+    .muted { color: #6b7280; }
+    .small { font-size: 0.75rem; }
+
+    #status {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    #status.error {
+      color: #f97373;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <h1>USEF Results Dashboard – Rider 5550974</h1>
+      <div id="status">Loading data…</div>
+    </header>
+
+    <section aria-label="Summary">
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">Competitions</div>
+          <div class="card-value" id="stat-competitions">–</div>
+          <div class="card-sub" id="stat-years">–</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Classes</div>
+          <div class="card-value" id="stat-classes">–</div>
+          <div class="card-sub" id="stat-sections">–</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Wins</div>
+          <div class="card-value" id="stat-wins">–</div>
+          <div class="card-sub small">First-place finishes</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Top 3</div>
+          <div class="card-value" id="stat-top3">–</div>
+          <div class="card-sub small">Placings 1–3</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Average Field Size</div>
+          <div class="card-value" id="stat-avg-entries">–</div>
+          <div class="card-sub small">Across classes with entry counts</div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Class detail">
+      <h2>Class Detail</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Competition</th>
+              <th>Dates / Zone</th>
+              <th>Section</th>
+              <th>Class</th>
+              <th>Horse</th>
+              <th>Placing</th>
+              <th>Entries</th>
+              <th>Media</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- rows injected via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (async function () {
+      const DATA_URL = "https://blog.clearroundtravel.com/data/usef/people/5550974.json";
+
+      const $ = (id) => document.getElementById(id);
+
+      function parseIntSafe(v) {
+        const n = parseInt(String(v).replace(/[^0-9-]/g, ""), 10);
+        return Number.isNaN(n) ? null : n;
+      }
+
+      function formatDate(d) {
+        if (!d) return "";
+        const dt = new Date(d);
+        if (Number.isNaN(dt.getTime())) return d;
+        return dt.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        });
+      }
+
+      function htmlEscape(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      try {
+        const res = await fetch(DATA_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+
+        const competitions =
+          (data && data.state && Array.isArray(data.state.competitions) && data.state.competitions) ||
+          (Array.isArray(data.competitions) && data.competitions) ||
+          [];
+
+        if (!competitions.length) {
+          $("status").textContent = "No competition data found in payload.";
+          return;
+        }
+
+        // Flatten classes into rows
+        const classRows = [];
+        const yearsSet = new Set();
+        const sectionsSet = new Set();
+
+        for (const comp of competitions) {
+          if (comp.year) yearsSet.add(comp.year);
+          const compName = comp.competitionName || comp.name || "";
+          const compState = comp.state || "";
+          const compZone = comp.zone || "";
+          const compStart = comp.start || comp.startDate || "";
+          const compEnd = comp.end || comp.endDate || "";
+          const compUrl = comp.viewUrl || comp.viewURL || "";
+
+          const sections = Array.isArray(comp.sections) ? comp.sections : [];
+          for (const sec of sections) {
+            const sectionName = sec.sectionName || "";
+            const sectionKey = compName + "::" + sectionName;
+            sectionsSet.add(sectionKey);
+
+            const classes = Array.isArray(sec.classes) ? sec.classes : [];
+            for (const cls of classes) {
+              const placingRaw = cls.placing || "";
+              const placingNum = parseIntSafe(placingRaw);
+              const entriesNum = parseIntSafe(cls.entries);
+              const horse = cls.horse || {};
+              const videos = Array.isArray(cls.videos) ? cls.videos : [];
+              const cmpUrl = cls.clipmyhorse_url || "";
+
+              classRows.push({
+                compName,
+                compUrl,
+                compStart,
+                compEnd,
+                compState,
+                compZone,
+                sectionName,
+                classCode: cls.classCode || "",
+                classTitle: cls.classTitle || "",
+                horseName: horse.name || "",
+                placingRaw,
+                placingNum,
+                entriesNum,
+                videoCount: videos.length,
+                clipUrl: cmpUrl
+              });
+            }
+          }
+        }
+
+        classRows.sort((a, b) => {
+          const da = new Date(a.compStart).getTime() || 0;
+          const db = new Date(b.compStart).getTime() || 0;
+          if (da !== db) return da - db;
+          if (a.compName !== b.compName) return a.compName.localeCompare(b.compName);
+          if (a.sectionName !== b.sectionName) return a.sectionName.localeCompare(b.sectionName);
+          return (a.classTitle || "").localeCompare(b.classTitle || "");
+        });
+
+        // Stats
+        const totalComps = competitions.length;
+        const totalClasses = classRows.length;
+        const wins = classRows.filter(r => r.placingNum === 1).length;
+        const top3 = classRows.filter(r => r.placingNum && r.placingNum >= 1 && r.placingNum <= 3).length;
+
+        const entriesWithCounts = classRows.filter(r => typeof r.entriesNum === "number");
+        const avgEntries =
+          entriesWithCounts.length > 0
+            ? (
+                entriesWithCounts.reduce((sum, r) => sum + r.entriesNum, 0) /
+                entriesWithCounts.length
+              ).toFixed(1)
+            : "–";
+
+        $("stat-competitions").textContent = totalComps.toString();
+        $("stat-years").textContent =
+          yearsSet.size > 0 ? "Years: " + Array.from(yearsSet).sort().join(", ") : "Year not set";
+        $("stat-classes").textContent = totalClasses.toString();
+        $("stat-sections").textContent = sectionsSet.size + " sections";
+        $("stat-wins").textContent = wins.toString();
+        $("stat-top3").textContent = top3.toString();
+        $("stat-avg-entries").textContent = avgEntries;
+        $("status").textContent = `Loaded ${totalClasses} classes from ${totalComps} competitions.`;
+
+        // Table rows
+        const tbody = $("table-body");
+        const frag = document.createDocumentFragment();
+
+        for (const row of classRows) {
+          const tr = document.createElement("tr");
+
+          const tdComp = document.createElement("td");
+          const compLabel = document.createElement("div");
+          compLabel.textContent = row.compName || "(No competition name)";
+          const compLink = document.createElement("div");
+          compLink.className = "small muted";
+          if (row.compUrl) {
+            compLink.innerHTML =
+              '<a href="' + htmlEscape(row.compUrl) + '" target="_blank" rel="noopener">USEF page</a>';
+          }
+          tdComp.appendChild(compLabel);
+          tdComp.appendChild(compLink);
+
+          const tdDates = document.createElement("td");
+          const d1 = formatDate(row.compStart);
+          const d2 = formatDate(row.compEnd);
+          tdDates.innerHTML =
+            (d1 && d2 ? d1 + " – " + d2 : d1 || d2 || "") +
+            (row.compState || row.compZone
+              ? '<div class="small muted">' +
+                htmlEscape([row.compState, row.compZone ? "Zone " + row.compZone : ""].filter(Boolean).join(" · ")) +
+                "</div>"
+              : "");
+
+          const tdSection = document.createElement("td");
+          tdSection.textContent = row.sectionName || "";
+
+          const tdClass = document.createElement("td");
+          tdClass.innerHTML =
+            '<div><span class="muted small">' +
+            htmlEscape(row.classCode || "") +
+            "</span> " +
+            htmlEscape(row.classTitle || "") +
+            "</div>";
+
+          const tdHorse = document.createElement("td");
+          tdHorse.textContent = row.horseName || "";
+
+          const tdPlacing = document.createElement("td");
+          const placingSpan = document.createElement("span");
+          placingSpan.textContent = row.placingRaw || "";
+          placingSpan.className = "pill";
+          if (row.placingNum === 1) placingSpan.classList.add("pill-win");
+          else if (row.placingNum && row.placingNum <= 3) placingSpan.classList.add("pill-top3");
+          tdPlacing.appendChild(placingSpan);
+
+          const tdEntries = document.createElement("td");
+          tdEntries.textContent = row.entriesNum != null ? String(row.entriesNum) : "";
+
+          const tdMedia = document.createElement("td");
+          if (row.clipUrl) {
+            const clipTag = document.createElement("span");
+            clipTag.className = "tag";
+            clipTag.innerHTML =
+              '<a href="' + htmlEscape(row.clipUrl) + '" target="_blank" rel="noopener">ClipMyHorse</a>';
+            tdMedia.appendChild(clipTag);
+          }
+          if (row.videoCount > 0) {
+            const vTag = document.createElement("span");
+            vTag.className = "tag";
+            vTag.textContent = row.videoCount + " ring video" + (row.videoCount > 1 ? "s" : "");
+            tdMedia.appendChild(vTag);
+          }
+
+          tr.appendChild(tdComp);
+          tr.appendChild(tdDates);
+          tr.appendChild(tdSection);
+          tr.appendChild(tdClass);
+          tr.appendChild(tdHorse);
+          tr.appendChild(tdPlacing);
+          tr.appendChild(tdEntries);
+          tr.appendChild(tdMedia);
+
+          frag.appendChild(tr);
+        }
+
+        tbody.appendChild(frag);
+      } catch (err) {
+        console.error(err);
+        const statusEl = $("status");
+        statusEl.textContent = "Error loading data: " + err.message;
+        statusEl.classList.add("error");
+      }
+    })();
+  </script>
+</body>
+</html>
