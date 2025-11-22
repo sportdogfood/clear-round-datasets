@@ -1,0 +1,298 @@
+{
+  "meta": {
+    "runner_name": "competition-runner",
+    "version": "1.0.0",
+    "updated_iso": "2025-11-22T00:00:00Z",
+    "notes": "All detailed writing rules live here so instructions.txt can stay small."
+  },
+
+  "rows_sources": {
+    "description": "How the runner gets the competition_payload from Rows.",
+    "competition_payload": {
+      "spreadsheet_id": "GqOwXTcrQ9u14dbdcTxWa",
+      "table_id": "18be0a0d-dbea-43ea-811f-f7bcbf4982d3",
+      "range": "B2:B2",
+      "shape": "single cell containing stringified JSON",
+      "usage": [
+        "Call the Rows GET /values action wired to this table/range.",
+        "Read values[0][0] as a string, then JSON-parse to get competition_payload.",
+        "competition_payload MUST match the creator-abc-collection shape (collections_payload for a single creation_id)."
+      ]
+    }
+  },
+
+  "upstream_example_payloads": {
+    "collections_payload_example_path": "creator-abc-collection.json",
+    "notes": "This path is for human reference/testing; the live runner should normally use Rows."
+  },
+
+  "output_paths": {
+    "description": "Where competition-runner output is intended to live under docs/ when used with docs_commit_bulk.",
+    "competition_output_path_template": "docs/runner/competition-output/{creation_id}.json",
+    "slug_notes": "The host system is responsible for substituting {creation_id} before commit."
+  },
+
+  "brand_profile": {
+    "audience": "competitive hunter/jumper riders",
+    "pov": "First person singular — you, the founder of Clear Round Travel.",
+    "voice": "Upbeat, celebratory, authoritative insider-guide. Confident but approachable, like a magazine column.",
+    "length_style": "2–4 sentence paragraphs, short and tight. No fluff.",
+    "style": "Practical, concrete nouns. Mix enthusiasm with actionable tips. Avoid purple prose.",
+    "we_vs_i": {
+      "use_i": "for personal credibility (show parent, 20+ years travel).",
+      "use_we": "only for brand services (“we can handle hotels for your barn”)."
+    },
+    "keywords": [],
+    "insiders": []
+  },
+
+  "blueprints": {
+    "top_brick_goal": "Create a vivid, travel-brochure top section that spotlights the event, venue, and host city, highlights elite rider caliber, and delivers an exciting, visual, high-energy paragraph.",
+    "hello_intro": {
+      "goal": "Competition-first travel brochure; visual, specific, composed.",
+      "structure": "tell → write → tell",
+      "length": {
+        "min_words": 110,
+        "max_words": 180,
+        "paragraphs": 1
+      },
+      "links": {
+        "required": [
+          "event_official_link",
+          "venue_official_link"
+        ],
+        "rule": "Exactly two markdown links, each used once, woven as proper nouns inside the intro paragraph."
+      },
+      "content_focus": [
+        "Event identity and stature (prestige, reputation, rider caliber).",
+        "Venue visual feel and operations tone (arenas, footing, sightlines, energy).",
+        "Host city in-season feel at a very high level (no logistics lists)."
+      ],
+      "forbidden": [
+        "ticketing, prices, detailed logistics, street-by-street directions, parking, drive times.",
+        "hotel and restaurant names in the intro.",
+        "overt CTA phrasing like 'learn more', 'click here', 'see more'."
+      ]
+    },
+
+    "hello_transition": {
+      "goal": "Bridge from the prestige intro into practical planning (sleep, food, resets, barn basics).",
+      "structure": "tell → write → tell",
+      "length": {
+        "min_words": 40,
+        "max_words": 70,
+        "paragraphs": 1
+      },
+      "content_focus": [
+        "Summarize what the week feels like logistically (pace, windows, reset needs).",
+        "Name the next zones: sleep/stay, dine/food, locale resets, essentials.",
+        "Stay focused on competitors and barns; no tourist brochure."
+      ]
+    },
+
+    "hello_outro": {
+      "goal": "Two-part close for the whole blog: pivot + main.",
+      "pivot": {
+        "length": {
+          "min_words": 35,
+          "max_words": 70,
+          "paragraphs": 1
+        },
+        "job": "Summarize what is now locked in (sleep, food, essentials) and hand off to final reassurance."
+      },
+      "main": {
+        "length": {
+          "min_words": 120,
+          "max_words": 220,
+          "allow_multi_paragraphs": true
+        },
+        "job": "Close in first person, explaining how 'I' / 'we' keep the week running smooth (rooms, dinners, carts, groceries), without adding links.",
+        "links_forbidden": true
+      }
+    },
+
+    "event_block": {
+      "description": "Event-only prestige block derived from competition data.",
+      "fields": [
+        "name",
+        "official_link",
+        "month",
+        "start_date",
+        "end_date",
+        "rating_tags",
+        "rider_caliber",
+        "aliases",
+        "known_for",
+        "vibe",
+        "event_snap",
+        "event_paragraph",
+        "event_hello",
+        "legs",
+        "event_legs"
+      ],
+      "writing_rules": {
+        "snap_length": "18–30 words",
+        "paragraph_length": "60–90 words",
+        "hello_length": "≤ 25 words",
+        "tone": "clean, factual, vivid; competition-forward.",
+        "no_logistics": "no stabling details, barns, schedule tables, hotel/restaurant names, or ticketing."
+      }
+    },
+
+    "venue_block": {
+      "description": "Venue-only block (look, feel, architecture, on-grounds vibe).",
+      "fields": [
+        "name",
+        "official_link",
+        "place_id",
+        "city_state",
+        "venue_acronyms",
+        "venue_aliases",
+        "venue_snap",
+        "venue_paragraph",
+        "venue_hello"
+      ],
+      "writing_rules": {
+        "snap_length": "18–30 words",
+        "paragraph_length": "60–80 words",
+        "hello_length": "≤ 25 words",
+        "focus": [
+          "architecture/materials, layout, footing, light, noise, scale, atmosphere.",
+          "why equestrian professionals read it as serious or elite."
+        ],
+        "forbidden": [
+          "city tourism, event dates, ticketing, hotel/restaurant names."
+        ]
+      }
+    },
+
+    "host_city_in_season": {
+      "description": "City-only seasonal feel, no venues or events, used internally to flavor intro and transition.",
+      "seasons": [
+        "winter",
+        "spring",
+        "summer",
+        "fall"
+      ],
+      "fields_per_season": [
+        "snapshot",
+        "paragraph_80w",
+        "hello_intro_sentence"
+      ],
+      "rules": {
+        "snapshot": {
+          "length": "18–30 words",
+          "job": "One vivid line about season-and-city feel.",
+          "no_greetings": true
+        },
+        "paragraph_80w": {
+          "length": "60–90 words",
+          "job": "In-town feel, brief resets, qualitative season feel; no logistics lists."
+        },
+        "hello_intro_sentence": {
+          "length": "≤ 25 words",
+          "job": "Clean, prestigious opener that can be prepended to a competition intro."
+        },
+        "research": {
+          "city_vibe_only": true,
+          "no_venues_events": true,
+          "no_degrees": true,
+          "logistics_cues_max": 2
+        },
+        "variation": {
+          "different_openers": true,
+          "rotate_syntax": true,
+          "rotate_sensory_axis": [
+            "light",
+            "wind",
+            "scent",
+            "sound",
+            "moisture"
+          ],
+          "avoid_reused_phrases": true
+        }
+      }
+    }
+  },
+
+  "output_contract": {
+    "description": "Shape of the competition_output object the runner must emit for a single creation_id.",
+    "required_root_fields": [
+      "creation_id",
+      "kind",
+      "event",
+      "host_venue",
+      "host_city",
+      "hello",
+      "seo",
+      "brand_usage",
+      "word_counts",
+      "validation"
+    ],
+    "schema": {
+      "creation_id": "string, e.g. 'creator-abc'",
+      "kind": "fixed string 'competition_output'",
+      "event": "object, follows blueprints.event_block.fields",
+      "host_venue": "object, follows blueprints.venue_block.fields",
+      "host_city": {
+        "city": "string",
+        "state": "string",
+        "season": "string",
+        "seasons": "optional nested seasonal detail if available"
+      },
+      "hello": {
+        "intro": "string",
+        "transition": "string",
+        "outro_pivot": "string",
+        "outro_main": "string"
+      },
+      "seo": {
+        "section_title": "string",
+        "meta_description": "string",
+        "open_graph_title": "string",
+        "open_graph_description": "string",
+        "search_title": "string",
+        "search_description": "string"
+      },
+      "brand_usage": {
+        "keywords_used": "string[]",
+        "insiders_used": "string[]",
+        "audience_trait": "string",
+        "intro_template_id": "string",
+        "outro_template_id": "string",
+        "cta_closers": {
+          "stay": "string",
+          "dine": "string",
+          "essentials": "string"
+        },
+        "intro_outro_lockdown_used": "boolean",
+        "intro_outro_lockdown_link": "string"
+      },
+      "word_counts": {
+        "intro": "integer",
+        "transition": "integer",
+        "outro_pivot": "integer",
+        "outro_main": "integer"
+      },
+      "validation": {
+        "status": "string, 'pass' or 'fail'",
+        "warnings": "string[]",
+        "errors": "string[]"
+      }
+    }
+  },
+
+  "runner_steps": [
+    "1) Use Rows action defined in rows_sources.competition_payload to fetch the JSON string for this run.",
+    "2) Parse the JSON to get competition_payload for a single creation_id (e.g. creator-abc).",
+    "3) From competition_payload, derive: (a) event block (spans, legs, rating), (b) venue identity, (c) city + season markers.",
+    "4) Using blueprints.event_block, build event_snap / event_paragraph / event_hello and related metadata.",
+    "5) Using blueprints.venue_block, build venue_snap / venue_paragraph / venue_hello.",
+    "6) Using blueprints.host_city_in_season, either pull existing city-season text or synthesize a compact seasonal feel for the relevant season.",
+    "7) Using blueprints.hello_intro and hello_transition, write intro and transition paragraphs that weave event, venue, and city together at competition scale.",
+    "8) Using blueprints.hello_outro, write outro_pivot and outro_main with no links, in first person where appropriate.",
+    "9) Assemble all pieces into the output_contract.competition_output shape.",
+    "10) Validate word ranges and sections; populate word_counts and validation fields.",
+    "11) Return ONLY the competition_output JSON as the final answer for this run."
+  ]
+}
