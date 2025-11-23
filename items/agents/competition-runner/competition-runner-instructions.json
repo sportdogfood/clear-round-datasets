@@ -1,6 +1,6 @@
 {
   "runner": "competition-runner",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "notes": "Top-brick writer for CRT blogs. Uses collections-payload only; does NOT touch destinations.",
   "io_contract": {
     "input": {
@@ -8,327 +8,102 @@
     },
     "tools": {
       "rows": {
-        "operationId": "getCompetitionPayloadRows",
-        "description": "Fetches all [creation_id, collections_payload_json] rows from the competition table."
+        "operation_id": "getCompetitionPayloadRows",
+        "endpoint": "/spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/18be0a0d-dbea-43ea-811f-f7bcbf4982d3/values/A2:B999",
+        "response": {
+          "root_array_field": "items",
+          "row_shape": [
+            "creation_id",
+            "payload_json_string"
+          ],
+          "selection_rule": "Find first row where row[0] == creation_id; parse row[1] as JSON into collections_payload; if none, stop with error."
+        }
       },
       "crt": {
-        "read_path_blueprint": "agents/competition-runner/competition-runner-instructions.json",
-        "output_path_template": "docs/runner/competition-output.{creation_id}.json"
+        "read": {
+          "operation_id": "items_get",
+          "path_for_blueprint": "agents/competition-runner/competition-runner-instructions.json"
+        },
+        "write": {
+          "operation_id": "docs_commit_bulk",
+          "path_template": "docs/runner/competition-output.{creation_id}.json",
+          "content_type": "application/json"
+        }
       }
     },
     "output": {
       "path_template": "docs/runner/competition-output.{creation_id}.json",
-      "description": "Single JSON object per creation_id with meta + hello + event + venue + host_city + seo + flags. No HTML."
-    }
-  },
-  "collections_payload_contract": {
-    "description": "Expected shape of collections-payload JSON parsed from Rows cell for a given creation_id.",
-    "type": "object",
-    "required": [
-      "creation_id",
-      "span_start_date",
-      "span_end_date",
-      "span_season",
-      "span_season_city_slug",
-      "span_rating",
-      "active_leg_count",
-      "collection_primary"
-    ],
-    "properties": {
-      "creation_id": {
-        "type": "string"
-      },
-      "span_start_date": {
-        "type": "string",
-        "description": "MM/DD/YYYY"
-      },
-      "span_end_date": {
-        "type": "string",
-        "description": "MM/DD/YYYY"
-      },
-      "span_season": {
-        "type": "string"
-      },
-      "span_season_city_slug": {
-        "type": "string"
-      },
-      "span_rating": {
-        "type": "string"
-      },
-      "zoom_start_date": {
-        "type": "string"
-      },
-      "zoom_end_date": {
-        "type": "string"
-      },
-      "zoom_season": {
-        "type": "string"
-      },
-      "zoom_season_city_slug": {
-        "type": "string"
-      },
-      "zoom_rating": {
-        "type": "string"
-      },
-      "active_leg_count": {
-        "type": "integer"
-      },
-      "collection_primary": {
-        "type": "object",
-        "required": [
-          "collection_uid",
-          "collection_title",
-          "base_key",
-          "span_start_date",
-          "span_end_date",
-          "span_season",
-          "span_season_city_slug",
-          "span_rating",
-          "zoom_leg_index",
-          "zoom_leg_key",
-          "zoom_leg_name",
-          "zoom_season",
-          "zoom_start_date",
-          "zoom_end_date",
-          "zoom_season_city_slug",
-          "zoom_rating",
-          "role",
-          "rank",
-          "comps"
-        ],
-        "properties": {
-          "collection_uid": {
-            "type": "string"
-          },
-          "collection_title": {
-            "type": "string"
-          },
-          "base_key": {
-            "type": "string"
-          },
-          "span_start_date": {
-            "type": "string"
-          },
-          "span_end_date": {
-            "type": "string"
-          },
-          "span_season": {
-            "type": "string"
-          },
-          "span_season_city_slug": {
-            "type": "string"
-          },
-          "span_rating": {
-            "type": "string"
-          },
-          "zoom_leg_index": {
-            "type": "integer"
-          },
-          "zoom_leg_key": {
-            "type": "string"
-          },
-          "zoom_leg_name": {
-            "type": "string"
-          },
-          "zoom_season": {
-            "type": "string"
-          },
-          "zoom_start_date": {
-            "type": "string"
-          },
-          "zoom_end_date": {
-            "type": "string"
-          },
-          "zoom_season_city_slug": {
-            "type": "string"
-          },
-          "zoom_rating": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
-          "rank": {
-            "type": "integer"
-          },
-          "comps": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "object",
-              "required": [
-                "comp_uuid",
-                "comp_id",
-                "comp_mgt_id",
-                "venue_uid",
-                "farm_acronym",
-                "link_id",
-                "zone",
-                "base_name",
-                "comp_name",
-                "city",
-                "state",
-                "start_date",
-                "end_date",
-                "base_key",
-                "leg_key",
-                "leg_uuid"
-              ],
-              "properties": {
-                "comp_uuid": {
-                  "type": "string"
-                },
-                "comp_id": {
-                  "type": "string"
-                },
-                "comp_mgt_id": {
-                  "type": "string"
-                },
-                "venue_uid": {
-                  "type": "string"
-                },
-                "rating": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "farm_acronym": {
-                  "type": "string"
-                },
-                "link_id": {
-                  "type": "string"
-                },
-                "zone": {
-                  "type": "string"
-                },
-                "base_name": {
-                  "type": "string"
-                },
-                "comp_name": {
-                  "type": "string"
-                },
-                "city": {
-                  "type": "string"
-                },
-                "state": {
-                  "type": "string"
-                },
-                "start_date": {
-                  "type": "string"
-                },
-                "end_date": {
-                  "type": "string"
-                },
-                "base_key": {
-                  "type": "string"
-                },
-                "leg_key": {
-                  "type": "string"
-                },
-                "leg_uuid": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
-      "collections_support": {
-        "type": "array"
-      },
-      "collections_zoom": {
-        "type": "array"
-      },
-      "collections_list_only": {
-        "type": "array"
-      }
+      "description": "One JSON object per creation_id with meta + hello + event + venue + host_city + seo + flags. No HTML."
     }
   },
   "blueprint": {
     "brand_profile": {
-      "audience": "competitive hunter/jumper riders",
-      "pov": "First person singular — you, the founder of Clear Round Travel.",
-      "voice": "Upbeat, celebratory, authoritative insider-guide. Confident but approachable, like a magazine column.",
-      "style": "Practical, concrete nouns. Mix enthusiasm with actionable tips. Avoid purple prose.",
-      "length": "2–4 sentence paragraphs, short and tight.",
-      "we_vs_i": "Use 'I' for personal credibility; use 'we' only when describing CRT services."
+      "audience": "Time-poor competitive hunter/jumper riders, trainers, and supporter families.",
+      "voice": "Straightforward, magazine-style English. Confident and informed, never slangy or over-hyped.",
+      "pov": "Primarily third-person editorial. Optional light first-person from the CRT founder in the main outro only.",
+      "brand_name_rules": [
+        "Spell the brand as 'Clear Round Travel (CRT)' on first mention in the outro, then 'CRT' only.",
+        "Never invent variants like 'CIRT' or other misspellings."
+      ]
+    },
+    "copy_principles": {
+      "no_typos_or_neologisms": "Do not invent new words or unusual spellings. No 'ryders', 'exhercence', or similar.",
+      "grammar_pass": "Before emitting JSON, silently reread each paragraph and fix spelling and grammar.",
+      "clarity_over_style": "If a phrase sounds odd or unclear, replace it with a simple, literal alternative.",
+      "metaphors": "Use at most one light, familiar image per paragraph; avoid mixed or surreal metaphors.",
+      "geography": "Do not assume beaches, mountains, snow, or desert unless clearly implied by inputs. Use generic but plausible visuals: tree-lined roads, barns, arenas, warm evenings, etc.",
+      "no_filler": "Avoid empty phrases like 'classic travel environment' or 'journal of elegance'. Say what is actually happening or visible."
     },
     "hello_block": {
-      "goal": "Create a vivid, travel-brochure intro that spotlights the event, venue, and host city, highlights elite rider caliber, and delivers an exciting, visual, high-energy paragraph.",
-      "structure": "tell \u2192 write \u2192 tell",
-      "intro": {
-        "words_min": 110,
-        "words_max": 180,
-        "links_required": [
-          "event_official_link",
-          "venue_official_link"
+      "goal": "Create a vivid, competition-first travel-brochure top section that weaves together event, venue, and host city.",
+      "structure": "hello.intro → hello.transition → hello.outro_pivot → hello.outro_main; each builds on the last without repeating the same claim.",
+      "length_targets": {
+        "intro_words": {
+          "min": 120,
+          "max": 180
+        },
+        "transition_words": {
+          "min": 40,
+          "max": 70
+        },
+        "outro_pivot_words": {
+          "min": 35,
+          "max": 70
+        },
+        "outro_main_words": {
+          "min": 130,
+          "max": 220
+        }
+      },
+      "content_rules": {
+        "intro_focus": [
+          "Name and stature of the series or headline leg.",
+          "High-level sense of rider caliber when supported by ratings or known history.",
+          "One or two clean visuals about the venue setting and on-grounds feel.",
+          "A light nod to the host city in season, not full city copy."
         ],
-        "focus": [
-          "event identity and stature",
-          "elite rider caliber (only when supported by inputs)",
-          "venue look/feel and on-grounds atmosphere",
-          "host city in season at a high level"
+        "transition_role": "Bridge from big-picture excitement into planning blocks (stay, dine, locale, essentials); mention sleep, food, resets, and restock at a high level.",
+        "outro_pivot_role": "Summarize how the planning pieces fit together and pivot into a first-person logistics close.",
+        "outro_main_role": "In first person as the CRT founder, explain how CRT handles hotels, meals, essentials, and timing so the week runs like a clear, controlled course.",
+        "links": [
+          "If an event_official_link is available, link the first mention of the event name using markdown [Name](url).",
+          "If a venue_official_link is available, link the first mention of the venue name.",
+          "Never invent URLs. If no link is available, leave the name unlinked."
         ],
         "forbid": [
-          "logistics lists",
-          "step-by-step directions",
-          "prices",
-          "tickets"
-        ],
-        "tone": "Competition-first travel brochure; visual, specific, composed; no hype words."
-      },
-      "transition": {
-        "words_min": 40,
-        "words_max": 70,
-        "role": "Bridge from intro into planning blocks (stay, dine, locale, essentials). Mention sleep, food, resets, and restock at a high level."
-      },
-      "outro": {
-        "pivot": {
-          "words_min": 35,
-          "words_max": 70,
-          "role": "Summarize how planning pieces lock together and hand off into the main close."
-        },
-        "main": {
-          "words_min": 120,
-          "words_max": 220,
-          "allow_multi_paragraph": true,
-          "role": "Logistics-driven, confident close in first person. Emphasize how CRT handles hotels, meals, essentials, and timing so the week reads like clear rounds in sequence."
-        },
-        "links_forbidden": true
-      }
-    },
-    "city_in_season": {
-      "fields": [
-        "snapshot",
-        "paragraph_80w",
-        "hello_intro_sentence"
-      ],
-      "rules": {
-        "snapshot_words_18_30": true,
-        "paragraph_words_60_90": true,
-        "hello_max_25": true,
-        "city_only": true,
-        "no_venues_no_events": true,
-        "no_temps_numbers": true,
-        "logistics_cues_max_per_season": 2,
-        "variation": {
-          "no_greetings": true,
-          "rotate_syntax": true,
-          "rotate_sensory_axis": true,
-          "avoid_repeated_phrases": true
-        },
-        "style": {
-          "snapshot": "One vivid line about the season-and-city feel; 18–30 words.",
-          "paragraph_80w": "60–90 words on visuals, in-town feel, short resets away from barns, qualitative season feel; no logistics lists.",
-          "hello_intro_sentence": "\u2264 25 words; clean, prestigious opener suitable to prepend an intro; no greeting words."
-        }
+          "No bullet lists, timetables, or step-by-step directions.",
+          "No prices, tickets, box office language, or deep parking logistics.",
+          "No copy/paste from event or venue websites; always paraphrase."
+        ]
       }
     },
     "event_block": {
-      "goal": "Event-only prestige copy centered on identity, reputation, rider caliber, and series structure.",
+      "goal": "Event-only prestige copy centered on identity, reputation, rider caliber, and structure.",
       "fields": [
         "name",
+        "official_link",
+        "start_date",
+        "end_date",
         "rating_tags",
         "rider_caliber",
         "aliases",
@@ -338,44 +113,82 @@
         "event_hello_sentence"
       ],
       "rules": {
-        "no_logistics": true,
-        "no_city_copy": true,
-        "no_class_lists": true
+        "source": "Use collections_payload.collection_primary.comps plus any attached event JSON if available. Do not invent new show names.",
+        "no_logistics": "Do not mention stabling, stalls, haul-in, prize lists, or daily schedules.",
+        "no_city_copy": "Keep city language minimal; full city feel belongs in host_city.",
+        "event_paragraph_length": "Aim for 80–130 words.",
+        "event_hello_sentence_max_words": 25
       }
     },
     "venue_block": {
       "goal": "Venue-only copy on setting, layout, architecture, atmosphere, and reputation.",
       "fields": [
         "name",
+        "official_link",
+        "place_id",
+        "city_state",
+        "venue_acronyms",
+        "venue_aliases",
         "venue_snap",
         "venue_paragraph",
-        "venue_hello_sentence",
-        "venue_acronyms",
-        "venue_aliases"
+        "venue_hello_sentence"
       ],
       "rules": {
-        "no_events": true,
-        "no_city_copy": true
+        "no_events": "Do not mention specific shows, weeks, or dates inside the venue block.",
+        "no_city_copy": "Do not drift into off-site restaurants, neighborhoods, or beaches.",
+        "venue_snap_length": "18–30 words; one strong line on how the venue looks and feels.",
+        "venue_paragraph_length": "70–120 words; focus on arenas, footing, concourses, sightlines, and general atmosphere.",
+        "venue_hello_sentence_max_words": 25
       }
-    }
-  },
-  "writing_contract": {
-    "hello": {
-      "must_emit": [
-        "intro",
-        "transition",
-        "outro_pivot",
-        "outro_main"
-      ]
     },
-    "sections": {
-      "event": "Event-only prestige copy; identity, reputation, rider caliber. No logistics or city copy.",
-      "venue": "Venue-only identity and atmosphere. No event or city copy.",
-      "host_city": "City-in-season overlay as described in city_in_season rules."
+    "city_in_season_block": {
+      "goal": "Host-city overlay for the primary season drawn from collections_payload.span_season or zoom_season.",
+      "fields": [
+        "city",
+        "state",
+        "season",
+        "snapshot",
+        "paragraph_80w",
+        "hello_intro_sentence"
+      ],
+      "rules": {
+        "city_only": "No venue names, show names, barns, rings, or specific competitions.",
+        "no_events": "Do not reference classes, divisions, or rings.",
+        "no_weather_numbers": "Describe feel (warm, crisp, humid) without temperatures or degree symbols.",
+        "logistics_cues": "At most two short cues per paragraph (traffic pace, errand timing, mornings vs evenings).",
+        "snapshot_words": {
+          "min": 18,
+          "max": 30
+        },
+        "paragraph_words": {
+          "min": 60,
+          "max": 90
+        },
+        "hello_intro_sentence_max_words": 25,
+        "variation": {
+          "no_greetings": true,
+          "rotate_syntax": true,
+          "rotate_sensory_axis": true,
+          "avoid_repeated_phrases": true
+        }
+      }
     },
-    "language_guards": {
-      "no_star_ratings": true,
-      "no_directions_lexicon": true
+    "seo_block": {
+      "goal": "Derive a small SEO bundle from event + venue + city.",
+      "fields": [
+        "section_title",
+        "meta_description",
+        "open_graph_title",
+        "open_graph_description",
+        "search_title",
+        "search_description"
+      ],
+      "rules": {
+        "section_title": "Short, human-readable H2-style title combining event and venue or city.",
+        "meta_description": "One 18–28 word sentence summarizing the week for riders and families.",
+        "no_keyword_stuffing": "Do not repeat the same phrase more than twice.",
+        "no_first_person": "SEO fields are neutral, not in 'I' voice."
+      }
     }
   },
   "output_schema": {
@@ -414,22 +227,7 @@
             "type": "string"
           },
           "blog_type": {
-            "type": "string",
-            "description": "Expected values for this runner: 'collection-place' or 'collection-place-zoom'."
-          },
-          "source_trace": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "source": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "integer"
-                }
-              }
-            }
+            "type": "string"
           }
         }
       },
@@ -468,12 +266,6 @@
             "type": "string"
           },
           "official_link": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "month": {
             "type": [
               "string",
               "null"
@@ -627,15 +419,6 @@
           "used_founder": {
             "type": "boolean"
           },
-          "used_audiences": {
-            "type": "boolean"
-          },
-          "used_intro_patterns": {
-            "type": "boolean"
-          },
-          "used_outro_templates": {
-            "type": "boolean"
-          },
           "used_city_in_season_rules": {
             "type": "boolean"
           },
@@ -655,7 +438,7 @@
   "validation": {
     "word_targets": {
       "hello_intro": {
-        "min": 110,
+        "min": 120,
         "max": 180
       },
       "hello_transition": {
@@ -667,7 +450,7 @@
         "max": 70
       },
       "hello_outro_main": {
-        "min": 120,
+        "min": 130,
         "max": 220
       },
       "city_snapshot": {
@@ -684,10 +467,10 @@
       }
     },
     "guards": {
-      "intro_no_directions": true,
-      "intro_no_ticketing_cta": true,
       "no_star_ratings_text": true,
-      "no_temperature_numbers": true
+      "no_ticketing_cta": true,
+      "no_temperature_numbers": true,
+      "no_directional_turn_by_turn": true
     }
   }
 }
