@@ -1,0 +1,114 @@
+{
+  "runner": "hub-runner",
+  "version": "1.0.0",
+  "notes": "Stitches together competition-output and destination-output for a single creation_id into a hub-output JSON for downstream blog rendering.",
+  "io_contract": {
+    "input": {
+      "creation_id": "string, required; e.g. 'creator-abc'."
+    },
+    "tools": {
+      "crt": {
+        "items_get": "GET /items/{path}",
+        "docs_get": "GET /docs/{path}",
+        "docs_commit_bulk": "POST /docs/commit-bulk"
+      }
+    },
+    "sources": {
+      "competition_output": "docs/runner/competition-output.{creation_id}.json",
+      "destination_output": "docs/runner/destination-output.{creation_id}.json"
+    },
+    "output": {
+      "path_template": "docs/runner/hub-output.{creation_id}.json",
+      "description": "Hub JSON combining competition-output and destination-output for one creation_id. No new prose is generated here.",
+      "shape": "See output_schema."
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "meta",
+      "competition",
+      "destinations"
+    ],
+    "properties": {
+      "meta": {
+        "type": "object",
+        "required": [
+          "runner",
+          "runner_version",
+          "creation_id",
+          "timestamp_iso",
+          "blog_type",
+          "components"
+        ],
+        "properties": {
+          "runner": {
+            "type": "string",
+            "const": "hub-runner"
+          },
+          "runner_version": {
+            "type": "string",
+            "description": "Copy of this blueprint's version field."
+          },
+          "creation_id": {
+            "type": "string"
+          },
+          "timestamp_iso": {
+            "type": "string",
+            "description": "UTC ISO-8601 timestamp when hub-output was generated."
+          },
+          "blog_type": {
+            "type": "string",
+            "description": "Carried from competition_output.meta.blog_type when available; otherwise 'unknown'."
+          },
+          "components": {
+            "type": "object",
+            "required": [
+              "competition_source",
+              "destinations_source",
+              "partial"
+            ],
+            "properties": {
+              "competition_source": {
+                "type": "string",
+                "description": "Full docs path to competition-output file, e.g. 'docs/runner/competition-output.creator-abc.json'."
+              },
+              "destinations_source": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Full docs path to destination-output file, or null if not found/invalid."
+              },
+              "partial": {
+                "type": "boolean",
+                "description": "true if destinations_source is missing/invalid and destinations=null; false otherwise."
+              }
+            }
+          }
+        }
+      },
+      "competition": {
+        "type": "object",
+        "description": "Verbatim competition-output JSON object for this creation_id (meta + hello + event + venue + host_city + seo + flags)."
+      },
+      "destinations": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "description": "Verbatim destination-output JSON object for this creation_id, or null if the destination-runner has not been executed yet or the file failed to load."
+      }
+    }
+  },
+  "runtime_flow": [
+    "1. Receive input.creation_id and validate that it is a non-empty string.",
+    "2. Read this blueprint via crt.items_get at path 'agents/hub-runner/hub-runner-instructions.json' (for reference only; do not modify it).",
+    "3. Fetch competition-output.{creation_id}.json using crt.docs_get with path 'runner/competition-output.' + creation_id + '.json'. If missing or invalid JSON, abort and do not call docs_commit_bulk.",
+    "4. Fetch destination-output.{creation_id}.json using crt.docs_get with path 'runner/destination-output.' + creation_id + '.json'. If missing or invalid, treat destinations as null and mark components.partial=true.",
+    "5. Build a hub-output object that matches output_schema: populate meta from creation_id, this blueprint's version, current timestamp, and competition_output.meta.blog_type when available; embed the full competition-output under 'competition' and the parsed destination-output (or null) under 'destinations'.",
+    "6. Pretty-print the hub-output JSON, base64-encode the UTF-8 bytes, and call crt.docs_commit_bulk with a single FileItem at 'docs/runner/hub-output.' + creation_id + '.json'.",
+    "7. Return a concise summary indicating the creation_id, whether destinations were present (partial flag), and the docs path that was written."
+  ]
+}
+::contentReference[oaicite:0]{index=0}
