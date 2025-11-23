@@ -8,85 +8,21 @@
     },
     "tools": {
       "rows": {
-        "competition": "GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/18be0a0d-dbea-43ea-811f-f7bcbf4982d3/values/A2:B999",
-        "contract": {
-          "response_shape": {
-            "type": "object",
-            "required": ["items"],
-            "properties": {
-              "items": {
-                "type": "array",
-                "description": "Each row is [creation_id, payload_json_string].",
-                "items": {
-                  "type": "array",
-                  "minItems": 2,
-                  "items": [
-                    { "type": "string", "description": "creation_id" },
-                    { "type": "string", "description": "payload_json (collections-payload for this creation_id)" }
-                  ]
-                }
-              }
-            }
-          },
-          "selection_rule": "Find the first row where row[0] === input.creation_id. Parse row[1] as JSON into collections_payload. If none found, abort with a clear error in meta."
-        }
+        "operationId": "getCompetitionPayloadRows",
+        "description": "Fetches all [creation_id, collections_payload_json] rows from the competition table."
       },
       "crt": {
-        "read": "GET /items/{path}",
-        "write": "POST /docs/commit-bulk",
-        "write_contract": {
-          "path": "docs/runner/competition-output.{creation_id}.json",
-          "content_type": "application/json",
-          "file_item_shape": {
-            "type": "object",
-            "required": ["path", "content_type", "content_base64"],
-            "properties": {
-              "path": {
-                "type": "string",
-                "pattern": "^docs/",
-                "example": "docs/runner/competition-output.creator-abc.json"
-              },
-              "content_type": {
-                "type": "string",
-                "enum": ["application/json"]
-              },
-              "content_base64": {
-                "type": "string",
-                "description": "Base64 of pretty-printed competition-output JSON (UTF-8). No data: prefix."
-              }
-            }
-          },
-          "bulk_commit_request_shape": {
-            "type": "object",
-            "required": ["files"],
-            "properties": {
-              "message": {
-                "type": "string",
-                "description": "Short commit message, e.g. 'publish competition-output.creator-abc'"
-              },
-              "overwrite": {
-                "type": "boolean",
-                "default": true
-              },
-              "files": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 1,
-                "items": { "$ref": "#/io_contract/tools/crt/write_contract/file_item_shape" }
-              }
-            }
-          }
-        }
+        "read_path_blueprint": "agents/competition-runner/competition-runner-instructions.json",
+        "output_path_template": "docs/runner/competition-output.{creation_id}.json"
       }
     },
     "output": {
       "path_template": "docs/runner/competition-output.{creation_id}.json",
-      "description": "Single JSON object per creation_id with meta + hello + event + venue + host_city + seo + flags. No HTML.",
-      "shape": "See output_schema."
+      "description": "Single JSON object per creation_id with meta + hello + event + venue + host_city + seo + flags. No HTML."
     }
   },
   "collections_payload_contract": {
-    "description": "Expected shape of collections-payload JSON parsed from Rows cell Bx for a given creation_id.",
+    "description": "Expected shape of collections-payload JSON parsed from Rows cell for a given creation_id.",
     "type": "object",
     "required": [
       "creation_id",
@@ -99,18 +35,44 @@
       "collection_primary"
     ],
     "properties": {
-      "creation_id": { "type": "string" },
-      "span_start_date": { "type": "string", "description": "MM/DD/YYYY string for overall span start." },
-      "span_end_date": { "type": "string", "description": "MM/DD/YYYY string for overall span end." },
-      "span_season": { "type": "string", "description": "e.g., 'summer'." },
-      "span_season_city_slug": { "type": "string", "description": "e.g., 'summer-wellington'." },
-      "span_rating": { "type": "string", "description": "Human-readable combined rating summary." },
-      "zoom_start_date": { "type": "string" },
-      "zoom_end_date": { "type": "string" },
-      "zoom_season": { "type": "string" },
-      "zoom_season_city_slug": { "type": "string" },
-      "zoom_rating": { "type": "string" },
-      "active_leg_count": { "type": "integer" },
+      "creation_id": {
+        "type": "string"
+      },
+      "span_start_date": {
+        "type": "string",
+        "description": "MM/DD/YYYY"
+      },
+      "span_end_date": {
+        "type": "string",
+        "description": "MM/DD/YYYY"
+      },
+      "span_season": {
+        "type": "string"
+      },
+      "span_season_city_slug": {
+        "type": "string"
+      },
+      "span_rating": {
+        "type": "string"
+      },
+      "zoom_start_date": {
+        "type": "string"
+      },
+      "zoom_end_date": {
+        "type": "string"
+      },
+      "zoom_season": {
+        "type": "string"
+      },
+      "zoom_season_city_slug": {
+        "type": "string"
+      },
+      "zoom_rating": {
+        "type": "string"
+      },
+      "active_leg_count": {
+        "type": "integer"
+      },
       "collection_primary": {
         "type": "object",
         "required": [
@@ -135,28 +97,63 @@
           "comps"
         ],
         "properties": {
-          "collection_uid": { "type": "string" },
-          "collection_title": { "type": "string" },
-          "base_key": { "type": "string" },
-          "span_start_date": { "type": "string" },
-          "span_end_date": { "type": "string" },
-          "span_season": { "type": "string" },
-          "span_season_city_slug": { "type": "string" },
-          "span_rating": { "type": "string" },
-          "zoom_leg_index": { "type": "integer" },
-          "zoom_leg_key": { "type": "string" },
-          "zoom_leg_name": { "type": "string" },
-          "zoom_season": { "type": "string" },
-          "zoom_start_date": { "type": "string" },
-          "zoom_end_date": { "type": "string" },
-          "zoom_season_city_slug": { "type": "string" },
-          "zoom_rating": { "type": "string" },
-          "role": { "type": "string" },
-          "rank": { "type": "integer" },
+          "collection_uid": {
+            "type": "string"
+          },
+          "collection_title": {
+            "type": "string"
+          },
+          "base_key": {
+            "type": "string"
+          },
+          "span_start_date": {
+            "type": "string"
+          },
+          "span_end_date": {
+            "type": "string"
+          },
+          "span_season": {
+            "type": "string"
+          },
+          "span_season_city_slug": {
+            "type": "string"
+          },
+          "span_rating": {
+            "type": "string"
+          },
+          "zoom_leg_index": {
+            "type": "integer"
+          },
+          "zoom_leg_key": {
+            "type": "string"
+          },
+          "zoom_leg_name": {
+            "type": "string"
+          },
+          "zoom_season": {
+            "type": "string"
+          },
+          "zoom_start_date": {
+            "type": "string"
+          },
+          "zoom_end_date": {
+            "type": "string"
+          },
+          "zoom_season_city_slug": {
+            "type": "string"
+          },
+          "zoom_rating": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer"
+          },
           "comps": {
             "type": "array",
             "minItems": 1,
-            "description": "Leg-level competitions included in this collection.",
             "items": {
               "type": "object",
               "required": [
@@ -178,31 +175,74 @@
                 "leg_uuid"
               ],
               "properties": {
-                "comp_uuid": { "type": "string" },
-                "comp_id": { "type": "string" },
-                "comp_mgt_id": { "type": "string" },
-                "venue_uid": { "type": "string" },
-                "rating": { "type": ["string", "null"] },
-                "farm_acronym": { "type": "string" },
-                "link_id": { "type": "string" },
-                "zone": { "type": "string" },
-                "base_name": { "type": "string" },
-                "comp_name": { "type": "string" },
-                "city": { "type": "string" },
-                "state": { "type": "string" },
-                "start_date": { "type": "string" },
-                "end_date": { "type": "string" },
-                "base_key": { "type": "string" },
-                "leg_key": { "type": "string" },
-                "leg_uuid": { "type": "string" }
+                "comp_uuid": {
+                  "type": "string"
+                },
+                "comp_id": {
+                  "type": "string"
+                },
+                "comp_mgt_id": {
+                  "type": "string"
+                },
+                "venue_uid": {
+                  "type": "string"
+                },
+                "rating": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "farm_acronym": {
+                  "type": "string"
+                },
+                "link_id": {
+                  "type": "string"
+                },
+                "zone": {
+                  "type": "string"
+                },
+                "base_name": {
+                  "type": "string"
+                },
+                "comp_name": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "start_date": {
+                  "type": "string"
+                },
+                "end_date": {
+                  "type": "string"
+                },
+                "base_key": {
+                  "type": "string"
+                },
+                "leg_key": {
+                  "type": "string"
+                },
+                "leg_uuid": {
+                  "type": "string"
+                }
               }
             }
           }
         }
       },
-      "collections_support": { "type": "array" },
-      "collections_zoom": { "type": "array" },
-      "collections_list_only": { "type": "array" }
+      "collections_support": {
+        "type": "array"
+      },
+      "collections_zoom": {
+        "type": "array"
+      },
+      "collections_list_only": {
+        "type": "array"
+      }
     }
   },
   "blueprint": {
@@ -212,13 +252,11 @@
       "voice": "Upbeat, celebratory, authoritative insider-guide. Confident but approachable, like a magazine column.",
       "style": "Practical, concrete nouns. Mix enthusiasm with actionable tips. Avoid purple prose.",
       "length": "2–4 sentence paragraphs, short and tight.",
-      "we_vs_i": "Use 'I' for personal credibility; use 'we' only when describing CRT services.",
-      "keywords": [],
-      "insiders": []
+      "we_vs_i": "Use 'I' for personal credibility; use 'we' only when describing CRT services."
     },
     "hello_block": {
       "goal": "Create a vivid, travel-brochure intro that spotlights the event, venue, and host city, highlights elite rider caliber, and delivers an exciting, visual, high-energy paragraph.",
-      "structure": "tell → write → tell",
+      "structure": "tell \u2192 write \u2192 tell",
       "intro": {
         "words_min": 110,
         "words_max": 180,
@@ -283,7 +321,7 @@
         "style": {
           "snapshot": "One vivid line about the season-and-city feel; 18–30 words.",
           "paragraph_80w": "60–90 words on visuals, in-town feel, short resets away from barns, qualitative season feel; no logistics lists.",
-          "hello_intro_sentence": "≤ 25 words; clean, prestigious opener suitable to prepend an intro; no greeting words."
+          "hello_intro_sentence": "\u2264 25 words; clean, prestigious opener suitable to prepend an intro; no greeting words."
         }
       }
     },
@@ -362,10 +400,19 @@
           "blog_type"
         ],
         "properties": {
-          "runner": { "type": "string", "const": "competition-runner" },
-          "runner_version": { "type": "string" },
-          "creation_id": { "type": "string" },
-          "timestamp_iso": { "type": "string" },
+          "runner": {
+            "type": "string",
+            "const": "competition-runner"
+          },
+          "runner_version": {
+            "type": "string"
+          },
+          "creation_id": {
+            "type": "string"
+          },
+          "timestamp_iso": {
+            "type": "string"
+          },
           "blog_type": {
             "type": "string",
             "description": "Expected values for this runner: 'collection-place' or 'collection-place-zoom'."
@@ -375,8 +422,12 @@
             "items": {
               "type": "object",
               "properties": {
-                "source": { "type": "string" },
-                "status": { "type": "integer" }
+                "source": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                }
               }
             }
           }
@@ -391,10 +442,18 @@
           "outro_main"
         ],
         "properties": {
-          "intro": { "type": "string" },
-          "transition": { "type": "string" },
-          "outro_pivot": { "type": "string" },
-          "outro_main": { "type": "string" }
+          "intro": {
+            "type": "string"
+          },
+          "transition": {
+            "type": "string"
+          },
+          "outro_pivot": {
+            "type": "string"
+          },
+          "outro_main": {
+            "type": "string"
+          }
         }
       },
       "event": {
@@ -405,24 +464,60 @@
           "event_hello_sentence"
         ],
         "properties": {
-          "name": { "type": "string" },
-          "official_link": { "type": ["string", "null"] },
-          "month": { "type": ["string", "null"] },
-          "start_date": { "type": ["string", "null"] },
-          "end_date": { "type": ["string", "null"] },
+          "name": {
+            "type": "string"
+          },
+          "official_link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "month": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "end_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "rating_tags": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
-          "rider_caliber": { "type": "string" },
+          "rider_caliber": {
+            "type": "string"
+          },
           "aliases": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
-          "known_for": { "type": "string" },
-          "vibe": { "type": "string" },
-          "event_paragraph": { "type": "string" },
-          "event_hello_sentence": { "type": "string" }
+          "known_for": {
+            "type": "string"
+          },
+          "vibe": {
+            "type": "string"
+          },
+          "event_paragraph": {
+            "type": "string"
+          },
+          "event_hello_sentence": {
+            "type": "string"
+          }
         }
       },
       "venue": {
@@ -434,15 +529,42 @@
           "venue_hello_sentence"
         ],
         "properties": {
-          "name": { "type": "string" },
-          "official_link": { "type": ["string", "null"] },
-          "place_id": { "type": ["string", "null"] },
-          "city_state": { "type": ["string", "null"] },
-          "venue_acronyms": { "type": "string" },
-          "venue_aliases": { "type": "string" },
-          "venue_snap": { "type": "string" },
-          "venue_paragraph": { "type": "string" },
-          "venue_hello_sentence": { "type": "string" }
+          "name": {
+            "type": "string"
+          },
+          "official_link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "place_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "venue_acronyms": {
+            "type": "string"
+          },
+          "venue_aliases": {
+            "type": "string"
+          },
+          "venue_snap": {
+            "type": "string"
+          },
+          "venue_paragraph": {
+            "type": "string"
+          },
+          "venue_hello_sentence": {
+            "type": "string"
+          }
         }
       },
       "host_city": {
@@ -456,37 +578,75 @@
           "hello_intro_sentence"
         ],
         "properties": {
-          "city": { "type": "string" },
-          "state": { "type": "string" },
-          "season": { "type": "string" },
-          "snapshot": { "type": "string" },
-          "paragraph_80w": { "type": "string" },
-          "hello_intro_sentence": { "type": "string" }
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          },
+          "snapshot": {
+            "type": "string"
+          },
+          "paragraph_80w": {
+            "type": "string"
+          },
+          "hello_intro_sentence": {
+            "type": "string"
+          }
         }
       },
       "seo": {
         "type": "object",
         "properties": {
-          "section_title": { "type": "string" },
-          "meta_description": { "type": "string" },
-          "open_graph_title": { "type": "string" },
-          "open_graph_description": { "type": "string" },
-          "search_title": { "type": "string" },
-          "search_description": { "type": "string" }
+          "section_title": {
+            "type": "string"
+          },
+          "meta_description": {
+            "type": "string"
+          },
+          "open_graph_title": {
+            "type": "string"
+          },
+          "open_graph_description": {
+            "type": "string"
+          },
+          "search_title": {
+            "type": "string"
+          },
+          "search_description": {
+            "type": "string"
+          }
         }
       },
       "flags": {
         "type": "object",
         "properties": {
-          "used_founder": { "type": "boolean" },
-          "used_audiences": { "type": "boolean" },
-          "used_intro_patterns": { "type": "boolean" },
-          "used_outro_templates": { "type": "boolean" },
-          "used_city_in_season_rules": { "type": "boolean" },
-          "validation_passed": { "type": "boolean" },
+          "used_founder": {
+            "type": "boolean"
+          },
+          "used_audiences": {
+            "type": "boolean"
+          },
+          "used_intro_patterns": {
+            "type": "boolean"
+          },
+          "used_outro_templates": {
+            "type": "boolean"
+          },
+          "used_city_in_season_rules": {
+            "type": "boolean"
+          },
+          "validation_passed": {
+            "type": "boolean"
+          },
           "validation_warnings": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
@@ -494,13 +654,34 @@
   },
   "validation": {
     "word_targets": {
-      "hello_intro": { "min": 110, "max": 180 },
-      "hello_transition": { "min": 40, "max": 70 },
-      "hello_outro_pivot": { "min": 35, "max": 70 },
-      "hello_outro_main": { "min": 120, "max": 220 },
-      "city_snapshot": { "min": 18, "max": 30 },
-      "city_paragraph_80w": { "min": 60, "max": 90 },
-      "city_hello_intro_sentence": { "min": 1, "max": 25 }
+      "hello_intro": {
+        "min": 110,
+        "max": 180
+      },
+      "hello_transition": {
+        "min": 40,
+        "max": 70
+      },
+      "hello_outro_pivot": {
+        "min": 35,
+        "max": 70
+      },
+      "hello_outro_main": {
+        "min": 120,
+        "max": 220
+      },
+      "city_snapshot": {
+        "min": 18,
+        "max": 30
+      },
+      "city_paragraph_80w": {
+        "min": 60,
+        "max": 90
+      },
+      "city_hello_intro_sentence": {
+        "min": 1,
+        "max": 25
+      }
     },
     "guards": {
       "intro_no_directions": true,
@@ -508,20 +689,5 @@
       "no_star_ratings_text": true,
       "no_temperature_numbers": true
     }
-  },
-  "runtime_flow": {
-    "steps": [
-      "1. Receive input.creation_id.",
-      "2. Call Rows competition GET endpoint and read items (rows) for A2:B999.",
-      "3. Locate the row where row[0] == creation_id. If not found, emit a minimal JSON with meta.error = 'creation_id_not_found' and do NOT attempt to write.",
-      "4. Parse row[1] as JSON into collections_payload. If parse fails, emit meta.error = 'invalid_collections_payload' and stop.",
-      "5. From collections_payload, derive event, venue, and host_city context (dates, city, state, season, rating text, leg names).",
-      "6. Research event/venue/host_city as needed (per upstream tools/policies) and write event, venue, host_city blocks according to blueprint and writing_contract.",
-      "7. Write hello.intro, hello.transition, hello.outro_pivot, hello.outro_main from a single coherent plan for the week (competition-first brochure tone).",
-      "8. Populate seo using the top section (no insider slang).",
-      "9. Assemble competition-output.{creation_id}.json matching output_schema, run lightweight validation (word targets, required fields). Set flags accordingly.",
-      "10. Base64-encode the pretty-printed JSON and POST /docs/commit-bulk with a single file at docs/runner/competition-output.{creation_id}.json, content_type=application/json.",
-      "11. Return the final JSON as the tool result."
-    ]
   }
 }
