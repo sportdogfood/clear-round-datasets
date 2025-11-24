@@ -1,0 +1,200 @@
+{
+  "runner": "competition-runner",
+  "qa_config_version": "0.1.0",
+  "default_mode": "balanced",
+
+  "modes": {
+    "loose": {
+      "description": "Light guardrails; mainly warn on obvious junk but still allow output.",
+      "max_hard_banned_tokens_per_field": 1,
+      "max_name_mismatches": 2,
+      "max_sentence_violations_per_field": 2,
+      "block_on_failure": false
+    },
+    "balanced": {
+      "description": "Recommended for dev; block clearly broken copy, warn on softer issues.",
+      "max_hard_banned_tokens_per_field": 0,
+      "max_name_mismatches": 0,
+      "max_sentence_violations_per_field": 1,
+      "block_on_failure": true
+    },
+    "strict": {
+      "description": "Pre-publish mode; require clean names and sentences everywhere.",
+      "max_hard_banned_tokens_per_field": 0,
+      "max_name_mismatches": 0,
+      "max_sentence_violations_per_field": 0,
+      "block_on_failure": true
+    }
+  },
+
+  "hard_banned_tokens": [
+    "ruddy",
+    "sit-reserved",
+    "kips",
+    "drave-and-park",
+    "drave",
+    "handpy",
+    "stillwind",
+    "showchasing",
+    "nown",
+    "spuplies",
+    "patisseril",
+    "hhttps",
+    "cirt",
+    "wealh",
+    "hinge"
+  ],
+
+  "soft_flag_tokens": [
+    "journal of elegance",
+    "classic travel environment",
+    "clear miles of competition",
+    "calendar of competitive",
+    "show-horse calendar"
+  ],
+
+  "canonical_names": [
+    {
+      "id": "esp_summer_series",
+      "type": "event",
+      "preferred": "ESP Summer Series",
+      "allowed": [
+        "ESP Summer Series",
+        "ESP Summer"
+      ],
+      "forbidden_fragments": [
+        "SSP Summer Series",
+        "SPA Summer Series",
+        "ESP Summer IE"
+      ]
+    },
+    {
+      "id": "wef",
+      "type": "venue",
+      "preferred": "Wellington International",
+      "allowed": [
+        "Wellington International",
+        "WEF",
+        "Wellington Equestrian Festival"
+      ],
+      "forbidden_fragments": [
+        "WEB",
+        "Wealth welcomes"
+      ]
+    },
+    {
+      "id": "wellington_fl",
+      "type": "city",
+      "preferred": "Wellington, FL",
+      "allowed": [
+        "Wellington",
+        "Wellington, FL"
+      ],
+      "forbidden_fragments": []
+    },
+    {
+      "id": "brand_crt",
+      "type": "brand",
+      "preferred": "Clear Round Travel (CRT)",
+      "allowed": [
+        "Clear Round Travel (CRT)",
+        "Clear Round Travel",
+        "CRT"
+      ],
+      "forbidden_fragments": [
+        "CIRT"
+      ]
+    }
+  ],
+
+  "sentence_limits": {
+    "global": {
+      "min_words": 6,
+      "max_words": 35
+    },
+    "fields": {
+      "hello.intro": {
+        "min_words_total": 110,
+        "max_words_total": 190,
+        "min_sentences": 3,
+        "max_sentences": 5
+      },
+      "hello.transition": {
+        "min_words_total": 40,
+        "max_words_total": 80,
+        "min_sentences": 1,
+        "max_sentences": 3
+      },
+      "hello.outro_pivot": {
+        "min_words_total": 35,
+        "max_words_total": 80,
+        "min_sentences": 1,
+        "max_sentences": 3
+      },
+      "hello.outro_main": {
+        "min_words_total": 130,
+        "max_words_total": 230,
+        "min_sentences": 3,
+        "max_sentences": 6
+      },
+      "event.event_paragraph": {
+        "min_words_total": 80,
+        "max_words_total": 140,
+        "min_sentences": 3,
+        "max_sentences": 6
+      },
+      "venue.venue_paragraph": {
+        "min_words_total": 70,
+        "max_words_total": 140,
+        "min_sentences": 3,
+        "max_sentences": 6
+      },
+      "host_city.paragraph_80w": {
+        "min_words_total": 60,
+        "max_words_total": 100,
+        "min_sentences": 2,
+        "max_sentences": 4
+      }
+    }
+  },
+
+  "field_rules": {
+    "hello.intro": {
+      "required_visuals_min": 1,
+      "required_visuals_max": 3,
+      "forbid_questions": true
+    },
+    "hello.transition": {
+      "must_mention": [
+        "sleep",
+        "food",
+        "restock"
+      ]
+    },
+    "hello.outro_main": {
+      "must_contain_brand_id": "brand_crt",
+      "forbid_first_person_in_other_fields": true
+    },
+    "event.name": {
+      "must_match_canonical_id": "esp_summer_series"
+    },
+    "event.known_for": {
+      "forbid_fragments_from_canonical": [
+        "esp_summer_series"
+      ]
+    },
+    "venue.name": {
+      "must_match_one_of": [
+        "Wellington International",
+        "WEF",
+        "Wellington Equestrian Festival"
+      ]
+    },
+    "venue.venue_hello_sentence": {
+      "forbid_fragments": [
+        "Wealth welcomes",
+        "acrid riders"
+      ]
+    }
+  }
+}
