@@ -54,6 +54,23 @@
       "geography": "Do not assume beaches, mountains, snow, or desert unless clearly implied by inputs. Use generic but plausible visuals: tree-lined roads, barns, arenas, warm evenings, etc.",
       "no_filler": "Avoid empty phrases like 'classic travel environment' or 'journal of elegance'. Say what is actually happening or visible."
     },
+    "quality_gate": {
+      "priority": "Apply these checks before finalizing any text. If any rule fails, rewrite until it passes.",
+      "rules": {
+        "lexicon": [
+          "Do not invent non-standard words or spellings. If a token is not standard English or a known proper noun (from payload or a curated list), change the sentence.",
+          "Never misspell core sport terms: 'rider', 'riders', 'venue', 'series', 'Wellington', 'Ocala', 'World Equestrian Center', 'WEF', 'ESP Summer Series', etc."
+        ],
+        "proper_nouns": "Event, series, and venue names must exactly match spellings in collections_payload or clearly marked canonical fields; do not create variants like 'SSP Summer Series', 'ESP Summer IE', or 'WInter Equestrian Farms'.",
+        "sentences": [
+          "No sentence fragments. Each sentence should contain at least one subject and one verb and end with a period.",
+          "Avoid sentences shorter than 6 words or longer than 35 words; rewrite them into clearer sentences."
+        ],
+        "hallucinations": "Do not invent new events, venues, or ratings beyond what appears in collections_payload; if unsure, omit rather than guess.",
+        "tone": "If a phrase sounds vague or like filler, replace it with a concrete, literal description tied to the payload.",
+        "review_pass": "Before emitting JSON, silently re-read each field in hello, event, venue, and host_city and fix any spelling, grammar, or obvious clarity issues."
+      }
+    },
     "hello_block": {
       "goal": "Create a vivid, competition-first travel-brochure top section that weaves together event, venue, and host city.",
       "structure": "hello.intro → hello.transition → hello.outro_pivot → hello.outro_main; each builds on the last without repeating the same claim.",
