@@ -1,1 +1,54 @@
-{"status": "success", "creation_id": "creator-abc"}
+{
+  "meta": {
+    "runner": "destination-runner",
+    "runner_version": "1.0.1",
+    "creation_id": "creator-abc",
+    "timestamp_iso": "2025-11-24T12:00:00Z"
+  },
+  "lanes": {
+    "stay": {
+      "h2_title": "Stay Close to the Show",
+      "paragraph": "Base your week at The Equestrian Hotel[(https://maps.google.com/?cid=15728538072984070206)] for stylish, relaxed comforts and quick access to the rings. The Riding Academy Hotel[https://maps.google.com/?cid=15443201254713929313]] offers a closer, more moderate option, while the Ocala RV Camp Resort[(https://maps.google.com/?cid=2896080737149113405)] provides a peaceful escape within driving distance.",
+      "also_consider": "Also consider: [Springhill Suites(](https://maps.google.com/?cid=6713423633958611846)), [Holiday Inn Express](https://maps.google.com/?cid=6927925009587209303)), [Hilton Ocala(](https://maps.google.com/?cid=934922919620640321)).",
+      "table": [
+        {"label": "Springhill Suites", "url": "https://maps.google.com/?cid=6713423633958611846", "distance_text": "8.2 mi", "duration_text": "14 mins", "tags": ["chain-hotel"]},
+        {"label": "Holiday Inn Express", "url": "https://maps.google.com/?cid=6927925009587209303", "distance_text": "7.9 mi", "duration_text": "14 mins", "tags": ["chain-hotel"]},
+        {"label": "Hilton Ocala", "url": "https://maps.google.com/?cid=934922919620640321", "distance_text": "8.7 mi", "duration_text": "16 mins", "tags": ["chain-hotel"]}
+      ]
+    },
+    "dine": {
+      "h2_title": "Food Between Rounds",
+      "paragraph": "Begin your day with a sw treat at [Emma's Patisserie](https://maps.google.com/?cid=13366247699921278089) for coffee or a sweet treat. Dinner can be a short cart to Stirrups Restaurant[hhttps://maps.google.com/?cid=5581101793901248113]. For a longer meal, the steakhouse [Ipanema Brazilian Steak House](https://maps.google.com/?cid=4561279710775035273) offers a full service experience.",
+      "also_consider": "Also consider: [Marcos Pizza](https://maps.google.com/?cid=177225994602515242)), [Romas Italian Restaurant](https://maps.google.com/?cid=17835897447681867853), [Jersey Mikes Subs](https://maps.google.com/?cid=5394991478095524792).",
+      "table": [
+        {"label": "Marcos Pizza", "url": "https://maps.google.com/?cid=177225994602515242", "distance_text": "8.4 mi", "duration_text": "17 mins", "tags": ["lunch"]},
+        {"label": "Romas Italian Restaurant", "url": "https://maps.google.com/?cid=17835897447681867853", "distance_text": "4.8 mi", "duration_text": "9 mins", "tags": ["lunch"]},
+        {"label": "Jersey Mikes Subs", "url": "https://maps.google.com/?cid=5394991478095524792", "distance_text": "8.7 mi", "duration_text": "15 mins", "tags": ["lunch"]}
+      ]
+    },
+    "essentials": {
+      "h2_title": "Essentials Nearby",
+      "paragraph": "Get supplies and stores covered with feed, health, and gods. The onsite [Publix Super Market](https://maps.google.com/?cid=9425402872657215094) makes shopping simple, while [Contour Saddlery](https://maps.google.com/?cid=7402624918411903144) stocks high-quality equestrian gear, and [Walgreens Pharmacy](https://maps.google.com/?cid=14183509540220545419) provides basic health needs within a short drive.",
+      "also_consider": "Also consider: [Seminole Feed Stores](http://maps.google.com/?cid=14886264627511037563), [Ocala Breeders Feed and Supply](https://maps.google.com/?cid=11663449608065948503), [Jand J Tack Shack](https://maps.google.com/?cid=18219651835231262811).",
+      "table": [
+        {"label": "Publix Super Market", "url": "https://maps.google.com/?cid=9425402872657215094", "distance_text": "4.9 mi", "duration_text": "10 mins", "tags": ["grocery"]},
+        {"label": "Albrights Finest Halters and Leather Goods Of Ocala", "url": "http://www.albrighthalters.com/", "distance_text": "7.6 mi", "duration_text": "13 mins", "tags": ["tack-feed"]},
+        {"label": "Tack Shack Of", "url": "http://www.tackshackocala.com/", "distance_text": "3.9 mi", "duration_text": "7 mins", "tags": ["tack-feed"]}
+      ]
+    }
+  },
+  "seo": {
+    "stay_title": "Places to Stay Near WEC",
+    "stay_description": "Comfortable hotels and RV parks close to World Equestrian Center.",
+    "dine_title": "Good Eating Near WEC",
+    "dine_description": "Combines coffee, quick meals, and a sit-down steak house options.",
+    "essentials_title": "Shop Essentials Nearby",
+    "essentials_description": "Pharmacies, groceries, and feed stores within a drive."
+  },
+  "flags": {
+    "used_feature_items": true,
+    "used_list_only": true,
+    "validation_passed": true,
+    "validation_warnings": []
+  }
+}
