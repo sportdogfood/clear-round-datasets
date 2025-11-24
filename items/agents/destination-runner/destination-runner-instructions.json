@@ -1,448 +1,216 @@
 {
-  "runner": "destination-runner",
-  "version": "1.0.1",
-  "notes": "Bottom-brick writer for CRT blogs. Uses destinations-payload only; does NOT touch competitions.",
+  "runner": "competition-runner",
+  "version": "1.3.0",
+  "notes": "Top-brick writer for CRT blogs. Uses collections-payload only; does NOT touch destinations.",
   "io_contract": {
     "input": {
       "creation_id": "string, required. Example: 'creator-abc'."
     },
     "tools": {
       "rows": {
-        "destination": "GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/52d0a628-4e75-4b93-8acd-121a5e860e2e/values/A2:B999",
-        "contract": {
-          "response_shape": {
-            "type": "object",
-            "required": [
-              "items"
-            ],
-            "properties": {
-              "items": {
-                "type": "array",
-                "description": "Each row is [creation_id, payload_json_string].",
-                "items": {
-                  "type": "array",
-                  "minItems": 2,
-                  "items": [
-                    {
-                      "type": "string",
-                      "description": "creation_id"
-                    },
-                    {
-                      "type": "string",
-                      "description": "payload_json (destinations-payload for this creation_id)"
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "selection_rule": "Find the first row where row[0] === input.creation_id. Parse row[1] as JSON into destinations_payload. If none found, abort with a clear error in meta."
+        "operation_id": "getCompetitionPayloadRows",
+        "endpoint": "/spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/18be0a0d-dbea-43ea-811f-f7bcbf4982d3/values/A2:B999",
+        "response": {
+          "root_array_field": "items",
+          "row_shape": [
+            "creation_id",
+            "payload_json_string"
+          ],
+          "selection_rule": "Find first row where row[0] == creation_id; parse row[1] as JSON into collections_payload; if none, stop with error."
         }
       },
       "crt": {
-        "read": "GET /items/{path}",
-        "write": "POST /docs/commit-bulk",
-        "write_contract": {
-          "path_template": "docs/runner/destination-output.{creation_id}.json",
-          "content_type": "application/json",
-          "file_item_shape": {
-            "type": "object",
-            "required": [
-              "path",
-              "content_type",
-              "content_base64"
-            ],
-            "properties": {
-              "path": {
-                "type": "string",
-                "pattern": "^docs/",
-                "example": "docs/runner/destination-output.creator-abc.json"
-              },
-              "content_type": {
-                "type": "string",
-                "enum": [
-                  "application/json"
-                ]
-              },
-              "content_base64": {
-                "type": "string",
-                "description": "Base64 of pretty-printed destination-output JSON (UTF-8). No data: prefix."
-              }
-            }
-          }
+        "read": {
+          "operation_id": "items_get",
+          "path_for_blueprint": "agents/competition-runner/competition-runner-instructions.json"
+        },
+        "write": {
+          "operation_id": "docs_commit_bulk",
+          "path_template": "docs/runner/competition-output.{creation_id}.json",
+          "content_type": "application/json"
         }
       }
     },
     "output": {
-      "path_template": "docs/runner/destination-output.{creation_id}.json",
-      "description": "Single JSON object per creation_id with meta + lanes (stay/dine/essentials) + seo + flags. No HTML.",
-      "shape": "See output_schema."
-    }
-  },
-  "destinations_payload_contract": {
-    "description": "Expected shape of destinations-payload JSON parsed from Rows cell Bx for a given creation_id.",
-    "type": "object",
-    "required": [
-      "creation_id",
-      "hub_meta",
-      "stay",
-      "dine",
-      "essentials"
-    ],
-    "properties": {
-      "creation_id": {
-        "type": "string"
-      },
-      "hub_meta": {
-        "type": "object",
-        "description": "High-level hub metadata (title overrides, venue_uid, etc.). May contain additional fields."
-      },
-      "stay": {
-        "type": "object",
-        "required": [
-          "feature",
-          "list-only"
-        ],
-        "properties": {
-          "feature": {
-            "type": "array",
-            "items": {
-              "$ref": "#/destinations_payload_contract/definitions/destination_item"
-            }
-          },
-          "list-only": {
-            "type": "array",
-            "items": {
-              "$ref": "#/destinations_payload_contract/definitions/destination_item"
-            }
-          }
-        }
-      },
-      "dine": {
-        "type": "object",
-        "required": [
-          "feature",
-          "list-only"
-        ],
-        "properties": {
-          "feature": {
-            "type": "array",
-            "items": {
-              "$ref": "#/destinations_payload_contract/definitions/destination_item"
-            }
-          },
-          "list-only": {
-            "type": "array",
-            "items": {
-              "$ref": "#/destinations_payload_contract/definitions/destination_item"
-            }
-          }
-        }
-      },
-      "essentials": {
-        "type": "object",
-        "required": [
-          "feature",
-          "list-only"
-        ],
-        "properties": {
-          "feature": {
-            "type": "array",
-            "items": {
-              "$ref": "#/destinations_payload_contract/definitions/destination_item"
-            }
-          },
-          "list-only": {
-            "type": "array",
-            "items": {
-              "$ref": "#/destinations_payload_contract/definitions/destination_item"
-            }
-          }
-        }
-      }
-    },
-    "definitions": {
-      "destination_item": {
-        "type": "object",
-        "description": "One place record (stay, dine, or essentials). Additional fields allowed.",
-        "properties": {
-          "creation_id": {
-            "type": "string"
-          },
-          "lane": {
-            "type": "string",
-            "description": "stay | dine | essentials"
-          },
-          "role": {
-            "type": "string",
-            "description": "feature | list-only | support"
-          },
-          "rank": {
-            "type": "integer"
-          },
-          "vertical_lane": {
-            "type": "string",
-            "description": "stay | dine | essentials"
-          },
-          "dine_lane": {
-            "type": "string",
-            "description": "am | lu | pm (for dine lane only)"
-          },
-          "place_uid": {
-            "type": "string"
-          },
-          "place_id": {
-            "type": "string"
-          },
-          "name2": {
-            "type": "string",
-            "description": "Display name"
-          },
-          "entity": {
-            "type": "string",
-            "description": "Hotel, cafe, restaurant, grocery, pharmacy, tack/feed, RV park, etc."
-          },
-          "label": {
-            "type": "string"
-          },
-          "website": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string",
-            "description": "Maps URL"
-          },
-          "distance_bucket": {
-            "type": "string",
-            "description": "walkable | cart | drive | onsite"
-          },
-          "distance_text": {
-            "type": "string"
-          },
-          "duration_text": {
-            "type": "string"
-          },
-          "price_band": {
-            "type": "string"
-          },
-          "price_level": {
-            "type": "integer"
-          },
-          "rating": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "user_ratings_total": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "editorial_overview": {
-            "type": "string"
-          },
-          "menu": {
-            "type": "string",
-            "description": "Short description of core offering or segment."
-          },
-          "top_rated": {
-            "type": "boolean"
-          },
-          "preferred": {
-            "type": "boolean"
-          },
-          "chain_slug": {
-            "type": "string"
-          },
-          "chain_safety": {
-            "type": "string"
-          },
-          "geo_safety": {
-            "type": "string"
-          }
-        }
-      }
+      "path_template": "docs/runner/competition-output.{creation_id}.json",
+      "description": "One JSON object per creation_id with meta + hello + event + venue + host_city + seo + flags. No HTML."
     }
   },
   "blueprint": {
     "brand_profile": {
-      "audience": "competitive hunter/jumper riders and their support crews",
-      "pov": "First person singular as the founder of Clear Round Travel when appropriate; neutral third-person is also acceptable for lane paragraphs.",
-      "voice": "Straightforward, magazine-style travel writing. Visual and concrete without hype.",
-      "style": "Every sentence should be clean, grammatical English. No invented words, no odd spellings, no experimental punctuation.",
-      "we_vs_i": "Use 'I' only when speaking as the founder about CRT's role. Use 'we' only for CRT services. Never write 'CIRT'."
+      "audience": "Time-poor competitive hunter/jumper riders, trainers, and supporter families.",
+      "voice": "Straightforward, magazine-style English. Confident and informed, never slangy or over-hyped.",
+      "pov": "Primarily third-person editorial. Optional light first-person from the CRT founder in the main outro only.",
+      "brand_name_rules": [
+        "Spell the brand as 'Clear Round Travel (CRT)' on first mention in the outro, then 'CRT' only.",
+        "Never invent variants like 'CIRT' or other misspellings."
+      ]
     },
-    "quality_gate": {
-      "priority": "Apply these checks before finalizing any lane text. If any rule fails, rewrite until it passes.",
-      "rules": {
-        "lexicon": [
-          "Do not invent non-standard words or spellings. If a token is not standard English or a known proper noun (from the payload or a curated list), change the sentence.",
-          "Never misspell core terms or place names: 'hotel', 'restaurants', 'Wellington', 'Ocala', 'World Equestrian Center', 'WEC', etc."
+    "copy_principles": {
+      "no_typos_or_neologisms": "Do not invent new words or unusual spellings. No 'ryders', 'exhercence', 'stillwind', 'ruddy networks', or similar.",
+      "grammar_pass": "Before emitting JSON, silently reread each paragraph and fix spelling and grammar.",
+      "clarity_over_style": "If a phrase sounds odd, muddy, or unclear, replace it with a simple, literal alternative.",
+      "metaphors": "Use at most one light, familiar image per paragraph; avoid mixed, surreal, or confusing metaphors.",
+      "geography": "Do not assume beaches, mountains, snow, or desert unless clearly implied by inputs. Use generic but plausible visuals: tree-lined roads, barns, arenas, warm evenings, etc.",
+      "no_filler": "Avoid empty phrases like 'classic travel environment' or 'journal of elegance'. Say what is actually happening or visible.",
+      "no_meta_language": "Do not talk about 'this paragraph', 'this section', or 'in my first-person note'. Speak directly about the event, venue, city, and CRT."
+    },
+    "hello_block": {
+      "goal": "Create a vivid, competition-first travel-brochure top section that weaves together event, venue, and host city.",
+      "structure": "hello.intro → hello.transition → hello.outro_pivot → hello.outro_main; each builds on the last without repeating the same claim.",
+      "length_targets": {
+        "intro_words": {
+          "min": 120,
+          "max": 180
+        },
+        "transition_words": {
+          "min": 40,
+          "max": 70
+        },
+        "outro_pivot_words": {
+          "min": 35,
+          "max": 70
+        },
+        "outro_main_words": {
+          "min": 130,
+          "max": 220
+        }
+      },
+      "content_rules": {
+        "intro_focus": [
+          "Name and stature of the series or headline leg.",
+          "High-level sense of rider caliber when supported by ratings or known history.",
+          "One or two clean visuals about the venue setting and on-grounds feel.",
+          "A light nod to the host city in season, not full city copy."
         ],
-        "proper_nouns": "Venue and place names must exactly match spellings in destinations_payload or clearly marked canonical fields. Do not create variants or abbreviations that are not present in the payload.",
-        "sentences": [
-          "No sentence fragments. Each sentence should contain at least one subject and one verb and end with a period.",
-          "Avoid sentences shorter than 6 words or longer than 35 words; rewrite them into clearer sentences."
+        "transition_role": "Bridge from big-picture excitement into planning blocks (stay, dine, locale, essentials); mention sleep, food, resets, and restock at a high level.",
+        "outro_pivot_role": "Summarize how the planning pieces fit together and pivot into a first-person logistics close.",
+        "outro_main_role": "In first person as the CRT founder, explain how CRT handles hotels, meals, essentials, and timing so the week runs like a clear, controlled course.",
+        "links": [
+          "If an event_official_link is available, link the first mention of the event name using markdown [Name](url).",
+          "If a venue_official_link is available, link the first mention of the venue name.",
+          "Never invent URLs. If no link is available, leave the name unlinked."
         ],
-        "hallucinations": "Do not invent new hotels, restaurants, or essentials beyond what appears in destinations_payload; if unsure, omit rather than guess.",
-        "tone": "If a phrase sounds vague or like filler, replace it with a concrete, literal description tied to how the place is used during a show week.",
-        "review_pass": "Before emitting JSON, silently re-read each lane paragraph and also_consider line and fix any spelling, grammar, or obvious clarity issues."
+        "forbid": [
+          "No bullet lists, timetables, or step-by-step directions.",
+          "No prices, tickets, box office language, or deep parking logistics.",
+          "No copy/paste from event or venue websites; always paraphrase."
+        ]
       }
     },
-    "lanes": {
-      "stay": {
-        "goal": "Help competitors pick a sleep base that makes the week feel effortless.",
-        "h2_rules": {
-          "words_min": 3,
-          "words_max": 6,
-          "examples": [
-            "Where to Stay",
-            "Sleep Near The Rings",
-            "Stay Close To The Show"
-          ]
+    "event_block": {
+      "goal": "Event-only prestige copy centered on identity, reputation, rider caliber, and structure.",
+      "fields": [
+        "name",
+        "official_link",
+        "start_date",
+        "end_date",
+        "rating_tags",
+        "rider_caliber",
+        "aliases",
+        "known_for",
+        "vibe",
+        "event_paragraph",
+        "event_hello_sentence"
+      ],
+      "rules": {
+        "source": "Use collections_payload.collection_primary.comps plus any attached event JSON if available. Do not invent new show names or alter their spelling or casing.",
+        "no_logistics": "Do not mention stabling, stalls, haul-in, prize lists, or daily schedules.",
+        "no_city_copy": "Keep city language minimal; full city feel belongs in host_city.",
+        "event_paragraph_length": "Aim for 80–130 words.",
+        "event_hello_sentence_max_words": 25
+      }
+    },
+    "venue_block": {
+      "goal": "Venue-only copy on setting, layout, architecture, atmosphere, and reputation.",
+      "fields": [
+        "name",
+        "official_link",
+        "place_id",
+        "city_state",
+        "venue_acronyms",
+        "venue_aliases",
+        "venue_snap",
+        "venue_paragraph",
+        "venue_hello_sentence"
+      ],
+      "rules": {
+        "no_events": "Do not mention specific shows, weeks, or dates inside the venue block.",
+        "no_city_copy": "Do not drift into off-site restaurants, neighborhoods, or beaches.",
+        "venue_snap_length": "18–30 words; one strong line on how the venue looks and feels.",
+        "venue_paragraph_length": "70–120 words; focus on arenas, footing, concourses, sightlines, and general atmosphere.",
+        "venue_hello_sentence_max_words": 25
+      }
+    },
+    "city_in_season_block": {
+      "goal": "Host-city overlay for the primary season drawn from collections_payload.span_season or zoom_season.",
+      "fields": [
+        "city",
+        "state",
+        "season",
+        "snapshot",
+        "paragraph_80w",
+        "hello_intro_sentence"
+      ],
+      "rules": {
+        "city_only": "No venue names, show names, barns, rings, or specific competitions.",
+        "no_events": "Do not reference classes, divisions, or rings.",
+        "no_weather_numbers": "Describe feel (warm, crisp, humid) without temperatures or degree symbols.",
+        "logistics_cues": "At most two short cues per paragraph (traffic pace, errand timing, mornings vs evenings).",
+        "snapshot_words": {
+          "min": 18,
+          "max": 30
         },
-        "paragraph_rules": {
-          "words_min": 90,
-          "words_max": 150,
-          "structure": "One or two tightly edited paragraphs.",
-          "content": [
-            "Position featured hotels or RV parks relative to the venue in practical, visual terms.",
-            "Blend 1–2 FEATURE items inline using [Name](url) links.",
-            "Use distance_bucket and duration_text to convey ease of transfer, not in a bullet list.",
-            "Mention on-site vs quick-cart vs short-drive when supported.",
-            "No room types, no rates, no amenity lists."
-          ]
+        "paragraph_words": {
+          "min": 60,
+          "max": 90
         },
-        "also_consider_rules": {
-          "required": true,
-          "format": "Single sentence starting with 'Also consider:'.",
-          "items_min": 1,
-          "items_max": 3,
-          "inline_links": true
-        },
-        "table_rules": {
-          "source": "list-only only",
-          "row_fields": [
-            "label",
-            "url",
-            "distance_text",
-            "duration_text",
-            "tags"
-          ],
-          "tags_logic": "Derive tags from entity/menu/vertical_lane (e.g., 'on-site hotel', 'rv-park', 'boutique', 'chain')."
+        "hello_intro_sentence_max_words": 25,
+        "variation": {
+          "no_greetings": true,
+          "rotate_syntax": true,
+          "rotate_sensory_axis": true,
+          "avoid_repeated_phrases": true
         }
-      },
-      "dine": {
-        "goal": "Map out easy food and coffee around the show week.",
-        "h2_rules": {
-          "words_min": 3,
-          "words_max": 6,
-          "examples": [
-            "Where To Eat",
-            "Coffee and Meals",
-            "Food Between Rounds"
-          ]
-        },
-        "paragraph_rules": {
-          "words_min": 90,
-          "words_max": 150,
-          "structure": "One or two tightly edited paragraphs.",
-          "content": [
-            "Use dine_lane when present to thread breakfast/coffee, lunch, and dinner into a logical arc.",
-            "Blend 1–3 FEATURE stops inline as [Name](url) links.",
-            "Mention only the most important menu cues (e.g., 'quick breakfast sandwiches', 'casual tacos', 'sit-down steakhouse').",
-            "No long lists of dishes, no pricing, no foodie adjectives stack."
-          ]
-        },
-        "also_consider_rules": {
-          "required": true,
-          "format": "Single sentence starting with 'Also consider:'.",
-          "items_min": 1,
-          "items_max": 4,
-          "inline_links": true
-        },
-        "table_rules": {
-          "source": "list-only only",
-          "row_fields": [
-            "label",
-            "url",
-            "distance_text",
-            "duration_text",
-            "tags"
-          ],
-          "tags_logic": "Derive tags from menu/dine_lane (e.g., 'coffee', 'breakfast', 'lunch', 'dinner', 'late-night')."
-        }
-      },
-      "essentials": {
-        "goal": "Give riders a calm sense that pharmacy, grocery, tack-feed, and RV support are handled.",
-        "h2_rules": {
-          "words_min": 3,
-          "words_max": 6,
-          "examples": [
-            "Essentials Nearby",
-            "Restock and Reset",
-            "Pharmacy, Feed, Groceries"
-          ]
-        },
-        "paragraph_rules": {
-          "words_min": 80,
-          "words_max": 130,
-          "structure": "One paragraph.",
-          "content": [
-            "Highlight at most two FEATURE essentials: typically one tack/feed or RV park and one pharmacy or grocery.",
-            "Make it clear what each spot is for (e.g., 'late-night pharmacy', 'full grocery run', 'specialized feed store').",
-            "Use distance_text and duration_text only to support a sense of calm timing, not as bullets."
-          ]
-        },
-        "also_consider_rules": {
-          "required": true,
-          "format": "Single sentence starting with 'Also consider:'.",
-          "items_min": 1,
-          "items_max": 3,
-          "inline_links": true
-        },
-        "table_rules": {
-          "source": "list-only only",
-          "row_fields": [
-            "label",
-            "url",
-            "distance_text",
-            "duration_text",
-            "tags"
-          ],
-          "tags_logic": "Focus tags on 'pharmacy', 'grocery', 'tack-feed', 'rv-park', 'urgent-care'."
-        }
+      }
+    },
+    "seo_block": {
+      "goal": "Derive a small SEO bundle from event + venue + city.",
+      "fields": [
+        "section_title",
+        "meta_description",
+        "open_graph_title",
+        "open_graph_description",
+        "search_title",
+        "search_description"
+      ],
+      "rules": {
+        "section_title": "Short, human-readable H2-style title combining event and venue or city.",
+        "meta_description": "One 18–28 word sentence summarizing the week for riders and families.",
+        "no_keyword_stuffing": "Do not repeat the same phrase more than twice.",
+        "no_first_person": "SEO fields are neutral, not in 'I' voice."
       }
     }
   },
-  "writing_contract": {
-    "language_guards": {
-      "no_made_up_words": true,
-      "no_obvious_misspellings": true,
-      "no_star_ratings_text": true,
-      "no_temperature_numbers": true
-    },
-    "links": {
-      "syntax": "Use markdown-style inline links: [Name](https://example.com). No raw HTML tags.",
-      "max_links_per_paragraph": 4
-    },
-    "style": {
-      "tone": "travel-brochure but grounded in reality.",
-      "register": "conversational but precise.",
-      "forbid": [
-        "over-the-top hype adjectives",
-        "second-person commands like 'You must'.",
-        "long comma chains."
-      ]
-    }
+  "quality_gate": {
+    "rules": [
+      "After drafting hello, event, venue, host_city, and seo text, do a second pass sentence by sentence. If any sentence reads like a fragment or is missing a clear subject and verb, rewrite it before emitting JSON.",
+      "Do not use words that are not standard English or clearly recognizable proper nouns from the payload. If such a word appears (for example 'ruddy networks', 'stillwind', 'kips the focus'), rewrite or replace the whole sentence.",
+      "Never invent or alter canonical names for events or venues. For event.name and any first mention of the event in prose, copy the spelling and casing from the payload. For venue.name, use the canonical venue name from the payload or a curated lookup only; do not create new combinations like 'SPA Summer Series', 'Wellington Equestrian Festival' or 'WEB'.",
+      "Never introduce meta phrases about the act of writing (no 'in my first-person note', 'this paragraph will', or similar). Speak directly about the event, the arena, the city, and CRT.",
+      "Keep sentences within a reasonable length band (roughly 6–30 words). Break up overly long sentences and combine extremely short ones so the block reads like edited magazine copy.",
+      "If any paragraph includes more than two heavy adjectives in a single sentence or feels fuzzy or repetitive, simplify to concrete, workmanlike language before final output.",
+      "Before setting flags.validation_passed = true, mentally check: no obviously wrong words, no malformed proper nouns, no broken markdown links, and paragraphs you would be willing to paste directly into a live Webflow rich text block."
+    ]
   },
   "output_schema": {
     "type": "object",
     "required": [
       "meta",
-      "lanes",
+      "hello",
+      "event",
+      "venue",
+      "host_city",
       "seo",
       "flags"
     ],
@@ -453,12 +221,13 @@
           "runner",
           "runner_version",
           "creation_id",
-          "timestamp_iso"
+          "timestamp_iso",
+          "blog_type"
         ],
         "properties": {
           "runner": {
             "type": "string",
-            "const": "destination-runner"
+            "const": "competition-runner"
           },
           "runner_version": {
             "type": "string"
@@ -469,60 +238,189 @@
           "timestamp_iso": {
             "type": "string"
           },
-          "source_trace": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "source": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "integer"
-                }
-              }
-            }
+          "blog_type": {
+            "type": "string"
           }
         }
       },
-      "lanes": {
+      "hello": {
         "type": "object",
         "required": [
-          "stay",
-          "dine",
-          "essentials"
+          "intro",
+          "transition",
+          "outro_pivot",
+          "outro_main"
         ],
         "properties": {
-          "stay": {
-            "$ref": "#/output_schema/definitions/lane_block"
+          "intro": {
+            "type": "string"
           },
-          "dine": {
-            "$ref": "#/output_schema/definitions/lane_block"
+          "transition": {
+            "type": "string"
           },
-          "essentials": {
-            "$ref": "#/output_schema/definitions/lane_block"
+          "outro_pivot": {
+            "type": "string"
+          },
+          "outro_main": {
+            "type": "string"
+          }
+        }
+      },
+      "event": {
+        "type": "object",
+        "required": [
+          "name",
+          "event_paragraph",
+          "event_hello_sentence"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "official_link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "end_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rating_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rider_caliber": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "known_for": {
+            "type": "string"
+          },
+          "vibe": {
+            "type": "string"
+          },
+          "event_paragraph": {
+            "type": "string"
+          },
+          "event_hello_sentence": {
+            "type": "string"
+          }
+        }
+      },
+      "venue": {
+        "type": "object",
+        "required": [
+          "name",
+          "venue_snap",
+          "venue_paragraph",
+          "venue_hello_sentence"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "official_link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "place_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "venue_acronyms": {
+            "type": "string"
+          },
+          "venue_aliases": {
+            "type": "string"
+          },
+          "venue_snap": {
+            "type": "string"
+          },
+          "venue_paragraph": {
+            "type": "string"
+          },
+          "venue_hello_sentence": {
+            "type": "string"
+          }
+        }
+      },
+      "host_city": {
+        "type": "object",
+        "required": [
+          "city",
+          "state",
+          "season",
+          "snapshot",
+          "paragraph_80w",
+          "hello_intro_sentence"
+        ],
+        "properties": {
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          },
+          "snapshot": {
+            "type": "string"
+          },
+          "paragraph_80w": {
+            "type": "string"
+          },
+          "hello_intro_sentence": {
+            "type": "string"
           }
         }
       },
       "seo": {
         "type": "object",
         "properties": {
-          "stay_title": {
+          "section_title": {
             "type": "string"
           },
-          "stay_description": {
+          "meta_description": {
             "type": "string"
           },
-          "dine_title": {
+          "open_graph_title": {
             "type": "string"
           },
-          "dine_description": {
+          "open_graph_description": {
             "type": "string"
           },
-          "essentials_title": {
+          "search_title": {
             "type": "string"
           },
-          "essentials_description": {
+          "search_description": {
             "type": "string"
           }
         }
@@ -530,10 +428,10 @@
       "flags": {
         "type": "object",
         "properties": {
-          "used_feature_items": {
+          "used_founder": {
             "type": "boolean"
           },
-          "used_list_only": {
+          "used_city_in_season_rules": {
             "type": "boolean"
           },
           "validation_passed": {
@@ -547,92 +445,44 @@
           }
         }
       }
-    },
-    "definitions": {
-      "lane_block": {
-        "type": "object",
-        "required": [
-          "h2_title",
-          "paragraph",
-          "also_consider",
-          "table"
-        ],
-        "properties": {
-          "h2_title": {
-            "type": "string"
-          },
-          "paragraph": {
-            "type": "string"
-          },
-          "also_consider": {
-            "type": "string"
-          },
-          "cta": {
-            "type": "string"
-          },
-          "table": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "label": {
-                  "type": "string"
-                },
-                "url": {
-                  "type": "string"
-                },
-                "distance_text": {
-                  "type": "string"
-                },
-                "duration_text": {
-                  "type": "string"
-                },
-                "tags": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "validation": {
     "word_targets": {
-      "stay_paragraph": {
-        "min": 90,
-        "max": 150
+      "hello_intro": {
+        "min": 120,
+        "max": 180
       },
-      "dine_paragraph": {
-        "min": 90,
-        "max": 150
+      "hello_transition": {
+        "min": 40,
+        "max": 70
       },
-      "essentials_paragraph": {
-        "min": 80,
-        "max": 130
+      "hello_outro_pivot": {
+        "min": 35,
+        "max": 70
+      },
+      "hello_outro_main": {
+        "min": 130,
+        "max": 220
+      },
+      "city_snapshot": {
+        "min": 18,
+        "max": 30
+      },
+      "city_paragraph_80w": {
+        "min": 60,
+        "max": 90
+      },
+      "city_hello_intro_sentence": {
+        "min": 1,
+        "max": 25
       }
     },
     "guards": {
-      "h2_max_words": 6,
-      "intro_no_directions": true,
-      "no_ticketing_cta": true
+      "no_star_ratings_text": true,
+      "no_ticketing_cta": true,
+      "no_temperature_numbers": true,
+      "no_directional_turn_by_turn": true
     }
-  },
-  "runtime_flow": {
-    "steps": [
-      "1. Receive input.creation_id.",
-      "2. Call Rows destination GET endpoint and read items (rows) for A2:B999.",
-      "3. Locate the row where row[0] == creation_id. If not found, stop with a clear error; do NOT write docs.",
-      "4. Parse row[1] as JSON into destinations_payload. If parse fails, stop and surface the error; do NOT write docs.",
-      "5. From destinations_payload, derive lane-specific feature and list-only sets for stay, dine, and essentials.",
-      "6. For each lane, write h2_title, paragraph, also_consider, and table according to blueprint.lanes rules and blueprint.quality_gate.",
-      "7. Populate seo using concise, lane-specific titles and descriptions.",
-      "8. Assemble destination-output.{creation_id}.json matching output_schema and run lightweight validation based on word_targets and guards.",
-      "9. Base64-encode the pretty-printed JSON and POST /docs/commit-bulk with a single file at docs/runner/destination-output.{creation_id}.json, content_type=application/json.",
-      "10. Return the final JSON as the tool result (or a short confirmation in chat, depending on caller)."
-    ]
   }
 }
