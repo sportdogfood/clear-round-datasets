@@ -1,6 +1,6 @@
 {
   "runner": "competition-runner",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "notes": "Top-brick writer for CRT blogs. Uses collections-payload only; does NOT touch destinations.",
   "io_contract": {
     "input": {
@@ -47,29 +47,13 @@
       ]
     },
     "copy_principles": {
-      "no_typos_or_neologisms": "Do not invent new words or unusual spellings. No 'ryders', 'exhercence', or similar.",
+      "no_typos_or_neologisms": "Do not invent new words or unusual spellings. No 'ryders', 'exhercence', 'stillwind', 'ruddy networks', or similar.",
       "grammar_pass": "Before emitting JSON, silently reread each paragraph and fix spelling and grammar.",
-      "clarity_over_style": "If a phrase sounds odd or unclear, replace it with a simple, literal alternative.",
-      "metaphors": "Use at most one light, familiar image per paragraph; avoid mixed or surreal metaphors.",
+      "clarity_over_style": "If a phrase sounds odd, muddy, or unclear, replace it with a simple, literal alternative.",
+      "metaphors": "Use at most one light, familiar image per paragraph; avoid mixed, surreal, or confusing metaphors.",
       "geography": "Do not assume beaches, mountains, snow, or desert unless clearly implied by inputs. Use generic but plausible visuals: tree-lined roads, barns, arenas, warm evenings, etc.",
-      "no_filler": "Avoid empty phrases like 'classic travel environment' or 'journal of elegance'. Say what is actually happening or visible."
-    },
-    "quality_gate": {
-      "priority": "Apply these checks before finalizing any text. If any rule fails, rewrite until it passes.",
-      "rules": {
-        "lexicon": [
-          "Do not invent non-standard words or spellings. If a token is not standard English or a known proper noun (from payload or a curated list), change the sentence.",
-          "Never misspell core sport terms: 'rider', 'riders', 'venue', 'series', 'Wellington', 'Ocala', 'World Equestrian Center', 'WEF', 'ESP Summer Series', etc."
-        ],
-        "proper_nouns": "Event, series, and venue names must exactly match spellings in collections_payload or clearly marked canonical fields; do not create variants like 'SSP Summer Series', 'ESP Summer IE', or 'WInter Equestrian Farms'.",
-        "sentences": [
-          "No sentence fragments. Each sentence should contain at least one subject and one verb and end with a period.",
-          "Avoid sentences shorter than 6 words or longer than 35 words; rewrite them into clearer sentences."
-        ],
-        "hallucinations": "Do not invent new events, venues, or ratings beyond what appears in collections_payload; if unsure, omit rather than guess.",
-        "tone": "If a phrase sounds vague or like filler, replace it with a concrete, literal description tied to the payload.",
-        "review_pass": "Before emitting JSON, silently re-read each field in hello, event, venue, and host_city and fix any spelling, grammar, or obvious clarity issues."
-      }
+      "no_filler": "Avoid empty phrases like 'classic travel environment' or 'journal of elegance'. Say what is actually happening or visible.",
+      "no_meta_language": "Do not talk about 'this paragraph', 'this section', or 'in my first-person note'. Speak directly about the event, venue, city, and CRT."
     },
     "hello_block": {
       "goal": "Create a vivid, competition-first travel-brochure top section that weaves together event, venue, and host city.",
@@ -130,7 +114,7 @@
         "event_hello_sentence"
       ],
       "rules": {
-        "source": "Use collections_payload.collection_primary.comps plus any attached event JSON if available. Do not invent new show names.",
+        "source": "Use collections_payload.collection_primary.comps plus any attached event JSON if available. Do not invent new show names or alter their spelling or casing.",
         "no_logistics": "Do not mention stabling, stalls, haul-in, prize lists, or daily schedules.",
         "no_city_copy": "Keep city language minimal; full city feel belongs in host_city.",
         "event_paragraph_length": "Aim for 80–130 words.",
@@ -207,6 +191,17 @@
         "no_first_person": "SEO fields are neutral, not in 'I' voice."
       }
     }
+  },
+  "quality_gate": {
+    "rules": [
+      "After drafting hello, event, venue, host_city, and seo text, do a second pass sentence by sentence. If any sentence reads like a fragment or is missing a clear subject and verb, rewrite it before emitting JSON.",
+      "Do not use words that are not standard English or clearly recognizable proper nouns from the payload. If such a word appears (for example 'ruddy networks', 'stillwind', 'kips the focus'), rewrite or replace the whole sentence.",
+      "Never invent or alter canonical names for events or venues. For event.name and any first mention of the event in prose, copy the spelling and casing from the payload. For venue.name, use the canonical venue name from the payload or a curated lookup only; do not create new combinations like 'SPA Summer Series', 'Wellington Equestrian Festival' or 'WEB'.",
+      "Never introduce meta phrases about the act of writing (no 'in my first-person note', 'this paragraph will', or similar). Speak directly about the event, the arena, the city, and CRT.",
+      "Keep sentences within a reasonable length band (roughly 6–30 words). Break up overly long sentences and combine extremely short ones so the block reads like edited magazine copy.",
+      "If any paragraph includes more than two heavy adjectives in a single sentence or feels fuzzy or repetitive, simplify to concrete, workmanlike language before final output.",
+      "Before setting flags.validation_passed = true, mentally check: no obviously wrong words, no malformed proper nouns, no broken markdown links, and paragraphs you would be willing to paste directly into a live Webflow rich text block."
+    ]
   },
   "output_schema": {
     "type": "object",
