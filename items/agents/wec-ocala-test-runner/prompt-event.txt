@@ -1,0 +1,86 @@
+Use canvas. Create a new document titled WEC Ocala December  2025-event JSON. Type: document. Output only the Pretty JSON result in the canvas.
+Authoritative source is the official link:  and . The name/month inputs are guidance only. If they conflict with the official link or USEF.org use the site’s canonical title and actual dates.
+Return only pretty-printed JSON in canvas (ASCII, 2-space indent). No prose, no markdown, no comments.
+
+Authoritative source is the official link. The name/month inputs are guidance only. If they conflict with the site, use the site’s canonical title and actual dates.
+
+Do not copy instruction text, labels, or bracketed notes into the output. Output must be publishable copy only.
+Forbidden terms anywhere: status-forward, intro, snapshot, template, hello, boilerplate, placeholder.
+
+# Prompt
+Research the event using the official link as the single authoritative source.
+Generate event-only prestige copy centered on identity, reputation, and rider caliber.
+Exclude barns, stabling, class lists, timetables, hospitality, logistics, and city copy.
+Describe branding, competitive stature, the kind of rider it attracts, and the event’s on-paper identity.
+If the event is known by acronyms or aliases (e.g., WEF, DIHP, Hampton Classic), record them in CSV fields.
+Do not invent terms or pull from unofficial sources. Keep tone clean, factual, and vivid.
+
+Inputs (only):
+- event_official_link: 
+- event_name: WEC Ocala December  2025
+- event_month: December
+- event_legs: 2
+- event_usef_link: 
+- event_usef_ratings: Rating: Hunter(Premier) Jumper(6), H/J Channel: 1
+
+# RESEARCH TASKS
+1) Visit the official site at {{event_official_link}}.
+2) Determine the canonical event name from the site header or series branding and use it in "name".
+3) Identify official start_date and end_date.
+   - Single-span event: use the published start and end.
+   - Multi-leg event: confirm each leg’s dates.
+     • Outer "start_date" = first leg start. • Outer "end_date" = last leg end.
+4) Rating tags:
+   - Collect ONLY explicitly referenced ratings/sanction labels (e.g., "FEI 5*", "USEF Premier 'AA'", "Level 6 Jumper").
+   - Store as strings in "rating_tags". Do not infer.
+5) Rider caliber:
+   - Only use values found in official branding language.
+   - Allowed: "Olympic", "World-Class", "Elite", "International", "National".
+   - Choose the strongest explicitly supported.
+6) Aliases:
+   - Up to 2 alternate titles or designations used officially (header/logo/meta).
+   - If "Championship", "Finals", or "Regionals" appear in the official title, include as aliases.
+7) Known_for:
+   - One concise clause of what the event is known for.
+8) Vibe:
+   - One clause capturing prestige tone from official positioning.
+# WRITING RULES
+- ASCII only.
+- event_snap: 18–30 words. One vivid line about the venue’s look/feel.
+- event_paragraph: 60–80 words. Rich venue identity and atmosphere. No logistics.
+- event_hello: ≤ 25 words. Clean, prestigious opener suitable to prepend to copy.
+- Vary syntax. No templates. No reused phrasing. No “madlibbing.”
+
+# LEG LOGIC
+- If the site presents week-by-week or leg-by-leg schedule:
+   • Include "legs" array with one object per leg:
+     { "label": "", "start_date": "", "end_date": "" }
+     • Include "rating_tags" inside a leg only if explicitly provided.
+   • Include "event_legs" with the total number of legs.
+- If the site presents a single continuous event with no legs:
+   • Omit "legs" and "event_legs". If schema requires, set "event_legs": 0.
+
+# OUTPUT FORMAT
+{
+  "event": {
+    "name": "",
+    "official_link": "{{event_official_link}}",
+    "month": "{{event_month}}",
+    "start_date": "",
+    "end_date": "",
+    "rating_tags": [""],
+    "rider_caliber": "",
+    "aliases": [""],
+    "known_for": "",
+    "vibe": "",
+    "snapshot": "",
+    "paragraph": "",
+    "hello_intro_sentence": ""
+    {{#legs}}
+    ,"legs": [
+      { "label": "", "start_date": "", "end_date": ""{{#leg_ratings}}, "rating_tags": [""]{{/leg_ratings}} }
+    ]
+    ,"event_legs": 0
+    {{/legs}}
+  }
+}
