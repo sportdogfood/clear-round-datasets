@@ -1,6 +1,6 @@
 {
   "runner": "destination-runner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "notes": "Bottom-brick writer for CRT blogs. Uses destinations-payload only; does NOT touch competitions.",
   "io_contract": {
     "input": {
@@ -273,6 +273,23 @@
       "voice": "Straightforward, magazine-style travel writing. Visual and concrete without hype.",
       "style": "Every sentence should be clean, grammatical English. No invented words, no odd spellings, no experimental punctuation.",
       "we_vs_i": "Use 'I' only when speaking as the founder about CRT's role. Use 'we' only for CRT services. Never write 'CIRT'."
+    },
+    "quality_gate": {
+      "priority": "Apply these checks before finalizing any lane text. If any rule fails, rewrite until it passes.",
+      "rules": {
+        "lexicon": [
+          "Do not invent non-standard words or spellings. If a token is not standard English or a known proper noun (from the payload or a curated list), change the sentence.",
+          "Never misspell core terms or place names: 'hotel', 'restaurants', 'Wellington', 'Ocala', 'World Equestrian Center', 'WEC', etc."
+        ],
+        "proper_nouns": "Venue and place names must exactly match spellings in destinations_payload or clearly marked canonical fields. Do not create variants or abbreviations that are not present in the payload.",
+        "sentences": [
+          "No sentence fragments. Each sentence should contain at least one subject and one verb and end with a period.",
+          "Avoid sentences shorter than 6 words or longer than 35 words; rewrite them into clearer sentences."
+        ],
+        "hallucinations": "Do not invent new hotels, restaurants, or essentials beyond what appears in destinations_payload; if unsure, omit rather than guess.",
+        "tone": "If a phrase sounds vague or like filler, replace it with a concrete, literal description tied to how the place is used during a show week.",
+        "review_pass": "Before emitting JSON, silently re-read each lane paragraph and also_consider line and fix any spelling, grammar, or obvious clarity issues."
+      }
     },
     "lanes": {
       "stay": {
@@ -611,7 +628,7 @@
       "3. Locate the row where row[0] == creation_id. If not found, stop with a clear error; do NOT write docs.",
       "4. Parse row[1] as JSON into destinations_payload. If parse fails, stop and surface the error; do NOT write docs.",
       "5. From destinations_payload, derive lane-specific feature and list-only sets for stay, dine, and essentials.",
-      "6. For each lane, write h2_title, paragraph, also_consider, and table according to blueprint.lanes rules.",
+      "6. For each lane, write h2_title, paragraph, also_consider, and table according to blueprint.lanes rules and blueprint.quality_gate.",
       "7. Populate seo using concise, lane-specific titles and descriptions.",
       "8. Assemble destination-output.{creation_id}.json matching output_schema and run lightweight validation based on word_targets and guards.",
       "9. Base64-encode the pretty-printed JSON and POST /docs/commit-bulk with a single file at docs/runner/destination-output.{creation_id}.json, content_type=application/json.",
