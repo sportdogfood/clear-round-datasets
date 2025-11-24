@@ -1,0 +1,64 @@
+Use canvas. Create a new document titled WEC-venue JSON. Type: document. Output only the Pretty JSON result in the canvas.
+# Prompt
+Research the venue using the official link as the single authoritative source.
+Write venue-only copy for time-poor competitors, trainers, and supporter families.
+Do not mention events, dates, schedules, or city features.
+
+Describe the venue itself—setting, layout, scale, materials, light, atmosphere, and reputation as recognized by equestrian professionals.
+Show why it reads as elite or iconic without selling an event.
+Tone: clean, factual, vivid.
+
+If the venue is known by acronyms or aliases used on the official site (e.g., WEF, WEC, HTS), record them in CSV fields. Never fabricate or over-expand names.
+
+Return only pretty-printed JSON in canvas (ASCII, 2-space indent). No prose, no markdown, no comments.
+
+Do not copy instruction text, labels, or bracketed notes into the output. Output must be publishable copy only.
+Forbidden terms anywhere: intro, snapshot, template, hello, boilerplate, placeholder.
+
+Authoritative source is the official link. If the input name conflicts with the site, use the site’s canonical venue name.
+
+Inputs (only):
+- venue_name: World Equestrian Center Ocala
+- venue_official_link: https://worldequestriancenter.com
+- place_id: ChIJWzqBJjOB6IgR4B8GnC0p6wU
+- venue_city_state: Ocala, FL
+
+# RESEARCH RULES
+- Open {{venue_official_link}}. Resolve the canonical venue name from site header/branding.
+- Identify hallmark visuals and on-grounds feel (arenas, promenades, landscaping, architectural tone, scale).
+- Note what the venue is known for (prestige, polish, distinctive setting).
+- Record venue_acronyms and venue_aliases only if explicitly used on the official site. Use CSV if multiple.
+- Exclude city copy, event names, dates, and seasonal language.
+# WRITING RULES
+- ASCII only.
+- venue_snap: 18–30 words. One vivid line about the venue’s look/feel.
+- venue_paragraph: 60–80 words. Rich venue identity and atmosphere. No logistics.
+- venue_hello: ≤ 25 words. Clean, prestigious opener suitable to prepend to copy.
+- Vary syntax. No templates. No reused phrasing. No “madlibbing.”
+
+# OUTPUT FORMAT
+Return pretty-printed JSON only with this exact shape and key order:
+
+OUTPUT JSON (exact shape)
+
+Return pretty-printed JSON only with this exact shape and key order:
+{
+"host_venue": {
+"name": "{{resolved_canonical_name}}",
+"official_link": "{{venue_official_link}}",
+"place_id": "{{venue_place_id}}",
+"city_state": "{{venue_city_state}}",
+"venue_acronyms": "{{csv or empty}}",
+"venue_aliases": "{{csv or empty}}",
+"venue_snap": "",
+"venue_paragraph": "",
+"venue_hello": ""
+}
+}
+VALIDATION
+
+If {{venue_official_link}} is missing → {"error":"missing_official_link"}.
+
+If any length limit fails → {"error":"validation_failed","field":"<path>"}.
+
+Do not add fields or arrays.
