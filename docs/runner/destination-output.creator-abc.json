@@ -1,54 +1,631 @@
 {
-  "meta": {
-    "runner": "destination-runner",
-    "runner_version": "1.0.1",
-    "creation_id": "creator-abc",
-    "timestamp_iso": "2025-11-24T12:00:00Z"
+  "runner": "destination-runner",
+  "version": "1.0.2",
+  "notes": "Bottom-brick writer for CRT blogs. Uses destinations-payload only; does NOT touch competitions.",
+  "io_contract": {
+    "input": {
+      "creation_id": "string, required. Example: 'creator-abc'."
+    },
+    "tools": {
+      "rows": {
+        "destination": "GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/52d0a628-4e75-4b93-8acd-121a5e860e2e/values/A2:B999",
+        "contract": {
+          "response_shape": {
+            "type": "object",
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "description": "Each row is [creation_id, payload_json_string].",
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": [
+                    {
+                      "type": "string",
+                      "description": "creation_id"
+                    },
+                    {
+                      "type": "string",
+                      "description": "payload_json (destinations-payload for this creation_id)"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "selection_rule": "Find the first row where row[0] === input.creation_id. Parse row[1] as JSON into destinations_payload. If none found, abort with a clear error in meta."
+        }
+      },
+      "crt": {
+        "read": "GET /items/{path}",
+        "write": "POST /docs/commit-bulk",
+        "write_contract": {
+          "path_template": "docs/runner/destination-output.{creation_id}.json",
+          "content_type": "application/json",
+          "file_item_shape": {
+            "type": "object",
+            "required": [
+              "path",
+              "content_type",
+              "content_base64"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^docs/",
+                "example": "docs/runner/destination-output.creator-abc.json"
+              },
+              "content_type": {
+                "type": "string",
+                "enum": [
+                  "application/json"
+                ]
+              },
+              "content_base64": {
+                "type": "string",
+                "description": "Base64 of pretty-printed destination-output JSON (UTF-8). No data: prefix."
+              }
+            }
+          }
+        }
+      }
+    },
+    "output": {
+      "path_template": "docs/runner/destination-output.{creation_id}.json",
+      "description": "Single JSON object per creation_id with meta + lanes (stay/dine/essentials) + seo + flags. No HTML.",
+      "shape": "See output_schema."
+    }
   },
-  "lanes": {
-    "stay": {
-      "h2_title": "Stay Close to the Show",
-      "paragraph": "Base your week at The Equestrian Hotel[(https://maps.google.com/?cid=15728538072984070206)] for stylish, relaxed comforts and quick access to the rings. The Riding Academy Hotel[https://maps.google.com/?cid=15443201254713929313]] offers a closer, more moderate option, while the Ocala RV Camp Resort[(https://maps.google.com/?cid=2896080737149113405)] provides a peaceful escape within driving distance.",
-      "also_consider": "Also consider: [Springhill Suites(](https://maps.google.com/?cid=6713423633958611846)), [Holiday Inn Express](https://maps.google.com/?cid=6927925009587209303)), [Hilton Ocala(](https://maps.google.com/?cid=934922919620640321)).",
-      "table": [
-        {"label": "Springhill Suites", "url": "https://maps.google.com/?cid=6713423633958611846", "distance_text": "8.2 mi", "duration_text": "14 mins", "tags": ["chain-hotel"]},
-        {"label": "Holiday Inn Express", "url": "https://maps.google.com/?cid=6927925009587209303", "distance_text": "7.9 mi", "duration_text": "14 mins", "tags": ["chain-hotel"]},
-        {"label": "Hilton Ocala", "url": "https://maps.google.com/?cid=934922919620640321", "distance_text": "8.7 mi", "duration_text": "16 mins", "tags": ["chain-hotel"]}
-      ]
+  "destinations_payload_contract": {
+    "description": "Expected shape of destinations-payload JSON parsed from Rows cell Bx for a given creation_id.",
+    "type": "object",
+    "required": [
+      "creation_id",
+      "hub_meta",
+      "stay",
+      "dine",
+      "essentials"
+    ],
+    "properties": {
+      "creation_id": {
+        "type": "string"
+      },
+      "hub_meta": {
+        "type": "object",
+        "description": "High-level hub metadata (title overrides, venue_uid, etc.). May contain additional fields."
+      },
+      "stay": {
+        "type": "object",
+        "required": [
+          "feature",
+          "list-only"
+        ],
+        "properties": {
+          "feature": {
+            "type": "array",
+            "items": {
+              "$ref": "#/destinations_payload_contract/definitions/destination_item"
+            }
+          },
+          "list-only": {
+            "type": "array",
+            "items": {
+              "$ref": "#/destinations_payload_contract/definitions/destination_item"
+            }
+          }
+        }
+      },
+      "dine": {
+        "type": "object",
+        "required": [
+          "feature",
+          "list-only"
+        ],
+        "properties": {
+          "feature": {
+            "type": "array",
+            "items": {
+              "$ref": "#/destinations_payload_contract/definitions/destination_item"
+            }
+          },
+          "list-only": {
+            "type": "array",
+            "items": {
+              "$ref": "#/destinations_payload_contract/definitions/destination_item"
+            }
+          }
+        }
+      },
+      "essentials": {
+        "type": "object",
+        "required": [
+          "feature",
+          "list-only"
+        ],
+        "properties": {
+          "feature": {
+            "type": "array",
+            "items": {
+              "$ref": "#/destinations_payload_contract/definitions/destination_item"
+            }
+          },
+          "list-only": {
+            "type": "array",
+            "items": {
+              "$ref": "#/destinations_payload_contract/definitions/destination_item"
+            }
+          }
+        }
+      }
     },
-    "dine": {
-      "h2_title": "Food Between Rounds",
-      "paragraph": "Begin your day with a sw treat at [Emma's Patisserie](https://maps.google.com/?cid=13366247699921278089) for coffee or a sweet treat. Dinner can be a short cart to Stirrups Restaurant[hhttps://maps.google.com/?cid=5581101793901248113]. For a longer meal, the steakhouse [Ipanema Brazilian Steak House](https://maps.google.com/?cid=4561279710775035273) offers a full service experience.",
-      "also_consider": "Also consider: [Marcos Pizza](https://maps.google.com/?cid=177225994602515242)), [Romas Italian Restaurant](https://maps.google.com/?cid=17835897447681867853), [Jersey Mikes Subs](https://maps.google.com/?cid=5394991478095524792).",
-      "table": [
-        {"label": "Marcos Pizza", "url": "https://maps.google.com/?cid=177225994602515242", "distance_text": "8.4 mi", "duration_text": "17 mins", "tags": ["lunch"]},
-        {"label": "Romas Italian Restaurant", "url": "https://maps.google.com/?cid=17835897447681867853", "distance_text": "4.8 mi", "duration_text": "9 mins", "tags": ["lunch"]},
-        {"label": "Jersey Mikes Subs", "url": "https://maps.google.com/?cid=5394991478095524792", "distance_text": "8.7 mi", "duration_text": "15 mins", "tags": ["lunch"]}
-      ]
+    "definitions": {
+      "destination_item": {
+        "type": "object",
+        "description": "One place record (stay, dine, or essentials). Additional fields allowed.",
+        "properties": {
+          "creation_id": {
+            "type": "string"
+          },
+          "lane": {
+            "type": "string",
+            "description": "stay | dine | essentials"
+          },
+          "role": {
+            "type": "string",
+            "description": "feature | list-only | support"
+          },
+          "rank": {
+            "type": "integer"
+          },
+          "vertical_lane": {
+            "type": "string",
+            "description": "stay | dine | essentials"
+          },
+          "dine_lane": {
+            "type": "string",
+            "description": "am | lu | pm (for dine lane only)"
+          },
+          "place_uid": {
+            "type": "string"
+          },
+          "place_id": {
+            "type": "string"
+          },
+          "name2": {
+            "type": "string",
+            "description": "Display name"
+          },
+          "entity": {
+            "type": "string",
+            "description": "Hotel, cafe, restaurant, grocery, pharmacy, tack/feed, RV park, etc."
+          },
+          "label": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "description": "Maps URL"
+          },
+          "distance_bucket": {
+            "type": "string",
+            "description": "walkable | cart | drive | onsite"
+          },
+          "distance_text": {
+            "type": "string"
+          },
+          "duration_text": {
+            "type": "string"
+          },
+          "price_band": {
+            "type": "string"
+          },
+          "price_level": {
+            "type": "integer"
+          },
+          "rating": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "user_ratings_total": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "editorial_overview": {
+            "type": "string"
+          },
+          "menu": {
+            "type": "string",
+            "description": "Short description of core offering or segment."
+          },
+          "top_rated": {
+            "type": "boolean"
+          },
+          "preferred": {
+            "type": "boolean"
+          },
+          "chain_slug": {
+            "type": "string"
+          },
+          "chain_safety": {
+            "type": "string"
+          },
+          "geo_safety": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "blueprint": {
+    "brand_profile": {
+      "audience": "competitive hunter/jumper riders and their support crews",
+      "pov": "First person singular as the founder of Clear Round Travel when appropriate; neutral third-person is also acceptable for lane paragraphs.",
+      "voice": "Straightforward, magazine-style travel writing. Visual and concrete without hype.",
+      "style": "Every sentence should be clean, grammatical English. No invented words, no odd spellings, no experimental punctuation.",
+      "we_vs_i": "Use 'I' only when speaking as the founder about CRT's role. Use 'we' only for CRT services. Never write 'CIRT'."
     },
-    "essentials": {
-      "h2_title": "Essentials Nearby",
-      "paragraph": "Get supplies and stores covered with feed, health, and gods. The onsite [Publix Super Market](https://maps.google.com/?cid=9425402872657215094) makes shopping simple, while [Contour Saddlery](https://maps.google.com/?cid=7402624918411903144) stocks high-quality equestrian gear, and [Walgreens Pharmacy](https://maps.google.com/?cid=14183509540220545419) provides basic health needs within a short drive.",
-      "also_consider": "Also consider: [Seminole Feed Stores](http://maps.google.com/?cid=14886264627511037563), [Ocala Breeders Feed and Supply](https://maps.google.com/?cid=11663449608065948503), [Jand J Tack Shack](https://maps.google.com/?cid=18219651835231262811).",
-      "table": [
-        {"label": "Publix Super Market", "url": "https://maps.google.com/?cid=9425402872657215094", "distance_text": "4.9 mi", "duration_text": "10 mins", "tags": ["grocery"]},
-        {"label": "Albrights Finest Halters and Leather Goods Of Ocala", "url": "http://www.albrighthalters.com/", "distance_text": "7.6 mi", "duration_text": "13 mins", "tags": ["tack-feed"]},
-        {"label": "Tack Shack Of", "url": "http://www.tackshackocala.com/", "distance_text": "3.9 mi", "duration_text": "7 mins", "tags": ["tack-feed"]}
+    "lanes": {
+      "stay": {
+        "goal": "Help competitors pick a sleep base that makes the week feel effortless.",
+        "h2_rules": {
+          "words_min": 3,
+          "words_max": 6,
+          "examples": [
+            "Where to Stay",
+            "Sleep Near The Rings",
+            "Stay Close To The Show"
+          ]
+        },
+        "paragraph_rules": {
+          "words_min": 90,
+          "words_max": 150,
+          "structure": "One or two tightly edited paragraphs.",
+          "content": [
+            "Position featured hotels or RV parks relative to the venue in practical, visual terms.",
+            "Blend 1–2 FEATURE items inline using [Name](url) links.",
+            "Use distance_bucket and duration_text to convey ease of transfer, not in a bullet list.",
+            "Mention on-site vs quick-cart vs short-drive when supported.",
+            "No room types, no rates, no amenity lists."
+          ]
+        },
+        "also_consider_rules": {
+          "required": true,
+          "format": "Single sentence starting with 'Also consider:'.",
+          "items_min": 1,
+          "items_max": 3,
+          "inline_links": true
+        },
+        "table_rules": {
+          "source": "list-only only",
+          "row_fields": [
+            "label",
+            "url",
+            "distance_text",
+            "duration_text",
+            "tags"
+          ],
+          "tags_logic": "Derive tags from entity/menu/vertical_lane (e.g., 'on-site hotel', 'rv-park', 'boutique', 'chain')."
+        }
+      },
+      "dine": {
+        "goal": "Map out easy food and coffee around the show week.",
+        "h2_rules": {
+          "words_min": 3,
+          "words_max": 6,
+          "examples": [
+            "Where To Eat",
+            "Coffee and Meals",
+            "Food Between Rounds"
+          ]
+        },
+        "paragraph_rules": {
+          "words_min": 90,
+          "words_max": 150,
+          "structure": "One or two tightly edited paragraphs.",
+          "content": [
+            "Use dine_lane when present to thread breakfast/coffee, lunch, and dinner into a logical arc.",
+            "Blend 1–3 FEATURE stops inline as [Name](url) links.",
+            "Mention only the most important menu cues (e.g., 'quick breakfast sandwiches', 'casual tacos', 'sit-down steakhouse').",
+            "No long lists of dishes, no pricing, no foodie adjectives stack."
+          ]
+        },
+        "also_consider_rules": {
+          "required": true,
+          "format": "Single sentence starting with 'Also consider:'.",
+          "items_min": 1,
+          "items_max": 4,
+          "inline_links": true
+        },
+        "table_rules": {
+          "source": "list-only only",
+          "row_fields": [
+            "label",
+            "url",
+            "distance_text",
+            "duration_text",
+            "tags"
+          ],
+          "tags_logic": "Derive tags from menu/dine_lane (e.g., 'coffee', 'breakfast', 'lunch', 'dinner', 'late-night')."
+        }
+      },
+      "essentials": {
+        "goal": "Give riders a calm sense that pharmacy, grocery, tack-feed, and RV support are handled.",
+        "h2_rules": {
+          "words_min": 3,
+          "words_max": 6,
+          "examples": [
+            "Essentials Nearby",
+            "Restock and Reset",
+            "Pharmacy, Feed, Groceries"
+          ]
+        },
+        "paragraph_rules": {
+          "words_min": 80,
+          "words_max": 130,
+          "structure": "One paragraph.",
+          "content": [
+            "Highlight at most two FEATURE essentials: typically one tack/feed or RV park and one pharmacy or grocery.",
+            "Make it clear what each spot is for (e.g., 'late-night pharmacy', 'full grocery run', 'specialized feed store').",
+            "Use distance_text and duration_text only to support a sense of calm timing, not as bullets."
+          ]
+        },
+        "also_consider_rules": {
+          "required": true,
+          "format": "Single sentence starting with 'Also consider:'.",
+          "items_min": 1,
+          "items_max": 3,
+          "inline_links": true
+        },
+        "table_rules": {
+          "source": "list-only only",
+          "row_fields": [
+            "label",
+            "url",
+            "distance_text",
+            "duration_text",
+            "tags"
+          ],
+          "tags_logic": "Focus tags on 'pharmacy', 'grocery', 'tack-feed', 'rv-park', 'urgent-care'."
+        }
+      }
+    }
+  },
+  "writing_contract": {
+    "language_guards": {
+      "no_made_up_words": true,
+      "no_obvious_misspellings": true,
+      "no_star_ratings_text": true,
+      "no_temperature_numbers": true
+    },
+    "links": {
+      "syntax": "Use markdown-style inline links: [Name](https://example.com). No raw HTML tags.",
+      "max_links_per_paragraph": 4
+    },
+    "style": {
+      "tone": "travel-brochure but grounded in reality.",
+      "register": "conversational but precise.",
+      "forbid": [
+        "over-the-top hype adjectives",
+        "second-person commands like 'You must'.",
+        "long comma chains."
       ]
     }
   },
-  "seo": {
-    "stay_title": "Places to Stay Near WEC",
-    "stay_description": "Comfortable hotels and RV parks close to World Equestrian Center.",
-    "dine_title": "Good Eating Near WEC",
-    "dine_description": "Combines coffee, quick meals, and a sit-down steak house options.",
-    "essentials_title": "Shop Essentials Nearby",
-    "essentials_description": "Pharmacies, groceries, and feed stores within a drive."
+  "quality_gate": {
+    "rules": [
+      "All inline links MUST follow exact markdown syntax: [Name](URL) with no extra brackets, parentheses, or stray characters before or after the closing parenthesis.",
+      "Do not invent or misspell English words; avoid outputs like 'gods' for 'goods', 'sw treat', or similar. If you see such a word, rewrite the entire sentence before emitting JSON.",
+      "Do not output malformed or partial URLs (no 'hhttps'). Use the URL provided in the payload verbatim.",
+      "Make sure each lane.paragraph reads as 2–4 complete, connected sentences, not a list of stitched phrases. It should feel like smooth travel-brochure copy that a human could publish as-is.",
+      "Avoid meta commentary and self-reference. Do not talk about 'this paragraph' or 'this lane'; talk about where to stay, eat, and restock, and why those places work for the week.",
+      "Before setting flags.validation_passed = true, double-check that stay/dine/essentials paragraphs contain no obvious typos, all links would render correctly in markdown, and lane headings are clean, plain English."
+    ]
   },
-  "flags": {
-    "used_feature_items": true,
-    "used_list_only": true,
-    "validation_passed": true,
-    "validation_warnings": []
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "meta",
+      "lanes",
+      "seo",
+      "flags"
+    ],
+    "properties": {
+      "meta": {
+        "type": "object",
+        "required": [
+          "runner",
+          "runner_version",
+          "creation_id",
+          "timestamp_iso"
+        ],
+        "properties": {
+          "runner": {
+            "type": "string",
+            "const": "destination-runner"
+          },
+          "runner_version": {
+            "type": "string"
+          },
+          "creation_id": {
+            "type": "string"
+          },
+          "timestamp_iso": {
+            "type": "string"
+          },
+          "source_trace": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "lanes": {
+        "type": "object",
+        "required": [
+          "stay",
+          "dine",
+          "essentials"
+        ],
+        "properties": {
+          "stay": {
+            "$ref": "#/output_schema/definitions/lane_block"
+          },
+          "dine": {
+            "$ref": "#/output_schema/definitions/lane_block"
+          },
+          "essentials": {
+            "$ref": "#/output_schema/definitions/lane_block"
+          }
+        }
+      },
+      "seo": {
+        "type": "object",
+        "properties": {
+          "stay_title": {
+            "type": "string"
+          },
+          "stay_description": {
+            "type": "string"
+          },
+          "dine_title": {
+            "type": "string"
+          },
+          "dine_description": {
+            "type": "string"
+          },
+          "essentials_title": {
+            "type": "string"
+          },
+          "essentials_description": {
+            "type": "string"
+          }
+        }
+      },
+      "flags": {
+        "type": "object",
+        "properties": {
+          "used_feature_items": {
+            "type": "boolean"
+          },
+          "used_list_only": {
+            "type": "boolean"
+          },
+          "validation_passed": {
+            "type": "boolean"
+          },
+          "validation_warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "lane_block": {
+        "type": "object",
+        "required": [
+          "h2_title",
+          "paragraph",
+          "also_consider",
+          "table"
+        ],
+        "properties": {
+          "h2_title": {
+            "type": "string"
+          },
+          "paragraph": {
+            "type": "string"
+          },
+          "also_consider": {
+            "type": "string"
+          },
+          "cta": {
+            "type": "string"
+          },
+          "table": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "distance_text": {
+                  "type": "string"
+                },
+                "duration_text": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "validation": {
+    "word_targets": {
+      "stay_paragraph": {
+        "min": 90,
+        "max": 150
+      },
+      "dine_paragraph": {
+        "min": 90,
+        "max": 150
+      },
+      "essentials_paragraph": {
+        "min": 80,
+        "max": 130
+      }
+    },
+    "guards": {
+      "h2_max_words": 6,
+      "intro_no_directions": true,
+      "no_ticketing_cta": true
+    }
+  },
+  "runtime_flow": {
+    "steps": [
+      "1. Receive input.creation_id.",
+      "2. Call Rows destination GET endpoint and read items (rows) for A2:B999.",
+      "3. Locate the row where row[0] == creation_id. If not found, stop with a clear error; do NOT write docs.",
+      "4. Parse row[1] as JSON into destinations_payload. If parse fails, stop and surface the error; do NOT write docs.",
+      "5. From destinations_payload, derive lane-specific feature and list-only sets for stay, dine, and essentials.",
+      "6. For each lane, write h2_title, paragraph, also_consider, and table according to blueprint.lanes rules.",
+      "7. Populate seo using concise, lane-specific titles and descriptions.",
+      "8. Assemble destination-output.{creation_id}.json matching output_schema and run lightweight validation based on word_targets and guards.",
+      "9. Base64-encode the pretty-printed JSON and POST /docs/commit-bulk with a single file at docs/runner/destination-output.{creation_id}.json, content_type=application/json.",
+      "10. Return the final JSON as the tool result (or a short confirmation in chat, depending on caller)."
+    ]
   }
 }
