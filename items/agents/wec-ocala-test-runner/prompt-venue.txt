@@ -42,19 +42,21 @@ Return pretty-printed JSON only with this exact shape and key order:
 OUTPUT JSON (exact shape)
 
 Return pretty-printed JSON only with this exact shape and key order:
-{
-"host_venue": {
-"name": "{{resolved_canonical_name}}",
-"official_link": "{{venue_official_link}}",
-"place_id": "{{venue_place_id}}",
-"city_state": "{{venue_city_state}}",
-"venue_acronyms": "{{csv or empty}}",
-"venue_aliases": "{{csv or empty}}",
-"venue_snap": "",
-"venue_paragraph": "",
-"venue_hello": ""
-}
-}
+The output must be a JSON object with this exact shape and key order:
+
+- host_venue (object)
+  - name (string)
+  - official_link (string)
+  - place_id (string)
+  - city_state (string)
+  - venue_acronyms (string)
+  - venue_aliases (string)
+  - venue_snap (string)
+  - venue_paragraph (string)
+  - venue_hello (string)
+
+Return only the final JSON object. Pretty-printed, ASCII, 2-space indent.
+
 VALIDATION
 
 If {{venue_official_link}} is missing → {"error":"missing_official_link"}.
