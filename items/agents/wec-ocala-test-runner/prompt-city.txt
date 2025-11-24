@@ -1,0 +1,55 @@
+Use canvas. Create a new document titled Ocala-seasons JSON. Type: document. Output only the Pretty JSON result in the canvas.
+# Prompt
+Generate city-only copy for time-poor competitors, trainers, and supporter families. Do not mention any event or venue.
+For each season in create_seasons, write three fields: a snapshot line, an ~80-word paragraph, and a ≤25-word opener.
+Use concrete visuals, brief logistics, and qualitative seasonal feel only (e.g., humid August, crisp fall). Vary openings and syntax across seasons. No templates. No reused phrasing. No “madlibbing.”
+
+Inputs (only):
+- city: Ocala
+- state: FL
+- lat: 29.2923586
+- lng: -82.3542663
+create_seasons: {{['winter','spring','summer','fall']}}
+
+# RESEARCH + WRITING RULES
+- City vibe and atmosphere only. No venues, rings, schedules, or events.
+- Infer widely recognized local motifs for {{city}}; if uncertain, keep generic to coastline/farmland/town as applicable.
+- Mention seasonal feel without numbers or degrees.
+- One or two logistics cues max per season (traffic pace, early/late windows).
+- Enforce variation: first 8–12 words differ per season; rotate clause structures.
+- Prioritize novelty, specificity, and brevity across all fields.
+- The opener must not include greetings.
+- Each season must open with a unique syntactic form (declarative, prepositional, gerund, infinitive, or fragment).
+- Rotate sensory axis (light, wind, scent, sound, moisture) so no two seasons lean on the same cue.
+- Limit repeating phrasing; avoid identical two-word pairs across snapshots or openers.
+- Vary sentence rhythm and length to avoid pattern echo.
+
+
+# FIELD LENGTHS
+- snapshot: 18–30 words. One vivid line about the season-and-city feel.
+- paragraph_80w: 60–90 words. Approach visuals, in-town feel, brief resets, qualitative season feel. No logistics lists.
+- hello_intro_sentence: ≤ 25 words. Clean, prestigious opener suitable to prepend to copy. Do not include greeting words.
+
+OUTPUT FORMAT
+- Return pretty-printed JSON.
+- No prose, no markdown fences, no headers—JSON only.
+- Preserve key order exactly as in the schema.
+
+OUTPUT JSON (exact shape)
+{
+  "host_city": {
+    "city": "{{city}}",
+    "state": "{{state}}",
+    "seasons": {
+      "<season>": {
+        "snapshot": "<one vivid, season-and-city-specific line you researched>",
+        "paragraph_80w": "<60–90 words on approach visuals, in-town feel, short resets away from barns, qualitative season feel>",
+        "hello_intro_sentence": "<≤25 words; clean clause suitable to prepend an intro>"
+      }
+      // repeat for every season in create_seasons
+    }
+  }
+}
+
+ON EMPTY SEASONS
+- If create_seasons is empty, return: {"error":"no_seasons_provided"}.
