@@ -286,18 +286,25 @@
   function renderStartScreen() {
     screenRoot.innerHTML = '';
 
-    const logo = document.createElement('div');
-    logo.className = 'start-logo';
-    logo.innerHTML = `
-      <div class="start-logo-mark">TL</div>
-      <div class="start-logo-text">
-        <div class="start-logo-title">TackLists.com</div>
-        <div class="start-logo-subtitle">
-          Quick horse tack lists, on the fly.
-        </div>
+     const logo = document.createElement('div');
+  logo.className = 'start-logo';
+  logo.innerHTML = `
+    <div class="start-logo-mark">
+      <img
+        src="docs/lists/tacklists.png"
+        class="start-logo-img"
+        alt="TackLists.com logo"
+      />
+    </div>
+    <div class="start-logo-text">
+      <div class="start-logo-title">TackLists.com</div>
+      <div class="start-logo-subtitle">
+        Quick horse tack lists, on the fly.
       </div>
-    `;
-    screenRoot.appendChild(logo);
+    </div>
+  `;
+  screenRoot.appendChild(logo);
+
 
     if (!state.session) {
       createRow('New session', {
