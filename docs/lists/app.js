@@ -73,8 +73,7 @@
       list4: true,
       list5: true
     },
-    // Simple search filter for the State screen
-    stateFilter: ''
+    stateFilter: '' // search filter for the State screen
   };
 
   // ---------------------------------------------------------------------------
@@ -169,11 +168,18 @@
     const scr = state.currentScreen;
     const match = scr.match(/^list([1-5])(Detail)?$/);
     if (!match) return;
+
     let idx = Number(match[1]);
+
     if (direction === 'prev' && idx > 1) {
       setScreen(`list${idx - 1}`);
-    } else if (direction === 'next' && idx < 5) {
-      setScreen(`list${idx + 1}`);
+    } else if (direction === 'next') {
+      if (idx < 5) {
+        setScreen(`list${idx + 1}`);
+      } else if (idx === 5) {
+        // From last list → Summary
+        setScreen('summary');
+      }
     }
   }
 
@@ -210,13 +216,12 @@
       headerAction.textContent = state.shareMode ? 'Send' : 'Text';
       headerAction.dataset.action = state.shareMode ? 'send-share' : 'enter-share';
     } else if (scr === 'state') {
-      // On State: show a "Next" button to jump to List 1
       headerAction.hidden = false;
       headerAction.textContent = 'Next';
       headerAction.dataset.action = 'go-first-list';
     } else if (isListScreen) {
       headerAction.hidden = false;
-      headerAction.textContent = '→';
+      headerAction.textContent = 'Next';
       headerAction.dataset.action = 'next-list';
     } else {
       headerAction.hidden = true;
@@ -286,25 +291,24 @@
   function renderStartScreen() {
     screenRoot.innerHTML = '';
 
-     const logo = document.createElement('div');
-  logo.className = 'start-logo';
-  logo.innerHTML = `
-    <div class="start-logo-mark">
-      <img
-        src="docs/lists/tacklists.png"
-        class="start-logo-img"
-        alt="TackLists.com logo"
-      />
-    </div>
-    <div class="start-logo-text">
-      <div class="start-logo-title">TackLists.com</div>
-      <div class="start-logo-subtitle">
-        Quick horse tack lists, on the fly.
+    const logo = document.createElement('div');
+    logo.className = 'start-logo';
+    logo.innerHTML = `
+      <div class="start-logo-mark">
+        <img
+          src="docs/lists/tacklists.png"
+          class="start-logo-img"
+          alt="TackLists.com logo"
+        />
       </div>
-    </div>
-  `;
-  screenRoot.appendChild(logo);
-
+      <div class="start-logo-text">
+        <div class="start-logo-title">TackLists.com</div>
+        <div class="start-logo-subtitle">
+          Quick horse tack lists, on the fly.
+        </div>
+      </div>
+    `;
+    screenRoot.appendChild(logo);
 
     if (!state.session) {
       createRow('New session', {
@@ -386,7 +390,7 @@
 
     searchInput.addEventListener('input', (e) => {
       state.stateFilter = e.target.value || '';
-      render(); // full render so header/nav stay correct
+      render();
     });
 
     searchWrap.appendChild(searchInput);
@@ -537,7 +541,6 @@
 
     function handleRowClick(key) {
       if (!inShare) {
-        // Normal navigation mode
         if (key === 'state') {
           setScreen('state');
         } else if (key.startsWith('list')) {
@@ -545,7 +548,6 @@
           setScreen(`list${num}Detail`);
         }
       } else {
-        // Share selection mode: toggle include/exclude
         state.shareSelection[key] = !state.shareSelection[key];
         render();
       }
@@ -723,8 +725,7 @@
       ensureSession();
       const hasActive = state.session.horses.some((h) => h.state);
       if (!hasActive) {
-        // Still allow them to proceed; they will simply see "No active horses."
-        setScreen('list1');
+        setScreen('list1'); // still allow; list will show "No active horses."
       } else {
         setScreen('list1');
       }
