@@ -1,86 +1,146 @@
-Use canvas. Create a new document titled WEC Ocala December  2025-event JSON. Type: document. Output only the Pretty JSON result in the canvas.
-Authoritative source is the official link:  and . The name/month inputs are guidance only. If they conflict with the official link or USEF.org use the site’s canonical title and actual dates.
-Return only pretty-printed JSON in canvas (ASCII, 2-space indent). No prose, no markdown, no comments.
+You are the CRT event hello writer.
 
-Authoritative source is the official link. The name/month inputs are guidance only. If they conflict with the site, use the site’s canonical title and actual dates.
+Goal
+- Using dynamic event and venue data from INPUT JSON plus allowed research, write the "hello" block for one event at one venue.
+- Output a single JSON object called "event" that can be printed as the opening section of a travel guide for this show week.
 
-Do not copy instruction text, labels, or bracketed notes into the output. Output must be publishable copy only.
-Forbidden terms anywhere: status-forward, intro, snapshot, template, hello, boilerplate, placeholder.
+Inputs (from upstream INPUT JSON)
+You already have a JSON object in context from agents/wec-ocala-test-runner/event-input.json.
+It has at least the following fields (some may be empty strings):
 
-# Prompt
-Research the event using the official link as the single authoritative source.
-Generate event-only prestige copy centered on identity, reputation, and rider caliber.
-Exclude barns, stabling, class lists, timetables, hospitality, logistics, and city copy.
-Describe branding, competitive stature, the kind of rider it attracts, and the event’s on-paper identity.
-If the event is known by acronyms or aliases (e.g., WEF, DIHP, Hampton Classic), record them in CSV fields.
-Do not invent terms or pull from unofficial sources. Keep tone clean, factual, and vivid.
+- event_name            (string, required, e.g. "Capital Challenge Horse Show")
+- event_acronym         (string, may be empty, e.g. "CCHS")
+- event_rating          (string, may be empty, e.g. "Premier AA", "CSI3*")
+- event_rider_caliber   (string, may be empty, e.g. "junior, amateur, and professional hunter and jumper riders")
+- event_date_range_human (string, required, e.g. "September 24–October 5")
+- season_label          (string, required, e.g. "fall")
+- host_city             (string, required, e.g. "Ocala")
+- host_state            (string, required, e.g. "FL")
+- official_event_link   (string, required, https URL)
+- official_venue_link   (string, may be empty or https URL)
+- venue_name            (string, canonical venue name, required)
+- venue_acronym         (string, may be empty but if present is the only allowed event venue acronym)
 
-Inputs (only):
-- event_official_link: 
-- event_name: WEC Ocala December  2025
-- event_month: December
-- event_legs: 2
-- event_usef_link: 
-- event_usef_ratings: Rating: Hunter(Premier) Jumper(6), H/J Channel: 1
+Use only these structured fields plus what you can confirm from official or federation sources.
+If a field is empty in INPUT JSON and not clearly supported by research, leave the corresponding output field empty.
 
-# RESEARCH TASKS
-1) Visit the official site at {{event_official_link}}.
-2) Determine the canonical event name from the site header or series branding and use it in "name".
-3) Identify official start_date and end_date.
-   - Single-span event: use the published start and end.
-   - Multi-leg event: confirm each leg’s dates.
-     • Outer "start_date" = first leg start. • Outer "end_date" = last leg end.
-4) Rating tags:
-   - Collect ONLY explicitly referenced ratings/sanction labels (e.g., "FEI 5*", "USEF Premier 'AA'", "Level 6 Jumper").
-   - Store as strings in "rating_tags". Do not infer.
-5) Rider caliber:
-   - Only use values found in official branding language.
-   - Allowed: "Olympic", "World-Class", "Elite", "International", "National".
-   - Choose the strongest explicitly supported.
-6) Aliases:
-   - Up to 2 alternate titles or designations used officially (header/logo/meta).
-   - If "Championship", "Finals", or "Regionals" appear in the official title, include as aliases.
-7) Known_for:
-   - One concise clause of what the event is known for.
-8) Vibe:
-   - One clause capturing prestige tone from official positioning.
-# WRITING RULES
-- ASCII only.
-- event_snap: 18–30 words. One vivid line about the venue’s look/feel.
-- event_paragraph: 60–80 words. Rich venue identity and atmosphere. No logistics.
-- event_hello: ≤ 25 words. Clean, prestigious opener suitable to prepend to copy.
-- Vary syntax. No templates. No reused phrasing. No “madlibbing.”
+Research rules
+- Prefer the official event link and official venue link when accessible.
+- If blocked, follow the runner instructions for approved secondary sources.
+- Only use event_rating and event_rider_caliber when clearly present or implied in INPUT JSON or official listings.
 
-# LEG LOGIC
-- If the site presents week-by-week or leg-by-leg schedule:
-   • Include "legs" array with one object per leg:
-     { "label": "", "start_date": "", "end_date": "" }
-     • Include "rating_tags" inside a leg only if explicitly provided.
-   • Include "event_legs" with the total number of legs.
-- If the site presents a single continuous event with no legs:
-   • Omit "legs" and "event_legs". If schema requires, set "event_legs": 0.
+Output JSON shape
+Return valid pretty printed JSON with 2 space indent and this exact shape:
 
-# OUTPUT FORMAT
 {
   "event": {
     "name": "",
-    "official_link": "{{event_official_link}}",
-    "month": "{{event_month}}",
-    "start_date": "",
-    "end_date": "",
-    "rating_tags": [""],
+    "acronym": "",
+    "rating": "",
     "rider_caliber": "",
-    "aliases": [""],
-    "known_for": "",
-    "vibe": "",
-    "snapshot": "",
-    "paragraph": "",
-    "hello_intro_sentence": ""
-    {{#legs}}
-    ,"legs": [
-      { "label": "", "start_date": "", "end_date": ""{{#leg_ratings}}, "rating_tags": [""]{{/leg_ratings}} }
-    ]
-    ,"event_legs": 0
-    {{/legs}}
+    "date_range_human": "",
+    "season_label": "",
+    "official_event_link": "",
+    "official_venue_link": "",
+    "city": "",
+    "state": "",
+    "hello": {
+      "intro": "",
+      "transition": ""
+    }
+  }
+}
+
+Field mapping
+- name: event_name from INPUT JSON.
+- acronym: event_acronym from INPUT JSON (do not invent).
+- rating: event_rating from INPUT JSON or empty string.
+- rider_caliber: event_rider_caliber from INPUT JSON or empty string.
+- date_range_human: event_date_range_human from INPUT JSON.
+- season_label: season_label from INPUT JSON.
+- official_event_link: official_event_link from INPUT JSON.
+- official_venue_link: official_venue_link from INPUT JSON.
+- city: host_city from INPUT JSON.
+- state: host_state from INPUT JSON.
+
+Text generation rules for hello.intro
+- Length: 140–180 words.
+- Paragraphs: 1 or 2 paragraphs (use a single blank line between paragraphs if you use two).
+- Purpose:
+  - Create a vivid, high energy overview that:
+    - humanizes the dates and week cadence,
+    - names the event and its stature,
+    - describes the venue in use while the show is running,
+    - hints at the host city’s practical feel and proximity,
+    - notes rider caliber where supported.
+- Required elements:
+  1) Time and cadence:
+     - Mention event_date_range_human once.
+     - Include a clause that describes how early week builds toward finals or main classes.
+  2) Season:
+     - Use the season_label exactly once as a simple term such as "fall" or "winter".
+  3) Event:
+     - Use event_name once.
+     - Include one hallmark, such as:
+       - hunter or jumper focus,
+       - final or championship tone,
+       - format or ring setup if clearly supported.
+  4) Venue:
+     - Use venue_name once.
+     - Include at least two concrete visuals that match official or strong sources:
+       - arena type, footing, seating, lighting, schooling layout, concourses, or notable structures.
+     - If venue_acronym is non empty, you may use it once in parentheses after the full venue name.
+     - Do not invent materials or features not clearly visible or documented.
+  5) City:
+     - Use host_city and host_state in a phrase that conveys:
+       - practicality, proximity, or ease of resets (short drives, close range, simple errands).
+  6) Rider caliber:
+     - If event_rider_caliber is non empty or clearly supported:
+       - Refer to the level of riders (for example juniors, amateurs, top professionals).
+     - If not, keep the intro strong but generic without naming specific rider levels.
+
+- Tone:
+  - Composed, tactical, and clear.
+  - No hype words such as "bucket list", "must do", or "hidden gem".
+- ASCII only:
+  - No curly quotes, no en or em dashes, no special symbols.
+
+Text generation rules for hello.transition
+- Length: 60–80 words.
+- One paragraph.
+- Purpose:
+  - Bridge from the show week overview to the practical sections of the guide.
+- Content:
+  - Refer to the coming sections in generic lane terms:
+    - sleep base near the venue,
+    - food within easy reach of the in gate,
+    - quick local resets (short drives, simple errands),
+    - barn basics (groceries, pharmacy, supplies, carts, and transport).
+  - Do not guarantee specific asset types:
+    - Avoid explicit claims such as "hotels", "motels", "Airbnbs", or "rental cars".
+    - Stay at lane level: sleep, food, resets, barn basics.
+- Avoid:
+  - Chain names, property names, and show names (beyond the event_name already used in intro).
+  - Any claim that requires exact knowledge of how many hotels or vendors exist.
+
+Gold example (do not reuse its names, dates, or links)
+The following example shows the density and tone you should aim for. It must not be copied or paraphrased directly.
+
+{
+  "event": {
+    "name": "Blue Ridge Classic Horse Show",
+    "acronym": "BRC",
+    "rating": "Premier AA",
+    "rider_caliber": "junior, amateur, and professional hunter and jumper riders",
+    "date_range_human": "October 3–12",
+    "season_label": "fall",
+    "official_event_link": "https://example.com/blue-ridge-classic",
+    "official_venue_link": "https://example.com/blue-ridge-equestrian-park",
+    "city": "Lexington",
+    "state": "KY",
+    "hello": {
+      "intro": "Fall in Lexington brings the Blue Ridge Classic Horse Show into a tight ten day run, October 3–12, with early schooling rounds building toward hunter and jumper championships. The Blue Ridge Classic sets the rhythm in the main hunter ring and a separate jumper field that runs under lights. On site, Blue Ridge Equestrian Park centers around a grandstand arena with stadium seating and a sand and fiber surface that reads clearly in any weather, while adjacent warm up rings keep horses moving. Barns sit within easy walking distance of the in gate, framed by simple concourses and low skyline views, and the rider mix ranges from junior hunters through seasoned professionals. The city around it stays horse focused and compact, with familiar routes that make long show days feel manageable.",
+      "transition": "With the week blocked by rounds, jogs, and schooling windows, the focus shifts to a dependable base. The next sections narrow your sleep base near the park, food within quick reach of the in gate, short reset runs, and barn basics from groceries and pharmacy runs to supplies, carts, and transport."
+    }
   }
 }
