@@ -5,10 +5,21 @@
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // Config / data
+  // Config / labels
   // ---------------------------------------------------------------------------
 
+  // Base horse names; edit these if you want custom names.
   const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
+
+  // List labels; edit these strings to rename lists.
+  const LIST_LABELS = {
+    state: 'State',
+    list1: 'List 1',
+    list2: 'List 2',
+    list3: 'List 3',
+    list4: 'List 4',
+    list5: 'List 5'
+  };
 
   const state = {
     session: null,
@@ -105,13 +116,15 @@
 
   function titleForScreen(scr) {
     if (scr === 'start') return 'Start';
-    if (scr === 'state') return 'State';
+    if (scr === 'state') return LIST_LABELS.state;
     if (scr === 'summary') return 'Summary';
+
     const listMatch = scr.match(/^list([1-5])(Detail)?$/);
     if (listMatch) {
       const n = listMatch[1];
-      if (listMatch[2]) return `List ${n} Detail`;
-      return `List ${n}`;
+      const base = LIST_LABELS[`list${n}`] || `List ${n}`;
+      if (listMatch[2]) return `${base} Detail`;
+      return base;
     }
     return '';
   }
@@ -230,7 +243,7 @@
     });
   }
 
-  // State
+  // State: grouped, active at top, inactive below
   function handleStateHorseClick(horseId) {
     const horse = findHorse(horseId);
     if (!horse) return;
@@ -270,29 +283,16 @@
       .slice()
       .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
-    const inactive = horses.filter((h) => !h.state);
     const active = horses.filter((h) => h.state);
+    const inactive = horses.filter((h) => !h.state);
 
-    if (inactive.length) {
-      const label = document.createElement('div');
-      label.className = 'list-group-label';
-      label.textContent = 'Inactive (State)';
-      screenRoot.appendChild(label);
-
-      inactive.forEach((horse) => {
-        createRow(horse.horseName, {
-          onClick: () => handleStateHorseClick(horse.horseId)
-        });
-      });
+    if (!active.length && !inactive.length) {
+      createRow('No horses found.', {});
+      return;
     }
 
+    // Active at top
     if (active.length) {
-      if (inactive.length) {
-        const divider = document.createElement('div');
-        divider.className = 'list-group-divider';
-        screenRoot.appendChild(divider);
-      }
-
       const label = document.createElement('div');
       label.className = 'list-group-label';
       label.textContent = 'Active (State)';
@@ -306,50 +306,33 @@
       });
     }
 
-    if (!inactive.length && !active.length) {
-      createRow('No horses found.', {});
-    }
-  }
+    // Divider + Inactive below
+    if (inactive.length) {
+      if (active.length) {
+        const divider = document.createElement('div');
+        divider.className = 'list-group-divider';
+        screenRoot.appendChild(divider);
+      }
 
-  // List add view (FALSE in list, but state must be TRUE)
-  function handleListHorseClick(listId, horseId) {
-    const horse = findHorse(horseId);
-    if (!horse) return;
+      const label = document.createElement('div');
+      label.className = 'list-group-label';
+      label.textContent = 'Inactive (State)';
+      screenRoot.appendChild(label);
 
-    // Only allow list membership if horse is active in state
-    if (!horse.state) return;
-
-    horse.lists[listId] = true;
-    updateLastUpdated();
-    render();
-  }
-
-  function renderListScreen(listId) {
-    ensureSession();
-    screenRoot.innerHTML = '';
-
-    const horses = state.session.horses
-      .filter((h) => h.state && !h.lists[listId])
-      .sort((a, b) => a.horseName.localeCompare(b.horseName));
-
-    if (horses.length === 0) {
-      createRow('List complete.', {});
-      return;
-    }
-
-    horses.forEach((horse) => {
-      createRow(horse.horseName, {
-        onClick: () => handleListHorseClick(listId, horse.horseId)
+      inactive.forEach((horse) => {
+        createRow(horse.horseName, {
+          onClick: () => handleStateHorseClick(horse.horseId)
+        });
       });
-    });
+    }
   }
 
-  // List detail (grouped: inactive in list / active in list)
-  function handleListDetailHorseClick(listId, horseId) {
+  // List membership toggle (used by all list screens)
+  function toggleListMembership(listId, horseId) {
     const horse = findHorse(horseId);
     if (!horse) return;
 
-    // Only list edits when globally active
+    // Only allow list edits when globally active
     if (!horse.state) return;
 
     horse.lists[listId] = !horse.lists[listId];
@@ -357,45 +340,28 @@
     render();
   }
 
-  function renderListDetailScreen(listId) {
+  // Shared grouped renderer for List 1..5:
+  // - Only globally active horses
+  // - Active in this list at top
+  // - Inactive in this list below
+  function renderListGrouped(listId) {
     ensureSession();
     screenRoot.innerHTML = '';
 
-    const activeStateHorses = state.session.horses.filter((h) => h.state);
-
-    const inactiveInList = activeStateHorses
-      .filter((h) => !h.lists[listId])
+    const activeStateHorses = state.session.horses
+      .filter((h) => h.state)
       .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
-    const activeInList = activeStateHorses
-      .filter((h) => h.lists[listId])
-      .sort((a, b) => a.horseName.localeCompare(b.horseName));
-
-    if (inactiveInList.length === 0 && activeInList.length === 0) {
-      createRow('No active horses for this list.', {});
+    if (activeStateHorses.length === 0) {
+      createRow('No active horses.', {});
       return;
     }
 
-    if (inactiveInList.length) {
-      const label = document.createElement('div');
-      label.className = 'list-group-label';
-      label.textContent = 'Inactive in this list';
-      screenRoot.appendChild(label);
+    const activeInList = activeStateHorses.filter((h) => h.lists[listId]);
+    const inactiveInList = activeStateHorses.filter((h) => !h.lists[listId]);
 
-      inactiveInList.forEach((horse) => {
-        createRow(horse.horseName, {
-          onClick: () => handleListDetailHorseClick(listId, horse.horseId)
-        });
-      });
-    }
-
+    // Active in this list (top)
     if (activeInList.length) {
-      if (inactiveInList.length) {
-        const divider = document.createElement('div');
-        divider.className = 'list-group-divider';
-        screenRoot.appendChild(divider);
-      }
-
       const label = document.createElement('div');
       label.className = 'list-group-label';
       label.textContent = 'Active in this list';
@@ -404,10 +370,42 @@
       activeInList.forEach((horse) => {
         createRow(horse.horseName, {
           active: true,
-          onClick: () => handleListDetailHorseClick(listId, horse.horseId)
+          onClick: () => toggleListMembership(listId, horse.horseId)
         });
       });
     }
+
+    // Divider + Inactive in this list (bottom)
+    if (inactiveInList.length) {
+      if (activeInList.length) {
+        const divider = document.createElement('div');
+        divider.className = 'list-group-divider';
+        screenRoot.appendChild(divider);
+      }
+
+      const label = document.createElement('div');
+      label.className = 'list-group-label';
+      label.textContent = 'Inactive in this list';
+      screenRoot.appendChild(label);
+
+      inactiveInList.forEach((horse) => {
+        createRow(horse.horseName, {
+          onClick: () => toggleListMembership(listId, horse.horseId)
+        });
+      });
+    }
+
+    if (!activeInList.length && !inactiveInList.length) {
+      createRow('No active horses for this list.', {});
+    }
+  }
+
+  function renderListScreen(listId) {
+    renderListGrouped(listId);
+  }
+
+  function renderListDetailScreen(listId) {
+    renderListGrouped(listId);
   }
 
   // Summary
@@ -418,13 +416,17 @@
     const horses = state.session.horses;
     const activeCount = horses.filter((h) => h.state).length;
 
-    createRow('STATE', {
+    // STATE row
+    createRow(LIST_LABELS.state, {
       tagText: String(activeCount),
       onClick: () => setScreen('state')
     });
 
+    // LIST 1..5 rows
     for (let i = 1; i <= 5; i++) {
       const listId = `list${i}`;
+      const listLabel = LIST_LABELS[listId] || `List ${i}`;
+
       const listCount = horses.filter(
         (h) => h.state && h.lists[listId]
       ).length;
@@ -432,7 +434,7 @@
       const isFull = activeCount > 0 && listCount === activeCount;
       const tagText = isFull ? `${listCount} ✔️` : String(listCount);
 
-      createRow(`LIST ${i}`, {
+      createRow(listLabel, {
         tagText,
         onClick: () => setScreen(`list${i}Detail`)
       });
@@ -450,7 +452,7 @@
     const lines = [];
 
     // STATE
-    lines.push('STATE');
+    lines.push(LIST_LABELS.state);
     horses.forEach((h) => {
       if (h.state) lines.push(h.horseName);
     });
@@ -459,7 +461,8 @@
     // LIST 1..5 (only active horses)
     for (let i = 1; i <= 5; i++) {
       const listId = `list${i}`;
-      lines.push(`LIST ${i}`);
+      const listLabel = LIST_LABELS[listId] || `List ${i}`;
+      lines.push(listLabel);
       horses.forEach((h) => {
         if (h.state && h.lists[listId]) lines.push(h.horseName);
       });
