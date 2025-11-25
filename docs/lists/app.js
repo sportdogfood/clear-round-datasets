@@ -9,46 +9,43 @@
   // ---------------------------------------------------------------------------
 
   // Editable horse names
-const HORSE_NAMES = [
-  'Elliot',
-  'Gaston',
-  'Indy',
-  'Kenny',
-  'Knox',
-  'Lenny',
-  'Maiki',
-  'Milo',
-  'Oddur',
-  'Orion',
-  'Paisley',
-  'Pedro',
-  'Peri',
-  'Q',
-  'Rimini',
-  'Star',
-  'Titan'
-];
+  const HORSE_NAMES = [
+    'Elliot',
+    'Gaston',
+    'Indy',
+    'Kenny',
+    'Knox',
+    'Lenny',
+    'Maiki',
+    'Milo',
+    'Oddur',
+    'Orion',
+    'Paisley',
+    'Pedro',
+    'Peri',
+    'Q',
+    'Rimini',
+    'Star',
+    'Titan'
+  ];
 
+  // Editable list names (in order)
+  const LIST_NAMES = [
+    'Active Horses',     // state
+    'Schooling Bridles', // list1
+    'Show Bridles',      // list2
+    'Schooling Girths',  // list3
+    'Show Girths',       // list4
+    'Saddles'            // list5
+  ];
 
-  // List labels; edit these strings to rename lists.
-// Editable list names (in order)
-const LIST_NAMES = [
-  'Active Horses',           // state
-  'Schooling Bridles', // list1
-  'Show Bridles',      // list2
-  'Schooling Girths',  // list3
-  'Show Girths',       // list4
-  'Saddles'           // list5
-];
+  // Fixed keys used by the app
+  const LIST_KEYS = ['state', 'list1', 'list2', 'list3', 'list4', 'list5'];
 
-// Fixed keys used by the app
-const LIST_KEYS = ['state', 'list1', 'list2', 'list3', 'list4', 'list5'];
-
-// Derived labels object used everywhere else
-const LIST_LABELS = Object.fromEntries(
-  LIST_KEYS.map((key, i) => [key, LIST_NAMES[i]])
-);
-
+  // Derived labels object used everywhere else
+  const LIST_LABELS = Object.fromEntries(
+    LIST_KEYS.map((key, i) => [key, LIST_NAMES[i]])
+  );
 
   const state = {
     session: null,
@@ -314,7 +311,7 @@ const LIST_LABELS = Object.fromEntries(
       const inAnyList = Object.values(horse.lists).some(Boolean);
       if (inAnyList) {
         const ok = window.confirm(
-          'Removing this horse from State will also remove it from all lists. Continue?'
+          'Removing this horse from Active Horses will also remove it from all lists. Continue?'
         );
         if (!ok) return;
 
@@ -676,28 +673,41 @@ const LIST_LABELS = Object.fromEntries(
       case 'start':
         setScreen('start');
         break;
+
       case 'state':
         ensureSession();
         setScreen('state');
         break;
+
       case 'summary':
         ensureSession();
         setScreen('summary');
         break;
+
       case 'list1':
       case 'list2':
       case 'list3':
       case 'list4':
-      case 'list5':
+      case 'list5': {
         ensureSession();
-        setScreen(key);
+        const hasActive = state.session.horses.some((h) => h.state);
+        if (!hasActive) {
+          // No active horses yet → send user to Active Horses first
+          setScreen('state');
+        } else {
+          setScreen(key);
+        }
         break;
+      }
+
       case 'list-prev':
         handleListPrevNext('prev');
         break;
+
       case 'list-next':
         handleListPrevNext('next');
         break;
+
       default:
         break;
     }
