@@ -1,5 +1,5 @@
 // app.js
-// Mobile horse list app – single in-memory session
+// Mobile horse list app – single in-memory session with share selection mode
 
 (function () {
   'use strict';
@@ -8,12 +8,7 @@
   // Config / labels
   // ---------------------------------------------------------------------------
 
-  // Base horse names; edit these if you want custom names.
-  //const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
-// Replace this:
-// const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
-
-// With this:
+  // Editable horse names
 const HORSE_NAMES = [
   'Elliot',
   'Gaston',
@@ -48,7 +43,16 @@ const HORSE_NAMES = [
   const state = {
     session: null,
     currentScreen: 'start',
-    history: []
+    history: [],
+    shareMode: false,
+    shareSelection: {
+      state: true,
+      list1: true,
+      list2: true,
+      list3: true,
+      list4: true,
+      list5: true
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -113,10 +117,23 @@ const HORSE_NAMES = [
       state.history.push(state.currentScreen);
     }
     state.currentScreen = newScreen;
+
+    // Leaving Summary resets share mode
+    if (newScreen !== 'summary') {
+      state.shareMode = false;
+    }
+
     render();
   }
 
   function goBack() {
+    // In Summary share mode, back = exit share mode (stay on Summary)
+    if (state.currentScreen === 'summary' && state.shareMode) {
+      state.shareMode = false;
+      render();
+      return;
+    }
+
     const prev = state.history.pop();
     if (prev) {
       state.currentScreen = prev;
@@ -157,31 +174,29 @@ const HORSE_NAMES = [
   // Header / nav rendering
   // ---------------------------------------------------------------------------
 
-function renderHeader() {
-  const scr = state.currentScreen;
-  headerTitle.textContent = titleForScreen(scr);
+  function renderHeader() {
+    const scr = state.currentScreen;
+    headerTitle.textContent = titleForScreen(scr);
 
-  const hideBack = state.history.length === 0 && scr === 'start';
-  headerBack.style.visibility = hideBack ? 'hidden' : 'visible';
+    const hideBack = state.history.length === 0 && scr === 'start';
+    headerBack.style.visibility = hideBack ? 'hidden' : 'visible';
 
-  const isListScreen = /^list[1-5](Detail)?$/.test(scr);
+    const isListScreen = /^list[1-5](Detail)?$/.test(scr);
 
-  // Decide what the right-side header button does
-  if (scr === 'summary') {
-    headerAction.hidden = false;
-    headerAction.textContent = 'Text';
-    headerAction.dataset.action = 'share';
-  } else if (isListScreen) {
-    headerAction.hidden = false;
-    headerAction.textContent = '→';
-    headerAction.dataset.action = 'next-list';
-  } else {
-    headerAction.hidden = true;
-    headerAction.textContent = '';
-    delete headerAction.dataset.action;
+    if (scr === 'summary') {
+      headerAction.hidden = false;
+      headerAction.textContent = state.shareMode ? 'Send' : 'Text';
+      headerAction.dataset.action = state.shareMode ? 'send-share' : 'enter-share';
+    } else if (isListScreen) {
+      headerAction.hidden = false;
+      headerAction.textContent = '→';
+      headerAction.dataset.action = 'next-list';
+    } else {
+      headerAction.hidden = true;
+      headerAction.textContent = '';
+      delete headerAction.dataset.action;
+    }
   }
-}
-
 
   function renderNav() {
     const scr = state.currentScreen;
@@ -448,17 +463,36 @@ function renderHeader() {
 
     const horses = state.session.horses;
     const activeCount = horses.filter((h) => h.state).length;
+    const inShare = state.shareMode;
+
+    function handleRowClick(key) {
+      if (!inShare) {
+        // Normal navigation mode
+        if (key === 'state') {
+          setScreen('state');
+        } else if (key.startsWith('list')) {
+          const num = key.replace('list', '');
+          setScreen(`list${num}Detail`);
+        }
+      } else {
+        // Share selection mode: toggle include/exclude
+        state.shareSelection[key] = !state.shareSelection[key];
+        render();
+      }
+    }
 
     // STATE row
+    const stateSelected = state.shareSelection.state;
     createRow(LIST_LABELS.state, {
       tagText: String(activeCount),
-      onClick: () => setScreen('state')
+      active: inShare && stateSelected,
+      onClick: () => handleRowClick('state')
     });
 
     // LIST 1..5 rows
     for (let i = 1; i <= 5; i++) {
       const listId = `list${i}`;
-      const listLabel = LIST_LABELS[listId] || `List ${i}`;
+      const label = LIST_LABELS[listId] || `List ${i}`;
 
       const listCount = horses.filter(
         (h) => h.state && h.lists[listId]
@@ -467,9 +501,12 @@ function renderHeader() {
       const isFull = activeCount > 0 && listCount === activeCount;
       const tagText = isFull ? `${listCount} ✔️` : String(listCount);
 
-      createRow(listLabel, {
+      const selected = state.shareSelection[listId];
+
+      createRow(label, {
         tagText,
-        onClick: () => setScreen(`list${i}Detail`)
+        active: inShare && selected,
+        onClick: () => handleRowClick(listId)
       });
     }
   }
@@ -478,67 +515,66 @@ function renderHeader() {
   // Share / SMS
   // ---------------------------------------------------------------------------
 
- function buildShareText() {
-  if (!state.session) return '';
+  function buildShareText() {
+    if (!state.session) return '';
 
-  const horses = state.session.horses;
-
-  // Active horses (global state)
-  const activeHorses = horses
-    .filter((h) => h.state)
-    .sort((a, b) => a.horseName.localeCompare(b.horseName));
-
-  const activeCount = activeHorses.length;
-  const lines = [];
-
-  // STATE header with count
-  const stateLabel = LIST_LABELS.state || 'State';
-  lines.push(`${stateLabel} (${activeCount})`);
-
-  if (activeCount === 0) {
-    lines.push('[none]');
-  } else {
-    activeHorses.forEach((h) => lines.push(h.horseName));
-  }
-
-  lines.push('');
-
-  // LIST 1..5 – only active horses in each list
-  for (let i = 1; i <= 5; i++) {
-    const listId = `list${i}`;
-    const listLabel = LIST_LABELS[listId] || `List ${i}`;
-
-    const members = horses
-      .filter((h) => h.state && h.lists[listId])
+    const horses = state.session.horses;
+    const activeHorses = horses
+      .filter((h) => h.state)
       .sort((a, b) => a.horseName.localeCompare(b.horseName));
+    const activeCount = activeHorses.length;
 
-    const listCount = members.length;
-    const isFull = activeCount > 0 && listCount === activeCount;
+    const lines = [];
+    const order = ['state', 'list1', 'list2', 'list3', 'list4', 'list5'];
 
-    // Header example: "MyList1 (3/5 ✔️)" or "MyList1 (0/5)"
-    let header = listLabel;
-    if (activeCount > 0) {
-      header += ` (${listCount}/${activeCount}`;
-      if (isFull) header += ' ✔️';
-      header += ')';
-    } else {
-      header += ` (${listCount})`;
+    function addSection(header, members) {
+      // One blank line between sections, but not before the first
+      if (lines.length > 0) {
+        lines.push('');
+      }
+
+      lines.push(header);
+
+      if (members.length === 0) {
+        lines.push('[none]');
+      } else {
+        members.forEach((h) => lines.push(h.horseName));
+      }
     }
 
-    lines.push(header);
+    order.forEach((key) => {
+      if (!state.shareSelection[key]) return;
 
-    if (listCount === 0) {
-      lines.push('[none]');
-    } else {
-      members.forEach((h) => lines.push(h.horseName));
-    }
+      if (key === 'state') {
+        const label = LIST_LABELS.state || 'State';
+        const header = `${label} (${activeCount})`;
+        addSection(header, activeHorses);
+      } else {
+        const listId = key;
+        const label = LIST_LABELS[listId] || listId;
 
-    if (i < 5) lines.push('');
+        const members = horses
+          .filter((h) => h.state && h.lists[listId])
+          .sort((a, b) => a.horseName.localeCompare(b.horseName));
+
+        const listCount = members.length;
+        const isFull = activeCount > 0 && listCount === activeCount;
+
+        let header;
+        if (activeCount > 0) {
+          header = `${label} (${listCount}/${activeCount}`;
+          if (isFull) header += ' ✔️';
+          header += ')';
+        } else {
+          header = `${label} (${listCount})`;
+        }
+
+        addSection(header, members);
+      }
+    });
+
+    return lines.join('\n');
   }
-
-  return lines.join('\n');
-}
-
 
   function handleShareClick() {
     ensureSession();
@@ -598,16 +634,27 @@ function renderHeader() {
     goBack();
   });
 
-headerAction.addEventListener('click', () => {
-  const action = headerAction.dataset.action;
+  headerAction.addEventListener('click', () => {
+    const action = headerAction.dataset.action;
+    const scr = state.currentScreen;
 
-  if (action === 'share' && state.currentScreen === 'summary') {
-    handleShareClick();
-  } else if (action === 'next-list') {
-    handleListPrevNext('next');
-  }
-});
+    if (scr === 'summary') {
+      if (action === 'enter-share') {
+        state.shareMode = true;
+        render();
+      } else if (action === 'send-share') {
+        // Build + send SMS, then exit share mode and stay on Summary
+        handleShareClick();
+        state.shareMode = false;
+        render();
+      }
+      return;
+    }
 
+    if (action === 'next-list') {
+      handleListPrevNext('next');
+    }
+  });
 
   navRow.addEventListener('click', (evt) => {
     const btn = evt.target.closest('.nav-btn');
