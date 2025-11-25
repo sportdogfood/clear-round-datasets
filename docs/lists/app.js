@@ -9,25 +9,39 @@
   // ---------------------------------------------------------------------------
 
   // Editable horse names
-  const HORSE_NAMES = [
-    'Elliot',
-    'Gaston',
-    'Indy',
-    'Kenny',
-    'Knox',
-    'Lenny',
-    'Maiki',
-    'Milo',
-    'Oddur',
-    'Orion',
-    'Paisley',
-    'Pedro',
-    'Peri',
-    'Q',
-    'Rimini',
-    'Star',
-    'Titan'
-  ];
+const HORSE_NAMES = [
+  'Cervin',
+  'Charly',
+  'Coin',
+  'Darcy',
+  'Dino',
+  'Dottie',
+  'Doug',
+  'Elliot',
+  'Gaston',
+  'Indy',
+  'Kenny',
+  'King',
+  'Knox',
+  'Krypton',
+  'Lenny',
+  'Maiki',
+  'Milo',
+  'Minute',
+  'Navy',
+  'Oddur',
+  'Orion',
+  'Paisley',
+  'Pedro',
+  'Peri',
+  'Q',
+  'Rimini',
+  'Star',
+  'Tank',
+  'Titan',
+  'Zen'
+];
+
 
   // Editable list names (in order)
   const LIST_NAMES = [
