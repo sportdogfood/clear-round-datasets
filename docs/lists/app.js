@@ -31,14 +31,24 @@ const HORSE_NAMES = [
 
 
   // List labels; edit these strings to rename lists.
-  const LIST_LABELS = {
-    state: 'Active',
-    list1: 'Schooling Bridle',
-    list2: 'Show Bridle',
-    list3: 'Schooling Girth',
-    list4: 'Show Girth',
-    list5: 'Saddles'
-  };
+// Editable list names (in order)
+const LIST_NAMES = [
+  'Active',           // state
+  'Schooling Bridle', // list1
+  'Show Bridle',      // list2
+  'Schooling Girth',  // list3
+  'Show Girth',       // list4
+  'Saddles'           // list5
+];
+
+// Fixed keys used by the app
+const LIST_KEYS = ['state', 'list1', 'list2', 'list3', 'list4', 'list5'];
+
+// Derived labels object used everywhere else
+const LIST_LABELS = Object.fromEntries(
+  LIST_KEYS.map((key, i) => [key, LIST_NAMES[i]])
+);
+
 
   const state = {
     session: null,
