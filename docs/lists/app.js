@@ -266,73 +266,87 @@
     updateLastUpdated();
     render();
   }
+function renderListScreen(listId) {
+  ensureSession();
+  screenRoot.innerHTML = '';
 
-  function renderListScreen(listId) {
-    ensureSession();
-    screenRoot.innerHTML = '';
+  // Only ACTIVE horses that are NOT yet in this list
+  const horses = state.session.horses.filter(
+    (h) => h.state && !h.lists[listId]
+  );
 
-    const horses = state.session.horses.filter((h) => !h.lists[listId]);
+  if (horses.length === 0) {
+    createRow('No horses to add.', {});
+    return;
+  }
 
-    if (horses.length === 0) {
-      createRow('No horses to add.', {});
-      return;
-    }
+  horses.forEach((horse) => {
+    createRow(horse.horseName, {
+      onClick: () => handleListHorseClick(listId, horse.horseId)
+    });
+  });
+}
 
-    horses.forEach((horse) => {
-      createRow(horse.horseName, {
-        onClick: () => handleListHorseClick(listId, horse.horseId)
-      });
+function handleListHorseClick(listId, horseId) {
+  const horse = findHorse(horseId);
+  if (!horse) return;
+
+  // Safety: only allow membership if horse is active
+  if (!horse.state) return;
+
+  horse.lists[listId] = true;
+  updateLastUpdated();
+  render();
+}
+
+
+function renderListDetailScreen(listId) {
+  ensureSession();
+  screenRoot.innerHTML = '';
+
+  // Only ACTIVE horses that are currently in this list
+  const horses = state.session.horses.filter(
+    (h) => h.state && h.lists[listId]
+  );
+
+  if (horses.length === 0) {
+    createRow('No horses in this list.', {});
+    return;
+  }
+
+  horses.forEach((horse) => {
+    createRow(horse.horseName, {
+      active: true,
+      onClick: () => handleListDetailHorseClick(listId, horse.horseId)
+    });
+  });
+}
+
+
+ function renderSummaryScreen() {
+  ensureSession();
+  screenRoot.innerHTML = '';
+
+  const horses = state.session.horses;
+
+  const stateCount = horses.filter((h) => h.state).length;
+  createRow('STATE', {
+    tagText: String(stateCount),
+    onClick: () => setScreen('state')
+  });
+
+  for (let i = 1; i <= 5; i++) {
+    const listId = `list${i}`;
+    const count = horses.filter(
+      (h) => h.state && h.lists[listId]
+    ).length;
+    createRow(`LIST ${i}`, {
+      tagText: String(count),
+      onClick: () => setScreen(`list${i}Detail`)
     });
   }
+}
 
-  function handleListDetailHorseClick(listId, horseId) {
-    const horse = findHorse(horseId);
-    if (!horse) return;
-    horse.lists[listId] = false;
-    updateLastUpdated();
-    render();
-  }
-
-  function renderListDetailScreen(listId) {
-    ensureSession();
-    screenRoot.innerHTML = '';
-
-    const horses = state.session.horses.filter((h) => h.lists[listId]);
-
-    if (horses.length === 0) {
-      createRow('No horses in this list.', {});
-      return;
-    }
-
-    horses.forEach((horse) => {
-      createRow(horse.horseName, {
-        active: true,
-        onClick: () => handleListDetailHorseClick(listId, horse.horseId)
-      });
-    });
-  }
-
-  function renderSummaryScreen() {
-    ensureSession();
-    screenRoot.innerHTML = '';
-
-    const horses = state.session.horses;
-
-    const stateCount = horses.filter((h) => h.state).length;
-    createRow('STATE', {
-      tagText: String(stateCount),
-      onClick: () => setScreen('state')
-    });
-
-    for (let i = 1; i <= 5; i++) {
-      const listId = `list${i}`;
-      const count = horses.filter((h) => h.lists[listId]).length;
-      createRow(`LIST ${i}`, {
-        tagText: String(count),
-        onClick: () => setScreen(`list${i}Detail`)
-      });
-    }
-  }
 
   // --- Share / SMS ----------------------------------------------------------
 
