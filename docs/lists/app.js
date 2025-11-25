@@ -32,12 +32,12 @@ const HORSE_NAMES = [
 
   // List labels; edit these strings to rename lists.
   const LIST_LABELS = {
-    state: 'State',
-    list1: 'List 1',
-    list2: 'List 2',
-    list3: 'List 3',
-    list4: 'List 4',
-    list5: 'List 5'
+    state: 'Active',
+    list1: 'Schooling Bridle',
+    list2: 'Show Bridle',
+    list3: 'Schooling Girth',
+    list4: 'Show Girth',
+    list5: 'Saddles'
   };
 
   const state = {
