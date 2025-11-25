@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Horse Lists</title>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <style>
+    :root {
+      --bg: #050509;
+      --bg-alt: #111319;
+      --border: #2a2d3a;
+      --accent: #2563eb;
+      --accent-soft: #1d4ed8;
+      --text: #f9fafb;
+      --text-soft: #d1d5db;
+      --radius-row: 999px;
+      --radius-pill: 999px;
+      --header-h: 52px;
+      --nav-h: 60px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Header */
+
+    .app-header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5, 5, 9, 0.96);
+      backdrop-filter: blur(10px);
+    }
+
+    .header-back,
+    .header-action {
+      min-width: 44px;
+      height: 36px;
+      border-radius: var(--radius-pill);
+      border: 0;
+      background: transparent;
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .header-back span {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-action {
+      font-size: 13px;
+      padding: 0 10px;
+    }
+
+    /* Main content */
+
+    .app-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px 8px;
+      background: radial-gradient(circle at top, #111827 0, #020617 52%);
+    }
+
+    .list-column {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 12px;
+    }
+
+    .row {
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: var(--radius-row);
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      color: var(--text-soft);
+    }
+
+    .row-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      opacity: 0.7;
+    }
+
+    .row--active {
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
+      color: var(--text);
+    }
+
+    .row--active .row-tag {
+      border-color: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.3);
+      color: var(--text-soft);
+      opacity: 1;
+    }
+
+    .row--tap {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Bottom nav */
+
+    .app-nav {
+      height: var(--nav-h);
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: rgba(5, 5, 9, 0.98);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .nav-scroller {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    .nav-row {
+      display: inline-flex;
+      gap: 6px;
+      padding: 0 4px;
+    }
+
+    .nav-btn {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--text-soft);
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .nav-btn--primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #f9fafb;
+    }
+
+    .nav-btn--icon {
+      min-width: 34px;
+      text-align: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .nav-btn:active,
+    .row--tap:active {
+      transform: translateY(1px);
+    }
+
+    button {
+      font-family: inherit;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="app-header">
+      <button class="header-back" id="header-back" type="button">
+        <span>&larr;</span>
+      </button>
+      <h1 class="header-title" id="header-title">Start</h1>
+      <button class="header-action" id="header-action" type="button" hidden>
+        <!-- e.g. "Text" on Summary -->
+      </button>
+    </header>
+
+    <!-- Main screen content -->
+    <main class="app-main">
+      <div id="screen-root" class="list-column">
+        <!-- JS will inject rows here based on current screen/state -->
+        <!-- Example placeholder rows for now -->
+        <div class="row row--tap">
+          <div class="row-title">New session</div>
+        </div>
+        <div class="row row--tap">
+          <div class="row-title">In-session</div>
+        </div>
+        <div class="row row--tap">
+          <div class="row-title">Summary</div>
+        </div>
+        <div class="row row--tap">
+          <div class="row-title">Restart session</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom nav -->
+    <nav class="app-nav">
+      <div class="nav-scroller">
+        <div class="nav-row" id="nav-row">
+          <button class="nav-btn nav-btn--primary"
+                  type="button"
+                  data-screen="start">
+            Start
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="state">
+            State
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="list1">
+            List 1
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="list2">
+            List 2
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="list3">
+            List 3
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="list4">
+            List 4
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="list5">
+            List 5
+          </button>
+          <button class="nav-btn"
+                  type="button"
+                  data-screen="summary">
+            Summary
+          </button>
+          <button class="nav-btn nav-btn--icon"
+                  type="button"
+                  data-screen="list-prev">
+            &larr;
+          </button>
+          <button class="nav-btn nav-btn--icon"
+                  type="button"
+                  data-screen="list-next">
+            &rarr;
+          </button>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- App logic (to be implemented next) -->
+  <script src="app.js"></script>
+</body>
+</html>
