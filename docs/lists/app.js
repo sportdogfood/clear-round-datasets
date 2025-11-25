@@ -9,39 +9,38 @@
   // ---------------------------------------------------------------------------
 
   // Editable horse names
-const HORSE_NAMES = [
-  'Cervin',
-  'Charly',
-  'Coin',
-  'Darcy',
-  'Dino',
-  'Dottie',
-  'Doug',
-  'Elliot',
-  'Gaston',
-  'Indy',
-  'Kenny',
-  'King',
-  'Knox',
-  'Krypton',
-  'Lenny',
-  'Maiki',
-  'Milo',
-  'Minute',
-  'Navy',
-  'Oddur',
-  'Orion',
-  'Paisley',
-  'Pedro',
-  'Peri',
-  'Q',
-  'Rimini',
-  'Star',
-  'Tank',
-  'Titan',
-  'Zen'
-];
-
+  const HORSE_NAMES = [
+    'Cervin',
+    'Charly',
+    'Coin',
+    'Darcy',
+    'Dino',
+    'Dottie',
+    'Doug',
+    'Elliot',
+    'Gaston',
+    'Indy',
+    'Kenny',
+    'King',
+    'Knox',
+    'Krypton',
+    'Lenny',
+    'Maiki',
+    'Milo',
+    'Minute',
+    'Navy',
+    'Oddur',
+    'Orion',
+    'Paisley',
+    'Pedro',
+    'Peri',
+    'Q',
+    'Rimini',
+    'Star',
+    'Tank',
+    'Titan',
+    'Zen'
+  ];
 
   // Editable list names (in order)
   const LIST_NAMES = [
@@ -549,7 +548,6 @@ const HORSE_NAMES = [
     const order = ['state', 'list1', 'list2', 'list3', 'list4', 'list5'];
 
     function addSection(header, members) {
-      // One blank line between sections, but not before the first
       if (lines.length > 0) {
         lines.push('');
       }
@@ -664,7 +662,6 @@ const HORSE_NAMES = [
         state.shareMode = true;
         render();
       } else if (action === 'send-share') {
-        // Build + send SMS, then exit share mode and stay on Summary
         handleShareClick();
         state.shareMode = false;
         render();
@@ -706,7 +703,6 @@ const HORSE_NAMES = [
         ensureSession();
         const hasActive = state.session.horses.some((h) => h.state);
         if (!hasActive) {
-          // No active horses yet → send user to Active Horses first
           setScreen('state');
         } else {
           setScreen(key);
