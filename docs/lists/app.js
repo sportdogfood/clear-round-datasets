@@ -164,22 +164,31 @@ const HORSE_NAMES = [
   // Header / nav rendering
   // ---------------------------------------------------------------------------
 
-  function renderHeader() {
-    const scr = state.currentScreen;
-    headerTitle.textContent = titleForScreen(scr);
+function renderHeader() {
+  const scr = state.currentScreen;
+  headerTitle.textContent = titleForScreen(scr);
 
-    const hideBack = state.history.length === 0 && scr === 'start';
-    headerBack.style.visibility = hideBack ? 'hidden' : 'visible';
+  const hideBack = state.history.length === 0 && scr === 'start';
+  headerBack.style.visibility = hideBack ? 'hidden' : 'visible';
 
-    // Only show header action ("Text") on Summary
-    if (scr === 'summary') {
-      headerAction.hidden = false;
-      headerAction.textContent = 'Text';
-    } else {
-      headerAction.hidden = true;
-      headerAction.textContent = '';
-    }
+  const isListScreen = /^list[1-5](Detail)?$/.test(scr);
+
+  // Decide what the right-side header button does
+  if (scr === 'summary') {
+    headerAction.hidden = false;
+    headerAction.textContent = 'Text';
+    headerAction.dataset.action = 'share';
+  } else if (isListScreen) {
+    headerAction.hidden = false;
+    headerAction.textContent = '→';
+    headerAction.dataset.action = 'next-list';
+  } else {
+    headerAction.hidden = true;
+    headerAction.textContent = '';
+    delete headerAction.dataset.action;
   }
+}
+
 
   function renderNav() {
     const scr = state.currentScreen;
@@ -561,11 +570,16 @@ const HORSE_NAMES = [
     goBack();
   });
 
-  headerAction.addEventListener('click', () => {
-    if (state.currentScreen === 'summary') {
-      handleShareClick();
-    }
-  });
+headerAction.addEventListener('click', () => {
+  const action = headerAction.dataset.action;
+
+  if (action === 'share' && state.currentScreen === 'summary') {
+    handleShareClick();
+  } else if (action === 'next-list') {
+    handleListPrevNext('next');
+  }
+});
+
 
   navRow.addEventListener('click', (evt) => {
     const btn = evt.target.closest('.nav-btn');
