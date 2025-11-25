@@ -485,32 +485,67 @@ function renderHeader() {
   // Share / SMS
   // ---------------------------------------------------------------------------
 
-  function buildShareText() {
-    if (!state.session) return '';
+ function buildShareText() {
+  if (!state.session) return '';
 
-    const horses = state.session.horses;
-    const lines = [];
+  const horses = state.session.horses;
 
-    // STATE
-    lines.push(LIST_LABELS.state);
-    horses.forEach((h) => {
-      if (h.state) lines.push(h.horseName);
-    });
-    lines.push('');
+  // Active horses (global state)
+  const activeHorses = horses
+    .filter((h) => h.state)
+    .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
-    // LIST 1..5 (only active horses)
-    for (let i = 1; i <= 5; i++) {
-      const listId = `list${i}`;
-      const listLabel = LIST_LABELS[listId] || `List ${i}`;
-      lines.push(listLabel);
-      horses.forEach((h) => {
-        if (h.state && h.lists[listId]) lines.push(h.horseName);
-      });
-      if (i < 5) lines.push('');
+  const activeCount = activeHorses.length;
+  const lines = [];
+
+  // STATE header with count
+  const stateLabel = LIST_LABELS.state || 'State';
+  lines.push(`${stateLabel} (${activeCount})`);
+
+  if (activeCount === 0) {
+    lines.push('[none]');
+  } else {
+    activeHorses.forEach((h) => lines.push(h.horseName));
+  }
+
+  lines.push('');
+
+  // LIST 1..5 – only active horses in each list
+  for (let i = 1; i <= 5; i++) {
+    const listId = `list${i}`;
+    const listLabel = LIST_LABELS[listId] || `List ${i}`;
+
+    const members = horses
+      .filter((h) => h.state && h.lists[listId])
+      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+
+    const listCount = members.length;
+    const isFull = activeCount > 0 && listCount === activeCount;
+
+    // Header example: "MyList1 (3/5 ✔️)" or "MyList1 (0/5)"
+    let header = listLabel;
+    if (activeCount > 0) {
+      header += ` (${listCount}/${activeCount}`;
+      if (isFull) header += ' ✔️';
+      header += ')';
+    } else {
+      header += ` (${listCount})`;
     }
 
-    return lines.join('\n');
+    lines.push(header);
+
+    if (listCount === 0) {
+      lines.push('[none]');
+    } else {
+      members.forEach((h) => lines.push(h.horseName));
+    }
+
+    if (i < 5) lines.push('');
   }
+
+  return lines.join('\n');
+}
+
 
   function handleShareClick() {
     ensureSession();
