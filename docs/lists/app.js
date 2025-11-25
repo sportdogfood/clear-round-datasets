@@ -9,7 +9,38 @@
   // ---------------------------------------------------------------------------
 
   // Base horse names; edit these if you want custom names.
-  const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
+  //const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
+// Replace this:
+// const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
+
+// With this:
+const HORSE_NAMES = [
+  'Horse 1',
+  'Horse 2',
+  'Horse 3',
+  'Horse 4',
+  'Horse 5',
+  'Horse 6',
+  'Horse 7',
+  'Horse 8',
+  'Horse 9',
+  'Horse 10',
+  'Horse 11',
+  'Horse 12',
+  'Horse 13',
+  'Horse 14',
+  'Horse 15',
+  'Horse 16',
+  'Horse 17',
+  'Horse 18',
+  'Horse 19',
+  'Horse 20',
+  'Horse 21',
+  'Horse 22',
+  'Horse 23',
+  'Horse 24',
+  'Horse 25'
+];
 
   // List labels; edit these strings to rename lists.
   const LIST_LABELS = {
