@@ -11,7 +11,7 @@
       --bg: #050509;
       --bg-alt: #111319;
       --border: #2a2d3a;
-      --accent: #2563eb;
+      --accent: #2563eb;  /* FIXED: removed stray 'f' */
       --accent-soft: #1d4ed8;
       --text: #f9fafb;
       --text-soft: #d1d5db;
@@ -39,12 +39,13 @@
     body {
       display: flex;
       justify-content: center;
+      align-items: stretch;
     }
 
     .app {
       width: 100%;
       max-width: 480px;
-      height: 100vh;
+      height: 100vh; /* viewport height, nav glued to bottom */
       display: flex;
       flex-direction: column;
       background: var(--bg);
@@ -144,10 +145,15 @@
       opacity: 0.7;
     }
 
+    /* Active rows – invert similar to nav primary */
     .row--active {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      color: var(--text);
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #f9fafb;
+    }
+
+    .row--active .row-title {
+      color: #f9fafb;
     }
 
     .row--active .row-tag {
@@ -160,6 +166,19 @@
     .row--tap {
       cursor: pointer;
       user-select: none;
+    }
+
+    .list-group-label {
+      font-size: 12px;
+      color: var(--text-soft);
+      opacity: 0.7;
+      margin: 6px 4px 4px;
+    }
+
+    .list-group-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 10px 4px;
     }
 
     /* Bottom nav */
@@ -187,19 +206,6 @@
       gap: 6px;
       padding: 0 4px;
     }
-    
-.list-group-label {
-  font-size: 12px;
-  color: var(--text-soft);
-  opacity: 0.7;
-  margin: 6px 4px 4px;
-}
-
-.list-group-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 10px 4px;
-}
 
     .nav-btn {
       padding: 6px 10px;
@@ -245,28 +251,13 @@
         <span>&larr;</span>
       </button>
       <h1 class="header-title" id="header-title">Start</h1>
-      <button class="header-action" id="header-action" type="button" hidden>
-        <!-- e.g. "Text" on Summary -->
-      </button>
+      <button class="header-action" id="header-action" type="button" hidden></button>
     </header>
 
     <!-- Main screen content -->
     <main class="app-main">
       <div id="screen-root" class="list-column">
-        <!-- JS will inject rows here based on current screen/state -->
-        <!-- Example placeholder rows for now -->
-        <div class="row row--tap">
-          <div class="row-title">New session</div>
-        </div>
-        <div class="row row--tap">
-          <div class="row-title">In-session</div>
-        </div>
-        <div class="row row--tap">
-          <div class="row-title">Summary</div>
-        </div>
-        <div class="row row--tap">
-          <div class="row-title">Restart session</div>
-        </div>
+        <!-- JS will inject rows here -->
       </div>
     </main>
 
@@ -282,27 +273,27 @@
           <button class="nav-btn"
                   type="button"
                   data-screen="state">
-            Active
+            Active Horses
           </button>
           <button class="nav-btn"
                   type="button"
                   data-screen="list1">
-            Schooling Bridle
+            Schooling Bridles
           </button>
           <button class="nav-btn"
                   type="button"
                   data-screen="list2">
-            Show Bridle
+            Show Bridles
           </button>
           <button class="nav-btn"
                   type="button"
                   data-screen="list3">
-            Schooling Girth
+            Schooling Girths
           </button>
           <button class="nav-btn"
                   type="button"
                   data-screen="list4">
-            Show Girth
+            Show Girths
           </button>
           <button class="nav-btn"
                   type="button"
@@ -329,7 +320,6 @@
     </nav>
   </div>
 
-  <!-- App logic (to be implemented next) -->
   <script src="app.js"></script>
 </body>
 </html>
