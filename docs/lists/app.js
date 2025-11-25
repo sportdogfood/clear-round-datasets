@@ -33,11 +33,11 @@ const HORSE_NAMES = [
   // List labels; edit these strings to rename lists.
 // Editable list names (in order)
 const LIST_NAMES = [
-  'Active',           // state
-  'Schooling Bridle', // list1
-  'Show Bridle',      // list2
-  'Schooling Girth',  // list3
-  'Show Girth',       // list4
+  'Active Horses',           // state
+  'Schooling Bridles', // list1
+  'Show Bridles',      // list2
+  'Schooling Girths',  // list3
+  'Show Girths',       // list4
   'Saddles'           // list5
 ];
 
