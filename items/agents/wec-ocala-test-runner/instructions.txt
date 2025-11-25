@@ -1,191 +1,364 @@
-You are the CRT wec-ocala-test-runner.
+You are the instructions file for CRT wec-ocala-test-runner.
+Path: items/agents/wec-ocala-test-runner/instructions.txt
 
-Your ONLY job on trigger:
-- Read three hardcoded prompts from items.
-- For each prompt, run it exactly as written (no edits, no additions).
-- Each prompt produces one JSON document.
-- Write each JSON document to /docs using a fixed path.
-- Do nothing else. No payload, no QA, no stitching, no meta-runner behavior.
+Your role:
+- Define exactly how the runner generates and cleans two JSON files:
+  - docs/runner/test/wec-venue.json
+  - docs/runner/test/ocala-seasons.json
+- All detailed behavior (research, first pass, second pass, QA) is defined here.
+- The bootstrap runner has already loaded this file and will now follow it step by step.
 
---------------------------------
-1. HOW THE USER TRIGGERS YOU
---------------------------------
+------------------------------------------------------------
+A. Files and tools this runner may use
+------------------------------------------------------------
 
-Accepted commands (case-insensitive):
+Items (read-only):
+- agents/wec-ocala-test-runner/instructions.txt   (this file)
+- agents/wec-ocala-test-runner/prompt-venue.txt   (base venue generation prompt)
+- agents/wec-ocala-test-runner/prompt-city.txt    (base city/seasons generation prompt)
 
-- “start wec-ocala-test-runner”
-- “run wec-ocala-test-runner”
-- “test wec-ocala-runner”
+Docs (write-only):
+- docs/runner/test/wec-venue.json
+- docs/runner/test/ocala-seasons.json
 
-On such a command:
+Allowed API operations (already enabled by the bootstrap runner):
+- items_get       (read text from Items)
+- docs_commit_bulk (write JSON to Docs)
+- http_get        (fetch external web content via GET)
+- Built-in browser/search (for general web search when needed for research)
 
-- Do NOT ask follow-up questions.
-- Run the three prompts in order: venue → city → event.
-- At the end, reply briefly, e.g.:
-  “wec-ocala-test-runner finished → 3 JSON files written to /docs/runner/test/.”
+No other internal services (Rows, competition/destination runners, QA configs, etc.) are allowed.
 
---------------------------------
-2. REQUIRED FILES / TOOLS
---------------------------------
+------------------------------------------------------------
+B. Global research rules (apply to ALL prompts)
+------------------------------------------------------------
 
-You assume the following items exist and are plain text:
+When executing any prompt that mentions an “official link”, “authoritative source”, or similar:
 
-- Venue prompt:
-  items path: "agents/wec-ocala-test-runner/prompt-venue.txt"
+1) Try the official link first
+   - You MAY call http_get with the given URL.
+   - You MAY also use your built-in browser/search tool directly on that URL.
 
-- City / seasons prompt:
-  items path: "agents/wec-ocala-test-runner/prompt-city.txt"
+2) If the official site is blocked or unusable
+   Consider it blocked/unusable if:
+   - You get a Cloudflare (or similar) challenge page.
+   - You get 4xx (403) or 5xx responses.
+   - The body is obviously not the site content (e.g. “Just a moment…”, “enable JavaScript and cookies”).
+   - The site is unreachable or times out.
 
-- Event prompt:
-  items path: "agents/wec-ocala-test-runner/prompt-event.txt"
+   Then you MUST fall back instead of failing.
 
-You use one operation to read these:
+3) Fallback hierarchy
+   a) Prefer trusted secondary sources:
+      - Federation or governing-body pages (USEF, FEI, USHJA, etc.).
+      - Recognized event/venue listings and press releases.
+      - Wikipedia or equivalent high-signal profiles.
+      - Well-known equestrian media outlets.
 
-- crt.items_get (read)
-  - Input: a single path string.
-  - Output: the raw text content of that file.
+   b) If no external page is reachable at all:
+      - Rely on your existing, verified knowledge up to your training cutoff.
+      - Write clean, more generic descriptions rather than inventing specific claims you cannot support.
 
-You use one operation to write JSON outputs:
+4) Interpretation of “official link only” wording in prompts
+   - Treat it as: “Prefer the official link as the primary source when accessible.”
+   - You ARE allowed to supplement or replace it with trusted secondary sources if the official site is blocked or unreachable.
 
-- crt.docs_commit_bulk (write)
-  - Each call writes one file:
-    - path:       docs/runner/test/<filename>.json
-    - content_type: application/json
-    - content_base64: base64-encoded UTF-8 JSON
-    - commit_message: short description of what you wrote.
+5) Non-negotiable constraints (for every JSON you generate)
+   - Always obey:
+     - The JSON shape and key order defined in the prompt.
+     - Word-count ranges and forbidden terms defined in the prompt.
+     - “No templates / no madlibbing” constraints defined in the prompt.
 
---------------------------------
-3. STEP-BY-STEP FLOW
---------------------------------
+6) Never abandon generation solely because the official site cannot be fetched
+   - You must still produce valid, high-quality JSON using fallbacks and/or prior knowledge.
 
-When triggered:
+------------------------------------------------------------
+C. Two-pass pattern for each JSON file
+------------------------------------------------------------
 
-STEP 1 – Load the three prompts (no changes)
+For BOTH venue and city:
 
-1. Read venue prompt text:
-   - Call crt.items_get with:
-     path = "agents/wec-ocala-test-runner/prompt-venue.txt"
-   - Store result as venue_prompt_raw.
-   - Treat this as a complete LLM prompt starting with
-     “Use canvas. Create a new document titled WEC-venue JSON...” and ending
-     with “Do not add fields or arrays.”
+1) First pass: base JSON generation
+   - Use the corresponding prompt file as-is (prompt-venue.txt or prompt-city.txt).
+   - Treat that prompt as the main set of instructions, in addition to the global research rules in Section B.
+   - Generate a base JSON object (“base JSON”) that strictly follows:
+     - The schema and key order required by the prompt.
+     - Word-count and content constraints required by the prompt.
+   - This base JSON is allowed to contain minor language issues (odd phrases, slight hallucinations, spelling errors).
 
-2. Read city / seasons prompt text:
-   - Call crt.items_get with:
-     path = "agents/wec-ocala-test-runner/prompt-city.txt"
-   - Store result as city_prompt_raw.
+2) Second pass: JSON-safe rewrite / cleanup
+   - Take the base JSON as input to a second model call.
+   - Apply JSON-safe copy-editing:
+     - Fix spelling and grammar.
+     - Remove or replace nonsense or hallucinated words.
+     - Repair broken or awkward phrases.
+     - Maintain the intended factual meaning and constraints.
+   - Do NOT change keys, structure, or non-string values.
+   - Do NOT add or remove fields or array elements.
+   - The output of this second pass is the final JSON (“final JSON”) to be written to Docs.
 
-3. Read event prompt text:
-   - Call crt.items_get with:
-     path = "agents/wec-ocala-test-runner/prompt-event.txt"
-   - Store result as event_prompt_raw.
+3) ASCII normalization
+   - In the second pass, normalize all string fields to ASCII:
+     - Replace smart quotes with straight quotes (’ → ').
+     - Replace en/em dashes with plain hyphens.
+     - Remove or simplify any non-ASCII characters.
 
-You MUST NOT modify any of these strings. Use them exactly as stored.
+4) Fallback behavior
+   - If the second-pass rewrite produces invalid JSON or changes the schema:
+     - Discard that second-pass result.
+     - Use the base JSON as the final JSON instead.
+   - In all other cases, prefer the cleaned “final JSON” from the rewrite pass.
 
-STEP 2 – Execute VENUE prompt → write venue JSON
+------------------------------------------------------------
+D. Venue workflow (wec-venue.json)
+------------------------------------------------------------
 
-4. Execute venue_prompt_raw:
-   - Treat venue_prompt_raw as the ONLY instructions for this generation.
-   - Run it as-is, as if a user had typed that prompt directly to you.
-   - Follow all of its internal rules:
-     • Use the given Inputs (venue_name, venue_official_link, place_id, venue_city_state).
-     • Research using the venue_official_link as described.
-     • Produce JSON in the exact shape defined in the prompt.
-     • No markdown, no prose, JSON only.
+Goal:
+- Use prompt-venue.txt to generate venue-only copy for World Equestrian Center Ocala, then clean it with a JSON-safe second pass, and commit to docs/runner/test/wec-venue.json.
 
-5. Validate structurally (light check):
-   - Ensure the result is valid JSON that parses.
-   - Ensure the top-level key is "host_venue" as required by the prompt.
-   - Do NOT “fix” wording, style, or content beyond what the prompt already enforces.
+STEP D1 – Load prompt-venue.txt
 
-6. Write venue JSON:
-   - Pretty-print the JSON (2-space indent, ASCII-safe).
-   - Encode as UTF-8 bytes, then base64.
-   - Call crt.docs_commit_bulk with a single FileItem:
-     - path: "docs/runner/test/wec-venue.json"
-     - content_type: "application/json"
-     - content_base64: (encoded JSON)
-     - commit_message: "publish wec-venue.json"
+1) Call items_get with:
+   - path = "agents/wec-ocala-test-runner/prompt-venue.txt"
 
-STEP 3 – Execute CITY / SEASONS prompt → write city JSON
+2) If items_get fails:
+   - Reply in chat:
+     - "wec-ocala-test-runner error: missing prompt-venue.txt"
+   - STOP the entire runner.
 
-7. Execute city_prompt_raw:
-   - Treat city_prompt_raw as the ONLY instructions for this generation.
-   - Run it as-is, using the Inputs it defines (city, state, lat, lng, create_seasons).
-   - Produce JSON in the exact shape:
+3) If items_get succeeds:
+   - Treat the body as plain text: venue_prompt.
+   - Do NOT modify venue_prompt.
+
+STEP D2 – First pass: generate base venue JSON
+
+4) Execute venue_prompt as the primary instructions for this generation, with Section B’s research rules also active.
+
+5) The model must:
+   - Use the “official link” and fallbacks per Section B.
+   - Obey all writing and validation rules inside prompt-venue.txt, including:
+     - ASCII-only requirement.
+     - Word-count ranges for venue_snap, venue_paragraph, and venue_hello.
+     - Forbidden terms and tone constraints.
+   - Produce exactly one JSON object with the schema defined in prompt-venue.txt.
+
+6) Call this output venue_json_base.
+   - It MUST be valid JSON.
+   - It MUST match the required schema from prompt-venue.txt.
+
+If the output is not valid JSON or schema is clearly wrong:
+   - Make one more attempt at first-pass generation using the same venue_prompt.
+   - If it still fails, reply:
+     - "wec-ocala-test-runner error: could not generate valid venue JSON"
+   - STOP.
+
+STEP D3 – Second pass: rewrite venue_json_base
+
+7) Perform a second generation whose sole purpose is to clean and normalize venue_json_base.
+
+   Use the following rewrite instruction as the main guidance:
+
+   """
+   You are a JSON-safe copy editor for venue metadata.
+
+   Input:
+   - One JSON object produced by a previous step.
+   - It has this structure:
      {
-       "host_city": {
-         "city": "...",
-         "state": "...",
-         "seasons": { ... }
+       "host_venue": {
+         "name": "...",
+         "official_link": "...",
+         "place_id": "...",
+         "city_state": "...",
+         "venue_acronyms": "...",
+         "venue_aliases": "...",
+         "venue_snap": "...",
+         "venue_paragraph": "...",
+         "venue_hello": "..."
        }
      }
-   - No markdown, no prose, JSON only.
 
-8. Validate structurally (light check):
-   - Ensure result parses as JSON.
-   - Ensure it has "host_city" at the top-level.
+   Task:
+   - Rewrite ONLY the string values inside this JSON.
+   - Do NOT change keys, nesting, ordering, or any non-string values.
+   - Preserve the factual meaning and focus: description of the venue itself, not events or schedules.
 
-9. Write city JSON:
-   - Pretty-print, encode to UTF-8, base64.
-   - Call crt.docs_commit_bulk with:
-     - path: "docs/runner/test/ocala-seasons.json"
-     - content_type: "application/json"
-     - content_base64: (encoded JSON)
-     - commit_message: "publish ocala-seasons.json"
+   For every string field:
+   - Fix spelling, punctuation, and grammar.
+   - Remove or replace hallucinated or nonsense words.
+   - Replace broken or awkward phrases with clear, natural English.
+   - Maintain a tone that is clean, factual, and vivid, not over-hyped.
+   - Do NOT introduce new factual claims that are not clearly implied by the input.
+   - Use ASCII characters only (replace smart quotes with ', and ensure no non-ASCII symbols).
+   - Keep length constraints aligned with the original prompt intent:
+     - venue_snap: approximately 18–30 words.
+     - venue_paragraph: approximately 60–80 words.
+     - venue_hello: no more than about 25 words.
 
-STEP 4 – Execute EVENT prompt → write event JSON
+   Additional constraints:
+   - Do NOT materially alter:
+     - name
+     - official_link
+     - place_id
+     - city_state
+     - venue_acronyms
+     - venue_aliases
+     beyond minor punctuation or spacing fixes.
+   - Do NOT add or remove fields.
+   - Do NOT wrap the output in any explanation or comments.
 
-10. Execute event_prompt_raw:
-    - Treat event_prompt_raw as the ONLY instructions for this generation.
-    - Run it as-is, using the Inputs it defines for:
-      - event_official_link
-      - event_name
-      - event_month
-      - event_legs
-      - event_usef_link
-      - event_usef_ratings
-    - Follow its RESEARCH TASKS, WRITING RULES, and LEG LOGIC.
-    - Produce JSON in the exact shape under a top-level "event" object as the prompt specifies.
-    - No markdown, no prose, JSON only.
+   Output:
+   - Return ONLY the cleaned JSON object.
+   - It MUST be valid JSON with the same schema.
+   - Use 2-space indentation and ASCII-only characters.
+   """
 
-11. Validate structurally (light check):
-    - Ensure result parses as JSON.
-    - Ensure it has "event" at the top-level.
+8) Provide venue_json_base as the JSON input to those instructions, and generate venue_json_final.
 
-12. Write event JSON:
-    - Pretty-print, encode to UTF-8, base64.
-    - Call crt.docs_commit_bulk with:
-      - path: "docs/runner/test/wec-ocala-dec-2025-event.json"
-      - content_type: "application/json"
-      - content_base64: (encoded JSON)
-      - commit_message: "publish wec-ocala-dec-2025-event.json"
+9) Validate venue_json_final:
+   - It MUST be valid JSON.
+   - It MUST have the same schema as venue_json_base.
+   - If it fails, set venue_json_final = venue_json_base.
 
-STEP 5 – Reply to the user
+STEP D4 – Commit wec-venue.json
 
-13. After all three docs_commit_bulk calls succeed, respond in chat with a short status:
-    - Example:
-      “wec-ocala-test-runner finished → wrote wec-venue.json, ocala-seasons.json, wec-ocala-dec-2025-event.json to /docs/runner/test/.”
+10) Pretty-print venue_json_final with 2-space indentation.
+11) Encode as UTF-8, Base64-encode → venue_base64.
 
-Do NOT dump any of the JSON unless the user explicitly asks to see it.
+12) Call docs_commit_bulk with:
+    {
+      "message": "publish wec-venue.json",
+      "overwrite": true,
+      "files": [
+        {
+          "path": "docs/runner/test/wec-venue.json",
+          "content_type": "application/json",
+          "content_base64": venue_base64
+        }
+      ]
+    }
 
---------------------------------
-4. WHEN USER ASKS TO SEE OUTPUTS
---------------------------------
+13) If docs_commit_bulk fails:
+    - Reply:
+      - "wec-ocala-test-runner error: commit failed for wec-venue.json"
+    - STOP the entire runner.
 
-If the user asks to see one of the test outputs (e.g., “show me wec-venue.json”):
+------------------------------------------------------------
+E. City/seasons workflow (ocala-seasons.json)
+------------------------------------------------------------
 
-- Read the corresponding file via crt.docs_get (if available).
-- Paste the raw JSON exactly as stored (no paraphrasing, no rewriting).
-- Only show the specific file(s) they request.
+Goal:
+- Use prompt-city.txt to generate city + seasons metadata for Ocala, then clean it with a JSON-safe second pass, and commit to docs/runner/test/ocala-seasons.json.
 
---------------------------------
-5. BEHAVIOR RULES
---------------------------------
+STEP E1 – Load prompt-city.txt
 
-- Always run all three prompts in order on trigger (venue → city → event).
-- Never modify or partially edit the prompt text loaded from items.
-- Never combine or blend outputs; each prompt’s JSON is independent.
-- Never call any Rows endpoints from this runner.
-- Never write files outside docs/runner/test/.
-- If a read or write fails, stop and report a brief error instead of guessing.
+1) Call items_get with:
+   - path = "agents/wec-ocala-test-runner/prompt-city.txt"
+
+2) If items_get fails:
+   - Reply:
+     - "wec-ocala-test-runner error: missing prompt-city.txt"
+   - STOP the entire runner.
+
+3) If items_get succeeds:
+   - Treat the body as plain text: city_prompt.
+   - Do NOT modify city_prompt.
+
+STEP E2 – First pass: generate base city JSON
+
+4) Execute city_prompt as the primary instructions for this generation, with Section B’s research rules active.
+
+5) The model must:
+   - Use any “official link” and fallbacks as described in Section B when required by city_prompt.
+   - Obey all writing and validation rules inside city_prompt, including:
+     - Expected schema (city-level data and seasons array/objects).
+     - Tone and content constraints for time-poor competitors and families.
+
+6) Call this output city_json_base.
+   - It MUST be valid JSON.
+   - It MUST match the required schema from city_prompt.
+
+If the output is not valid JSON or schema is clearly wrong:
+   - Make one more attempt at first-pass generation using the same city_prompt.
+   - If it still fails, reply:
+     - "wec-ocala-test-runner error: could not generate valid city JSON"
+   - STOP.
+
+STEP E3 – Second pass: rewrite city_json_base
+
+7) Perform a second generation whose sole purpose is to clean and normalize city_json_base.
+
+   Use the following rewrite instruction as the main guidance:
+
+   """
+   You are a JSON-safe copy editor for city and seasons metadata.
+
+   Input:
+   - One JSON object produced by a previous step.
+   - It describes a city and its seasons (names, brief descriptions, typical temperatures, and related fields).
+
+   Task:
+   - Rewrite ONLY the string values inside this JSON.
+   - Do NOT change keys, nesting, ordering, or any numeric values.
+   - Preserve the factual content and structure defined in the base JSON.
+
+   For every string field:
+   - Fix spelling, punctuation, and grammar.
+   - Remove or replace hallucinated or nonsense words.
+   - Replace broken or awkward phrases with clear, straightforward English.
+   - Maintain a tone that is clean, factual, and useful for time-poor competitors and families.
+   - Do NOT add new factual claims (no new weather stats, amenities, or claims about the city beyond what the base JSON clearly implies).
+   - Use ASCII characters only (no smart quotes or special symbols).
+   - Keep length roughly similar to the base JSON for each field.
+
+   Additional constraints:
+   - Do NOT change the city name or any proper names, except for minor capitalization or punctuation fixes.
+   - Do NOT change any numeric values (temperatures, ranges, counts).
+   - Do NOT add or remove any fields or array elements.
+
+   Output:
+   - Return ONLY the cleaned JSON object.
+   - It MUST be valid JSON with the same schema as the input.
+   - Use 2-space indentation and ASCII-only characters.
+   """
+
+8) Provide city_json_base as the JSON input to those instructions, and generate city_json_final.
+
+9) Validate city_json_final:
+   - It MUST be valid JSON.
+   - It MUST have the same schema as city_json_base.
+   - If it fails, set city_json_final = city_json_base.
+
+STEP E4 – Commit ocala-seasons.json
+
+10) Pretty-print city_json_final with 2-space indentation.
+11) Encode as UTF-8, Base64-encode → city_base64.
+
+12) Call docs_commit_bulk with:
+    {
+      "message": "publish ocala-seasons.json",
+      "overwrite": true,
+      "files": [
+        {
+          "path": "docs/runner/test/ocala-seasons.json",
+          "content_type": "application/json",
+          "content_base64": city_base64
+        }
+      ]
+    }
+
+13) If docs_commit_bulk fails:
+    - Reply:
+      - "wec-ocala-test-runner error: commit failed for ocala-seasons.json"
+    - STOP the entire runner.
+
+------------------------------------------------------------
+F. Completion message
+------------------------------------------------------------
+
+If both commits (wec-venue.json and ocala-seasons.json) succeed:
+
+- Send a short confirmation message in chat:
+  - "wec-ocala-test-runner finished → wrote wec-venue.json and ocala-seasons.json under docs/runner/test/."
+
+Do NOT paste any JSON unless the user explicitly asks to see it.
