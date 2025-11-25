@@ -42,6 +42,10 @@
       align-items: stretch;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     .app {
       width: 100%;
       max-width: 480px;
@@ -105,6 +109,11 @@
       color: #e5e7eb;
     }
 
+    .header-back:active,
+    .header-action:active {
+      transform: translateY(1px);
+    }
+
     /* Main content */
 
     .app-main {
@@ -123,33 +132,32 @@
 
     /* Start logo */
 
- .start-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 18px;
-}
+    .start-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 18px;
+    }
 
-.start-logo-mark {
-  width: 80px;
-  height: 80px;
-  border-radius: 20px;
-  background: rgba(15, 23, 42, 0.95);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
-}
+    .start-logo-mark {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+    }
 
-.start-logo-img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-}
-
+    .start-logo-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
 
     .start-logo-title {
       font-size: 18px;
@@ -185,17 +193,20 @@
       text-overflow: ellipsis;
     }
 
+    /* Modern count / status tags */
     .row-tag {
-      font-size: 11px;
-      padding: 3px 9px;
+      min-width: 32px;
+      padding: 3px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.9);
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-soft);
-      opacity: 1;
+      border: 1px solid var(--accent);
+      background: radial-gradient(circle at top, rgba(37, 99, 235, 0.35), #020617);
+      color: #e5e7eb;
+      font-size: 11px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8);
     }
 
-    /* Active rows – invert similar to nav primary */
     .row--active {
       background: linear-gradient(145deg, var(--accent), var(--accent-soft));
       border-color: var(--accent);
@@ -208,10 +219,9 @@
     }
 
     .row--active .row-tag {
-      border-color: rgba(15, 23, 42, 0.7);
-      background: rgba(15, 23, 42, 0.3);
-      color: var(--text-soft);
-      opacity: 1;
+      border-color: #22c55e;
+      background: radial-gradient(circle at top, rgba(34, 197, 94, 0.4), #020617);
+      color: #f9fafb;
     }
 
     .row--tap {
@@ -328,9 +338,7 @@
 
     <!-- Main screen content -->
     <main class="app-main">
-      <div id="screen-root" class="list-column">
-        <!-- JS will inject rows here -->
-      </div>
+      <div id="screen-root" class="list-column"></div>
     </main>
 
     <!-- Bottom nav -->
