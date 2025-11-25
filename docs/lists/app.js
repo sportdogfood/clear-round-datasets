@@ -1,10 +1,12 @@
 // app.js
-// Simple in-memory mobile app for Start, State, List 1–5, Summary, and List Detail.
+// Mobile horse list app – single in-memory session
 
 (function () {
   'use strict';
 
-  // --- Config / data --------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Config / data
+  // ---------------------------------------------------------------------------
 
   const HORSE_NAMES = Array.from({ length: 25 }, (_, i) => `Horse ${i + 1}`);
 
@@ -14,7 +16,9 @@
     history: []
   };
 
-  // --- DOM refs -------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // DOM references
+  // ---------------------------------------------------------------------------
 
   const headerTitle = document.getElementById('header-title');
   const headerBack = document.getElementById('header-back');
@@ -22,7 +26,9 @@
   const screenRoot = document.getElementById('screen-root');
   const navRow = document.getElementById('nav-row');
 
-  // --- Session helpers ------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Session helpers
+  // ---------------------------------------------------------------------------
 
   function createNewSession() {
     const horses = HORSE_NAMES.map((name, index) => ({
@@ -63,7 +69,9 @@
     return state.session.horses.find((h) => h.horseId === horseId) || null;
   }
 
-  // --- Navigation / routing -------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Navigation / routing
+  // ---------------------------------------------------------------------------
 
   function setScreen(newScreen, pushHistory = true) {
     if (pushHistory && state.currentScreen && state.currentScreen !== newScreen) {
@@ -95,8 +103,6 @@
     }
   }
 
-  // --- Header / nav rendering ----------------------------------------------
-
   function titleForScreen(scr) {
     if (scr === 'start') return 'Start';
     if (scr === 'state') return 'State';
@@ -104,23 +110,24 @@
     const listMatch = scr.match(/^list([1-5])(Detail)?$/);
     if (listMatch) {
       const n = listMatch[1];
-      if (listMatch[2]) {
-        return `List ${n} Detail`;
-      }
+      if (listMatch[2]) return `List ${n} Detail`;
       return `List ${n}`;
     }
     return '';
   }
 
+  // ---------------------------------------------------------------------------
+  // Header / nav rendering
+  // ---------------------------------------------------------------------------
+
   function renderHeader() {
     const scr = state.currentScreen;
     headerTitle.textContent = titleForScreen(scr);
 
-    // Back button: hide only if there is no history and we are on Start
     const hideBack = state.history.length === 0 && scr === 'start';
     headerBack.style.visibility = hideBack ? 'hidden' : 'visible';
 
-    // Header action ("Text") only on Summary
+    // Only show header action ("Text") on Summary
     if (scr === 'summary') {
       headerAction.hidden = false;
       headerAction.textContent = 'Text';
@@ -153,7 +160,9 @@
     });
   }
 
-  // --- Row creation helper --------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Row helper
+  // ---------------------------------------------------------------------------
 
   function createRow(label, options = {}) {
     const { tagText, active, onClick } = options;
@@ -181,8 +190,11 @@
     screenRoot.appendChild(row);
   }
 
-  // --- Screen renderers -----------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Screen renderers
+  // ---------------------------------------------------------------------------
 
+  // Start
   function renderStartScreen() {
     screenRoot.innerHTML = '';
 
@@ -218,20 +230,23 @@
     });
   }
 
+  // State
   function handleStateHorseClick(horseId) {
     const horse = findHorse(horseId);
     if (!horse) return;
 
     if (!horse.state) {
+      // FALSE -> TRUE
       horse.state = true;
     } else {
-      // Going TRUE -> FALSE
+      // TRUE -> FALSE
       const inAnyList = Object.values(horse.lists).some(Boolean);
       if (inAnyList) {
         const ok = window.confirm(
           'Removing this horse from State will also remove it from all lists. Continue?'
         );
         if (!ok) return;
+
         horse.state = false;
         horse.lists.list1 = false;
         horse.lists.list2 = false;
@@ -251,104 +266,182 @@
     ensureSession();
     screenRoot.innerHTML = '';
 
-    state.session.horses.forEach((horse) => {
-      createRow(horse.horseName, {
-        active: horse.state,
-        onClick: () => handleStateHorseClick(horse.horseId)
+    const horses = state.session.horses
+      .slice()
+      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+
+    const inactive = horses.filter((h) => !h.state);
+    const active = horses.filter((h) => h.state);
+
+    if (inactive.length) {
+      const label = document.createElement('div');
+      label.className = 'list-group-label';
+      label.textContent = 'Inactive (State)';
+      screenRoot.appendChild(label);
+
+      inactive.forEach((horse) => {
+        createRow(horse.horseName, {
+          onClick: () => handleStateHorseClick(horse.horseId)
+        });
       });
-    });
+    }
+
+    if (active.length) {
+      if (inactive.length) {
+        const divider = document.createElement('div');
+        divider.className = 'list-group-divider';
+        screenRoot.appendChild(divider);
+      }
+
+      const label = document.createElement('div');
+      label.className = 'list-group-label';
+      label.textContent = 'Active (State)';
+      screenRoot.appendChild(label);
+
+      active.forEach((horse) => {
+        createRow(horse.horseName, {
+          active: true,
+          onClick: () => handleStateHorseClick(horse.horseId)
+        });
+      });
+    }
+
+    if (!inactive.length && !active.length) {
+      createRow('No horses found.', {});
+    }
   }
 
+  // List add view (FALSE in list, but state must be TRUE)
   function handleListHorseClick(listId, horseId) {
     const horse = findHorse(horseId);
     if (!horse) return;
+
+    // Only allow list membership if horse is active in state
+    if (!horse.state) return;
+
     horse.lists[listId] = true;
     updateLastUpdated();
     render();
   }
-function renderListScreen(listId) {
-  ensureSession();
-  screenRoot.innerHTML = '';
 
-  // Only ACTIVE horses that are NOT yet in this list
-  const horses = state.session.horses.filter(
-    (h) => h.state && !h.lists[listId]
-  );
+  function renderListScreen(listId) {
+    ensureSession();
+    screenRoot.innerHTML = '';
 
-  if (horses.length === 0) {
-    createRow('No horses to add.', {});
-    return;
-  }
+    const horses = state.session.horses
+      .filter((h) => h.state && !h.lists[listId])
+      .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
-  horses.forEach((horse) => {
-    createRow(horse.horseName, {
-      onClick: () => handleListHorseClick(listId, horse.horseId)
-    });
-  });
-}
+    if (horses.length === 0) {
+      createRow('List complete.', {});
+      return;
+    }
 
-function handleListHorseClick(listId, horseId) {
-  const horse = findHorse(horseId);
-  if (!horse) return;
-
-  // Safety: only allow membership if horse is active
-  if (!horse.state) return;
-
-  horse.lists[listId] = true;
-  updateLastUpdated();
-  render();
-}
-
-
-function renderListDetailScreen(listId) {
-  ensureSession();
-  screenRoot.innerHTML = '';
-
-  // Only ACTIVE horses that are currently in this list
-  const horses = state.session.horses.filter(
-    (h) => h.state && h.lists[listId]
-  );
-
-  if (horses.length === 0) {
-    createRow('No horses in this list.', {});
-    return;
-  }
-
-  horses.forEach((horse) => {
-    createRow(horse.horseName, {
-      active: true,
-      onClick: () => handleListDetailHorseClick(listId, horse.horseId)
-    });
-  });
-}
-
-
- function renderSummaryScreen() {
-  ensureSession();
-  screenRoot.innerHTML = '';
-
-  const horses = state.session.horses;
-
-  const stateCount = horses.filter((h) => h.state).length;
-  createRow('STATE', {
-    tagText: String(stateCount),
-    onClick: () => setScreen('state')
-  });
-
-  for (let i = 1; i <= 5; i++) {
-    const listId = `list${i}`;
-    const count = horses.filter(
-      (h) => h.state && h.lists[listId]
-    ).length;
-    createRow(`LIST ${i}`, {
-      tagText: String(count),
-      onClick: () => setScreen(`list${i}Detail`)
+    horses.forEach((horse) => {
+      createRow(horse.horseName, {
+        onClick: () => handleListHorseClick(listId, horse.horseId)
+      });
     });
   }
-}
 
+  // List detail (grouped: inactive in list / active in list)
+  function handleListDetailHorseClick(listId, horseId) {
+    const horse = findHorse(horseId);
+    if (!horse) return;
 
-  // --- Share / SMS ----------------------------------------------------------
+    // Only list edits when globally active
+    if (!horse.state) return;
+
+    horse.lists[listId] = !horse.lists[listId];
+    updateLastUpdated();
+    render();
+  }
+
+  function renderListDetailScreen(listId) {
+    ensureSession();
+    screenRoot.innerHTML = '';
+
+    const activeStateHorses = state.session.horses.filter((h) => h.state);
+
+    const inactiveInList = activeStateHorses
+      .filter((h) => !h.lists[listId])
+      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+
+    const activeInList = activeStateHorses
+      .filter((h) => h.lists[listId])
+      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+
+    if (inactiveInList.length === 0 && activeInList.length === 0) {
+      createRow('No active horses for this list.', {});
+      return;
+    }
+
+    if (inactiveInList.length) {
+      const label = document.createElement('div');
+      label.className = 'list-group-label';
+      label.textContent = 'Inactive in this list';
+      screenRoot.appendChild(label);
+
+      inactiveInList.forEach((horse) => {
+        createRow(horse.horseName, {
+          onClick: () => handleListDetailHorseClick(listId, horse.horseId)
+        });
+      });
+    }
+
+    if (activeInList.length) {
+      if (inactiveInList.length) {
+        const divider = document.createElement('div');
+        divider.className = 'list-group-divider';
+        screenRoot.appendChild(divider);
+      }
+
+      const label = document.createElement('div');
+      label.className = 'list-group-label';
+      label.textContent = 'Active in this list';
+      screenRoot.appendChild(label);
+
+      activeInList.forEach((horse) => {
+        createRow(horse.horseName, {
+          active: true,
+          onClick: () => handleListDetailHorseClick(listId, horse.horseId)
+        });
+      });
+    }
+  }
+
+  // Summary
+  function renderSummaryScreen() {
+    ensureSession();
+    screenRoot.innerHTML = '';
+
+    const horses = state.session.horses;
+    const activeCount = horses.filter((h) => h.state).length;
+
+    createRow('STATE', {
+      tagText: String(activeCount),
+      onClick: () => setScreen('state')
+    });
+
+    for (let i = 1; i <= 5; i++) {
+      const listId = `list${i}`;
+      const listCount = horses.filter(
+        (h) => h.state && h.lists[listId]
+      ).length;
+
+      const isFull = activeCount > 0 && listCount === activeCount;
+      const tagText = isFull ? `${listCount} ✔️` : String(listCount);
+
+      createRow(`LIST ${i}`, {
+        tagText,
+        onClick: () => setScreen(`list${i}Detail`)
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Share / SMS
+  // ---------------------------------------------------------------------------
 
   function buildShareText() {
     if (!state.session) return '';
@@ -363,12 +456,12 @@ function renderListDetailScreen(listId) {
     });
     lines.push('');
 
-    // LIST 1..5
+    // LIST 1..5 (only active horses)
     for (let i = 1; i <= 5; i++) {
       const listId = `list${i}`;
       lines.push(`LIST ${i}`);
       horses.forEach((h) => {
-        if (h.lists[listId]) lines.push(h.horseName);
+        if (h.state && h.lists[listId]) lines.push(h.horseName);
       });
       if (i < 5) lines.push('');
     }
@@ -381,12 +474,13 @@ function renderListDetailScreen(listId) {
     const body = buildShareText();
     if (!body) return;
 
-    // Basic SMS handoff; on desktop this may do nothing.
     const href = 'sms:?&body=' + encodeURIComponent(body);
     window.location.href = href;
   }
 
-  // --- Main render dispatcher ----------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Render dispatcher
+  // ---------------------------------------------------------------------------
 
   function render() {
     renderHeader();
@@ -424,7 +518,9 @@ function renderListDetailScreen(listId) {
     renderStartScreen();
   }
 
-  // --- Event wiring ---------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Events
+  // ---------------------------------------------------------------------------
 
   headerBack.addEventListener('click', () => {
     if (headerBack.style.visibility === 'hidden') return;
@@ -474,7 +570,9 @@ function renderListDetailScreen(listId) {
     }
   });
 
-  // --- Initial render -------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Initial render
+  // ---------------------------------------------------------------------------
 
   render();
 })();
