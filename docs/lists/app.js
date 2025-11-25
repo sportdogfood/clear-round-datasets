@@ -1,5 +1,5 @@
 // app.js
-// Mobile horse list app – single in-memory session with share selection mode
+// TackLists.com – Mobile horse list app, single in-memory session
 
 (function () {
   'use strict';
@@ -72,7 +72,9 @@
       list3: true,
       list4: true,
       list5: true
-    }
+    },
+    // Simple search filter for the State screen
+    stateFilter: ''
   };
 
   // ---------------------------------------------------------------------------
@@ -207,6 +209,11 @@
       headerAction.hidden = false;
       headerAction.textContent = state.shareMode ? 'Send' : 'Text';
       headerAction.dataset.action = state.shareMode ? 'send-share' : 'enter-share';
+    } else if (scr === 'state') {
+      // On State: show a "Next" button to jump to List 1
+      headerAction.hidden = false;
+      headerAction.textContent = 'Next';
+      headerAction.dataset.action = 'go-first-list';
     } else if (isListScreen) {
       headerAction.hidden = false;
       headerAction.textContent = '→';
@@ -275,9 +282,22 @@
   // Screen renderers
   // ---------------------------------------------------------------------------
 
-  // Start
+  // Start (with TackLists logo)
   function renderStartScreen() {
     screenRoot.innerHTML = '';
+
+    const logo = document.createElement('div');
+    logo.className = 'start-logo';
+    logo.innerHTML = `
+      <div class="start-logo-mark">TL</div>
+      <div class="start-logo-text">
+        <div class="start-logo-title">TackLists.com</div>
+        <div class="start-logo-subtitle">
+          Quick horse tack lists, on the fly.
+        </div>
+      </div>
+    `;
+    screenRoot.appendChild(logo);
 
     if (!state.session) {
       createRow('New session', {
@@ -311,7 +331,7 @@
     });
   }
 
-  // State: grouped, active at top, inactive below
+  // State: grouped, active at top, inactive below, with search
   function handleStateHorseClick(horseId) {
     const horse = findHorse(horseId);
     if (!horse) return;
@@ -347,12 +367,35 @@
     ensureSession();
     screenRoot.innerHTML = '';
 
-    const horses = state.session.horses
+    // Search UI
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'state-search';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.className = 'state-search-input';
+    searchInput.placeholder = 'Search horses...';
+    searchInput.value = state.stateFilter || '';
+
+    searchInput.addEventListener('input', (e) => {
+      state.stateFilter = e.target.value || '';
+      render(); // full render so header/nav stay correct
+    });
+
+    searchWrap.appendChild(searchInput);
+    screenRoot.appendChild(searchWrap);
+
+    const sorted = state.session.horses
       .slice()
       .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
-    const active = horses.filter((h) => h.state);
-    const inactive = horses.filter((h) => !h.state);
+    const term = (state.stateFilter || '').trim().toLowerCase();
+    const filtered = term
+      ? sorted.filter((h) => h.horseName.toLowerCase().includes(term))
+      : sorted;
+
+    const active = filtered.filter((h) => h.state);
+    const inactive = filtered.filter((h) => !h.state);
 
     if (!active.length && !inactive.length) {
       createRow('No horses found.', {});
@@ -669,6 +712,18 @@
       return;
     }
 
+    if (action === 'go-first-list') {
+      ensureSession();
+      const hasActive = state.session.horses.some((h) => h.state);
+      if (!hasActive) {
+        // Still allow them to proceed; they will simply see "No active horses."
+        setScreen('list1');
+      } else {
+        setScreen('list1');
+      }
+      return;
+    }
+
     if (action === 'next-list') {
       handleListPrevNext('next');
     }
@@ -709,14 +764,6 @@
         }
         break;
       }
-
-      case 'list-prev':
-        handleListPrevNext('prev');
-        break;
-
-      case 'list-next':
-        handleListPrevNext('next');
-        break;
 
       default:
         break;
