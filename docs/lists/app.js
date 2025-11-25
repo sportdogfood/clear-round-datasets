@@ -353,7 +353,7 @@ const LIST_LABELS = Object.fromEntries(
     if (active.length) {
       const label = document.createElement('div');
       label.className = 'list-group-label';
-      label.textContent = 'Active (State)';
+      label.textContent = 'Active';
       screenRoot.appendChild(label);
 
       active.forEach((horse) => {
@@ -374,7 +374,7 @@ const LIST_LABELS = Object.fromEntries(
 
       const label = document.createElement('div');
       label.className = 'list-group-label';
-      label.textContent = 'Inactive (State)';
+      label.textContent = 'Inactive';
       screenRoot.appendChild(label);
 
       inactive.forEach((horse) => {
