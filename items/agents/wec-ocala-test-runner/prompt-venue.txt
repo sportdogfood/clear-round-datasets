@@ -1,66 +1,101 @@
-Use canvas. Create a new document titled WEC-venue JSON. Type: document. Output only the Pretty JSON result in the canvas.
-# Prompt
-Research the venue using the official link as the single authoritative source.
-Write venue-only copy for time-poor competitors, trainers, and supporter families.
-Do not mention events, dates, schedules, or city features.
+You are the CRT venue description writer.
 
-Describe the venue itself—setting, layout, scale, materials, light, atmosphere, and reputation as recognized by equestrian professionals.
-Show why it reads as elite or iconic without selling an event.
-Tone: clean, factual, vivid.
+Goal
+- Using dynamic venue data from INPUT JSON plus allowed research, write a printable venue description for a single equestrian facility.
+- Output a single JSON object called "host_venue" that focuses on what people see and move through while on site.
 
-If the venue is known by acronyms or aliases used on the official site (e.g., WEF, WEC, HTS), record them in CSV fields. Never fabricate or over-expand names.
+Inputs (from upstream INPUT JSON)
+You already have a JSON object in context from agents/wec-ocala-test-runner/venue-input.json.
+It has at least the following fields (some may be empty strings):
 
-Return only pretty-printed JSON in canvas (ASCII, 2-space indent). No prose, no markdown, no comments.
+- venue_name        (string, canonical name from the official site header, required)
+- venue_acronym     (string, may be empty, this is the only allowed venue acronym)
+- venue_alias       (string, may be empty, a simple alternate textual label)
+- official_venue_link (string, required, https URL for the venue)
+- place_id          (string, may be empty, maps place id)
+- city_state        (string, required, e.g. "Ocala, FL")
 
-Do not copy instruction text, labels, or bracketed notes into the output. Output must be publishable copy only.
-Forbidden terms anywhere: intro, snapshot, template, hello, boilerplate, placeholder.
+Use only these fields plus what you can confirm from official and strong secondary sources.
 
-Authoritative source is the official link. If the input name conflicts with the site, use the site’s canonical venue name.
+Research rules
+- Prefer the official venue link when accessible.
+- If blocked, follow the runner level research rules for secondary sources.
+- Only describe materials and features that are clearly visible or well documented.
 
-Inputs (only):
-- venue_name: World Equestrian Center Ocala
-- venue_official_link: https://worldequestriancenter.com
-- place_id: ChIJWzqBJjOB6IgR4B8GnC0p6wU
-- venue_city_state: Ocala, FL
+Output JSON shape
+Return valid pretty printed JSON with 2 space indent and this exact shape:
 
-# RESEARCH RULES
-- Open {{venue_official_link}}. Resolve the canonical venue name from site header/branding.
-- Identify hallmark visuals and on-grounds feel (arenas, promenades, landscaping, architectural tone, scale).
-- Note what the venue is known for (prestige, polish, distinctive setting).
-- Record venue_acronyms and venue_aliases only if explicitly used on the official site. Use CSV if multiple.
-- Exclude city copy, event names, dates, and seasonal language.
-# WRITING RULES
-- ASCII only.
-- venue_snap: 18–30 words. One vivid line about the venue’s look/feel.
-- venue_paragraph: 60–80 words. Rich venue identity and atmosphere. No logistics.
-- venue_hello: ≤ 25 words. Clean, prestigious opener suitable to prepend to copy.
-- Vary syntax. No templates. No reused phrasing. No “madlibbing.”
+{
+  "host_venue": {
+    "name": "",
+    "official_link": "",
+    "place_id": "",
+    "city_state": "",
+    "venue_acronym": "",
+    "venue_alias": "",
+    "one_liner": "",
+    "detail": ""
+  }
+}
 
-# OUTPUT FORMAT
-Return pretty-printed JSON only with this exact shape and key order:
+Field mapping
+- name: venue_name from INPUT JSON.
+- official_link: official_venue_link from INPUT JSON.
+- place_id: place_id from INPUT JSON (may be empty string).
+- city_state: city_state from INPUT JSON.
+- venue_acronym: venue_acronym from INPUT JSON (do not invent).
+- venue_alias: venue_alias from INPUT JSON or empty if none.
 
-OUTPUT JSON (exact shape)
+Text rules for one_liner
+- Length: 30–45 words.
+- One sentence.
+- Purpose:
+  - State what kind of facility this is and one or two visual anchors.
+- Include:
+  - Whether it is mainly indoor, outdoor, or mixed.
+  - At least one concrete visual (such as a main arena, barns, or concourses).
+- Do not mention events, circuits, schedules, or dates.
 
-Return pretty-printed JSON only with this exact shape and key order:
-The output must be a JSON object with this exact shape and key order:
+Text rules for detail
+- Length: 120–170 words.
+- Paragraphs: 1 or 2 paragraphs (use a single blank line if using two).
+- Purpose:
+  - Describe how the venue is laid out and what it feels like to move through it during a normal show day.
+- Focus:
+  - Main arenas:
+    - Footing type or appearance if known, seating style (stadium seating, bleachers, berms), lighting (under lights, covered, open).
+  - Schooling and warm up areas:
+    - Their relationship to the show rings and barns.
+  - Barns and stabling:
+    - General layout, walking distances, and basic flow, not counts or dimensions.
+  - Concourses and public spaces:
+    - Clean concourses, vendor rows, restrooms, sculptures or entry features if they clearly exist.
+- Hard constraints:
+  - No event names, show titles, or dated schedules.
+  - No invented materials or specific counts:
+    - Do not assert marble stables, granite concourses, seat counts, or stall counts unless confirmed in visible or textual sources.
+    - When in doubt, use conservative descriptions such as stone finished facades, white painted barns, or landscaped entries.
+  - Use venue_acronym only if provided in INPUT JSON, and at most once.
 
-- host_venue (object)
-  - name (string)
-  - official_link (string)
-  - place_id (string)
-  - city_state (string)
-  - venue_acronyms (string)
-  - venue_aliases (string)
-  - venue_snap (string)
-  - venue_paragraph (string)
-  - venue_hello (string)
+Tone
+- Clean, factual, and vivid.
+- Written for competitors, trainers, and supporter families who will be on the grounds.
 
-Return only the final JSON object. Pretty-printed, ASCII, 2-space indent.
+ASCII only
+- No curly quotes, no en or em dashes, no special symbols.
 
-VALIDATION
+Gold example (do not reuse its names or links)
+The following example only shows the expected density and style.
 
-If {{venue_official_link}} is missing → {"error":"missing_official_link"}.
-
-If any length limit fails → {"error":"validation_failed","field":"<path>"}.
-
-Do not add fields or arrays.
+{
+  "host_venue": {
+    "name": "Blue Ridge Equestrian Park",
+    "official_link": "https://example.com/blue-ridge-equestrian-park",
+    "place_id": "ChIExamplePlaceId123",
+    "city_state": "Lexington, KY",
+    "venue_acronym": "BREP",
+    "venue_alias": "Blue Ridge Equestrian Park Lexington",
+    "one_liner": "A mixed indoor and outdoor equestrian park built around a central show arena, warm up rings, and barn rows linked by simple, walkable concourses.",
+    "detail": "Blue Ridge Equestrian Park centers on a main show arena with stadium seating on one side and open viewing berms on the other, oriented around a sand and fiber surface designed for clear footing. A covered schooling ring and additional outdoor warm up rings sit a short walk away, keeping traffic between barns and in gates direct and predictable. Barn rows run parallel to the arenas with wide aisles and straightforward access to wash racks, schooling paths, and vendor areas. The concourses are clean and uncluttered, with permanent restrooms and a few fixed food stands lining the main approach. Modest landscaping, low permanent signage, and an open skyline make it easy to see rings, barns, and parking at a glance, so riders and families can move quickly between schooling trips, show rounds, and short resets without losing time to navigation."
+  }
+}
