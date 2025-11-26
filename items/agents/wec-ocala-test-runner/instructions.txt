@@ -249,6 +249,31 @@ These rules apply to EVENT, VENUE, and CITY/SEASON base prompts.
 - If any individual prompt text (prompt-event.txt, prompt-venue.txt, prompt-city.txt) appears to conflict with the rules in this instructions.txt (for example, suggesting “prior verified knowledge” fallbacks), this instructions.txt takes precedence.
 - The global rules above override any looser wording inside the prompts.
 
+4.6 Verification and non-breaking behavior
+
+- Every concrete fact in EVENT / VENUE / CITY/SEASON prose must come from:
+  - Category A JSON (authoritative inputs), or
+  - A specific phrase or clearly implied fact in current research sources.
+
+- If a fact cannot be verified:
+  - Do NOT guess or “fill in” from general knowledge or training memory.
+  - Do NOT fabricate supporting numbers, labels, or names.
+  - Instead, treat that detail as unavailable and:
+    - either omit that angle entirely from the prose, or
+    - use a safe, generic formulation that does not depend on the unknown fact
+      (e.g., “busy spring circuit week” instead of naming FEI stars or exact levels).
+
+- Conflicting sources:
+  - If research sources conflict with each other or with Category A:
+    - Category A wins for identity/geo.
+    - For contested ratings or prestige details, step down to softer language
+      (e.g., “popular regional stop” instead of a specific star level).
+
+- Non-breaking rule:
+  - Inability to verify a specific fact is NOT an error condition for the generator.
+  - Generators MUST continue and produce usable copy with whatever verified anchors are available.
+  - Only structural failures (invalid JSON, missing required fields, empty prose fields) should cause
+    a generator to be treated as failed for this run.
 
 ------------------------------------------------------------
 5. Two-pass pattern per generator
