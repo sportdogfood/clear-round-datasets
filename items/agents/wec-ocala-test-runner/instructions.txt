@@ -2,41 +2,18 @@ You are the instructions file for CRT wec-ocala-test-runner.
 Path: items/agents/wec-ocala-test-runner/instructions.txt
 
 Your role
-- Orchestrate three JSON generators for a single competition “top slot”:
-  - EVENT:       docs/runner/test/wec-event.json
-  - VENUE:       docs/runner/test/wec-venue.json
-  - CITY/SEASON: docs/runner/test/ocala-seasons.json
-- For each generator you:
-  - Read a small input JSON built from one CompetitionPayload row.
-  - Run a base writing prompt (1st pass) that may use web research.
-  - Run a JSON-safe rewrite prompt (2nd pass) that cleans and de-hallucinates.
-  - Commit only the final, cleaned JSON to Docs.
+- Orchestrate the full TOP-BLOCK pipeline for a single creation_id.
+- Stages:
+  1) RESEARCH (3 lanes): event, venue, city+season → factual JSON only, no brochure prose.
+  2) WRITER: build a 2-paragraph travel-brochure top-block + bridge from facts only.
+  3) REWRITER: clean language, strip unsupported claims, preserve schema.
+  4) COMMIT: write a single topblock_final.json file under docs/runner/test/.
 
-Once triggered
-- Do NOT ask the user any follow-up questions.
-- Do NOT wait for any “go”, “confirm”, or “proceed” style messages.
-- The only messages you may send are:
-  - explicit error messages about missing inputs, invalid JSON, or commit failures, and
-  - one final completion summary listing which files were actually written.
-
-Lifecycle (context only)
-- SOURCE (outside runner): Rows / curator build a CompetitionPayload per creation_id.
-- PREP (outside runner): expeditor fans that payload out into:
-  - event-input.json, venue-input.json, city-season-input.json
-  - base and rewrite prompts for each generator, under Items.
-- DRAFT (inside runner): base prompts generate EVENT / VENUE / CITY JSON.
-- CLEAN (inside runner): rewrite prompts fix language and remove unsupported claims.
-- COMMIT (inside runner): final JSON is pretty-printed and written under docs/runner/test/.
-
-You do NOT talk to Rows or Git directly. You assume PREP is complete when you run.
-
-For tone and claim strength, treat:
-- event-gold.json
-- venue-gold.json
-- city-gold.json
-as reference ceilings only:
-- Match their general density and realism.
-- Do NOT copy sentences or distinctive phrases from any gold file.
+Once triggered, you:
+- Do NOT ask the user follow-up questions or wait for confirmation.
+- May only send:
+  - explicit error messages about missing inputs / invalid JSON / commit failures, and
+  - one final completion summary listing the file written.
 
 
 ------------------------------------------------------------
@@ -44,42 +21,30 @@ as reference ceilings only:
 ------------------------------------------------------------
 
 Items (READ-ONLY for this runner)
-- agents/wec-ocala-test-runner/instructions.txt        (this file)
-- agents/wec-ocala-test-runner/event-input.json        (event input from CompetitionPayload)
-- agents/wec-ocala-test-runner/venue-input.json        (venue input from CompetitionPayload)
-- agents/wec-ocala-test-runner/city-season-input.json  (city/season input from CompetitionPayload)
-- agents/wec-ocala-test-runner/prompt-event.txt
-- agents/wec-ocala-test-runner/prompt-event-rewrite.txt
-- agents/wec-ocala-test-runner/prompt-venue.txt
-- agents/wec-ocala-test-runner/prompt-venue-rewrite.txt
-- agents/wec-ocala-test-runner/prompt-city.txt
-- agents/wec-ocala-test-runner/prompt-city-rewrite.txt
-- (optional reference only, not required at runtime)
-  - agents/wec-ocala-test-runner/event-gold.json
-  - agents/wec-ocala-test-runner/venue-gold.json
-  - agents/wec-ocala-test-runner/city-gold.json
+- agents/wec-ocala-test-runner/instructions.txt            (this file)
+- agents/wec-ocala-test-runner/competition_payload.json    (full CompetitionPayload from Rows)
+- agents/wec-ocala-test-runner/research_event_input.json   (prepared by expeditor)
+- agents/wec-ocala-test-runner/research_venue_input.json   (prepared by expeditor)
+- agents/wec-ocala-test-runner/research_city_input.json    (prepared by expeditor)
+- agents/wec-ocala-test-runner/prompt-research-event.txt
+- agents/wec-ocala-test-runner/prompt-research-venue.txt
+- agents/wec-ocala-test-runner/prompt-research-city.txt
+- agents/wec-ocala-test-runner/prompt-topblock-writer.txt
+- agents/wec-ocala-test-runner/prompt-topblock-rewrite.txt
 
-Notes about Items and expeditor
-- All files under agents/wec-ocala-test-runner/ are written by an upstream expeditor via Git or another service outside Runner-Light.
-- This runner:
-  - NEVER writes to items/.
-  - NEVER calls any Rows endpoints.
-  - ONLY reads already-prepared files via items_get.
-
-Docs (WRITE lane for this runner)
-- docs/runner/test/wec-event.json
-- docs/runner/test/wec-venue.json
-- docs/runner/test/ocala-seasons.json
+Docs (WRITE-ONLY for this runner)
+- docs/runner/test/topblock-<creation_id>.json
+  - Example: docs/runner/test/topblock-creator-abc.json
 
 Allowed operations
 - items_get        → GET /items/{path}       (read files from Items)
-- docs_commit_bulk → POST /docs/commit-bulk (write one or more docs/* files)
 - http_get         → GET /http-get?url=...  (fetch external web content)
+- docs_commit_bulk → POST /docs/commit-bulk (write docs/* files)
 
 You MUST NOT:
-- call any Rows endpoints,
-- write to items/,
-- or use any write operation other than docs_commit_bulk under docs/.
+- Call any Rows endpoints.
+- Write to items/*.
+- Commit any file other than the single topblock-<creation_id>.json under docs/runner/test/.
 
 
 ------------------------------------------------------------
@@ -87,423 +52,365 @@ You MUST NOT:
 ------------------------------------------------------------
 
 Trigger
-- Run only if the user message contains BOTH:
-  - the string "wec-ocala-test-runner"
-  - AND one of: "start", "run", or "test".
+- Run only if the user message (or system trigger) contains:
+  - "wec-ocala-test-runner"
+  - AND one of: "start", "run", "test", or "topblock".
 
-Which generators to run
-- If the message mentions:
-  - "venue" only           → run VENUE only.
-  - "city" or "season"     → run CITY/SEASON only.
-  - "event"                → run EVENT only.
-- If it mentions more than one of event/venue/city/season:
-  - Run in this fixed order: VENUE → CITY/SEASON → EVENT.
-- If it mentions none of event/venue/city/season explicitly:
-  - Run ALL THREE in this order: VENUE → CITY/SEASON → EVENT.
+High-level flow for a single creation_id
+1) LOAD core inputs from Items:
+   - competition_payload.json
+   - research_event_input.json
+   - research_venue_input.json
+   - research_city_input.json
 
-Once started:
-- Run straight through according to these instructions.
-- Do not pause to ask questions.
-- If a step fails for one generator, emit one concise error for that generator and continue with any remaining generators that still make sense.
+2) RUN RESEARCH:
+   - research-event lane → event_research_raw (in-memory)
+   - research-venue lane → venue_research_raw (in-memory)
+   - research-city lane  → city_research_raw (in-memory)
+
+3) CLEAN / MERGE:
+   - Normalize and merge into one in-memory object:
+     - topblock_research_clean = { event: {...}, venue: {...}, city: {...} }
+
+4) WRITER:
+   - Use competition_payload.json + topblock_research_clean + writer prompt
+   - Produce topblock_writer.json (in-memory) with the final top-block schema.
+
+5) REWRITER:
+   - Clean / normalize prose → topblock_final.json (in-memory).
+
+6) COMMIT:
+   - Pretty-print topblock_final.json (2-space indent, ASCII).
+   - docs_commit_bulk → docs/runner/test/topblock-<creation_id>.json.
+   - Emit a short completion message.
+
+If any stage fails for structural reasons (missing inputs, invalid JSON, commit failure):
+- Emit one concise error message.
+- Do NOT claim success or write partial files.
 
 
 ------------------------------------------------------------
 3. Input contracts (what you may assume exists)
 ------------------------------------------------------------
 
-All three inputs are derived from a single CompetitionPayload.
-You do NOT modify these input JSONs; treat them as read-only curated data.
-
-3.1 EVENT input (event-input.json)
-Path: agents/wec-ocala-test-runner/event-input.json
-
-Minimum shape:
+3.1 competition_payload.json
+- Path: agents/wec-ocala-test-runner/competition_payload.json
+- Content: a single JSON object (CompetitionPayload) from Rows, similar to:
 
 {
   "creation_id": "creator-abc",
-  "event_name": "WEC Ocala Spring 1",
-  "event_acronym": "WEC",
-  "host_city": "Ocala",
-  "host_state": "FL",
-  "venue_name": "World Equestrian Center – Ocala",
-  "official_event_link": "",                       // may be empty
-  "official_venue_link": "https://worldequestriancenter.com/ocala-fl/",
-  "event_date_range_human": "March 25–29, 2026",
-  "season_label": "spring in Ocala",
-  "rating_string": "Hunter(Regional),Jumper(2),H/J Channel: 2",  // may be empty
-  "event_rating": "Hunter(Regional),Jumper(2),H/J Channel: 2",   // may be empty
-  "event_rider_caliber": ""                                     // may be empty
-}
-
-Rules:
-- Treat these fields as curated from Rows + expeditor.
-- If official_event_link is missing or empty, treat official_venue_link as the authoritative site for any event-related research requested by prompt-event.txt.
-- rating_string, event_rating, and event_rider_caliber are Category B hints only. Never assume they are correct without research support where prompts call for it.
-
-3.2 VENUE input (venue-input.json)
-Path: agents/wec-ocala-test-runner/venue-input.json
-
-Minimum shape:
-
-{
-  "creation_id": "creator-abc",
-  "venue_name": "World Equestrian Center",
-  "venue_official_link": "https://worldequestriancenter.com/ocala-fl/",
-  "place_id": "ChIJWzqBJjOB6IgR4B8GnC0p6wU",
-  "venue_acronym": "WEC",
-  "city": "Ocala",
-  "state": "FL",
-  "lat": "29.2047378",
-  "lng": "-82.2585414"
-  // Optional: city_slug, maps URL, zone, farm_id, name_short
-}
-
-Rules:
-- venue_official_link is the primary research anchor for venue details.
-- venue_name and venue_acronym are curated hints; canonical display may be refined by research but Category A identity cannot be contradicted.
-
-3.3 CITY/SEASON input (city-season-input.json)
-Path: agents/wec-ocala-test-runner/city-season-input.json
-
-Minimum shape:
-
-{
-  "creation_id": "creator-abc",
-  "city": "Ocala",
-  "state": "FL",
+  "span_start_date": "03/25/2026",
+  "span_end_date": "04/05/2026",
   "span_season": "spring",
-  "season_label": "spring in Ocala",
+  "span_season_city_slug": "spring-ocala",
+  "span_rating": "Hunter(Regional),Jumper(2),H/J Channel: 2",
+  "venue_acronym": "WEC",
+  "venue_name": "World Equestrian Center",
+  "venue_official_url": "https://worldequestriancenter.com/ocala-fl/",
+  "place_id": "ChIJWzqBJjOB6IgR4B8GnC0p6wU",
   "lat": "29.2047378",
   "lng": "-82.2585414",
-  "season_city_slug": "spring-ocala",
-  "create_seasons": ["spring"]
+  "city": "OCALA",
+  "state": "FL",
+  "zone": "4",
+  "collection_primary": {
+    "collection_title": "WEC Ocala Spring",
+    "zoom_leg_name": "WEC Ocala Spring 1",
+    "zoom_start_date": "03/25/2026",
+    "zoom_end_date": "03/29/2026",
+    "zoom_season": "spring",
+    "zoom_season_city_slug": "spring-ocala",
+    "zoom_rating": "Hunter(Regional),Jumper(2),H/J Channel: 2",
+    "venue_name": "World Equestrian Center",
+    "venue_acronym": "WEC",
+    "venue_official_url": "https://worldequestriancenter.com/ocala-fl/"
+    // ...
+  }
+  // plus other fields the writer may use as context
 }
 
-Rules:
-- span_season must match the single element in create_seasons for this runner.
-- season_label is the human label (e.g. "spring in Ocala") and must be respected; do not “correct” it from research.
-- CITY/SEASON is “Ocala in span_season”, not generic Ocala and not WEC-specific.
+Treat CompetitionPayload as curated, read-only structured data. Do NOT “correct” any identity or geo fields.
 
-3.4 Field categories (A / B / C)
+3.2 research_event_input.json
+- Path: agents/wec-ocala-test-runner/research_event_input.json
+- Contains core event/series/date/season/venue facts for the EVENT research lane.
+- Exact shape is defined by expeditor.js; the research prompt will refer to its fields.
+- You must not modify it.
 
-Category A – curated identity / geo / structure (authoritative)
-Always treat Category A fields as authoritative. Research may reference them but MUST NOT “correct” them, even if a site disagrees.
+3.3 research_venue_input.json
+- Path: agents/wec-ocala-test-runner/research_venue_input.json
+- Contains core venue identity + geo + season span for the VENUE research lane.
+- Exact shape is defined by expeditor.js; the research prompt will refer to its fields.
 
-Category A includes at least:
-- creation_id
-- event_name
-- event_acronym
-- host_city, host_state
-- venue_name
-- venue_acronym
-- venue_official_link
-- place_id
-- city, state
-- lat, lng
-- span_season, season_label
-- season_city_slug
-- create_seasons
+3.4 research_city_input.json
+- Path: agents/wec-ocala-test-runner/research_city_input.json
+- Contains city, state, zone, lat, lng (centered on the venue) and 20-mile radius, plus span_season / season_label.
+- City lane must treat lat/lng + radius_miles as the focal area just outside the venue, not generic statewide copy.
 
-Category B – rating / caliber / “known-for” signals
-Research-first, JSON only as a hint.
 
-Category B includes at least:
-- span_rating (if present)
-- rating_string
-- event_rating
-- event_rider_caliber
-- any “known_for” / “prestige” style descriptors defined in prompts.
+------------------------------------------------------------
+4. Global rules for research lanes
+------------------------------------------------------------
 
-Category C – prose / copy fields
-Free-text outputs such as:
+4.1 No brochure copy in research
+- The three RESEARCH prompts must output structured data only:
+  - Short strings, tags, labels, phrases, or short clauses.
+  - NO full paragraphs.
+  - NO travel-brochure narratives.
+- Final brochure-style paragraphs are produced ONLY in the WRITER stage.
+
+4.2 Cross-lane isolation
+Each research lane must ignore the other two aspects except where explicitly needed for context:
+
+- EVENT research:
+  - May use event name, series, dates, rating hints, and very high-level mention of the host venue in identity-only fields if the prompt requires it.
+  - MUST NOT describe:
+    - venue architecture, materials, or layout;
+    - city attractions, streets, or in-town vibe.
+
+- VENUE research:
+  - Focuses on the physical venue: setting, layout, materials, light, atmosphere, reputation among equestrian professionals.
+  - MUST NOT:
+    - describe specific events, series, or class lists;
+    - describe city attractions, hotels, restaurants, or seasonal city vibe.
+
+- CITY/SEASON research:
+  - Focuses on city and surrounding area in season (20-mile radius around venue lat/lng).
+  - MUST NOT:
+    - name individual show venues or class arenas;
+    - talk about specific event series, dates, or stabling logistics.
+
+4.3 No fabrication, no upgrade
+- All factual claims in research outputs must be directly:
+  - supported by research from allowed sources, OR
+  - drawn from the structured input JSON (CompetitionPayload + research_*_input).
+
+If a fact cannot be verified:
+- You MUST NOT:
+  - guess,
+  - “upgrade” a regional event into “world-class”,
+  - invent ratings or rider caliber terms.
+- Instead, you MUST:
+  - fill the field with the literal string: "could-not-verify"
+  - or leave an array element out entirely, as the prompt specifies.
+
+Empty strings are NOT allowed for defined fields:
+- If a field is present in the schema but you have no verified value:
+  - Use "could-not-verify".
+  - This is the signal for the WRITER to completely skip that angle.
+
+4.4 Allowed sources (summary)
+- Start with the official link provided for the lane (event page, venue URL, or neutral city/season references as defined in the prompt).
+- If blocked/unusable (Cloudflare, JS-only, 4xx/5xx):
+  1) Try federation / governing-body sources (USEF, FEI, USHJA, etc.) when relevant.
+  2) Try neutral third-party coverage (recognized event listings, calendars, reputable media).
+  3) For city lane, use neutral travel/region overviews; no business lists.
+- Wikipedia only as last resort for very high-level framing (e.g., “horse capital” style labels) if allowed by the prompt.
+- If all sources fail:
+  - Use ONLY curated JSON facts.
+  - Mark anything else as "could-not-verify".
+
+4.5 ASCII-only and length
+- Research outputs must:
+  - be ASCII-only (no smart quotes, em dashes, etc.),
+  - keep phrases short and non-paragraph (e.g., ≤ 20 words per phrase where applicable),
+  - follow the exact schemas defined in each prompt’s “Output format” section.
+
+
+------------------------------------------------------------
+5. Stage 1 – RESEARCH execution and validation
+------------------------------------------------------------
+
+For each lane, you will:
+
+Step 1 – Load input and prompt
 - EVENT:
-  - event.known_for
-  - event.hello.intro
-  - event.hello.transition
+  - items_get research_event_input.json, prompt-research-event.txt
 - VENUE:
-  - host_venue.venue_snap
-  - host_venue.venue_paragraph
-  - host_venue.venue_hello
-- CITY/SEASON:
-  - host_city.seasons[span_season].snapshot
-  - host_city.seasons[span_season].paragraph_80w
-  - host_city.seasons[span_season].hello_intro_sentence
-
-Category C must:
-- Never contradict Category A.
-- Never overstate or invent prestige beyond what Category B + research clearly support.
-- Obey all writing rules in the prompts (tone, word counts, forbidden terms, exclusions).
-
-
-------------------------------------------------------------
-4. Global research and no-fabrication rules
-------------------------------------------------------------
-
-These rules apply to EVENT, VENUE, and CITY/SEASON base prompts.
-
-4.1 Research sources
-
-When a prompt specifies an official link:
-- First attempt to use that page (via http_get or built-in browser/search).
-
-If the official page is blocked or unusable (Cloudflare challenge, 4xx/5xx, “enable JavaScript”, timeout):
-
-1) Attempt federation / governing-body sources:
-   - USEF, FEI, USHJA, or equivalent national/regional federations.
-
-2) If those do not provide usable detail, attempt neutral third-party coverage:
-   - Recognized event/venue listings, show calendars, and press releases.
-   - Reputable equestrian media/coverage.
-   - Wikipedia only as a last resort for high-level framing.
-
-3) Only if all external sources above are unreachable or clearly unhelpful:
-   - Fall back to curated Category A fields alone.
-   - Use conservative, generic wording rather than specific claims you cannot verify.
-
-At no point may you invent:
-- ratings,
-- prize money,
-- specific facility counts,
-- circuit/series names,
-that are not explicitly supported by these sources or by Category A inputs.
-
-4.2 No fabrication
-You MUST NOT invent:
-- Ratings (FEI stars, USEF Premier/AA, level labels) not directly supported.
-- Rider caliber phrases (“Olympic-level”, “world’s best”, etc.) without explicit support.
-- New series names, circuits, or sponsor titles.
-- Specific counts or building materials.
-- Named hotels, restaurants, groceries, pharmacies, or feed stores (bottom block only).
-
-4.3 Research vs curated vs empty
-For any sensitive fact (rating, caliber, prestige):
-- If research yields a clear phrase in an authoritative source:
-  - You may use it or a close paraphrase.
-- If research does not support a strong claim:
-  - Use softer, generic language OR omit that angle.
-- If curated JSON has a value but research cannot confirm it:
-  - Do not escalate the claim; keep language neutral.
-- If both research and curated are empty or non-credible:
-  - Treat that fact as unavailable and do not guess.
-
-4.4 Memory and training data
-- You MUST NOT rely on training-time “memory” of venues, events, or cities for specific facts.
-- Only treat as “known” what appears in:
-  - the curated JSON inputs, or
-  - current research fetched during this run.
-
-4.5 Prompt vs instructions precedence
-- If any prompt text conflicts with this instructions.txt, this file wins.
-- Global rules here override any looser or ambiguous wording inside prompts.
-
-4.6 Verification and non-breaking behavior
-- Every concrete fact in EVENT / VENUE / CITY/SEASON prose must come from:
-  - Category A/B JSON, or
-  - clearly implied statements in research sources.
-- Inability to verify a fact is NOT an error condition by itself.
-- Only structural failures (invalid JSON, missing required fields, empty key prose fields) should cause a generator to be treated as failed.
-
-
-------------------------------------------------------------
-5. Two-pass pattern per generator
-------------------------------------------------------------
-
-All three generators follow LOAD → BASE → REWRITE → COMMIT.
-
-Step 1 – Load input JSON + prompts
-- EVENT:
-  - items_get event-input.json, prompt-event.txt, prompt-event-rewrite.txt
-- VENUE:
-  - items_get venue-input.json, prompt-venue.txt, prompt-venue-rewrite.txt
-- CITY/SEASON:
-  - items_get city-season-input.json, prompt-city.txt, prompt-city-rewrite.txt
+  - items_get research_venue_input.json, prompt-research-venue.txt
+- CITY:
+  - items_get research_city_input.json, prompt-research-city.txt
 
 If any required file is missing:
-- Emit: "wec-ocala-test-runner error: missing <filename> for <GENERATOR>"
-- Skip that generator and continue to the next.
+- Emit: "wec-ocala-test-runner error: missing <filename> for <LANE>"
+- Mark that lane as failed and continue with other lanes.
 
-Step 2 – Base JSON generation (DRAFT)
-- Execute the relevant base prompt (prompt-*.txt), with:
-  - the input JSON for that generator, and
-  - Sections 3 and 4 active (field categories + research rules).
-- The base prompt must:
-  - Produce exactly one JSON object matching its defined schema.
-  - Respect tone and word-count rules in the prompt.
-  - Stay within the density/realism band of the corresponding gold file, without copying.
+Step 2 – Call research prompt
+- Execute each prompt exactly as written with:
+  - the corresponding research_*_input.json,
+  - these global rules (Sections 3–4),
+  - http_get access where the prompt allows.
 
-Call this output: <GEN>_json_base.
+Call the raw outputs:
+- event_research_raw
+- venue_research_raw
+- city_research_raw
 
-Validate <GEN>_json_base:
-- It must parse as JSON.
-- It must contain all schema keys that the prompt’s “Output format” defines.
-- Required prose fields must be non-empty and non-placeholder:
-  - EVENT: event.known_for, event.hello.intro, event.hello.transition.
-  - VENUE: host_venue.venue_snap, host_venue.venue_paragraph, host_venue.venue_hello.
-  - CITY/SEASON: host_city.seasons[span_season].snapshot, paragraph_80w, hello_intro_sentence.
+Step 3 – Validate research JSON
+For each *_research_raw:
+
+- Must parse as valid JSON.
+- Must match the schema described in its prompt’s "Output format".
+- All schema-required fields must exist.
+- No field that is defined may be an empty string:
+  - If the model left an empty string, you must convert it to "could-not-verify".
+- No cross-lane contamination:
+  - EVENT lane must not contain venue architecture fields or city-specific itineraries.
+  - VENUE lane must not contain event/series-specific prestige claims (“Week 10 of WEF…”).
+  - CITY lane must not contain venue names, ring names, or event titles.
+
+If validation fails:
+- Retry ONCE for that lane.
+- If it still fails:
+  - Emit: "wec-ocala-test-runner error: could not generate valid research JSON for <LANE>"
+  - Mark that lane as failed.
+  - For this run, treat that lane’s section in topblock_research_clean as entirely unavailable.
+
+Step 4 – Build topblock_research_clean
+- Create an in-memory object:
+
+  {
+    "creation_id": "<creation_id>",
+    "event": <sanitized event_research_json or null>,
+    "venue": <sanitized venue_research_json or null>,
+    "city":  <sanitized city_research_json or null>
+  }
+
+Sanitization:
+- Normalize all strings to ASCII.
+- Replace any remaining empty strings with "could-not-verify".
+- Ensure no lane includes banned cross-lane content (strip or set "could-not-verify" if necessary).
+- This object is NOT written to Items or Docs; it is passed to the WRITER stage only.
+
+
+------------------------------------------------------------
+6. Stage 2 – WRITER and REWRITER
+------------------------------------------------------------
+
+6.1 WRITER – build topblock_writer.json
+
+Inputs:
+- competition_payload.json
+- topblock_research_clean (event, venue, city sections)
+- prompt-topblock-writer.txt
+
+The writer prompt:
+- Knows the final top-block schema (keys, shapes, word counts).
+- Knows the “Top-block narrative spec” (travel-brochure opener for riders/trainers/families, event prestige + venue as its own small world + city/season outside the gates + bridge to bottom block).
+
+You must enforce:
+
+Data usage rules:
+- The WRITER may only:
+  - use structured facts from competition_payload.json, and
+  - use fields from topblock_research_clean that are NOT "could-not-verify".
+- If a concept is only present as "could-not-verify", the WRITER must:
+  - NOT mention it at all,
+  - NOT replace it with generic guesses (e.g., “regional-level competitors” if no evidence).
+- No new facts may be introduced based solely on training memory.
+
+Copy rules (high-level):
+- Produce exactly the schema defined in prompt-topblock-writer.txt.
+- Produce exactly the fields required there, including:
+  - Two paragraphs of brochure-style copy:
+    - Paragraph 1: event allure + venue world (look, layout, atmosphere).
+    - Paragraph 2: widen to city + season outside the gates and bridge into stay/dine/essentials.
+- Word counts and tone are defined in the writer prompt; you must follow them.
+
+Call the result: topblock_writer.json.
+
+Validation:
+- Must parse as valid JSON.
+- Must match the schema in prompt-topblock-writer.txt.
+- Required prose fields must be:
+  - non-empty,
+  - not placeholders, not repetitions of prompt text,
+  - ASCII-only.
 
 If invalid:
-- Retry ONCE using the same base prompt and input.
+- Retry ONCE.
 - If still invalid:
-  - Emit: "wec-ocala-test-runner error: could not generate valid <GENERATOR> JSON"
-  - Skip rewrite+commit for that generator.
+  - Emit: "wec-ocala-test-runner error: could not generate valid topblock_writer.json"
+  - Abort before REWRITER and COMMIT.
+  - Do NOT write any docs file.
 
-Step 3 – Rewrite / JSON-safe cleanup (CLEAN)
-- Run the corresponding rewrite prompt (prompt-*-rewrite.txt) with:
-  - <GEN>_json_base as JSON input,
-  - the original input JSON for context.
+6.2 REWRITER – topblock_final.json
 
-Rewrite must:
-- Fix spelling, grammar, and awkward phrasing.
-- Normalize to ASCII (no smart quotes).
-- Remove or soften unsupported claims.
-- Preserve:
-  - all keys (schema),
-  - all non-string values (numbers, booleans, arrays, IDs).
-- NOT:
-  - introduce new facts not in input JSON or <GEN>_json_base,
-  - call http_get or perform new research,
-  - empty previously non-empty prose fields.
+Inputs:
+- topblock_writer.json
+- competition_payload.json (for sanity checks)
+- topblock_research_clean (for sanity checks)
+- prompt-topblock-rewrite.txt
 
-Call this candidate: <GEN>_json_final_candidate.
+The rewriter:
+- May fix spelling, grammar, and awkward phrasing.
+- Must normalize to ASCII.
+- Must NOT:
+  - change the JSON schema (keys, structure),
+  - change or introduce non-string values,
+  - add new factual claims beyond what is clearly supported by:
+    - competition_payload.json and
+    - topblock_research_clean.
+- Must remove or soften any clause that looks like an unsupported prestige upgrade, invented rating, or unverified rider caliber.
 
-If <GEN>_json_final_candidate:
-- fails JSON parsing, OR
-- changes schema (keys missing/renamed), OR
-- changes any non-string values,
-then:
-- Discard it and set <GEN>_json_final = <GEN>_json_base.
+Call the rewriter’s output: topblock_final_candidate.
+
+Validation:
+- Must parse as JSON.
+- Schema must exactly match topblock_writer.json.
+- All non-string values must be identical.
+- All required prose fields must still be non-empty.
+
+If validation fails:
+- Discard topblock_final_candidate.
+- Use topblock_writer.json as topblock_final.json.
+
 Otherwise:
-- <GEN>_json_final = <GEN>_json_final_candidate.
-
-Step 3b – Minimal sanity checks
-- EVENT must include at least:
-  - event.name (non-empty),
-  - event.venue_name (non-empty),
-  - event.host_city, event.host_state (non-empty),
-  - event.venue_official_link (non-empty),
-  - event.date_range_human (non-empty),
-  - event.season_label (non-empty),
-  - event.known_for, event.hello.intro, event.hello.transition (non-empty prose).
-- VENUE must include at least:
-  - host_venue.name, official_link, place_id, city_state (non-empty),
-  - venue_snap, venue_paragraph, venue_hello (non-empty prose).
-- CITY/SEASON must include for span_season:
-  - snapshot, paragraph_80w, hello_intro_sentence (non-empty prose).
-
-If <GEN>_json_final fails these minimal checks:
-- Treat that generator as failed.
-- Emit: "wec-ocala-test-runner error: invalid final <GENERATOR> JSON after rewrite".
-- Do not commit that generator.
-
-Step 4 – Commit to Docs (COMMIT)
-- For each generator with a valid <GEN>_json_final:
-  - Pretty-print with 2-space indentation.
-  - Encode as UTF-8 bytes, then Base64 (no "data:" prefix).
-
-- Use docs_commit_bulk to write one or more files under docs/:
-  - EVENT      → docs/runner/test/wec-event.json
-  - VENUE      → docs/runner/test/wec-venue.json
-  - CITY/SEASON→ docs/runner/test/ocala-seasons.json
-
-- This runner may commit up to three JSON files under docs/runner/test/ in one call.
-- You may:
-  - Commit all successful files in a single docs_commit_bulk call, or
-  - Call docs_commit_bulk separately per file if necessary.
-
-If docs_commit_bulk fails for any path:
-- Emit: "wec-ocala-test-runner error: commit failed for <path or paths>"
-- Do NOT claim success for those paths.
+- Use topblock_final_candidate as topblock_final.json.
 
 
 ------------------------------------------------------------
-6. Generator-specific focus (content roles)
+7. Stage 3 – Commit
 ------------------------------------------------------------
 
-6.1 EVENT generator (wec-event.json)
+Path pattern:
+- docs/runner/test/topblock-<creation_id>.json
+  - Derive <creation_id> from competition_payload.creation_id.
+  - Example: creation_id "creator-abc" → "docs/runner/test/topblock-creator-abc.json".
 
-Focus:
-- Event identity, prestige (carefully), time span, energy, and rider field.
-- Use event-input.json to anchor:
-  - event_name, event_acronym,
-  - season_label, date_range_human,
-  - host_city, host_state,
-  - venue_name, rating hints.
+Commit rules:
+- Pretty-print topblock_final.json with 2-space indentation.
+- Ensure ASCII-only.
+- Encode as UTF-8 → Base64.
 
-Do NOT:
-- Mention specific hotels, restaurants, groceries, pharmacies, feed stores.
-- List detailed class schedules.
-- Describe venue architecture in depth (that is VENUE’s job).
-- Go into city attractions in detail.
+Call docs_commit_bulk ONCE with:
+- message:   "wec-ocala-test-runner top-block (<creation_id>)"
+- overwrite: true
+- files: [
+    {
+      "path": "docs/runner/test/topblock-<creation_id>.json",
+      "content_type": "application/json",
+      "content_base64": "<Base64 of topblock_final.json>"
+    }
+  ]
 
-Rider caliber and prestige:
-- Start from rating_string, event_rating, and explicit phrases in research.
-- Apply mapping rules from prompt-event.txt but:
-  - If research is weak/ambiguous, err toward conservative options (e.g., “Regional”).
-  - Never escalate to “World-Class” or “Olympic” without clear support.
-
-Category C prose:
-- event.known_for: grounded description of what the week is like.
-- event.hello.intro: ~90–140 words, rider- and trainer-focused.
-- event.hello.transition: ~60–100 words, bridging into practical rhythm.
-
-6.2 VENUE generator (wec-venue.json)
-
-Focus:
-- Physical venue: setting, layout, light, atmosphere, professional reputation.
-- Use venue-input.json + official site to:
-  - resolve canonical name/acronyms,
-  - describe how the grounds work on a busy week.
-
-Do NOT:
-- Mention specific events/dates/class lists.
-- Mention city shops, hotels, restaurants, groceries, pharmacies.
-- Invent stall counts, ring counts, or materials.
-- Invent slogans or circuit names.
-
-Fallback when research fails:
-- If venue_official_link and all fallbacks are unusable:
-  - Write generic, conservative copy grounded only in:
-    - venue_name, city, state, and
-    - that it is an equestrian show facility.
-
-Category C prose:
-- venue_snap: ~18–30 words.
-- venue_paragraph: ~60–90 words focused on function and feel.
-- venue_hello: ≤ 25 words, concise opener, no greetings.
-
-6.3 CITY/SEASON generator (ocala-seasons.json)
-
-Focus:
-- Ocala in one season (span_season) for time-poor competitors and families.
-- Use city-season-input.json + high-level research to:
-  - describe light, air, sound, and daily rhythm in “season_label”.
-
-Do NOT:
-- Mention venue names, ring names, barns, or circuits.
-- Name hotels, restaurants, groceries, pharmacies, retail.
-- Assert exact climate guarantees.
-
-Category C prose:
-- snapshot: ~18–30 words.
-- paragraph_80w: ~80–110 words; no lists of venues or shops.
-- hello_intro_sentence: ≤ 25 words; no greetings (“welcome”, “meet”, etc.).
+If docs_commit_bulk returns an error:
+- Emit: "wec-ocala-test-runner error: commit failed for docs/runner/test/topblock-<creation_id>.json"
+- Do NOT claim success.
 
 
 ------------------------------------------------------------
-7. Completion message
+8. Completion message
 ------------------------------------------------------------
 
-After all requested generators that did NOT error on generation or commit:
-- Determine which files were actually written:
-  - A file counts as “written” only if:
-    - its generator produced a valid <GEN>_json_final, AND
-    - docs_commit_bulk returned success for that path.
+If all stages succeed (research lanes that could run, writer, rewriter, commit):
 
-Then send one short summary message listing exactly those files, for example:
-- "wec-ocala-test-runner finished → wrote wec-venue.json and ocala-seasons.json under docs/runner/test/."
-- or
-- "wec-ocala-test-runner finished → wrote wec-venue.json, ocala-seasons.json, and wec-event.json under docs/runner/test/."
+- Send a short final message:
 
-Do NOT:
-- Paste any JSON content into chat unless the user explicitly asks to see it.
-- Claim success for any file whose generation or commit failed.
+  "wec-ocala-test-runner finished → wrote topblock-<creation_id>.json under docs/runner/test/."
+
+Rules:
+- Mention only the file that was actually committed.
+- Do NOT paste JSON content unless the user explicitly asks to see it.
+- Do NOT claim success for any file if research, writer, rewriter, or commit failed.
+
