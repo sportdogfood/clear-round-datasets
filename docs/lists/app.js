@@ -77,18 +77,20 @@
   };
 
   // ---------------------------------------------------------------------------
-  // DOM references
-  // ---------------------------------------------------------------------------
-
-  const headerTitle = document.getElementById('header-title');
-  const headerBack = document.getElementById('header-back');
-  const headerAction = document.getElementById('header-action');
-  const screenRoot = document.getElementById('screen-root');
-  const navRow = document.getElementById('nav-row');
-
-  // ---------------------------------------------------------------------------
   // Session helpers
   // ---------------------------------------------------------------------------
+
+  function resetUiStateForNewSession() {
+    state.shareSelection = {
+      state: true,
+      list1: true,
+      list2: true,
+      list3: true,
+      list4: true,
+      list5: true
+    };
+    state.stateFilter = '';
+  }
 
   function createNewSession() {
     const horses = HORSE_NAMES.map((name, index) => ({
@@ -103,6 +105,8 @@
         list5: false
       }
     }));
+
+    resetUiStateForNewSession();
 
     state.session = {
       sessionId: Date.now().toString(),
@@ -202,6 +206,12 @@
   // Header / nav rendering
   // ---------------------------------------------------------------------------
 
+  const headerTitle = document.getElementById('header-title');
+  const headerBack = document.getElementById('header-back');
+  const headerAction = document.getElementById('header-action');
+  const screenRoot = document.getElementById('screen-root');
+  const navRow = document.getElementById('nav-row');
+
   function renderHeader() {
     const scr = state.currentScreen;
     headerTitle.textContent = titleForScreen(scr);
@@ -293,21 +303,21 @@
 
     const logo = document.createElement('div');
     logo.className = 'start-logo';
- logo.innerHTML = `
-  <div class="start-logo-mark">
-    <img
-      src="tacklists.png"
-      class="start-logo-img"
-      alt="TackLists.com logo"
-    />
-  </div>
-  <div class="start-logo-text">
-    <div class="start-logo-title">TackLists.com</div>
-    <div class="start-logo-subtitle">
-      Quick horse tack lists, on the fly.
-    </div>
-  </div>
-`;
+    logo.innerHTML = `
+      <div class="start-logo-mark">
+        <img
+          src="tacklists.png"
+          class="start-logo-img"
+          alt="TackLists.com logo"
+        />
+      </div>
+      <div class="start-logo-text">
+        <div class="start-logo-title">TackLists.com</div>
+        <div class="start-logo-subtitle">
+          Quick horse tack lists, on the fly.
+        </div>
+      </div>
+    `;
     screenRoot.appendChild(logo);
 
     if (!state.session) {
@@ -516,10 +526,6 @@
         });
       });
     }
-
-    if (!activeInList.length && !inactiveInList.length) {
-      createRow('No active horses for this list.', {});
-    }
   }
 
   function renderListScreen(listId) {
@@ -723,12 +729,7 @@
 
     if (action === 'go-first-list') {
       ensureSession();
-      const hasActive = state.session.horses.some((h) => h.state);
-      if (!hasActive) {
-        setScreen('list1'); // still allow; list will show "No active horses."
-      } else {
-        setScreen('list1');
-      }
+      setScreen('list1');
       return;
     }
 
