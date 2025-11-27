@@ -77,20 +77,18 @@
   };
 
   // ---------------------------------------------------------------------------
-  // Session helpers
+  // DOM references
   // ---------------------------------------------------------------------------
 
-  function resetUiStateForNewSession() {
-    state.shareSelection = {
-      state: true,
-      list1: true,
-      list2: true,
-      list3: true,
-      list4: true,
-      list5: true
-    };
-    state.stateFilter = '';
-  }
+  const headerTitle = document.getElementById('header-title');
+  const headerBack = document.getElementById('header-back');
+  const headerAction = document.getElementById('header-action');
+  const screenRoot = document.getElementById('screen-root');
+  const navRow = document.getElementById('nav-row');
+
+  // ---------------------------------------------------------------------------
+  // Session helpers
+  // ---------------------------------------------------------------------------
 
   function createNewSession() {
     const horses = HORSE_NAMES.map((name, index) => ({
@@ -105,8 +103,6 @@
         list5: false
       }
     }));
-
-    resetUiStateForNewSession();
 
     state.session = {
       sessionId: Date.now().toString(),
@@ -131,6 +127,53 @@
   function findHorse(horseId) {
     if (!state.session) return null;
     return state.session.horses.find((h) => h.horseId === horseId) || null;
+  }
+
+  /**
+   * Aggregate counts used by Summary + bottom nav.
+   * Returns counts for:
+   *  - state  = # active horses
+   *  - list1–list5 = # active horses in each list
+   *  - summary = same as state (used for Summary nav pill)
+   */
+  function computeAggregates() {
+    const base = {
+      state: 0,
+      list1: 0,
+      list2: 0,
+      list3: 0,
+      list4: 0,
+      list5: 0,
+      summary: 0
+    };
+
+    if (!state.session) return base;
+
+    const horses = state.session.horses;
+    const activeHorses = horses.filter((h) => h.state);
+    const activeCount = activeHorses.length;
+
+    const aggregates = { ...base, state: activeCount, summary: activeCount };
+
+    for (let i = 1; i <= 5; i++) {
+      const listId = `list${i}`;
+      aggregates[listId] = activeHorses.filter((h) => h.lists[listId]).length;
+    }
+
+    return aggregates;
+  }
+
+  function updateNavCounts() {
+    const aggregates = computeAggregates();
+    const tags = document.querySelectorAll('[data-nav-tag]');
+
+    tags.forEach((el) => {
+      const key = el.dataset.navTag;
+      if (!key) return;
+      if (Object.prototype.hasOwnProperty.call(aggregates, key)) {
+        el.textContent = String(aggregates[key]);
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -206,12 +249,6 @@
   // Header / nav rendering
   // ---------------------------------------------------------------------------
 
-  const headerTitle = document.getElementById('header-title');
-  const headerBack = document.getElementById('header-back');
-  const headerAction = document.getElementById('header-action');
-  const screenRoot = document.getElementById('screen-root');
-  const navRow = document.getElementById('nav-row');
-
   function renderHeader() {
     const scr = state.currentScreen;
     headerTitle.textContent = titleForScreen(scr);
@@ -261,14 +298,22 @@
         btn.classList.add('nav-btn--primary');
       }
     });
+
+    updateNavCounts();
   }
 
   // ---------------------------------------------------------------------------
   // Row helper
   // ---------------------------------------------------------------------------
 
+  /**
+   * Generic pill row.
+   *  - tagText: numeric / label text (for Summary counts)
+   *  - tagVariant: 'dot' = small circular indicator for horses/lists
+   *  - active: inverts styling for row + tag
+   */
   function createRow(label, options = {}) {
-    const { tagText, active, onClick } = options;
+    const { tagText, active, onClick, tagVariant } = options;
 
     const row = document.createElement('div');
     row.className = 'row row--tap';
@@ -279,10 +324,17 @@
     titleEl.textContent = label;
     row.appendChild(titleEl);
 
-    if (tagText != null) {
+    if (tagText != null || tagVariant === 'dot') {
       const tagEl = document.createElement('div');
       tagEl.className = 'row-tag';
-      tagEl.textContent = tagText;
+
+      if (tagVariant === 'dot') {
+        tagEl.classList.add('row-tag--dot');
+        tagEl.textContent = '';
+      } else {
+        tagEl.textContent = tagText;
+      }
+
       row.appendChild(tagEl);
     }
 
@@ -330,14 +382,21 @@
       return;
     }
 
+    const aggregates = computeAggregates();
+    const hasAnyActive = aggregates.state > 0;
+
+    // In-session row is green whenever a session exists
     createRow('In-session', {
+      active: true,
       onClick: () => {
         ensureSession();
         setScreen('state');
       }
     });
 
+    // Summary row is green when there is at least one active horse
     createRow('Summary', {
+      active: hasAnyActive,
       onClick: () => {
         ensureSession();
         setScreen('summary');
@@ -358,10 +417,8 @@
     if (!horse) return;
 
     if (!horse.state) {
-      // FALSE -> TRUE
       horse.state = true;
     } else {
-      // TRUE -> FALSE
       const inAnyList = Object.values(horse.lists).some(Boolean);
       if (inAnyList) {
         const ok = window.confirm(
@@ -433,6 +490,7 @@
       active.forEach((horse) => {
         createRow(horse.horseName, {
           active: true,
+          tagVariant: 'dot',
           onClick: () => handleStateHorseClick(horse.horseId)
         });
       });
@@ -453,6 +511,7 @@
 
       inactive.forEach((horse) => {
         createRow(horse.horseName, {
+          tagVariant: 'dot',
           onClick: () => handleStateHorseClick(horse.horseId)
         });
       });
@@ -502,6 +561,7 @@
       activeInList.forEach((horse) => {
         createRow(horse.horseName, {
           active: true,
+          tagVariant: 'dot',
           onClick: () => toggleListMembership(listId, horse.horseId)
         });
       });
@@ -522,9 +582,14 @@
 
       inactiveInList.forEach((horse) => {
         createRow(horse.horseName, {
+          tagVariant: 'dot',
           onClick: () => toggleListMembership(listId, horse.horseId)
         });
       });
+    }
+
+    if (!activeInList.length && !inactiveInList.length) {
+      createRow('No active horses for this list.', {});
     }
   }
 
@@ -541,8 +606,8 @@
     ensureSession();
     screenRoot.innerHTML = '';
 
-    const horses = state.session.horses;
-    const activeCount = horses.filter((h) => h.state).length;
+    const aggregates = computeAggregates();
+    const activeCount = aggregates.state;
     const inShare = state.shareMode;
 
     function handleRowClick(key) {
@@ -562,7 +627,7 @@
     // STATE row
     const stateSelected = state.shareSelection.state;
     createRow(LIST_LABELS.state, {
-      tagText: String(activeCount),
+      tagText: String(aggregates.state),
       active: inShare && stateSelected,
       onClick: () => handleRowClick('state')
     });
@@ -572,10 +637,7 @@
       const listId = `list${i}`;
       const label = LIST_LABELS[listId] || `List ${i}`;
 
-      const listCount = horses.filter(
-        (h) => h.state && h.lists[listId]
-      ).length;
-
+      const listCount = aggregates[listId] || 0;
       const isFull = activeCount > 0 && listCount === activeCount;
       const tagText = isFull ? `${listCount} ✔️` : String(listCount);
 
@@ -729,7 +791,12 @@
 
     if (action === 'go-first-list') {
       ensureSession();
-      setScreen('list1');
+      const hasActive = state.session.horses.some((h) => h.state);
+      if (!hasActive) {
+        setScreen('list1'); // still allow; list will show "No active horses."
+      } else {
+        setScreen('list1');
+      }
       return;
     }
 
