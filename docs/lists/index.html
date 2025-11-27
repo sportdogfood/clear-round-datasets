@@ -3,20 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>TackLists.com</title>
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <style>
     :root {
-      --bg: #050509;
-      --bg-alt: #111319;
-      --border: #2a2d3a;
+      --bg: #020617;
+      --bg-alt: #0b1120;
+      --border: #374151;
+      --border-soft: #4b5563;
       --accent: #2563eb;
       --accent-soft: #1d4ed8;
-      --text: #f9fafb;
-      --text-soft: #d1d5db;
-      --radius-row: 999px;
-      --radius-pill: 999px;
+      --pill-radius: 999px;
       --header-h: 52px;
       --nav-h: 72px;
     }
@@ -31,10 +28,9 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 90%);
-      color: var(--text);
+      color: #f9fafb;
     }
 
     body {
@@ -55,7 +51,7 @@
       margin: 8px;
       display: flex;
       flex-direction: column;
-      background: #020617;
+      background: var(--bg);
       border-radius: 24px;
       border: 1px solid rgba(15, 23, 42, 0.95);
       box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
@@ -64,7 +60,7 @@
       overflow: hidden;
     }
 
-    /* Header */
+    /* Header ----------------------------------------------------- */
 
     .app-header {
       height: var(--header-h);
@@ -79,18 +75,19 @@
 
     .header-back,
     .header-action {
-      min-width: 40px;
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      border: 1px solid rgba(55, 65, 81, 1);
+      min-width: 60px;
+      height: 34px;
+      padding: 0 16px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
       background: #020617;
-      color: var(--text-soft);
+      color: #e5e7eb;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 13px;
-      padding: 0;
+      font-weight: 500;
+      cursor: pointer;
       box-shadow:
         0 0 0 1px rgba(15, 23, 42, 1),
         0 3px 10px rgba(0, 0, 0, 0.8);
@@ -98,24 +95,13 @@
         background 0.12s ease-out,
         border-color 0.12s ease-out,
         transform 0.08s ease-out,
-        box-shadow 0.12s ease-out;
+        box-shadow 0.12s ease-out,
+        color 0.12s ease-out;
     }
 
     .header-back span {
-      font-size: 18px;
-      line-height: 1;
-    }
-
-    .header-title {
-      flex: 1;
-      text-align: center;
       font-size: 16px;
-      font-weight: 600;
-      margin: 0;
-      padding: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1;
     }
 
     .header-action {
@@ -132,7 +118,19 @@
         0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
-    /* Main content */
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Main content ---------------------------------------------- */
 
     .app-main {
       flex: 1;
@@ -148,7 +146,7 @@
       padding-bottom: 12px;
     }
 
-    /* Start logo */
+    /* Start logo ------------------------------------------------- */
 
     .start-logo {
       display: flex;
@@ -185,24 +183,24 @@
 
     .start-logo-subtitle {
       font-size: 12px;
-      color: var(--text-soft);
+      color: #d1d5db;
       opacity: 0.9;
     }
 
-    /* Long pills (rows) */
+    /* Long pills (rows) ----------------------------------------- */
 
     .row {
       width: 100%;
-      min-height: 48px;
-      padding: 12px 18px;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
+      min-height: 46px;
+      padding: 10px 16px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
       background: #111827;
       display: flex;
       align-items: center;
       justify-content: space-between;
       font-size: 14px;
-      color: var(--text-soft);
+      color: #e5e7eb;
       box-shadow: 0 1px 0 #020617;
     }
 
@@ -210,58 +208,52 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      padding-right: 8px;
     }
 
-    /* Count / status pill at row right */
     .row-tag {
-      min-width: 24px;
-      height: 24px;
-      padding: 0 8px;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
+      min-width: 28px;
+      padding: 3px 10px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
       background: #18181b;
       color: #e5e7eb;
       font-size: 11px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      text-align: center;
       font-variant-numeric: tabular-nums;
       box-shadow: 0 0 0 1px #020617;
     }
 
-    /* Small dot variant for horses */
-    .row-tag--dot {
-      width: 14px;
-      min-width: 14px;
-      height: 14px;
+    .row-tag--boolean {
+      min-width: 18px;
+      width: 18px;
+      height: 18px;
       padding: 0;
       border-radius: 999px;
-      border: 2px solid #4b5563;
-      background: #020617;
+      font-size: 0;
     }
 
-    .row--active {
-      border-color: var(--accent);
-      background: #1f2937;
-      color: #f9fafb;
-      box-shadow:
-        0 0 0 1px #020617,
-        0 4px 10px rgba(15, 23, 42, 0.75);
+    .row-tag--count {
+      min-width: 30px;
     }
 
-    .row--active .row-title {
-      color: #f9fafb;
-    }
-
-    .row--active .row-tag {
+    .row-tag--positive {
       border-color: #22c55e;
       background: #14532d;
       color: #f9fafb;
     }
 
-    .row--active .row-tag--dot {
-      border-color: #22c55e;
-      background: #16a34a;
+    .row--active {
+      border-color: var(--accent);
+      background: radial-gradient(circle at top, #1f2937, #020617 75%);
+      box-shadow:
+        0 0 0 1px #020617,
+        0 4px 10px rgba(15, 23, 42, 0.75);
+      color: #f9fafb;
+    }
+
+    .row--active .row-title {
+      color: #f9fafb;
     }
 
     .row--tap {
@@ -291,11 +283,11 @@
 
     .list-group-divider {
       height: 1px;
-      background: var(--border);
+      background: rgba(55, 65, 81, 0.9);
       margin: 10px 4px;
     }
 
-    /* State search */
+    /* State search ---------------------------------------------- */
 
     .state-search {
       margin: 4px 2px 10px;
@@ -304,10 +296,10 @@
     .state-search-input {
       width: 100%;
       padding: 10px 16px;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
       background: #020617;
-      color: var(--text);
+      color: #f9fafb;
       font-size: 14px;
       outline: none;
       box-shadow: 0 1px 0 #020617;
@@ -317,18 +309,18 @@
       color: rgba(156, 163, 175, 0.95);
     }
 
-    /* Bottom nav – pill row */
+    /* Bottom nav ------------------------------------------------ */
 
     .app-nav {
       height: var(--nav-h);
       flex-shrink: 0;
       border-top: 1px solid #27272f;
-      background: #111827;
+      background: #020617;
       box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(12px);
       display: flex;
-      align-items: center;
-      padding: 6px 8px 10px;
+      align-items: flex-start;
+      padding: 6px 6px 10px;
     }
 
     .nav-scroller {
@@ -336,33 +328,20 @@
       -webkit-overflow-scrolling: touch;
       white-space: nowrap;
       width: 100%;
-      padding-bottom: 4px;
-    }
-
-    .nav-scroller::-webkit-scrollbar {
-      height: 4px;
-    }
-
-    .nav-scroller::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .nav-scroller::-webkit-scrollbar-thumb {
-      background: #4b5563;
-      border-radius: 999px;
     }
 
     .nav-row {
       display: inline-flex;
       gap: 8px;
       padding: 0 4px;
+      align-items: center;
     }
 
     .nav-btn {
       padding: 6px 14px;
-      border-radius: 999px;
+      border-radius: var(--pill-radius);
       border: 1px solid #4b4f57;
-      background: #26282f;
+      background: #18181b;
       color: #f9fafb;
       font-size: 12px;
       font-weight: 500;
@@ -382,28 +361,13 @@
         transform 0.08s ease-out;
     }
 
-    .nav-label {
-      display: inline-block;
-    }
-
-    .nav-tag {
-      height: 22px;
-      min-width: 22px;
-      padding: 0 6px;
-    }
-
     .nav-btn--primary {
       border-color: var(--accent);
-      background: #1f2933;
+      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
       color: #f9fafb;
       box-shadow:
         0 0 0 1px #020617,
         0 3px 10px rgba(15, 23, 42, 0.8);
-    }
-
-    .nav-btn--primary .nav-tag {
-      border-color: #22c55e;
-      background: #14532d;
     }
 
     .nav-btn:active {
@@ -411,6 +375,29 @@
       box-shadow:
         0 0 0 1px #020617,
         0 2px 6px rgba(15, 23, 42, 0.9);
+    }
+
+    .nav-label {
+      display: inline-block;
+    }
+
+    .nav-agg {
+      min-width: 22px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #111827;
+      color: #e5e7eb;
+      font-size: 11px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 0 0 1px #020617;
+    }
+
+    .nav-agg--positive {
+      border-color: #22c55e;
+      background: #14532d;
+      color: #f9fafb;
     }
 
     button {
@@ -430,7 +417,7 @@
       <button class="header-action" id="header-action" type="button" hidden></button>
     </header>
 
-    <!-- Main screen content -->
+    <!-- Main content -->
     <main class="app-main">
       <div id="screen-root" class="list-column"></div>
     </main>
@@ -439,59 +426,43 @@
     <nav class="app-nav">
       <div class="nav-scroller">
         <div class="nav-row" id="nav-row">
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="start">
+          <button class="nav-btn nav-btn--primary" type="button" data-screen="start">
             <span class="nav-label">Start</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="state">
+          <button class="nav-btn" type="button" data-screen="state">
             <span class="nav-label">Active Horses</span>
-            <span class="nav-tag row-tag" data-nav-tag="state">0</span>
+            <span class="nav-agg" data-nav-agg="state">0</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="list1">
+          <button class="nav-btn" type="button" data-screen="list1">
             <span class="nav-label">Schooling Bridles</span>
-            <span class="nav-tag row-tag" data-nav-tag="list1">0</span>
+            <span class="nav-agg" data-nav-agg="list1">0</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="list2">
+          <button class="nav-btn" type="button" data-screen="list2">
             <span class="nav-label">Show Bridles</span>
-            <span class="nav-tag row-tag" data-nav-tag="list2">0</span>
+            <span class="nav-agg" data-nav-agg="list2">0</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="list3">
+          <button class="nav-btn" type="button" data-screen="list3">
             <span class="nav-label">Schooling Girths</span>
-            <span class="nav-tag row-tag" data-nav-tag="list3">0</span>
+            <span class="nav-agg" data-nav-agg="list3">0</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="list4">
+          <button class="nav-btn" type="button" data-screen="list4">
             <span class="nav-label">Show Girths</span>
-            <span class="nav-tag row-tag" data-nav-tag="list4">0</span>
+            <span class="nav-agg" data-nav-agg="list4">0</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="list5">
+          <button class="nav-btn" type="button" data-screen="list5">
             <span class="nav-label">Saddles</span>
-            <span class="nav-tag row-tag" data-nav-tag="list5">0</span>
+            <span class="nav-agg" data-nav-agg="list5">0</span>
           </button>
 
-          <button class="nav-btn"
-                  type="button"
-                  data-screen="summary">
+          <button class="nav-btn" type="button" data-screen="summary">
             <span class="nav-label">Summary</span>
-            <span class="nav-tag row-tag" data-nav-tag="summary">0</span>
+            <span class="nav-agg" data-nav-agg="summary">0</span>
           </button>
         </div>
       </div>
