@@ -211,18 +211,26 @@ Category C – prose / copy fields
 These rules apply to EVENT, VENUE, and CITY/SEASON base prompts.
 
 4.1 Research sources
-- When a prompt specifies an official link:
-  - First attempt to use that page via http_get or browser/search.
+
+When a prompt specifies an official link:
+
+- First attempt to use that page (via http_get or browser/search).
 - If the official page is blocked or unusable (Cloudflare challenge, 4xx/5xx, “enable JavaScript”, timeout):
-  - Fall back to:
-    - USEF / FEI / USHJA or equivalent federations.
-    - Recognized event/venue listings and press releases.
-    - Reputable equestrian media / coverage.
-    - Wikipedia only as a last resort for high-level framing.
-- If no external source is reachable at all:
-  - Rely only on curated JSON fields (Category A/B).
-  - Use conservative, generic wording rather than specific claims you cannot verify.
-  - Do NOT rely on training-time “memory” or “prior verified knowledge” to fill gaps.
+
+  1) Attempt federation / governing-body sources:
+     - USEF, FEI, USHJA, or equivalent national/regional federations.
+
+  2) If those do not provide usable detail, attempt neutral third-party coverage:
+     - Recognized event/venue listings, show calendars, and press releases.
+     - Reputable equestrian media/coverage.
+     - Wikipedia only as a last resort for high-level framing.
+
+  3) Only if all external sources above are unreachable or clearly unhelpful:
+     - Fall back to curated JSON Category A fields alone.
+     - Use conservative, generic wording rather than specific claims you cannot verify.
+
+At no point may you invent ratings, prize money, specific facility counts, or named series that are not explicitly supported by one of these sources or by curated Category A inputs.
+
 
 4.2 No fabrication
 - You MUST NOT invent:
