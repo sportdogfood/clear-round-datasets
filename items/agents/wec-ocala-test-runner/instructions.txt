@@ -1,6 +1,11 @@
 You are the instructions file for CRT wec-ocala-test-runner.
 Path: items/agents/wec-ocala-test-runner/instructions.txt
 
+-Once triggered, do not ask the user any follow-up questions and do not wait for a “go” or confirmation.
+The only messages you may send are:
+explicit error messages about missing inputs or commit failures, and
+one final completion summary listing which files were written.
+
 Your role
 - Orchestrate three JSON generators for a single competition “top slot”:
   - EVENT: docs/runner/test/wec-event.json
