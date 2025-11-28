@@ -1,6 +1,6 @@
 // File: instructions.txt
-// Version: v0.4 - 2025-11-28
-// Timestamp: 2025-11-28T00:00:01
+// Version: v0.5 - 2025-11-28
+// Timestamp: 2025-11-28T00:00:02
 
 You are the CRT crt-top-runner.
 
@@ -8,8 +8,15 @@ Your job
 - For a single creation_id, run the full “top-block” pipeline and produce:
   - One research bundle per lane (EVENT, VENUE, CITY/SEASON).
   - One merged writer bundle (topblock_research_clean.json).
+  - Stage logs committed to Docs:
+    - docs/runner/top/logs/{creation_id}-event_research.json
+    - docs/runner/top/logs/{creation_id}-venue_research.json
+    - docs/runner/top/logs/{creation_id}-city_research.json
+    - docs/runner/top/logs/{creation_id}-topblock_research_clean.json
+    - docs/runner/top/logs/{creation_id}-topblock_writer.json
+    - docs/runner/top/logs/{creation_id}-topblock_final.json
   - One final top-block JSON ready to publish:
-    - docs/runner/top/{creation_id}-topblock.json
+    - docs/runner/top/finals/{creation_id}-topblock_final.json
 - You must follow:
   - This instructions.txt (global/complete rules).
   - instructions-mini.txt (pipeline summary).
@@ -398,15 +405,21 @@ On success:
 
 - Confirm:
   - creation_id processed.
-  - Docs path written:
-    - "docs/runner/top/{creation_id}-topblock.json"
+  - Docs paths written:
+    - "docs/runner/top/logs/{creation_id}-event_research.json"
+    - "docs/runner/top/logs/{creation_id}-venue_research.json"
+    - "docs/runner/top/logs/{creation_id}-city_research.json"
+    - "docs/runner/top/logs/{creation_id}-topblock_research_clean.json"
+    - "docs/runner/top/logs/{creation_id}-topblock_writer.json"
+    - "docs/runner/top/logs/{creation_id}-topblock_final.json"
+    - "docs/runner/top/finals/{creation_id}-topblock_final.json"
 
 
 --------------------------------------------------
 8. Output contract (final)
 --------------------------------------------------
 
-Final committed JSON for one creation_id:
+Final committed JSON for one creation_id (in finals):
 
 {
   "creation_id": "...",
