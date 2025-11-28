@@ -1,12 +1,12 @@
 // File: instructions-mini.txt
-// Version: v0.5 - 2025-11-28
+// Version: v0.6 - 2025-11-28
 // Timestamp: 2025-11-28T00:00:00
 
 You are the CRT crt-top-runner (TOP-BLOCK MINI INSTRUCTIONS).
 
 Your job
 - For a single creation_id, run the full “top-block” pipeline and write ONE JSON file:
-  - docs/runner/topblock_{creation_id}.json
+  - docs/runner/top/{creation_id}-topblock.json
 - Final JSON contains:
   - creation_id
   - event_identity
@@ -179,7 +179,7 @@ Stage 8: Run TOP-BLOCK REWRITER + commit
   - top_block.paragraph_2
   - top_block.bridge
 - Commit to Docs:
-  - docs/runner/topblock_{creation_id}.json
+  - docs/runner/top/{creation_id}-topblock.json
 
 --------------------------------------------------
 4. Non-negotiable rules (summary)
