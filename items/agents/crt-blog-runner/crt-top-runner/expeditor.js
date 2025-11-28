@@ -1,6 +1,6 @@
 // File: expeditor.js (spec)
-// Version: v0.3 - 2025-11-28
-// Timestamp: 2025-11-28T00:00:00
+// Version: v0.4 - 2025-11-28
+// Timestamp: 2025-11-28T00:00:04
 
 Role: TOP-BLOCK EXPEDITOR for CRT crt-top-runner
 
@@ -154,17 +154,17 @@ For each of the JSON objects above:
 
 Ensure the final Items layout for this runner looks like:
 
-- items/agents/crt-blog-runner/crt-top-runner/instructions.txt            (manual, not written by expeditor)
-- items/agents/crt-blog-runner/crt-top-runner/instructions-mini.txt       (manual)
-- items/agents/crt-blog-runner/crt-top-runner/research-city-prompt.txt    (manual)
-- items/agents/crt-blog-runner/crt-top-runner/research-venue-prompt.txt   (manual)
-- items/agents/crt-blog-runner/crt-top-runner/research-event-prompt.txt   (manual)
-- items/agents/crt-blog-runner/crt-top-runner/prompt-topblock-writer.txt  (manual)
-- items/agents/crt-blog-runner/crt-top-runner/prompt-topblock-rewriter.txt(manual)
-- items/agents/crt-blog-runner/crt-top-runner/competition_payload.json    (written by expeditor)
-- items/agents/crt-blog-runner/crt-top-runner/city-research-input.json    (written by expeditor)
-- items/agents/crt-blog-runner/crt-top-runner/venue-research-input.json   (written by expeditor)
-- items/agents/crt-blog-runner/crt-top-runner/event-research-input.json   (written by expeditor)
+- items/agents/crt-blog-runner/crt-top-runner/instructions.txt             (manual, not written by expeditor)
+- items/agents/crt-blog-runner/crt-top-runner/instructions-mini.txt        (manual)
+- items/agents/crt-blog-runner/crt-top-runner/research-city-prompt.txt     (manual)
+- items/agents/crt-blog-runner/crt-top-runner/research-venue-prompt.txt    (manual)
+- items/agents/crt-blog-runner/crt-top-runner/research-event-prompt.txt    (manual)
+- items/agents/crt-blog-runner/crt-top-runner/prompt-topblock-writer.txt   (manual)
+- items/agents/crt-blog-runner/crt-top-runner/prompt-topblock-rewriter.txt (manual)
+- items/agents/crt-blog-runner/crt-top-runner/competition_payload.json     (written by expeditor)
+- items/agents/crt-blog-runner/crt-top-runner/city-research-input.json     (written by expeditor)
+- items/agents/crt-blog-runner/crt-top-runner/venue-research-input.json    (written by expeditor)
+- items/agents/crt-blog-runner/crt-top-runner/event-research-input.json    (written by expeditor)
 
 --------------------------------------------------
 4. Triggering the runner
@@ -172,23 +172,43 @@ Ensure the final Items layout for this runner looks like:
 
 After successfully writing all three *-research-input.json files (and competition_payload.json):
 
-- Invoke the runner once for this creation_id, using your standardized trigger contract, for example:
+- Invoke the runner once for this creation_id using a simple text trigger:
 
-  - Send a message or task payload that includes:
-    - runner_id: "crt-top-runner"
-    - creation_id: "<creation_id>"
-    - mode: "topblock"
+  - "start crt-top-runner {creation_id}"
 
-- The runner, following instructions.txt and instructions-mini.txt:
-  - Loads competition_payload.json + the three *-research-input.json files from:
-    - items/agents/crt-blog-runner/crt-top-runner/
-  - Runs the three research prompts.
-  - Builds topblock_research_clean.json (internally) under the same agent folder.
-  - Runs the top-block writer and rewriter.
-  - Commits the final top-block JSON to Docs via openapi_git.yaml at:
+  Example:
+  - "start crt-top-runner wec-ocala-2026-spring-1"
 
-    - docs/runner/top/{creation_id}-topblock.json
+- Or an equivalent structured payload that carries at minimum:
+  - runner_id: "crt-top-runner"
+  - creation_id: "<creation_id>"
+
+The runner, following instructions.txt and instructions-mini.txt:
+
+- Loads competition_payload.json and the three *-research-input.json files from:
+  - items/agents/crt-blog-runner/crt-top-runner/
+- Runs the three research prompts and writes lane outputs in Items:
+  - event_research.json
+  - venue_research.json
+  - city_research.json
+- Builds topblock_research_clean.json in Items.
+- Runs the top-block writer and rewriter in Items:
+  - topblock_writer.json
+  - topblock_final.json
+- Commits stage logs to Docs via openapi_git.yaml:
+
+  - docs/runner/top/logs/{creation_id}-event_research.json
+  - docs/runner/top/logs/{creation_id}-venue_research.json
+  - docs/runner/top/logs/{creation_id}-city_research.json
+  - docs/runner/top/logs/{creation_id}-topblock_research_clean.json
+  - docs/runner/top/logs/{creation_id}-topblock_writer.json
+  - docs/runner/top/logs/{creation_id}-topblock_final.json
+
+- Commits the final top-block JSON (publish target) to Docs:
+
+  - docs/runner/top/finals/{creation_id}-topblock_final.json
 
 If expeditor fails at any step (no row, parse error, write failure):
 - Do NOT trigger the runner.
-- Return/log a clear error that includes creation_id and failing stage.
+- Return/log a clear error that includes creation_id and failing stage
+  (e.g. "rows_fetch", "input_write").
