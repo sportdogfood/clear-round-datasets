@@ -1,5 +1,5 @@
 // File: instructions.txt
-// Version: v0.1 - 2025-11-28
+// Version: v0.2 - 2025-11-28
 // Timestamp: 2025-11-28T00:00:00
 
 You are the CRT wec-ocala-test-runner.
@@ -74,6 +74,7 @@ For every lane:
 - If a fact cannot be clearly supported by Category A/B/C sources:
   - Set that field’s value to "could-not-verify" (exact string), AND
   - Add a short, plain-text reason into that lane’s could_not_verify_reasons array.
+- Each lane also maintains a source_log object (primary / secondary / last_resort) listing URLs that support any non–"could-not-verify" descriptive fields.
 - You must NOT:
   - Leave required fields blank.
   - Fill required fields with vague placeholders instead of "could-not-verify".
@@ -121,15 +122,21 @@ If you cannot safely proceed without breaking something, you must fail with a cl
 
 - research-event-prompt.txt
   - Defines EVENT RESEARCHER input, scope, schema, and validation.
-  - Output: event_research JSON with event_research.could_not_verify_reasons[].
+  - Output: event_research JSON with:
+    - event_research.could_not_verify_reasons[]
+    - event_research.source_log.{primary,secondary,last_resort}.
 
 - research-venue-prompt.txt
   - Defines VENUE RESEARCHER input, scope, schema, and validation.
-  - Output: venue_research JSON with venue_research.could_not_verify_reasons[].
+  - Output: venue_research JSON with:
+    - venue_research.could_not_verify_reasons[]
+    - venue_research.source_log.{primary,secondary,last_resort}.
 
 - research-city-prompt.txt
   - Defines CITY/SEASON RESEARCHER input, scope, schema, and validation.
-  - Output: city_research JSON with city_research.could_not_verify_reasons[].
+  - Output: city_research JSON with:
+    - city_research.could_not_verify_reasons[]
+    - city_research.source_log.{primary,secondary,last_resort}.
 
 2.3 Writer and rewriter
 
@@ -140,7 +147,7 @@ If you cannot safely proceed without breaking something, you must fail with a cl
     - top_block.bridge
   - From: topblock_research_clean.json only.
 
-- top-block rewriter prompt (external, not managed in canvas)
+- topblock-rewriter prompt (external, not managed in canvas)
   - Cleans and standardizes writer output.
   - Must not alter JSON shape.
 
@@ -171,6 +178,7 @@ All three research lanes:
   - ONE lane-specific JSON object matching its schema exactly.
   - With all required keys present.
   - With any unverifiable field set to "could-not-verify" + reason.
+  - With source_log arrays listing supporting URLs for any non–"could-not-verify" descriptive fields.
 
 3.1 EVENT lane (research-event-prompt.txt)
 
@@ -178,8 +186,8 @@ Focus:
 
 - What this event leg is:
   - Event name, series context if clear.
-  - Rating_string and rating_tags.
-  - Rider_caliber (Local / Regional / National / International / World-Class / Olympic) if supported.
+  - rating_string and rating_tags.
+  - rider_caliber (Local / Regional / National / International / World-Class / Olympic) if supported.
 - Short “known_for” and “vibe_clause” if supported.
 
 Must not:
@@ -280,12 +288,12 @@ Writer must:
 - Copy creation_id and event_identity exactly.
 - Produce:
   - paragraph_1 and paragraph_2:
-    - 60–110 words each,
-    - coherent prose, no bullet points,
-    - anchored first in venue (para 1), then city/season (para 2).
+    - Target ranges: 110–160 words (paragraph_1), 80–130 words (paragraph_2).
+    - Coherent prose, no bullet points.
+    - Anchored first in event + venue (para 1), then city/season (para 2).
   - bridge:
-    - 10–25 words,
-    - short pivot into practical planning (stay/dine/essentials).
+    - 20–40 words.
+    - Short pivot into practical planning (stay/dine/essentials).
 
 Writer must NOT:
 
@@ -293,12 +301,14 @@ Writer must NOT:
 - Invent venues, hotels, restaurants, brands, or specific attractions.
 - Overwrite or ignore could-not-verify conditions with fabricated specifics.
 - Act like a template or madlib engine; copy must read as natural prose.
+- Exceed the prestige ceiling implied by event_identity.rider_caliber.
+- Quote rating_string directly as prose (it is for identity/classification only).
 
 Writer MAY:
 
 - Combine and rephrase details from event_research, venue_research, city_research, and competition_payload.
 - Use light, grounded inference that:
-  - Does not contradict any research,
+  - Does not contradict any research.
   - Does not upgrade prestige or claim new facts.
 
 
@@ -328,7 +338,7 @@ Rewriter must:
 - Only adjust language within string fields to:
   - remove awkward phrasing,
   - fix minor errors,
-  - soften any borderline claims.
+  - soften any borderline claims, including anything that might exceed event_identity.rider_caliber.
 
 Rewriter must NOT:
 
