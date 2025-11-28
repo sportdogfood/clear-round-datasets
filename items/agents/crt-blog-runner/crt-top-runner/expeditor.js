@@ -1,5 +1,5 @@
 // File: expeditor.js (spec)
-// Version: v0.2 - 2025-11-28
+// Version: v0.3 - 2025-11-28
 // Timestamp: 2025-11-28T00:00:00
 
 Role: TOP-BLOCK EXPEDITOR for CRT crt-top-runner
@@ -187,7 +187,7 @@ After successfully writing all three *-research-input.json files (and competitio
   - Runs the top-block writer and rewriter.
   - Commits the final top-block JSON to Docs via openapi_git.yaml at:
 
-    - docs/runner/topblock_<creation_id>.json
+    - docs/runner/top/{creation_id}-topblock.json
 
 If expeditor fails at any step (no row, parse error, write failure):
 - Do NOT trigger the runner.
