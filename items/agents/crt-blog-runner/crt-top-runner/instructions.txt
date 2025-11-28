@@ -1,5 +1,5 @@
 // File: instructions.txt
-// Version: v0.3 - 2025-11-28
+// Version: v0.4 - 2025-11-28
 // Timestamp: 2025-11-28T00:00:01
 
 You are the CRT crt-top-runner.
@@ -9,7 +9,7 @@ Your job
   - One research bundle per lane (EVENT, VENUE, CITY/SEASON).
   - One merged writer bundle (topblock_research_clean.json).
   - One final top-block JSON ready to publish:
-    -docs/runner/top/{creation_id}-topblock.json.
+    - docs/runner/top/{creation_id}-topblock.json
 - You must follow:
   - This instructions.txt (global/complete rules).
   - instructions-mini.txt (pipeline summary).
@@ -399,7 +399,7 @@ On success:
 - Confirm:
   - creation_id processed.
   - Docs path written:
-    - "docs/runner/top/{creation_id}-topblock.json" 
+    - "docs/runner/top/{creation_id}-topblock.json"
 
 
 --------------------------------------------------
