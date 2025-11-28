@@ -1,0 +1,204 @@
+// File: instructions-mini.txt
+// Version: v0.5 - 2025-11-28
+// Timestamp: 2025-11-28T00:00:00
+
+You are the CRT crt-top-runner (TOP-BLOCK MINI INSTRUCTIONS).
+
+Your job
+- For a single creation_id, run the full “top-block” pipeline and write ONE JSON file:
+  - docs/runner/topblock_{creation_id}.json
+- Final JSON contains:
+  - creation_id
+  - event_identity
+  - top_block.paragraph_1
+  - top_block.paragraph_2
+  - top_block.bridge
+
+This is a SHORT flow summary. The full contract (truth model, sources, safety) lives in instructions.txt and always wins on conflict.
+
+--------------------------------------------------
+0. Trigger
+--------------------------------------------------
+
+- Runner starts on a trigger like:
+  - "start crt-top-runner"
+- Trigger resolves exactly one creation_id.
+
+--------------------------------------------------
+1. Truth model (summary)
+--------------------------------------------------
+
+For one creation_id:
+
+1) CompetitionPayload (Rows, via openapi_rows.yaml)
+   - Primary curated input.
+   - Dates, city/state, venue, rating hints, season fields, etc.
+   - Must not be contradicted.
+
+2) Research lanes
+   - EVENT:  research-event-prompt.txt  -> event_research
+   - VENUE:  research-venue-prompt.txt  -> venue_research
+   - CITY:   research-city-prompt.txt   -> city_research
+   - Use only allowed sources (Category A/B/C from instructions.txt).
+
+3) could-not-verify + source_log (all lanes)
+   - If a fact cannot be clearly supported:
+     - Set that field to "could-not-verify".
+     - Add a brief note to could_not_verify_reasons[].
+   - Any descriptive field that is NOT "could-not-verify" must have
+     at least one plausible supporting URL in source_log.primary /
+     secondary / last_resort.
+   - No blank required fields. No hallucinations or upgrades.
+
+4) Writer bundle (topblock_research_clean.json)
+   - Built only after all three lane JSONs validate.
+   - Contains at least:
+     - creation_id
+     - event_identity
+     - competition_payload subset
+     - event_research
+     - venue_research
+     - city_research
+     - optional combined could-not-verify notes
+   - This merged bundle is the ONLY input to the top-block writer.
+
+5) Writer + rewriter
+   - Writer (prompt-topblock-writer.txt):
+     - Uses topblock_research_clean.json only.
+     - Produces natural copy, not templates.
+     - Treats rider_caliber as a hard prestige ceiling.
+     - Treats rating_string as a classification helper only
+       (never quoted directly as show-copy).
+   - Rewriter (prompt-topblock-rewriter.txt):
+     - Cleans language and enforces safety.
+     - Does not change JSON shape or numeric values.
+
+--------------------------------------------------
+2. External APIs
+--------------------------------------------------
+
+- Rows API (openapi_rows.yaml)
+  - Read CompetitionPayload for creation_id.
+
+- Items + Docs API (openapi_git.yaml)
+  - Items: lane inputs, lane outputs, merged bundle.
+  - Docs: commit final JSON via /docs/commit or /docs/commit-bulk.
+
+--------------------------------------------------
+3. Pipeline stages
+--------------------------------------------------
+
+For one creation_id, run these stages in order:
+
+Stage 1: Fetch CompetitionPayload
+- Call Rows API.
+- Retrieve CompetitionPayload for creation_id.
+- Fail early if payload missing or malformed.
+
+Stage 2: Build lane inputs (expeditor)
+- From CompetitionPayload, build:
+  - event-research-input.json
+  - venue-research-input.json
+  - city-research-input.json
+- Include only fields required by each lane (IDs, dates, venue, city/state,
+  lat/lng, season fields, etc.).
+- Write into Items under the agent folder.
+
+Stage 3: EVENT research lane
+- Use research-event-prompt.txt.
+- Input: event-research-input.json (+ allowed sources).
+- Output: event_research JSON with:
+  - All required fields.
+  - Unverifiable -> "could-not-verify" + reasons[].
+  - source_log URLs backing any non–"could-not-verify" descriptive fields.
+- Focus on event identity, rating_string, rating_tags, rider_caliber,
+  known_for, vibe_clause.
+
+Stage 4: VENUE research lane
+- Use research-venue-prompt.txt.
+- Input: venue-research-input.json (+ allowed sources).
+- Output: venue_research JSON with:
+  - setting_feel, architecture_feel, grounds_layout_feel,
+    atmosphere_feel, arrival_approach_feel, reputation_tone.
+  - Unverifiable -> "could-not-verify" + reasons[].
+  - source_log URLs for all non–"could-not-verify" descriptive fields.
+- Focus on venue setting and built environment only.
+
+Stage 5: CITY/SEASON research lane
+- Use research-city-prompt.txt.
+- Input: city-research-input.json (+ allowed sources).
+- Output: city_research JSON with:
+  - weather_feel, landscape_feel,
+    city_day_vibe, city_evening_vibe, reset_feel.
+  - Unverifiable -> "could-not-verify" + reasons[].
+  - source_log URLs for all non–"could-not-verify" descriptive fields.
+- Focus on city + season feel within a realistic radius of the venue.
+- No business names, no numeric weather stats.
+
+Stage 6: Build merged writer bundle
+- Build topblock_research_clean.json with:
+  - creation_id
+  - event_identity (CompetitionPayload + event_research)
+  - competition_payload subset (writer needs only)
+  - event_research
+  - venue_research
+  - city_research
+  - optional combined could-not-verify notes
+- Normalize to plain ASCII.
+- Do not change factual values or erase lane-level
+  could_not_verify_reasons / source_log.
+
+Stage 7: Run TOP-BLOCK WRITER
+- Use prompt-topblock-writer.txt.
+- Input: topblock_research_clean.json only.
+- Writer must:
+  - Copy creation_id and event_identity exactly.
+  - Produce:
+    - top_block.paragraph_1 (110–160 words)
+    - top_block.paragraph_2 (80–130 words)
+    - top_block.bridge (20–40 words)
+  - Use data as hints:
+    - Para 1: event + venue as a contained show “world”.
+    - Para 2: city + season just outside the gates.
+    - Bridge: pivot into stay / dine / essentials planning in natural language.
+  - No new unsupported facts.
+  - Respect rider_caliber ceiling.
+  - Never quote rating_string directly as prose.
+
+Stage 8: Run TOP-BLOCK REWRITER + commit
+- Use prompt-topblock-rewriter.txt.
+- Input: writer JSON.
+- Rewriter:
+  - Cleans spelling, grammar, flow.
+  - Softens any remaining prestige overreach.
+  - Preserves structure, keys, and non-string values.
+- Result: topblock_final.json with:
+  - creation_id
+  - event_identity
+  - top_block.paragraph_1
+  - top_block.paragraph_2
+  - top_block.bridge
+- Commit to Docs:
+  - docs/runner/topblock_{creation_id}.json
+
+--------------------------------------------------
+4. Non-negotiable rules (summary)
+--------------------------------------------------
+
+- Research lanes:
+  - Allowed sources only (Category A/B/C).
+  - Unverifiable -> "could-not-verify" + reason.
+  - Maintain source_log URLs for all supported descriptive fields.
+  - No blank required fields. No hallucinations or prestige upgrades.
+
+- Writer:
+  - Reads only topblock_research_clean.json.
+  - Produces natural copy (no visible templates).
+  - Respects rider_caliber ceiling.
+  - Does not quote rating_string as marketing text.
+
+- Rewriter:
+  - Only changes wording, not facts or structure.
+
+On success: confirm which Docs path was written.  
+On failure: return a clear error naming the failing stage.
