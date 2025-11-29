@@ -1,0 +1,239 @@
+You are defining the BLOG INLINE EDITOR for CRT crt-blog-runner.
+
+Purpose
+- Render one BLOG JSON (from {creation_id}-blog.json) as a full-page article.
+- Allow inline edits of all human-facing text.
+- Provide three buttons that call back into crt-blog-runner with modes:
+  - CHECK
+  - REWRITE
+  - APPROVE
+
+
+--------------------------------------------------
+1. Data source
+--------------------------------------------------
+
+The editor page is generated from:
+
+- /docs/runner/blog/finals/{creation_id}-blog.json
+
+With this schema (simplified):
+
+{
+  "creation_id": "...",
+  "event_identity": { ... },
+  "source_files": { ... },
+
+  "hello": { "intro": "", "transition": "" },
+
+  "stay":       { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [ ... ] },
+  "dine":       { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [ ... ] },
+  "locale":     { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [ ... ] },
+  "essentials": { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [ ... ] },
+
+  "outro": { "pivot": "", "main": "" },
+
+  "seo": {
+    "section_title": "",
+    "meta_description": "",
+    "open_graph_title": "",
+    "open_graph_description": "",
+    "search_title": "",
+    "search_description": ""
+  },
+
+  "workflow": {
+    "stage": "draft_v1" | "draft_rewritten" | "approved",
+    "last_refresh_at": null | "ISO-8601",
+    "last_approved_at": null | "ISO-8601"
+  }
+}
+
+
+--------------------------------------------------
+2. Layout (conceptual DOM structure)
+--------------------------------------------------
+
+The HTML file {creation_id}-blog.html should follow this structure:
+
+1) <head>
+   - <title> from seo.title_tag or seo.search_title.
+   - <meta name="description"> from seo.meta_description.
+   - Open Graph tags from seo.open_graph_*.
+
+2) <body>
+
+   a) Top bar / header
+      - Show event_identity summary:
+        - event_name, venue_name, city/state, season_label, rating_string.
+      - Show workflow status:
+        - A small badge or text for workflow.stage.
+      - Three buttons:
+        - [Check]    → mode="check"
+        - [Rewrite]  → mode="rewrite"
+        - [Approve]  → mode="approve"
+
+   b) SEO panel (optional, can be collapsible)
+      - Inline-editable fields:
+        - seo.section_title
+        - seo.meta_description
+        - seo.open_graph_title
+        - seo.open_graph_description
+        - seo.search_title
+        - seo.search_description
+
+   c) Main article
+
+      Section: HELLO
+      - h1: editable from hello.intro (or separate h1 + p if you prefer).
+      - p: editable from hello.transition.
+
+      Section: STAY
+      - h2: editable from stay.title.
+      - p: editable from stay.paragraph.
+      - p.small: editable from stay.transition (if non-empty).
+      - p.em: editable from stay.spectator_tip.
+      - p.em: editable from stay.cta.
+      - List (ul or div list) for stay.items:
+        - Each item renders:
+          - Label: items[i].name (NOT editable).
+          - Link: items[i].link (NOT editable).
+          - Short descriptor: items[i].alt (editable).
+
+      Section: DINE
+      - Same pattern as STAY, mapped to dine.*.
+
+      Section: LOCALE
+      - Same pattern as STAY, mapped to locale.*.
+      - items[] may be empty; hide list if no items.
+
+      Section: ESSENTIALS
+      - Same pattern as STAY, mapped to essentials.*.
+
+      Section: OUTRO
+      - p.strong: editable from outro.pivot.
+      - p: editable from outro.main.
+
+
+--------------------------------------------------
+3. Inline edit behavior
+--------------------------------------------------
+
+All editable fields must:
+
+- Be directly editable via contenteditable="true" (or equivalent).
+- Be bound to a specific JSON path via a data attribute:
+
+  Examples:
+  - data-blog-field="hello.intro"
+  - data-blog-field="stay.paragraph"
+  - data-blog-field="dine.items[0].alt"
+  - data-blog-field="seo.meta_description"
+
+Non-editable fields:
+
+- event_identity.*
+- source_files.*
+- items[].name
+- items[].link
+- items[].type
+- workflow.*
+
+These should render as plain text or links without contenteditable.
+
+On page load:
+
+- The editor script parses the BLOG JSON object injected into the page (e.g., via a <script> tag or data-json attribute).
+- It populates each editable region with the corresponding string value.
+
+
+--------------------------------------------------
+4. Serializing edits back to JSON
+--------------------------------------------------
+
+When any button is pressed (Check, Rewrite, Approve):
+
+1) The editor script builds a fresh BLOG JSON object:
+
+   - Start from the last known BLOG JSON.
+   - For each element with data-blog-field="<path>":
+     - Read its textContent.
+     - Write that string back into the BLOG JSON at <path>.
+   - Do NOT touch any fields not marked editable.
+
+2) Construct a payload:
+
+   {
+     "creation_id": "<creation_id>",
+     "mode": "check" | "rewrite" | "approve",
+     "blog": { ...updated BLOG JSON... }
+   }
+
+3) POST this payload to the runner endpoint configured for crt-blog-runner.
+   - The exact URL and auth are defined by the calling system (runner-light / proxy).
+   - The editor does not guess; it just posts to the provided endpoint.
+
+
+--------------------------------------------------
+5. Button semantics
+--------------------------------------------------
+
+Button: CHECK
+- Sends mode="check" + current BLOG JSON.
+- The runner:
+  - Runs BLOG WRITER in diagnostic mode (no schema change, no commit) OR equivalent logic.
+  - Returns a small “issues summary” in the HTTP response.
+- The editor:
+  - Displays the issues summary in a sidebar, toast, or overlay.
+  - Does NOT automatically change the text.
+
+Button: REWRITE
+- Sends mode="rewrite" + current BLOG JSON.
+- The runner:
+  - Runs BLOG REWRITER on the blog JSON.
+  - Commits updated {creation_id}-blog.json + {creation_id}-blog.html via /docs/commit-bulk.
+- The editor:
+  - After a successful response, reloads the page or rehydrates from the returned BLOG JSON to show the cleaned version.
+
+Button: APPROVE
+- Sends mode="approve" + current BLOG JSON (or just creation_id, depending on implementation).
+- The runner:
+  - Sets workflow.stage = "approved".
+  - Sets workflow.last_approved_at = now.
+  - Commits updated BLOG JSON (+ optionally HTML with an “Approved” marker).
+- The editor:
+  - Refreshes to reflect the approved state (e.g., badge, disabled Rewrite button if desired).
+
+
+--------------------------------------------------
+6. Minimal JS behavior (no new patterns)
+--------------------------------------------------
+
+The JavaScript for this editor should follow the same patterns you already use for other runner previews:
+
+- One init function:
+  - Binds editable fields to data-blog-field paths.
+  - Attaches click handlers for the three buttons.
+
+- One serialize function:
+  - Reads all editable elements.
+  - Produces a BLOG JSON matching the exact schema.
+
+- One post function:
+  - Sends JSON to the configured endpoint.
+  - Handles the response:
+    - For CHECK: show summary only.
+    - For REWRITE/APPROVE: reload or patch the DOM with the returned BLOG JSON.
+
+No new framework is required. Plain JS or the same lightweight helper you already use for top/bottom previews is sufficient.
+
+
+--------------------------------------------------
+7. Constraints
+--------------------------------------------------
+
+- The HTML must not change the BLOG JSON schema.
+- All editable fields must correspond to fields explicitly allowed to change in BLOG WRITER / BLOG REWRITER.
+- Non-editable fields (URLs, names, IDs) must not be user-editable.
+- Buttons must never partially update Docs:
+  - REWRITE and APPROVE rely on crt-blog-runner to commit via /docs/commit-bulk.
