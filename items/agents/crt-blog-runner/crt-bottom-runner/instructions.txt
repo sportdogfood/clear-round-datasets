@@ -1,0 +1,236 @@
+// File: instructions.txt
+// Runner: crt-bottom-runner
+// Version: v0.1 – 2025-11-29
+// Timestamp: 2025-11-29T22:25-ET
+//
+// Full bottom-runner contract. This file governs:
+// - All expeditor behavior
+// - Locale research lane
+// - Writer behavior for stay/dine/essentials/locale
+// - Rewriter behavior
+// - Logging and commit rules
+//
+// This file shares the same architecture and expectations as crt-top-runner.
+// No new mechanics. No new systems. Only lane differences.
+
+============================================================
+1. PURPOSE
+============================================================
+
+crt-bottom-runner produces one JSON file called:
+  docs/runner/bottom/{creation_id}-bottomblock.json
+
+This file contains four parts:
+- stay (paragraph + table)
+- dine (paragraph + table)
+- essentials (paragraph + table)
+- locale (short paragraph for nearby resets)
+- outro (short pivot line)
+
+Bottom-runner uses:
+- CompetitionPayload (Rows) — same source used by top-runner
+- DestinationPayload (Rows) — the stay/dine/essentials lists for this creation_id
+
+All work is done in a single pass:
+  expeditor → locale researcher → writer → rewriter → commit.
+
+No intermediate decisions, no multi-turn approvals.
+
+============================================================
+2. INPUTS FROM ROWS
+============================================================
+
+The runner reads two payload rows (exact match to top-runner pattern):
+
+(1) CompetitionPayload  
+    GET /spreadsheets/.../tables/.../competition/...  
+    items[n] = [creation_id, json_string]
+
+(2) DestinationPayload  
+    GET /spreadsheets/.../tables/.../destinations/...  
+    items[n] = [creation_id, json_string]
+
+Rules:
+- Select the row where items[n][0] === creation_id.
+- Parse items[n][1] into JSON.
+- Hard-fail if either is missing or unparsable.
+- No guessing defaults.
+
+============================================================
+3. EXPEDITOR
+============================================================
+
+Expeditor does NO writing. It prepares inputs only.
+
+Given:
+- competition_payload_json
+- destination_payload_json
+
+Expeditor creates four internal bundles:
+
+(A) stay_bundle.json  
+(B) dine_bundle.json  
+(C) essentials_bundle.json  
+(D) locale_research_input.json
+
+These are placed under:
+  items/agents/crt-bottom-runner/internal/
+
+Expeditor rules:
+- “stay”, “dine”, “essentials” come only from the DestinationPayload.
+- Only include objects with role="feature" or "list-only" that match the lane.
+- Preserve all fields verbatim (no rewriting).
+- DO NOT derive new claims from rating, price_level, user_ratings_total.
+- DO NOT generate safety flags; keep provided fields as-is.
+- DO NOT copy fields from other lanes.
+- Build locale_research_input.json using competition city, state, season, and dates.
+
+Expeditor must log all four bundles to:
+  docs/runner/bottom/logs/{creation_id}-<bundle>.json
+
+============================================================
+4. LOCALE RESEARCHER
+============================================================
+
+Locale research is the **only lane** allowed to call external sources.
+
+It uses:
+  research-locale-prompt.txt
+
+Purpose:
+- Gather factual, nearby, non-commercial “things-to-do,” public parks, short walks, simple resets.
+- No promotion, no ratings, no strong adjectives.
+- No restaurants, no hotels, no shopping.
+- No invented attractions.
+- If uncertain → mark as “could-not-verify”.
+
+Input:
+  locale_research_input.json
+
+Output:
+  locale_research.json
+
+Rules:
+- Must return one JSON object.
+- Schema defined by research-locale-prompt.txt.
+- No references to stay/dine/essentials lists.
+- MUST log output to:
+    docs/runner/bottom/logs/{creation_id}-locale_research.json
+
+============================================================
+5. WRITER (BOTTOM BLOCK WRITER)
+============================================================
+
+Writer uses:
+  prompt-bottom-writer.txt
+
+Inputs:
+- stay_bundle.json
+- dine_bundle.json
+- essentials_bundle.json
+- locale_research.json
+- (Optional) top-level context from CompetitionPayload (city/state/season)
+
+Writer produces:
+  bottomblock_writer.json
+
+Writer responsibilities:
+- Generate four short paragraphs:
+  stay, dine, essentials, locale
+- Produce one short outro pivot line.
+- Use equestrian-competitor framing (same tone as top-runner).
+- Stay/dine/essentials paragraphs:
+  - Use only fields from each lane’s bundle.
+  - Use distance_bucket, distance_text, duration_text naturally.
+  - Use editorial_overview if present.
+  - Use price_band if present.
+  - Use “top_rated” and “preferred” softly, not as templates.
+  - Absolutely no copying patterns like:
+      “X is Y miles away and takes Z minutes”
+    more than once or in a template-like structure.
+  - Forbidden: star ratings, “best in town,” amenities not listed, invented claims.
+
+- Locale paragraph:
+  - Uses only locale_research.json.
+  - No restaurants, no hotels, no stores.
+
+- Tables:
+  - Writer must construct a compact mobile-first table per lane.
+  - Table entries must correspond exactly to featured + list-only in input.
+  - No sorting except by rank field.
+  - No invented metadata.
+
+Writer logs to:
+  docs/runner/bottom/logs/{creation_id}-bottomblock_writer.json
+
+============================================================
+6. REWRITER
+============================================================
+
+Rewriter uses:
+  prompt-bottom-rewriter.txt
+
+Purpose:
+- Correct grammar, clarity, hallucinations, fantasy, misspellings.
+- NO creative expansion.
+- Keep tone and intent intact.
+- Keep schema identical.
+
+Rules:
+- Do not add new places.
+- Do not move items across lanes.
+- Do not add amenities, ratings, superlatives, or invented distance/price info.
+- Do not delete any valid entry.
+- Only fix language, never content structure.
+
+Output:
+  bottomblock_final.json
+
+Log:
+  docs/runner/bottom/logs/{creation_id}-bottomblock_final.json
+
+============================================================
+7. FINAL COMMIT
+============================================================
+
+The runner issues ONE final commit via:
+  POST /docs/commit-bulk
+
+Must include EXACTLY:
+- publish.json (metadata block)
+- index.html (full HTML preview of bottomblock_final.json)
+- bottomblock_final.json saved at:
+    docs/runner/bottom/{creation_id}-bottomblock.json
+
+No multi-commit sequences.
+
+============================================================
+8. SAFETY AND NO-INVENTION RULES
+============================================================
+
+Shared with top-runner:
+- No unverified claims.
+- No invented places.
+- No fantasy-level descriptions.
+- No weather unless provided in payload.
+- No commercial claims like “guaranteed,” “best,” “luxury.”
+- No research outside locale lane.
+- No cross-lane contamination.
+- If missing or unclear → write “could-not-verify” or omit safely.
+
+============================================================
+9. SESSION TACK (RESTORE POINT)
+============================================================
+
+The stable restore point for this runner version is:
+
+session_tack: crt-runners/crt-bottom-runner-bottom-plan-2025-11-29T22-00-ET
+
+If drift is detected:
+- Reset reasoning to this tack.
+- Keep user-provided files.
+- Disregard any patterns introduced after the tack if they conflict.
+
+============================================================
+END OF FILE
+============================================================
