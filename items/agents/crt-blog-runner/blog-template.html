@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRT Blog</title>
+
+  <!-- Basic meta; these will be updated from BLOG JSON on load -->
+  <meta name="description" content="" />
+  <meta property="og:title" content="" />
+  <meta property="og:description" content="" />
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #0b0c10;
+      color: #f1f1f1;
+      line-height: 1.5;
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .event-meta {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .workflow-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #222;
+      border: 1px solid #444;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button.blog-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: #222;
+      color: #f1f1f1;
+    }
+    button.blog-btn:hover {
+      background: #333;
+    }
+    button.blog-btn.primary {
+      background: #157347;
+    }
+    button.blog-btn.primary:hover {
+      background: #1b8a55;
+    }
+    button.blog-btn.warn {
+      background: #444;
+    }
+    button.blog-btn[disabled] {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .seo-panel {
+      margin: 16px 0 24px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.85rem;
+    }
+    .seo-panel h3 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+    .seo-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    @media (min-width: 720px) {
+      .seo-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .seo-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .seo-label {
+      opacity: 0.7;
+      font-size: 0.75rem;
+    }
+    .editable {
+      min-height: 1.2em;
+      padding: 4px 6px;
+      border-radius: 4px;
+      outline: none;
+    }
+    .editable:focus {
+      background: #151821;
+      border: 1px solid #555;
+    }
+
+    main article {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    h1, h2 {
+      margin: 0 0 8px;
+    }
+    h1 {
+      font-size: 1.6rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin-top: 8px;
+    }
+    p {
+      margin: 0 0 6px;
+    }
+    p.small {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    p.em {
+      font-size: 0.9rem;
+      font-style: italic;
+      opacity: 0.9;
+    }
+    section.lane {
+      border-top: 1px solid #222;
+      padding-top: 12px;
+    }
+    .items-list {
+      margin-top: 8px;
+      padding-left: 0;
+      list-style: none;
+    }
+    .items-list li {
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+    }
+    .item-label {
+      font-weight: 500;
+    }
+    .item-link a {
+      color: #7fb8ff;
+      text-decoration: none;
+    }
+    .item-link a:hover {
+      text-decoration: underline;
+    }
+    .item-alt {
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+
+    .issues-panel {
+      margin-top: 16px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+    }
+    .issues-panel h3 {
+      margin: 0 0 6px;
+      font-size: 0.9rem;
+    }
+    .issue-item {
+      margin-bottom: 4px;
+    }
+    .issue-tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <div id="event-title"></div>
+        <div class="event-meta" id="event-meta"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="workflow-badge" id="workflow-badge"></span>
+        <div class="btn-row">
+          <button type="button" class="blog-btn" data-mode="check">Check</button>
+          <button type="button" class="blog-btn" data-mode="rewrite">Rewrite</button>
+          <button type="button" class="blog-btn primary" data-mode="approve">Approve</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="seo-panel">
+      <h3>SEO Preview</h3>
+      <div class="seo-grid">
+        <div class="seo-field">
+          <span class="seo-label">Section title</span>
+          <div class="editable" contenteditable="true" data-blog-field="seo.section_title"></div>
+        </div>
+        <div class="seo-field">
+          <span class="seo-label">Meta description</span>
+          <div class="editable" contenteditable="true" data-blog-field="seo.meta_description"></div>
+        </div>
+        <div class="seo-field">
+          <span class="seo-label">Open Graph title</span>
+          <div class="editable" contenteditable="true" data-blog-field="seo.open_graph_title"></div>
+        </div>
+        <div class="seo-field">
+          <span class="seo-label">Open Graph description</span>
+          <div class="editable" contenteditable="true" data-blog-field="seo.open_graph_description"></div>
+        </div>
+        <div class="seo-field">
+          <span class="seo-label">Search title</span>
+          <div class="editable" contenteditable="true" data-blog-field="seo.search_title"></div>
+        </div>
+        <div class="seo-field">
+          <span class="seo-label">Search description</span>
+          <div class="editable" contenteditable="true" data-blog-field="seo.search_description"></div>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <article>
+        <!-- HELLO -->
+        <section class="lane" id="hello-section">
+          <h1 class="editable" contenteditable="true" data-blog-field="hello.intro"></h1>
+          <p class="editable" contenteditable="true" data-blog-field="hello.transition"></p>
+        </section>
+
+        <!-- STAY -->
+        <section class="lane" id="stay-section">
+          <h2 class="editable" contenteditable="true" data-blog-field="stay.title"></h2>
+          <p class="editable" contenteditable="true" data-blog-field="stay.paragraph"></p>
+          <p class="small editable" contenteditable="true" data-blog-field="stay.transition"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="stay.spectator_tip"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="stay.cta"></p>
+          <ul class="items-list" id="stay-items"></ul>
+        </section>
+
+        <!-- DINE -->
+        <section class="lane" id="dine-section">
+          <h2 class="editable" contenteditable="true" data-blog-field="dine.title"></h2>
+          <p class="editable" contenteditable="true" data-blog-field="dine.paragraph"></p>
+          <p class="small editable" contenteditable="true" data-blog-field="dine.transition"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="dine.spectator_tip"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="dine.cta"></p>
+          <ul class="items-list" id="dine-items"></ul>
+        </section>
+
+        <!-- LOCALE -->
+        <section class="lane" id="locale-section">
+          <h2 class="editable" contenteditable="true" data-blog-field="locale.title"></h2>
+          <p class="editable" contenteditable="true" data-blog-field="locale.paragraph"></p>
+          <p class="small editable" contenteditable="true" data-blog-field="locale.transition"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="locale.spectator_tip"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="locale.cta"></p>
+          <ul class="items-list" id="locale-items"></ul>
+        </section>
+
+        <!-- ESSENTIALS -->
+        <section class="lane" id="essentials-section">
+          <h2 class="editable" contenteditable="true" data-blog-field="essentials.title"></h2>
+          <p class="editable" contenteditable="true" data-blog-field="essentials.paragraph"></p>
+          <p class="small editable" contenteditable="true" data-blog-field="essentials.transition"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="essentials.spectator_tip"></p>
+          <p class="em editable" contenteditable="true" data-blog-field="essentials.cta"></p>
+          <ul class="items-list" id="essentials-items"></ul>
+        </section>
+
+        <!-- OUTRO -->
+        <section class="lane" id="outro-section">
+          <p class="em editable" contenteditable="true" data-blog-field="outro.pivot"></p>
+          <p class="editable" contenteditable="true" data-blog-field="outro.main"></p>
+        </section>
+      </article>
+
+      <section id="issues-section" class="issues-panel" style="display:none;">
+        <h3>Check Results</h3>
+        <div id="issues-summary"></div>
+        <div id="issues-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- The runner injects the BLOG JSON here -->
+  <script id="blog-data" type="application/json">
+  {
+    "creation_id": "creator-abc",
+    "event_identity": {
+      "event_leg_key": "",
+      "event_name": "",
+      "event_acronym": "",
+      "venue_name": "",
+      "city": "",
+      "state": "",
+      "season_label": "",
+      "rating_string": "",
+      "rider_caliber": ""
+    },
+    "source_files": {
+      "topblock": "",
+      "bottomblock": ""
+    },
+    "hello": { "intro": "", "transition": "" },
+    "stay": { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [] },
+    "dine": { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [] },
+    "locale": { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [] },
+    "essentials": { "title": "", "paragraph": "", "transition": "", "spectator_tip": "", "cta": "", "items": [] },
+    "outro": { "pivot": "", "main": "" },
+    "seo": {
+      "section_title": "",
+      "meta_description": "",
+      "open_graph_title": "",
+      "open_graph_description": "",
+      "search_title": "",
+      "search_description": ""
+    },
+    "workflow": {
+      "stage": "draft_v1",
+      "last_refresh_at": null,
+      "last_approved_at": null
+    }
+  }
+  </script>
+
+  <script>
+    // TODO: adjust to your proxy endpoint
+    const RUNNER_ENDPOINT = "/runner/crt-blog-runner";
+
+    function getValueByPath(obj, path) {
+      const segments = path.split(".");
+      let cur = obj;
+      for (const seg of segments) {
+        const m = seg.match(/^([a-zA-Z0-9_]+)\[(\d+)\]$/);
+        if (m) {
+          const key = m[1];
+          const idx = parseInt(m[2], 10);
+          if (!cur[key] || !Array.isArray(cur[key])) return "";
+          cur = cur[key][idx];
+        } else {
+          if (!cur || typeof cur !== "object") return "";
+          cur = cur[seg];
+        }
+      }
+      return cur == null ? "" : cur;
+    }
+
+    function setValueByPath(obj, path, value) {
+      const segments = path.split(".");
+      let cur = obj;
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
+        const m = seg.match(/^([a-zA-Z0-9_]+)\[(\d+)\]$/);
+        if (m) {
+          const key = m[1];
+          const idx = parseInt(m[2], 10);
+          if (!cur[key]) cur[key] = [];
+          if (!cur[key][idx]) cur[key][idx] = {};
+          if (i === segments.length - 1) {
+            cur[key][idx] = value;
+          } else {
+            cur = cur[key][idx];
+          }
+        } else {
+          if (i === segments.length - 1) {
+            cur[seg] = value;
+          } else {
+            if (!cur[seg]) cur[seg] = {};
+            cur = cur[seg];
+          }
+        }
+      }
+    }
+
+    function buildItemsList(containerId, laneKey, blog) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      const lane = blog[laneKey];
+      if (!lane || !Array.isArray(lane.items) || lane.items.length === 0) {
+        return;
+      }
+      lane.items.forEach((item, idx) => {
+        const li = document.createElement("li");
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "item-label";
+        labelSpan.textContent = item.name || "";
+
+        const linkSpan = document.createElement("span");
+        linkSpan.className = "item-link";
+        if (item.link) {
+          const a = document.createElement("a");
+          a.href = item.link;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = " link";
+          linkSpan.appendChild(a);
+        }
+
+        const altDiv = document.createElement("div");
+        altDiv.className = "item-alt editable";
+        altDiv.contentEditable = "true";
+        altDiv.dataset.blogField = laneKey + ".items[" + idx + "].alt";
+        altDiv.textContent = item.alt || "";
+
+        li.appendChild(labelSpan);
+        li.appendChild(document.createTextNode(" – "));
+        li.appendChild(linkSpan);
+        li.appendChild(document.createTextNode(" "));
+        li.appendChild(altDiv);
+        container.appendChild(li);
+      });
+    }
+
+    function populateFromBlog(blog) {
+      // Meta / header
+      const ev = blog.event_identity || {};
+      const title = `${ev.event_name || ""}`;
+      const metaLine = [
+        ev.venue_name,
+        ev.city && ev.state ? `${ev.city}, ${ev.state}` : (ev.city || ev.state || ""),
+        ev.season_label,
+        ev.rating_string
+      ].filter(Boolean).join(" • ");
+
+      document.getElementById("event-title").textContent = title;
+      document.getElementById("event-meta").textContent = metaLine;
+
+      const badge = document.getElementById("workflow-badge");
+      badge.textContent = blog.workflow && blog.workflow.stage ? blog.workflow.stage : "draft";
+
+      // SEO to <head>
+      const seo = blog.seo || {};
+      if (seo.search_title) document.title = seo.search_title;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc && seo.meta_description) metaDesc.setAttribute("content", seo.meta_description);
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && seo.open_graph_title) ogTitle.setAttribute("content", seo.open_graph_title);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc && seo.open_graph_description) ogDesc.setAttribute("content", seo.open_graph_description);
+
+      // Simple fields
+      document.querySelectorAll("[data-blog-field]").forEach(el => {
+        const path = el.dataset.blogField;
+        const val = getValueByPath(blog, path);
+        el.textContent = val || "";
+      });
+
+      // Items lists
+      buildItemsList("stay-items", "stay", blog);
+      buildItemsList("dine-items", "dine", blog);
+      buildItemsList("locale-items", "locale", blog);
+      buildItemsList("essentials-items", "essentials", blog);
+
+      // If approved, you may want to disable Rewrite
+      if (blog.workflow && blog.workflow.stage === "approved") {
+        const rewriteBtn = document.querySelector('button[data-mode="rewrite"]');
+        if (rewriteBtn) rewriteBtn.disabled = true;
+      }
+    }
+
+    function serializeBlogEdits(blog) {
+      const updated = JSON.parse(JSON.stringify(blog));
+      document.querySelectorAll("[data-blog-field]").forEach(el => {
+        const path = el.dataset.blogField;
+        const val = el.textContent.trim();
+        setValueByPath(updated, path, val);
+      });
+      return updated;
+    }
+
+    function showIssues(report) {
+      const panel = document.getElementById("issues-section");
+      const summaryEl = document.getElementById("issues-summary");
+      const listEl = document.getElementById("issues-list");
+
+      if (!report) {
+        panel.style.display = "none";
+        summaryEl.textContent = "";
+        listEl.innerHTML = "";
+        return;
+      }
+
+      panel.style.display = "block";
+      summaryEl.textContent = report.summary || "";
+
+      listEl.innerHTML = "";
+      if (Array.isArray(report.issues)) {
+        report.issues.forEach(issue => {
+          const div = document.createElement("div");
+          div.className = "issue-item";
+          const tag = document.createElement("span");
+          tag.className = "issue-tag";
+          tag.textContent = `[${issue.severity || "minor"}/${issue.category || "other"}] ${issue.field || ""}: `;
+          const text = document.createElement("span");
+          text.textContent = issue.suggestion || issue.example || "";
+          div.appendChild(tag);
+          div.appendChild(text);
+          listEl.appendChild(div);
+        });
+      }
+    }
+
+    async function sendMode(mode, blog) {
+      const payload = {
+        creation_id: blog.creation_id,
+        mode,
+        blog
+      };
+
+      const resp = await fetch(RUNNER_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!resp.ok) {
+        console.error("Runner error", resp.status);
+        return;
+      }
+
+      if (mode === "check") {
+        const report = await resp.json();
+        showIssues(report);
+      } else {
+        // For rewrite/approve, assume runner returns updated BLOG JSON
+        const updatedBlog = await resp.json();
+        showIssues(null);
+        populateFromBlog(updatedBlog);
+      }
+    }
+
+    (function init() {
+      const raw = document.getElementById("blog-data").textContent.trim();
+      let blog;
+      try {
+        blog = JSON.parse(raw || "{}");
+      } catch (e) {
+        console.error("Invalid BLOG JSON", e);
+        blog = {};
+      }
+
+      populateFromBlog(blog);
+
+      document.querySelectorAll("button[data-mode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const mode = btn.dataset.mode;
+          const updatedBlog = serializeBlogEdits(blog);
+          sendMode(mode, updatedBlog).catch(console.error);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
