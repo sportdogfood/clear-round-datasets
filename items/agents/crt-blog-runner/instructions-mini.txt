@@ -44,6 +44,13 @@ Inputs (specs and prompts)
   – First pass: take the combined view of top+bottom finals and produce one BLOG JSON in the exact schema defined in instructions.txt.
 - prompt-blog-rewriter.txt
   – Second pass: clean and smooth the same BLOG JSON, preserving schema, key order, and IDs. No new facts.
+- prompt-blog-checker.txt
+  – Check pass: reads a BLOG JSON and returns an issues summary (no schema changes).
+
+Template (Items)
+- blog-template.html
+  – HTML + JS shell used to render {creation_id}-blog.html.
+  – Contains a <script id="blog-data" type="application/json">…</script> block and data-blog-field bindings for inline editing and the three buttons (check / rewrite / approve).
 
 Inputs (runtime data from Docs)
 - /docs/runner/top/finals/{creation_id}-topblock.json
@@ -55,7 +62,7 @@ Outputs (Docs)
 - /docs/runner/blog/finals/{creation_id}-blog.json
   – Final BLOG JSON (hello + stay/dine/locale/essentials + outro + seo + workflow).
 - /docs/runner/blog/finals/{creation_id}-blog.html
-  – Matching full-page HTML used for inline editing and the three buttons (check / rewrite / approve).
+  – Matching full-page HTML, rendered from blog-template.html, used for inline editing and the three buttons (check / rewrite / approve).
 - Optional logs under:
   – /docs/runner/blog/logs/{creation_id}-*.json
   – Used for clear error notes if inputs are missing or invalid.
@@ -99,7 +106,7 @@ For each run, you handle exactly one creation_id. There are no batch runs in thi
 - Output: one BLOG JSON in the same schema.
 
 4) BLOG rewriter
-- Call prompt-blog-rewriter.txt on the BLOG writer output.
+- Call prompt-blog-rewriter.txt on the BLOG writer output (or on a user-edited BLOG JSON if this is a REWRITE mode call).
 - Rewriter’s job:
   - Final language polish only: clarity, rhythm, micro-transitions.
   - Preserve schema, key order, and all IDs/URLs.
@@ -109,10 +116,12 @@ For each run, you handle exactly one creation_id. There are no batch runs in thi
 5) Commit to Docs
 - If both top and bottom finals were loaded successfully and BLOG writer/rewriter completed without schema errors:
   - Build the final BLOG JSON.
-  - Render the BLOG HTML page (full blog view with inline-editable fields and three buttons).
+  - Render the BLOG HTML page using the Items template:
+    - Read blog-template.html from items/agents/crt-blog-runner/.
+    - Inject the final BLOG JSON into the <script id="blog-data" type="application/json">…</script> block.
   - POST /docs/commit-bulk with exactly:
-    - {creation_id}-blog.json
-    - {creation_id}-blog.html
+    - /docs/runner/blog/finals/{creation_id}-blog.json
+    - /docs/runner/blog/finals/{creation_id}-blog.html
 - If any stage fails:
   - Log a clear error.
   - Do NOT partially commit.
