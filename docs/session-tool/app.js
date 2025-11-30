@@ -7,7 +7,7 @@
 // - Stores them in sessionStorage
 // - Maintains a lightweight session "index" for overwrite/clear logic
 // - Clears everything on "End session"
-//
+// 
 // Replace the CONFIG constants (API key + table IDs) with your real values.
 
 (() => {
@@ -17,7 +17,7 @@
   const ROWS_API_BASE = "https://api.rows.com/v1";
 
   // IMPORTANT: put your real Rows API key here (or inject via <script> before this file)
-  const ROWS_API_KEY = window.CRT_ROWS_API_KEY || "REPLACE_WITH_ROWS_API_KEY";
+  const ROWS_API_KEY = window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
 
   // GET: competition payload rows
   // Shape: { items: [ [creation_id, payload_json_string], ... ] }
@@ -28,7 +28,7 @@
   // GET: destinations/hub payload rows (stay/dine/essentials)
   // You must replace DESTINATIONS_TABLE_ID and DESTINATIONS_RANGE with your real values.
   const DESTINATIONS_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
-  const DESTINATIONS_TABLE_ID = "REPLACE_DESTINATIONS_TABLE_ID";
+  const DESTINATIONS_TABLE_ID = "52d0a628-4e75-4b93-8acd-121a5e860e2e";
   const DESTINATIONS_RANGE = "A2:B999";
 
   // sessionStorage keys we own
