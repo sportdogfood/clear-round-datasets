@@ -17,13 +17,12 @@
 
     <!-- Session controls -->
     <section id="session-controls">
-      <button id="session-start-btn" type="button">Start session</button>
+      <button id="btn-start-session" type="button">Start session</button>
+      <button id="btn-end-session" type="button">End session</button>
       <button id="session-restart-btn" type="button">Restart session</button>
       <button id="session-send-btn" type="button">Send session</button>
       <span id="session-status" aria-live="polite"></span>
     </section>
-
-    <!-- Panels below are placeholders for the real UI wiring -->
 
     <!-- Competitions panel -->
     <section id="competitions-panel">
@@ -53,7 +52,7 @@
     <section id="debug-panel">
       <h2>Debug</h2>
       <p>For now, use the browser console to inspect state and network calls.</p>
-      <pre id="session-log"></pre>
+      <pre id="debug-payload"></pre>
     </section>
   </main>
 
