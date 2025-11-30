@@ -31,7 +31,7 @@
     '/spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/07cf8adf-604f-452b-a2f7-494b5fea0c2e/values/A:E:append';
 
   // TODO: replace with your real token (read+append for these tables only)
-  const ROWS_API_KEY = 'YOUR_ROWS_API_KEY_HERE';
+  const ROWS_API_KEY = 'rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc';
 
   // ---------------------------------------------------------------------------
   // State
