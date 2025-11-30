@@ -1,6 +1,7 @@
 // session-tool/app.js
 // CRT Session Tool – desktop picker (competitions + destinations)
-// Step 1: wire Start Session (Rows GET) and Send (Rows POST) with in-memory state.
+// Step 1: wire Start Session (Rows GET) and Send (Rows POST) with in-memory state,
+// plus basic DOM clearing and spam-click protection.
 
 (function () {
   'use strict';
@@ -11,6 +12,7 @@
 
   // READ endpoints (from your OpenAPI)
   const ROWS_API_BASE_READ = 'https://api.rows.com/v1';
+
   const COMPETITIONS_URL =
     ROWS_API_BASE_READ +
     '/spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/18be0a0d-dbea-43ea-811f-f7bcbf4982d3/values/A2:B999';
@@ -20,14 +22,16 @@
     '/spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/52d0a628-4e75-4b93-8acd-121a5e860e2e/values/A2:B999';
 
   // WRITE endpoint (append)
-  // A:E, table_id 07cf8adf-604f-452b-a2f7-494b5fea0c2e
+  // Spreadsheet: GqOwXTcrQ9u14dbdcTxWa
+  // Table:      07cf8adf-604f-452b-a2f7-494b5fea0c2e
+  // Columns:    A:E = session_id | mode | submitted_at | creation_id | payload_json
   const ROWS_API_BASE_WRITE = 'https://api.rows.com/v1beta1';
   const SUBMIT_URL =
     ROWS_API_BASE_WRITE +
     '/spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/07cf8adf-604f-452b-a2f7-494b5fea0c2e/values/A:E:append';
 
   // TODO: replace with your real token (read+append for these tables only)
-  const ROWS_API_KEY = 'rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc';
+  const ROWS_API_KEY = 'YOUR_ROWS_API_KEY_HERE';
 
   // ---------------------------------------------------------------------------
   // State
@@ -39,7 +43,7 @@
       mode: 'top',
       startedAt: null,
       submittedAt: null,
-      creationId: null // from rows.items[0][0]
+      creationId: null // from Rows items[0][0]
     },
     // Raw payloads from Rows (items[0][1] parsed)
     raw: {
@@ -76,7 +80,8 @@
         }
       }
     },
-    submitted: false
+    submitted: false,
+    loading: false          // guards against double-click / overlapping loads
   };
 
   // ---------------------------------------------------------------------------
@@ -104,9 +109,33 @@
   function toComparableDate(dateText) {
     // For sorting min/max; fall back to dateText string.
     if (!dateText || typeof dateText !== 'string') return dateText || '';
-    // Let Date parse US-style MM/DD/YYYY; we only use it to compare.
     const t = Date.parse(dateText);
     return Number.isFinite(t) ? t : dateText;
+  }
+
+  function setStatus(message) {
+    const el = document.getElementById('session-status');
+    if (el) el.textContent = message || '';
+  }
+
+  function clearDomForNewSession() {
+    // Clear status + debug log
+    setStatus('');
+    const logEl = document.getElementById('session-log');
+    if (logEl) logEl.textContent = '';
+
+    // Clear main containers so we don't stack old content
+    const compEl = document.getElementById('competitions-container');
+    if (compEl) compEl.innerHTML = '';
+
+    const stayEl = document.getElementById('stay-container');
+    if (stayEl) stayEl.innerHTML = '';
+
+    const dineEl = document.getElementById('dine-container');
+    if (dineEl) dineEl.innerHTML = '';
+
+    const essEl = document.getElementById('essentials-container');
+    if (essEl) essEl.innerHTML = '';
   }
 
   // ---------------------------------------------------------------------------
@@ -388,12 +417,17 @@
   // ---------------------------------------------------------------------------
 
   async function startSession() {
-    if (state.submitted === false && state.session.sessionId) {
-      // Optional: confirm discard of in-progress session.
-      console.info('Starting new session; discarding previous in-memory state.');
+    if (state.loading) {
+      // Ignore spam clicks while a session is already loading
+      console.info('[session-tool] Start Session ignored: already loading');
+      setStatus('Loading session from Rows…');
+      return;
     }
 
+    state.loading = true;
+    clearDomForNewSession();
     resetSessionState();
+    setStatus('Loading session from Rows…');
 
     try {
       // 1) competitions
@@ -411,7 +445,6 @@
       state.model.dine = destModel.dine;
       state.model.essentials = destModel.essentials;
 
-      // At this point the UI can render competitions + destinations.
       console.info('[session-tool] Start Session complete', {
         sessionId: state.session.sessionId,
         creationId: state.session.creationId,
@@ -421,10 +454,20 @@
         essentialsCount: state.model.essentials.length
       });
 
+      setStatus(
+        'Session loaded: ' +
+        state.model.series.length + ' series, ' +
+        state.model.stay.length + ' stay, ' +
+        state.model.dine.length + ' dine, ' +
+        state.model.essentials.length + ' essentials'
+      );
+
       // TODO: call a render() function here once the HTML structure is defined.
     } catch (err) {
       console.error('[session-tool] Start Session failed:', err);
-      // TODO: surface a human-friendly error message in the UI.
+      setStatus('Error loading session from Rows. See console for details.');
+    } finally {
+      state.loading = false;
     }
   }
 
@@ -487,10 +530,12 @@
   async function sendSession() {
     if (!state.session.sessionId || !state.session.startedAt) {
       console.warn('[session-tool] Cannot send: session not started');
+      setStatus('Start a session before sending.');
       return;
     }
     if (state.submitted) {
       console.warn('[session-tool] This session was already submitted');
+      setStatus('This session was already submitted. Start a new session to send again.');
       return;
     }
 
@@ -515,16 +560,16 @@
       console.info('[session-tool] Session submitted successfully', {
         sessionId: state.session.sessionId
       });
-      // TODO: Show a "submitted" state in the UI and disable Send until new Start.
+      setStatus('Session submitted successfully.');
     } catch (err) {
       console.error('[session-tool] Send failed:', err);
-      // TODO: surface error to user.
+      setStatus('Error sending session to Rows. See console for details.');
       state.session.submittedAt = null;
     }
   }
 
   // ---------------------------------------------------------------------------
-  // Wiring to DOM controls (IDs to be used in index.html)
+  // Wiring to DOM controls (IDs from index.html)
   // ---------------------------------------------------------------------------
 
   function bindUi() {
