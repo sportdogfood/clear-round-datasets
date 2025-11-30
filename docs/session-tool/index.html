@@ -2,120 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CRT Competition Selector</title>
+  <title>CRT Session Tool – Competition & Destinations Picker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Optional: drop in a styles.css later -->
+  <!-- Optional: add styles later -->
   <!-- <link rel="stylesheet" href="./styles.css" /> -->
 </head>
 <body>
   <main id="session-tool">
     <!-- Header -->
     <header id="session-header">
-      <h1>Competition Selector</h1>
-      <p>Start a new session, filter competitions, select series (Base Keys), and preview your submission.</p>
+      <h1>CRT Session Tool</h1>
+      <p>Start a new session, load data from Rows, and submit a selection payload.</p>
     </header>
 
     <!-- Session controls -->
     <section id="session-controls">
-      <button id="btn-start-session" type="button">Start new session</button>
+      <button id="session-start-btn" type="button">Start session</button>
+      <button id="session-restart-btn" type="button">Restart session</button>
+      <button id="session-send-btn" type="button">Send session</button>
       <span id="session-status" aria-live="polite"></span>
-      <button id="btn-end-session" type="button" hidden>End session</button>
     </section>
 
-    <!-- Filters (hidden until session starts) -->
-    <section id="filters-panel" hidden>
-      <h2>Filters</h2>
-      <div class="filters-grid">
-        <!-- Comp Uuid dropdown -->
-        <label for="filter-comp-uuid">
-          Comp Uuid
-          <select id="filter-comp-uuid">
-            <option value="">All</option>
-            <!-- options populated by JS -->
-          </select>
-        </label>
+    <!-- Panels below are placeholders for the real UI wiring -->
 
-        <!-- Rating text search -->
-        <label for="filter-rating">
-          Rating
-          <input id="filter-rating" type="text" placeholder="Search rating…" />
-        </label>
-
-        <!-- Name (Name Orig + Base Name) text search -->
-        <label for="filter-name">
-          Name
-          <input id="filter-name" type="text" placeholder="Search name…" />
-        </label>
-
-        <!-- Archived tri-state -->
-        <label for="filter-archived">
-          Archived
-          <select id="filter-archived">
-            <option value="all">All</option>
-            <option value="active">Only active</option>
-            <option value="archived">Only archived</option>
-          </select>
-        </label>
-
-        <!-- Year dropdown -->
-        <label for="filter-year">
-          Year
-          <select id="filter-year">
-            <option value="">All</option>
-            <!-- options populated by JS -->
-          </select>
-        </label>
-
-        <!-- City text search -->
-        <label for="filter-city">
-          City
-          <input id="filter-city" type="text" placeholder="Search city…" />
-        </label>
-
-        <!-- Zone dropdown -->
-        <label for="filter-zone">
-          Zone
-          <select id="filter-zone">
-            <option value="">All</option>
-            <!-- options populated by JS -->
-          </select>
-        </label>
-
-        <!-- State dropdown -->
-        <label for="filter-state">
-          State
-          <select id="filter-state">
-            <option value="">All</option>
-            <!-- options populated by JS -->
-          </select>
-        </label>
-      </div>
-
-      <button id="btn-clear-filters" type="button">Clear filters</button>
-    </section>
-
-    <!-- Results (grouped by Base Key) -->
-    <section id="results-panel" hidden>
-      <h2>Results</h2>
-      <div id="series-list">
-        <!-- series groups (Base Key) rendered by JS -->
+    <!-- Competitions panel -->
+    <section id="competitions-panel">
+      <h2>Competitions</h2>
+      <p>This panel will show grouped series (Base Keys) and legs once wired.</p>
+      <div id="competitions-container">
+        <!-- series + legs tables will render here in a later step -->
       </div>
     </section>
 
-    <!-- Submit panel -->
-    <section id="submit-panel" hidden>
-      <p id="selection-summary">You haven’t selected any series yet.</p>
-      <button id="btn-submit-selection" type="button" disabled>Submit selection</button>
+    <!-- Destinations panel -->
+    <section id="destinations-panel">
+      <h2>Destinations</h2>
+      <p>Stay, Dine, and Essentials lanes will render here in a later step.</p>
+      <div id="stay-container">
+        <!-- Stay lane table -->
+      </div>
+      <div id="dine-container">
+        <!-- Dine lane table -->
+      </div>
+      <div id="essentials-container">
+        <!-- Essentials lane table -->
+      </div>
     </section>
 
-    <!-- Debug submit payload preview -->
-    <section id="debug-panel" hidden>
-      <h2 id="debug-title">Submitted payload (preview only)</h2>
-      <pre id="debug-payload"></pre>
+    <!-- Debug / log panel -->
+    <section id="debug-panel">
+      <h2>Debug</h2>
+      <p>For now, use the browser console to inspect state and network calls.</p>
+      <pre id="session-log"></pre>
     </section>
   </main>
 
   <!-- Main script for this page -->
-  <script src="./main.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
