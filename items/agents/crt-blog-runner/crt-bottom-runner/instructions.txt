@@ -6,281 +6,213 @@
 ROLE OF THIS FILE
 ====================================================================
 This is the authoritative contract for the CRT bottom-runner.
-
-Every module (expeditor, researcher, writer, rewriter) MUST comply
-with this file. All mini/inlined instructions defer to this file.
-
-No memory. No assumptions. No external “fixing.” No auto-upgrades.
+All modules (expeditor, researcher, writer, rewriter) MUST comply.
+All mini/inlined instructions defer to this file.
+No memory. No assumptions. No external verification.
 
 ====================================================================
 GLOBAL PRINCIPLES
 ====================================================================
-1. NO FABRICATION  
-   - No module may create or guess any factual detail not explicitly
-     provided in:
-       • CompetitionPayload (Rows)
-       • DestinationPayload (Rows)
-       • Research output (created during this run ONLY)
+1. NO FABRICATION
+   No module may create or guess factual details not in:
+     • CompetitionPayload (Rows)
+     • DestinationPayload (Rows)
+     • Research output (this run ONLY)
 
-2. NO VERIFICATION  
-   - Researcher does NOT “check” the values from CompetitionPayload
-     or DestinationPayload against the world.  
-   - If the input is blank or missing → treat as unknown.
+2. NO VERIFICATION
+   Researcher does NOT “check” values against reality.
+   Missing → treat as unknown.
 
-3. UNIFIED FALLBACK  
-   Any missing OR empty-string field becomes:
-       "could-not-verify"
-   Exceptions:
-       lat/lng → null if not numeric.
+3. UNIFIED FALLBACK
+   Missing/empty → "could-not-verify"
+   Exception: lat/lng → null if not numeric.
 
-4. DOWNSTREAM IGNORE RULE  
-   Writer and rewriter ignore any field equal to:
-       "could-not-verify"
-   and do NOT attempt to fill in, infer, or guess what was missing.
+4. DOWNSTREAM IGNORE RULE
+   Writer/rewriter MUST ignore any "could-not-verify" values.
 
-5. STRICT PASS-THROUGH  
-   All curated fields in DestinationPayload MUST be preserved in the
-   writer-input unless explicitly defined as droppable.
+5. STRICT PASS-THROUGH
+   DestinationPayload fields preserved exactly unless defined droppable.
 
-6. DETERMINISTIC  
-   No randomness, no optional paths, no best-guess behavior.
+6. DETERMINISTIC
+   No randomness. No optional paths. No best-guess logic.
 
 ====================================================================
-PIPELINE OVERVIEW (BOTTOM-RUNNER)
+PIPELINE OVERVIEW
 ====================================================================
 
-1. Load inputs  
-   - Read CompetitionPayload JSON.  
-   - Read DestinationPayload JSON.  
-   - Both must have the same creation_id or pipeline stops.
+1) LOAD  
+   Read CompetitionPayload + DestinationPayload.  
+   creation_id must match.
 
-2. Expeditor  
-   - Produces:
-       • locale-research-input.json
-       • bottomblock-writer-input.json
-   - Performs ONLY mechanical shaping.  
-   - NEVER generates prose.  
-   - NEVER validates facts.  
-   - Applies fallback rules.  
-   - Ensures exact JSON shapes defined below.
+2) EXPEDITOR  
+   Produces:
+     • locale-research-input.json
+     • bottomblock-writer-input.json
+   Mechanical shaping only.  
+   No prose, no verification, no inference.
 
-3. Researcher  
-   - Consumes only locale-research-input.json.  
-   - Writes:
-       • locale-research-output.json
-   - Performs descriptive work ONLY.  
-   - Uses inputs AS FACTUAL ANCHORS.  
-   - NEVER verifies them externally.  
-   - NEVER fabricates details to “fill in blanks.”  
-   - MUST return "could-not-verify" whenever data from input is
-     missing.  
-   - Output must preserve JSON-safe text.
+3) RESEARCHER  
+   Input: locale-research-input.json  
+   Output: locale-research-output.json  
+   Descriptive only.  
+   No external validation.  
+   Missing → "could-not-verify".
 
-4. Writer  
-   - Inputs:
-       • bottomblock-writer-input.json
-       • locale-research-output.json  
-   - Produces:
-       • bottomblock-writer-output.json
-   - Writes:
-       • One equestrian-first paragraph for each lane
-         (stay/dine/essentials).  
-       • Mobile-first list/table for each lane.  
-   - MUST ignore “could-not-verify”.  
-   - MUST NOT “fix” or “repair” incomplete research–just produce
-     the best possible grounded copy with available fields.  
-   - NO assumption or detail beyond provided JSON + researcher
-     output.
+4) WRITER  
+   Inputs: writer-input + researcher-output  
+   Output: bottomblock-writer-output.json  
+   Creates:
+     • stay paragraph + list
+     • dine paragraph + list
+     • essentials paragraph + list  
+   MUST ignore “could-not-verify”.  
+   No invention.
 
-5. Rewriter  
-   - Cleans and JSON-safes the writer output.  
-   - NEVER changes facts or adds details.  
-   - NEVER rewrites beyond clarity/clean copy.  
-   - Outputs final:
-       • bottomblock_final.json
+5) REWRITER  
+   Input: writer-output  
+   Output: bottomblock_final.json  
+   Clean-up only.  
+   No factual changes. No fabrication.
 
-6. Commit  
-   - Write logs under:
-       docs/runner/bottom/logs/{creation_id}-*.json
-   - Write final:
-       docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
+6) COMMIT  
+   Logs → docs/runner/bottom/logs/{cid}-*.json  
+   Final → docs/runner/bottom/finals/{cid}-bottomblock_final.json
 
 ====================================================================
 INPUT SPECIFICATION
 ====================================================================
 
-------------------------------
-CompetitionPayload (Rows)
-------------------------------
+--------------- CompetitionPayload (Rows) ---------------
 Required minimum fields:
-- creation_id  
-- venue_name  
-- venue_acronym  
-- venue_official_url  
-- place_id  
-- lat, lng  
-- city, state, city_slug, zone  
-- span_start_date, span_end_date  
-- span_season, span_season_city_slug  
-- zoom_start_date, zoom_end_date  
-- zoom_season, zoom_season_city_slug  
-- collection_primary.zoom_leg_name  
-- collection_primary.comp_name  
+- creation_id
+- venue_name
+- venue_acronym
+- venue_official_url
+- place_id
+- lat, lng
+- city, state, city_slug, zone
+- span_start_date, span_end_date
+- span_season, span_season_city_slug
+- zoom_start_date, zoom_end_date
+- zoom_season, zoom_season_city_slug
+- collection_primary.zoom_leg_name
+- collection_primary.comp_name
 
-Missing/"" → "could-not-verify" (except lat/lng → null)
+Missing/"" → "could-not-verify" (lat/lng → null)
 
-------------------------------
-DestinationPayload (Rows)
-------------------------------
-- creation_id  
-- hub_meta.hub_title_override  
-- stay.feature[] / stay.list-only[]  
-- dine.feature[] / dine.list-only[]  
-- essentials.feature[] / essentials.list-only[]  
+--------------- DestinationPayload (Rows) ---------------
+- creation_id
+- hub_meta.hub_title_override
+- stay.feature[] / stay.list-only[]
+- dine.feature[] / dine.list-only[]
+- essentials.feature[] / essentials.list-only[]
 
-Each place row MUST preserve curated fields:
-- place_uid  
-- name, name2, entity  
-- price_band, price_level  
-- distance_bucket, distance_text, duration_text  
-- website  
-- editorial_overview  
-- formatted_address  
-- rating, user_ratings_total (if present)  
-- chain_slug, chain_types, all_types (if present)  
-- top_rated, preferred  
-- lat, lng  
-- ANY other curated field unless clearly meaningless.
+Each place row MUST preserve curated fields (no dropping):
+- place_uid
+- name, name2, entity
+- price_band, price_level
+- distance_bucket, distance_text, duration_text
+- website
+- editorial_overview
+- formatted_address
+- rating, user_ratings_total
+- chain_slug, chain_types, all_types
+- top_rated, preferred
+- lat, lng
+- Any other curated field unless meaningless.
 
-Missing/"" → "could-not-verify" (except lat/lng → null)
+Missing/"" → "could-not-verify" (lat/lng → null)
 
 ====================================================================
 OUTPUT SPECIFICATION — EXPEDITOR
 ====================================================================
 
-------------------------------
-1) locale-research-input.json
-------------------------------
+--------------- locale-research-input.json ---------------
 {
   "creation_id": "<cid>",
   "event_identity": {
-    "venue_name": "<payload>",
-    "venue_acronym": "<payload>",
-    "city": "<payload>",
-    "state": "<payload>",
-    "zone": "<payload>",
-    "span_season": "<payload>",
-    "span_season_city_slug": "<payload>",
-    "zoom_season": "<payload>",
-    "zoom_season_city_slug": "<payload>",
-    "span_start_date": "<payload>",
-    "span_end_date": "<payload>",
-    "zoom_start_date": "<payload>",
-    "zoom_end_date": "<payload>"
+    "venue_name": "...",
+    "venue_acronym": "...",
+    "city": "...",
+    "state": "...",
+    "zone": "...",
+    "span_season": "...",
+    "span_season_city_slug": "...",
+    "zoom_season": "...",
+    "zoom_season_city_slug": "...",
+    "span_start_date": "...",
+    "span_end_date": "...",
+    "zoom_start_date": "...",
+    "zoom_end_date": "..."
   },
   "maps_anchor": {
-    "place_id": "<payload>",
+    "place_id": "...",
     "lat": <number|null>,
     "lng": <number|null>
   }
 }
 
-- EXACT shape.  
-- Fallback: missing/"" → “could-not-verify”.  
-- Researcher will NOT check or verify any field.
-
-------------------------------
-2) bottomblock-writer-input.json
-------------------------------
+--------------- bottomblock-writer-input.json ---------------
 {
   "creation_id": "<cid>",
   "hub_meta": {
-    "hub_title_override": "<value>"
+    "hub_title_override": "..."
   },
   "stay": {
-    "feature": [ { passthrough place } ],
-    "list_only": [ { passthrough place } ]
+    "feature": [ ... ],
+    "list_only": [ ... ]
   },
   "dine": {
-    "feature": [ { passthrough place } ],
-    "list_only": [ { passthrough place } ]
+    "feature": [ ... ],
+    "list_only": [ ... ]
   },
   "essentials": {
-    "feature": [ { passthrough place } ],
-    "list_only": [ { passthrough place } ]
+    "feature": [ ... ],
+    "list_only": [ ... ]
   }
 }
 
 ====================================================================
 RESEARCHER CONTRACT
 ====================================================================
-The researcher:
-- Reads locale-research-input.json.  
-- Writes locale-research-output.json.  
-- MUST supply descriptive, structured, factual, narrative-ready text.  
-- MUST use anchor facts exactly as given.  
-- MUST NOT:
-   • check or validate facts  
-   • upgrade or guess  
-   • rewrite season/date/venue facts  
-
-Allowed:
-- Derive descriptive phrasing from anchors (ex: “spring in Ocala”).  
-- Mark anything missing as "could-not-verify".
+Uses locale-research-input.json AS GIVEN.
+No verification.
+Missing → “could-not-verify”.
+Outputs structured, descriptive context.
 
 ====================================================================
 WRITER CONTRACT
 ====================================================================
-The writer:
-- Inputs: researcher-output + writer-input.  
-- Outputs: bottomblock-writer-output.json.  
-- Writes:
-  - paragraph_stay  
-  - paragraph_dine  
-  - paragraph_essentials  
-  - structured lists
-  
-Rules:
-- MUST ignore “could-not-verify”.  
-- MUST NOT invent any new fact.  
-- Narrative MUST stay grounded in the fields provided.  
-- If little data is available, output becomes minimal but still valid.
+Uses researcher-output + writer-input.
+Creates Stay/Dine/Essentials:
+- paragraph
+- list  
+Ignores “could-not-verify”.
+No invention.
 
 ====================================================================
 REWRITER CONTRACT
 ====================================================================
-The rewriter:
-- Inputs: writer-output.  
-- Outputs: bottomblock_final.json.  
-- ONLY cleans text:
-  • clarity  
-  • flow  
-  • remove noise  
-  • JSON safety  
-- MUST NOT add new facts.  
-- MUST NOT change meaning.  
-- MUST NOT fabricate.
+Cleans Writer output.
+No factual changes.
 
 ====================================================================
 ERROR HANDLING
 ====================================================================
-Pipeline HALTS when:
-- Inputs missing or unreadable  
-- creation_id mismatch  
-- Any stage produces invalid JSON  
-
-Pipeline may continue with EMPTY arrays if a lane has no entries.
+Pipeline halts when:
+- Inputs missing/unreadable
+- creation_id mismatch
+- Invalid JSON
 
 ====================================================================
-TROUBLESHOOTING + KNOWN CONFLICTS (fixed)
+TROUBLESHOOTING — FIXED ISSUES
 ====================================================================
-✓ locale_research_input must EXACTLY match expected shape  
-✓ researcher does NOT confirm data online  
-✓ writer ignores missing/could-not-verify  
-✓ flows all unify around one fallback rule  
-✓ expeditor never attempts to calculate or infer seasons  
-✓ avoids old mistakes of skipping broken fields or assuming truth  
-✓ avoids double-fallback logic ("", null, undefined)
+✓ locale_research_input exact shape  
+✓ no external validation  
+✓ unified fallback  
+✓ no double-normalization  
+✓ strict passthrough of curated rows  
+✓ deterministic behavior
 
 ====================================================================
 END OF FILE
