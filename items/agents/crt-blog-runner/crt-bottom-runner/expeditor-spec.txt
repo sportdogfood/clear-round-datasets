@@ -1,182 +1,228 @@
-File: expeditor-spec.txt (bottom-runner)
+File: expeditor-spec.txt
+Runner: crt-bottom-runner
+Version: v0.2 – 2025-12-01
 
-Role
-- This expeditor prepares the inputs for the CRT bottom-runner.
-- It does only mechanical fan-out and light shaping.
-- It does NOT call any external APIs, does NOT generate prose, and does NOT make up new fields.
+ROLE
+- Defines the mechanical responsibilities of the bottom-runner expeditor.
+- Expeditor performs ONLY fan-out and safe shaping.
+- Expeditor does NOT:
+  - generate prose,
+  - research,
+  - modify curated data,
+  - add assumed fields,
+  - perform business lookups,
+  - depend on any top-runner logic.
 
-Scope (bottom-runner)
-- For a single creation_id, expeditor:
-  - Reads the shared CompetitionPayload JSON (top payload).
-  - Reads the BottomPayload JSON (stay/dine/essentials hub payload).
-  - Builds:
-    - A small locale-research input JSON.
-    - A compact bottom-block writer input JSON.
-- All research, writing, and rewriting is handled elsewhere (researcher, writer, rewriter).
+SCOPE (BOTTOM-RUNNER)
+For one creation_id, the expeditor:
 
-Inputs (read-only JSON files)
+1. Reads curated CompetitionPayload (Category A identity).
+2. Reads curated DestinationPayload (“BottomPayload”: stay/dine/essentials).
+3. Builds exactly TWO internal inputs:
+   - locale_research_input.json
+   - bottom_payload_normalized (later merged into bottomblock_research_clean.json)
+4. Writes BOTH as docs logs for debugging.
+5. Must NOT halt unless the payloads are missing or invalid JSON.
 
-1) CompetitionPayload
-- Path (example, actual path controlled by runner config):
-  - items/…/competition-payload.json
-- Shape: the same object used by the top-runner, including at least:
-  - creation_id
-  - venue_name
-  - venue_acronym
-  - venue_official_url
-  - place_id
-  - lat, lng
-  - city, state, city_slug, zone
-  - span_start_date, span_end_date, span_season, span_season_city_slug
-  - zoom_start_date, zoom_end_date, zoom_season, zoom_season_city_slug
-  - any other fields needed for locale context
+INPUTS (READ-ONLY)
 
-2) BottomPayload
-- Path (example):
-  - items/…/bottom-payload.json
-- Shape (minimum):
+-----------------------------------------------
+1) CompetitionPayload (permanent schema)
+-----------------------------------------------
+- Fetched by runner-logic via Rows API, not by expeditor.
+- Expeditor receives this already-loaded object.
+- Expeditor MUST adapt to the fixed payload shape (NO assumptions, NO top-runner inheritance).
+
+Required fields (these may exist or be empty, but never fabricated):
+- creation_id
+- venue_name
+- city
+- state
+- zone
+- span_start_date
+- span_end_date
+- span_season
+- lat
+- lng
+
+Expeditor MUST NOT:
+- expect season_label,
+- expect zoom fields,
+- expect collection_primary,
+- expect editorial_overview,
+- expect top-runner style structures.
+
+Expeditor MUST accept missing fields and use "" for missing strings.
+
+-----------------------------------------------
+2) DestinationPayload (BottomPayload)
+-----------------------------------------------
+Permanent curated schema from Rows:
 
 {
   "creation_id": "creator-abc",
-  "hub_meta": {
-    "hub_title_override": "..."
-  },
+  "hub_meta": { "hub_title_override": "..." },
   "stay": {
-    "feature": [ { … place row … }, … ],
-    "list-only": [ { … place row … }, … ]
+    "feature": [ { … place row … } ],
+    "list-only": [ { … place row … } ]
   },
   "dine": {
-    "feature": [ { … place row … }, … ],
-    "list-only": [ { … place row … }, … ]
+    "feature": [ { … place row … } ],
+    "list-only": [ { … place row … } ]
   },
   "essentials": {
-    "feature": [ { … place row … }, … ],
-    "list-only": [ { … place row … }, … ]
+    "feature": [ { … place row … } ],
+    "list-only": [ { … place row … } ]
   }
 }
 
-- Each place row is a curated item from Rows, similar to the example you provided, including:
-  - creation_id, lane, role, rank
-  - place_uid (internal key, required)
-  - place_id (optional but preserved if present)
-  - name, name2, entity
-  - price_band, price_level (may be missing or unreliable)
-  - distance_bucket, distance_text, duration_text
-  - top_rated, preferred
-  - website, url (maps), formatted_address (optional)
-  - editorial_overview (optional, short text)
-  - other passthrough fields (chain_slug, chain_types, all_types, etc.)
+Each place row includes curated, immutable fields such as:
+- place_uid (required)
+- name, name2
+- entity
+- distance_bucket, distance_text, duration_text
+- price_band, price_level (optional)
+- top_rated, preferred
+- website (optional)
+- editorial_overview (optional)
+- lane-type fields (e.g. dine_lane)
+- passthrough keys (chain_slug, all_types, etc.)
 
-Outputs (expeditor writes these JSON files)
+Expeditor MUST:
+- Preserve all keys as-is.
+- NEVER correct, infer, or invent data.
+- NEVER search for missing fields.
 
+-----------------------------------------------
+OUTPUTS (EXPEDITOR WRITES)
+-----------------------------------------------
+
+The expeditor writes EXACTLY TWO JSON files into docs logs:
+
+1) locale_research_input.json  
+2) bottom_places_payload.json (debug copy of DestinationPayload)
+
+These files are NOT used directly by the writer; they are used by:
+- locale researcher → locale_research
+- merge stage → bottomblock_research_clean.json
+
+These outputs must use ASCII-only and must preserve original data.
+
+-----------------------------------------------
 1) locale-research-input.json
-- Path (example):
-  - items/…/locale-research-input.json
-- Purpose:
-  - Give the locale researcher a compact view of:
-    - Where this event lives (city/state, zone, venue).
-    - When it happens (span/zoom dates; season labels).
-    - The fact that we care about “nearby resets” and “things to do close by”.
-- Shape (minimum):
+-----------------------------------------------
+MUST conform to research-locale-prompt.txt.
+
+Exact shape:
 
 {
   "creation_id": "<CompetitionPayload.creation_id>",
-  "event_identity": {
+  "locale_input": {
+    "event_name": "<CompetitionPayload.event_name OR empty>",
     "venue_name": "<CompetitionPayload.venue_name>",
-    "venue_acronym": "<CompetitionPayload.venue_acronym>",
     "city": "<CompetitionPayload.city>",
     "state": "<CompetitionPayload.state>",
     "zone": "<CompetitionPayload.zone>",
-    "span_season": "<CompetitionPayload.span_season>",
-    "span_season_city_slug": "<CompetitionPayload.span_season_city_slug>",
-    "zoom_season": "<CompetitionPayload.zoom_season>",
-    "zoom_season_city_slug": "<CompetitionPayload.zoom_season_city_slug>",
     "span_start_date": "<CompetitionPayload.span_start_date>",
     "span_end_date": "<CompetitionPayload.span_end_date>",
-    "zoom_start_date": "<CompetitionPayload.zoom_start_date>",
-    "zoom_end_date": "<CompetitionPayload.zoom_end_date>"
-  },
-  "maps_anchor": {
-    "place_id": "<CompetitionPayload.place_id>",
+    "span_season": "<CompetitionPayload.span_season>",
     "lat": "<CompetitionPayload.lat>",
     "lng": "<CompetitionPayload.lng>"
   }
 }
 
-- No place lists are needed here; this file is only for city/season/locale research.
+Rules:
+- NO zoom fields.
+- NO derived season_label.
+- NO top-runner identities.
+- NO business lists.
+- Default "" where fields are missing.
+- MUST NOT invent values.
+- MUST use exactly “locale_input”.
 
-2) bottomblock-writer-input.json
-- Path (example):
-  - items/…/bottomblock-writer-input.json
-- Purpose:
-  - Give the bottom-block writer everything needed to write:
-    - A short, equestrian-specific paragraph for each lane (stay/dine/essentials).
-    - A tight, mobile-first list/table backing each lane.
-- Shape (minimum):
+-----------------------------------------------
+2) bottom_payload_normalized (debug copy)
+-----------------------------------------------
+
+Expeditor logs bottom places payload as-is:
 
 {
   "creation_id": "<BottomPayload.creation_id>",
-  "hub_meta": {
-    "hub_title_override": "<BottomPayload.hub_meta.hub_title_override>"
-  },
   "stay": {
-    "feature": [ { … curated stay places … } ],
-    "list_only": [ { … curated stay places … } ]
+    "feature": [ ... ],
+    "list-only": [ ... ]
   },
   "dine": {
-    "feature": [ { … curated dine places … } ],
-    "list_only": [ { … curated dine places … } ]
+    "feature": [ ... ],
+    "list-only": [ ... ]
   },
   "essentials": {
-    "feature": [ { … curated essentials places … } ],
-    "list_only": [ { … curated essentials places … } ]
-  }
+    "feature": [ ... ],
+    "list-only": [ ... ]
+  },
+  "hub_meta": { ... }
 }
 
-- For each place object, expeditor:
-  - Copies fields from BottomPayload as-is (no rewriting).
-  - MUST preserve at least:
-    - place_uid
-    - name, name2, entity
-    - price_band (if present), price_level (if present)
-    - distance_bucket, distance_text, duration_text
-    - top_rated, preferred
-    - website
-    - editorial_overview (if present)
-  - May drop fields that are clearly irrelevant to copy (e.g. low-level internal metrics), but should err on the side of keeping existing keys.
+Expeditor MUST:
+- Keep “list-only”.
+- NOT rename keys to “list_only”.
+- NOT drop fields.
+- NOT modify place objects.
 
-Behavior and rules
+-----------------------------------------------
+BEHAVIOR RULES
+-----------------------------------------------
 
-- One creation_id at a time:
-  - Expeditor assumes both CompetitionPayload and BottomPayload refer to the same creation_id.
-  - If creation_id does not match, expeditor should fail fast (no outputs) and surface an error to the runner.
+NO BUSINESS LOGIC
+- No recomputation of distance_bucket, price_band, or any field.
+- No enrichment.
+- No fallback heuristics.
+- No assumptions about missing fields.
+- Do not remove “could-not-verify” fields if present.
 
-- No business logic:
-  - Do NOT:
-    - Recalculate price_band, price_level, rating, or user_ratings_total.
-    - Change distance_bucket or distance_text.
-    - Add “safety” labels or any editorial flags.
-  - Only pass through the curated values that already exist.
+NO PROSE GENERATION
+- No paragraphs.
+- No rewriting.
+- No suggestions.
 
-- No prose generation:
-  - Do NOT:
-    - Write paragraphs, sentences, or final copy.
-    - Try to “summarize” the lists.
-  - The writer and rewriter prompts will handle all narrative.
+NO TOP-RUNNER CROSS-CONTAMINATION
+- No zoom_season, collection_primary, zoom_leg_name.
+- No season_label expected from upstream.
+- No top-runner file paths.
 
-Non-goals
+ERROR HANDLING (STRICT)
+- Expeditor halts ONLY if:
+  - CompetitionPayload is missing OR invalid JSON.
+  - DestinationPayload is missing OR invalid JSON.
 
-- This expeditor is not responsible for:
-  - Calling Rows APIs directly (that happens upstream in runner logic).
-  - Any HTTP lookups (Expedia, Google, etc.).
-  - Any validation beyond basic shape and creation_id consistency.
-  - Any publishing to Docs; it only prepares items/… JSONs that the runner then uses.
+Otherwise:
+- Expeditor must proceed, even if fields are blank or incomplete.
+- Missing fields → "" or empty arrays (permanent rule).
+- NEVER halt due to missing span_season, editorial_overview, or season_label.
 
-Error handling (high-level)
+-----------------------------------------------
+NON-GOALS
+-----------------------------------------------
 
-- If either input file is missing or invalid JSON:
-  - Do not create any outputs.
-  - Return/raise a clear error for the runner layer (e.g. “missing competition-payload.json” or “bottom-payload.json parse error”).
+Expeditor does NOT:
+- Perform research.
+- Create any writer/rewriter inputs directly.
+- Write final outputs.
+- Call the Rows API.
+- Change any curated schema.
+- Validate URL correctness.
+- Apply ranking or filtering.
 
-- If required fields are missing (e.g. no stay/dine/essentials keys at all):
-  - Expeditor may still write what it can, but should keep the missing sections as empty arrays, not null.
+-----------------------------------------------
+SUMMARY (MECHANICAL CONTRACT)
+-----------------------------------------------
+
+Expeditor MUST:
+1. Consume CompetitionPayload and DestinationPayload exactly as they exist.
+2. Build locale_research_input.json exactly matching the research prompt.
+3. Log both inputs to Docs without altering curated data.
+4. Never assume top-runner schemas.
+5. Never require editorial_overview, season_label, zoom fields.
+6. Never halt unless payloads are missing or invalid JSON.
+
+END OF FILE
