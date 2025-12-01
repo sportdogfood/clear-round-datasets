@@ -1,15 +1,19 @@
 // app.js
-// CRT Session Tool – selector-data (filter-key → places-json, collection-json)
-// - User picks a venue (filter_id) from dropdown or enters it manually
-// - On Start/Restart: fetch matching row from Rows selector table
-// - Cache places + collection JSON in sessionStorage
-// - Keep a small index for debugging and later use
+// CRT Session Tool – Selector table → sessionStorage
+// --------------------------------------------------
+// - User chooses a venue (filter-id) via dropdown or manual input
+// - We fetch selector rows from Rows: filter-key | places-json | collection-json
+// - We find the row whose first column matches filter-id
+// - We store parsed JSONs into sessionStorage (places + collection)
+// - We keep a small index object for quick inspection
 
 (() => {
   // ------------------------------------------------
   // Config
   // ------------------------------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
+
+  // IMPORTANT: set this via window.CRT_ROWS_API_KEY or hardcode here
   const ROWS_API_KEY =
     window.CRT_ROWS_API_KEY ||
     "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
@@ -19,6 +23,42 @@
   const SELECTOR_TABLE_ID = "ac426c27-747f-44f7-a581-d856c7ac23d6";
   const SELECTOR_RANGE = "A2:C999";
 
+  // Hardcoded venue list for dropdown
+  const VENUES = [
+    { id: "6565", label: "Fox Lea" },
+    { id: "177", label: "Devon" },
+    { id: "276", label: "Hampton Classic" },
+    { id: "497", label: "PA National Horse Show" },
+    { id: "4993509", label: "WEF" },
+    { id: "5388360", label: "WEC" },
+    { id: "5692036", label: "WEC (alt)" },
+    { id: "5126822", label: "Old Salem" },
+    { id: "5368663", label: "Traverse City" },
+    { id: "5659122", label: "Terranova" },
+    { id: "5278924", label: "Tryon" },
+    { id: "4597285", label: "Kentucky Horse Park" },
+    { id: "3501105", label: "Prince Gerorge Eq Cntr" },
+    { id: "541", label: "Colorado Horse Park" },
+    { id: "263", label: "Great Southwest Eq Cntr" },
+    { id: "5445344", label: "Virginia Horse Center" },
+    { id: "997", label: "Galway Downs Equestrian Park" },
+    { id: "5606921", label: "Desert" },
+    { id: "999", label: "South Point" },
+    { id: "4880209-ocala", label: "HITS Ocala" },
+    { id: "4880209-saugerties", label: "HITS Saugerties" },
+    { id: "4880209-wayn", label: "HITS Lamplight" },
+    { id: "4880209-eastdorset", label: "HITS Vermont" },
+    { id: "4880209-delmar", label: "HITS Del Mar" },
+    { id: "4880209-culpeper", label: "HITS Culpeper" },
+    { id: "240211", label: "Capital Challenge" },
+    { id: "692", label: "Washington Intern Horse Show" },
+    { id: "431", label: "National Horse Show" },
+    { id: "597", label: "SFHJA" },
+    { id: "4880209", label: "HITS (generic)" },
+    { id: "4624769", label: "USHJA" },
+    { id: "5319183", label: "Split Rock" }
+  ];
+
   // sessionStorage keys we own
   const STORAGE_KEYS = {
     index: "crt_session_index",
@@ -26,7 +66,6 @@
     collection: "crt_session_collection"
   };
 
-  // Simple in-memory state
   const state = {
     isLoading: false,
     sessionId: null,
@@ -34,24 +73,37 @@
   };
 
   // ------------------------------------------------
-  // DOM refs
+  // DOM refs (support both older/newer IDs where possible)
   // ------------------------------------------------
-  const filterSelect = document.getElementById("filter-select");
-  const filterInput = document.getElementById("filter-id-input");
-
-  const btnStart = document.getElementById("session-start-btn");
+  const btnStart =
+    document.getElementById("session-start-btn") ||
+    document.getElementById("btn-start-session");
   const btnRestart = document.getElementById("session-restart-btn");
-  const btnSend = document.getElementById("session-send-btn"); // not wired yet
+  const btnSend = document.getElementById("session-send-btn");
+  const btnEnd =
+    document.getElementById("session-end-btn") ||
+    document.getElementById("btn-end-session");
 
   const statusEl = document.getElementById("session-status");
-  const debugPre = document.getElementById("session-log");
+
+  const debugPanel = document.getElementById("debug-panel") || null;
+  const debugPre =
+    document.getElementById("debug-payload") ||
+    document.getElementById("session-log") ||
+    null;
+
+  const filterIdInput = document.getElementById("filter-id-input");
+  const filterIdSelect = document.getElementById("filter-id-select");
 
   // ------------------------------------------------
   // Helpers
   // ------------------------------------------------
   function updateStatus(msg) {
-    if (statusEl) statusEl.textContent = msg;
-    console.log("[CRT status]", msg);
+    if (statusEl) {
+      statusEl.textContent = msg;
+    } else {
+      console.log("[CRT status]", msg);
+    }
   }
 
   function generateSessionId() {
@@ -73,39 +125,19 @@
     });
   }
 
-  function safeJsonParse(maybeStr) {
-    if (maybeStr == null || maybeStr === "") return null;
-    if (typeof maybeStr !== "string") return null;
+  function safeJsonParse(text) {
+    if (text == null) return null;
+    if (typeof text !== "string") return text; // already parsed / non-string value
     try {
-      return JSON.parse(maybeStr);
+      return JSON.parse(text);
     } catch (err) {
-      console.error("JSON parse error for string:", maybeStr.slice(0, 200), err);
+      console.error("JSON parse error:", err, "for text:", text);
       return null;
     }
   }
 
-  function cellToString(cell) {
-    if (cell == null) return "";
-    const t = typeof cell;
-    if (t === "string" || t === "number" || t === "boolean") {
-      return String(cell);
-    }
-    if (t === "object") {
-      // Try common shapes (guessing from typical spreadsheet APIs)
-      if (cell.value != null) return String(cell.value);
-      if (cell.formattedValue != null) return String(cell.formattedValue);
-      if (cell.displayValue != null) return String(cell.displayValue);
-      if (cell.formula != null) return String(cell.formula);
-      try {
-        return JSON.stringify(cell);
-      } catch {
-        return String(cell);
-      }
-    }
-    return String(cell);
-  }
-
   function buildRowsUrl(sheetId, tableId, rangeA1) {
+    // /spreadsheets/{sheetId}/tables/{tableId}/values/{range}
     return [
       ROWS_API_BASE,
       "spreadsheets",
@@ -119,39 +151,49 @@
 
   function writeIndexToStorage(indexObj) {
     try {
-      sessionStorage.setItem(
-        STORAGE_KEYS.index,
-        JSON.stringify(indexObj, null, 2)
-      );
+      sessionStorage.setItem(STORAGE_KEYS.index, JSON.stringify(indexObj));
     } catch (err) {
       console.error("Failed to write session index:", err);
     }
   }
 
   function showDebugSnapshot(indexObj, selectorResult) {
-    if (!debugPre) return;
+    if (!debugPanel || !debugPre) return;
+    debugPanel.hidden = false;
+
     const snapshot = {
-      index: indexObj,
+      session_id: indexObj.session_id,
+      filter_id: indexObj.filter_id,
+      created_at: indexObj.created_at,
+      payloads: indexObj.payloads,
       selector_row: selectorResult
         ? {
             filter_id: selectorResult.filterId,
-            places_present: !!selectorResult.places,
-            collection_present: !!selectorResult.collection
+            has_places: !!selectorResult.places,
+            has_collection: !!selectorResult.collection,
+            row_preview: selectorResult.rawRow
           }
         : null
     };
+
     debugPre.textContent = JSON.stringify(snapshot, null, 2);
   }
 
-  function getActiveFilterId() {
-    const manual = (filterInput && filterInput.value.trim()) || "";
-    if (manual) return manual;
-    if (filterSelect && filterSelect.value) return filterSelect.value;
-    return null;
+  function getSelectedFilterId() {
+    const fromSelect =
+      filterIdSelect && filterIdSelect.value
+        ? String(filterIdSelect.value).trim()
+        : "";
+    const fromInput =
+      filterIdInput && filterIdInput.value
+        ? String(filterIdInput.value).trim()
+        : "";
+    const fid = fromSelect || fromInput;
+    return fid || null;
   }
 
   // ------------------------------------------------
-  // Rows selector fetch
+  // Rows fetch + troubleshooting
   // ------------------------------------------------
   async function fetchSelectorRow(filterId) {
     const url = buildRowsUrl(
@@ -159,7 +201,8 @@
       SELECTOR_TABLE_ID,
       SELECTOR_RANGE
     );
-    console.log("[CRT] selector URL:", url);
+
+    console.log("[CRT] Fetching selector row", { filterId, url });
 
     const res = await fetch(url, {
       method: "GET",
@@ -170,90 +213,105 @@
     });
 
     if (!res.ok) {
-      throw new Error(`Rows selector GET failed (${res.status}): ${url}`);
+      throw new Error(`Rows GET failed (${res.status}): ${url}`);
     }
 
     const data = await res.json();
-    console.log("[CRT] selector raw response:", data);
+    console.log("[CRT] Raw Rows response object keys:", Object.keys(data));
 
-    const items = Array.isArray(data.items) ? data.items : [];
-    console.log("[CRT] selector items length:", items.length);
+    // Support multiple possible shapes: items, values, data.rows...
+    let rows = [];
 
-    const target = String(filterId).trim();
-    let match = null;
+    if (Array.isArray(data.items)) {
+      rows = data.items;
+      console.log("[CRT] Using data.items, row count:", rows.length);
+    } else if (Array.isArray(data.values)) {
+      rows = data.values;
+      console.log("[CRT] Using data.values, row count:", rows.length);
+    } else if (data.data && Array.isArray(data.data.rows)) {
+      rows = data.data.rows.map((r) =>
+        Array.isArray(r.cells)
+          ? r.cells.map((c) => c.value)
+          : []
+      );
+      console.log("[CRT] Using data.data.rows, row count:", rows.length);
+    } else {
+      console.warn("[CRT] No known rows field (items/values/data.rows) in Rows response.");
+    }
 
-    for (const row of items) {
-      if (!Array.isArray(row) || row.length === 0) continue;
-      const rawKey = row[0];
-      const keyStr = cellToString(rawKey).trim();
-      console.log("[CRT] row key candidate:", keyStr, "raw:", rawKey);
+    if (!rows.length) {
+      console.warn("[CRT] No rows returned from selector table.");
+      return null;
+    }
 
-      if (!keyStr) continue;
+    const fid = String(filterId).trim();
+    const availableKeys = rows
+      .map((r) => (r && r.length > 0 ? r[0] : null))
+      .filter((k) => k != null)
+      .map((k) => String(k).trim());
 
-      // Allow exact match, or prefix/substring match for safeness
-      if (
-        keyStr === target ||
-        keyStr.startsWith(target) ||
-        target.startsWith(keyStr)
-      ) {
-        match = row;
+    console.log("[CRT] Available filter keys in first column:", availableKeys);
+
+    let matchedRow = null;
+    for (const row of rows) {
+      if (!row || row.length < 2) continue;
+      const key = row[0];
+      if (key == null) continue;
+      const keyStr = String(key).trim();
+      if (keyStr === fid) {
+        matchedRow = row;
         break;
       }
     }
 
-    if (!match) {
+    if (!matchedRow) {
       console.warn(
-        "[CRT] No selector row match for filter_id",
-        filterId,
-        "candidates:",
-        items.map((r) => cellToString(r && r[0]).trim())
+        "[CRT] No Rows row found for filter_id",
+        fid,
+        "Available keys:",
+        availableKeys
       );
-      return {
-        filterId,
-        places: null,
-        collection: null,
-        rawPlaces: null,
-        rawCollection: null
-      };
+      return null;
     }
 
-    const placesCell = match.length > 1 ? match[1] : null;
-    const collectionCell = match.length > 2 ? match[2] : null;
+    console.log("[CRT] Matched row for filter_id", fid, "=>", matchedRow);
 
-    const placesStr = cellToString(placesCell);
-    const collectionStr = cellToString(collectionCell);
+    const placesCell = matchedRow[1];
+    const collectionCell = matchedRow[2];
 
-    console.log("[CRT] matched row for filter", filterId, {
-      placesStrPreview: placesStr.slice(0, 120),
-      collectionStrPreview: collectionStr.slice(0, 120)
+    const placesParsed = safeJsonParse(placesCell);
+    const collectionParsed = safeJsonParse(collectionCell);
+
+    console.log("[CRT] Parsed cells:", {
+      placesType: typeof placesCell,
+      collectionType: typeof collectionCell,
+      hasPlaces: !!placesParsed,
+      hasCollection: !!collectionParsed
     });
 
-    const placesJson = safeJsonParse(placesStr);
-    const collectionJson = safeJsonParse(collectionStr);
-
     return {
-      filterId,
-      places: placesJson,
-      collection: collectionJson,
-      rawPlaces: placesStr,
-      rawCollection: collectionStr
+      filterId: fid,
+      places: placesParsed,
+      collection: collectionParsed,
+      rawRow: matchedRow
     };
   }
 
   // ------------------------------------------------
   // Core flows
   // ------------------------------------------------
-  async function startOrRestartSession() {
+  async function startNewSession() {
     if (state.isLoading) return;
 
-    const filterId = getActiveFilterId();
+    const filterId = getSelectedFilterId();
     if (!filterId) {
-      updateStatus("Select or enter a venue first.");
+      updateStatus("Set Filter ID (input or dropdown) before starting.");
+      console.warn("[CRT] No filterId provided.");
       return;
     }
 
     state.isLoading = true;
-    updateStatus(`Loading selector row for ${filterId}…`);
+    updateStatus(`Loading Rows payloads for filter_id ${filterId}…`);
 
     clearSessionStorageKeys();
 
@@ -263,12 +321,21 @@
     try {
       selectorResult = await fetchSelectorRow(filterId);
 
+      if (!selectorResult) {
+        updateStatus(`No row found for filter_id ${filterId}. See console logs.`);
+        state.sessionId = null;
+        state.filterId = null;
+        clearSessionStorageKeys();
+        return;
+      }
+
       if (selectorResult.places) {
         sessionStorage.setItem(
           STORAGE_KEYS.places,
           JSON.stringify(selectorResult.places)
         );
       }
+
       if (selectorResult.collection) {
         sessionStorage.setItem(
           STORAGE_KEYS.collection,
@@ -292,20 +359,13 @@
       writeIndexToStorage(indexObj);
       showDebugSnapshot(indexObj, selectorResult);
 
-      if (!selectorResult.places && !selectorResult.collection) {
-        updateStatus(
-          `No JSON found for filter_id ${filterId}. Check console logs for selector rows.`
-        );
-      } else {
-        updateStatus(
-          `Session ready (${sessionId}). filter_id: ${filterId} – places: ${
-            indexObj.payloads.places
-          }, collection: ${indexObj.payloads.collection}`
-        );
-      }
+      updateStatus(
+        `Session ready (${sessionId}). filter_id: ${filterId}`
+      );
+      console.log("[CRT] Session index:", indexObj);
     } catch (err) {
       console.error("Error starting session:", err);
-      updateStatus("Error loading selector row. See console for details.");
+      updateStatus("Error loading from Rows. See console for details.");
       clearSessionStorageKeys();
       state.sessionId = null;
       state.filterId = null;
@@ -314,40 +374,128 @@
     }
   }
 
+  function restartSession() {
+    console.log("[CRT] Restart requested.");
+    startNewSession();
+  }
+
+  function endSession() {
+    console.log("[CRT] End session requested.");
+    clearSessionStorageKeys();
+    state.sessionId = null;
+    state.filterId = null;
+    updateStatus("Session cleared.");
+    if (debugPanel && debugPre) {
+      debugPanel.hidden = false;
+      debugPre.textContent = JSON.stringify(
+        {
+          session_id: null,
+          filter_id: null,
+          payloads: { places: false, collection: false }
+        },
+        null,
+        2
+      );
+    }
+  }
+
+  function sendSession() {
+    try {
+      const index = safeJsonParse(
+        sessionStorage.getItem(STORAGE_KEYS.index) || "null"
+      );
+      const places = safeJsonParse(
+        sessionStorage.getItem(STORAGE_KEYS.places) || "null"
+      );
+      const collection = safeJsonParse(
+        sessionStorage.getItem(STORAGE_KEYS.collection) || "null"
+      );
+
+      console.log("[CRT] SEND SESSION STUB", {
+        index,
+        places,
+        collection
+      });
+
+      updateStatus("Send stub executed. See console for payload.");
+    } catch (err) {
+      console.error("Error in sendSession stub:", err);
+      updateStatus("Error while preparing send stub. See console.");
+    }
+  }
+
   // ------------------------------------------------
-  // Event wiring
+  // UI wiring
   // ------------------------------------------------
+  function populateVenueSelect() {
+    if (!filterIdSelect) return;
+
+    // Only populate once
+    if (filterIdSelect.dataset.crtPopulated === "1") return;
+
+    filterIdSelect.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select a venue…";
+    filterIdSelect.appendChild(placeholder);
+
+    VENUES.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = `${v.label} (${v.id})`;
+      filterIdSelect.appendChild(opt);
+    });
+
+    filterIdSelect.dataset.crtPopulated = "1";
+  }
+
   function bindEvents() {
     if (btnStart) {
       btnStart.addEventListener("click", () => {
-        startOrRestartSession();
+        console.log("[CRT] Start clicked.");
+        startNewSession();
       });
+    } else {
+      console.warn("Start button not found (session-start-btn / btn-start-session).");
     }
 
     if (btnRestart) {
       btnRestart.addEventListener("click", () => {
-        startOrRestartSession();
+        console.log("[CRT] Restart clicked.");
+        restartSession();
+      });
+    }
+
+    if (btnEnd) {
+      btnEnd.addEventListener("click", () => {
+        endSession();
       });
     }
 
     if (btnSend) {
       btnSend.addEventListener("click", () => {
-        console.log(
-          "[CRT] Send session clicked. Implement webhook/runner POST here."
-        );
-        updateStatus("Send session: not wired yet (stub).");
+        sendSession();
+      });
+    }
+
+    if (filterIdSelect && filterIdInput) {
+      filterIdSelect.addEventListener("change", () => {
+        if (filterIdSelect.value) {
+          filterIdInput.value = filterIdSelect.value;
+        }
       });
     }
   }
 
   function init() {
-    if (!ROWS_API_KEY) {
+    if (!ROWS_API_KEY || ROWS_API_KEY === "REPLACE_WITH_ROWS_API_KEY") {
       console.warn(
         "[CRT] ROWS_API_KEY is not set. Set window.CRT_ROWS_API_KEY or edit app.js."
       );
     }
+    populateVenueSelect();
     bindEvents();
-    updateStatus("Ready. Pick a venue and start a session.");
+    updateStatus("Ready. Choose a venue / filter ID, then Start session.");
   }
 
   if (document.readyState === "loading") {
