@@ -1,19 +1,18 @@
 // app.js
-// CRT Session Tool – selector-data via Rows + sessionStorage
-// ----------------------------------------------------------
-// - User picks a venue (filter-id) from dropdown.
-// - We GET selector-data from Rows (filter-key, places-json, collection-json).
-// - We match on filter-key == filter-id (string compare).
-// - We cache places/collection payloads + a small index into sessionStorage.
-// - Restart clears everything. Send just dumps a preview into the debug log.
+// CRT Session Tool – selector-data → sessionStorage
+// Single Rows table:
+//   A: filter-key
+//   B: places-json
+//   C: collection-json
 
 (() => {
-  // ------------------------------------------------
+  // -----------------------------
   // Config
-  // ------------------------------------------------
+  // -----------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
+
   const ROWS_API_KEY =
-    window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
+        window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
 
   // selector-data table: filter-key | places-json | collection-json | ...
   const SELECTOR_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
@@ -22,28 +21,29 @@
 
   const STORAGE_KEYS = {
     index: "crt_session_index",
-    places: "crt_session_places_payload",
-    collection: "crt_session_collection_payload"
+    places: "crt_session_places",
+    collection: "crt_session_collection"
   };
 
-  const VENUES = [
+  // Hard-coded venue list for the dropdown
+  const VENUE_OPTIONS = [
     { id: "6565", label: "Fox Lea" },
     { id: "177", label: "Devon" },
     { id: "276", label: "Hampton Classic" },
     { id: "497", label: "PA National Horse Show" },
     { id: "4993509", label: "WEF" },
     { id: "5388360", label: "WEC" },
-    { id: "5692036", label: "WEC" },
+    { id: "5692036", label: "WEC (5692036)" },
     { id: "5126822", label: "Old Salem" },
     { id: "5368663", label: "Traverse City" },
     { id: "5659122", label: "Terranova" },
     { id: "5278924", label: "Tryon" },
     { id: "4597285", label: "Kentucky Horse Park" },
-    { id: "3501105", label: "Prince Gerorge Eq Cntr" },
+    { id: "3501105", label: "Prince George Eq Cntr" },
     { id: "541", label: "Colorado Horse Park" },
     { id: "263", label: "Great Southwest Eq Cntr" },
     { id: "5445344", label: "Virginia Horse Center" },
-    { id: "997", label: "Galway Downs Equestrian Park" },
+    { id: "997", label: "Galway Downs" },
     { id: "5606921", label: "Desert" },
     { id: "999", label: "South Point" },
     { id: "4880209-ocala", label: "HITS Ocala" },
@@ -53,35 +53,46 @@
     { id: "4880209-delmar", label: "HITS Del Mar" },
     { id: "4880209-culpeper", label: "HITS Culpeper" },
     { id: "240211", label: "Capital Challenge" },
-    { id: "692", label: "Washington Intern Horse Show" },
+    { id: "692", label: "Washington International" },
     { id: "431", label: "National Horse Show" },
     { id: "597", label: "SFHJA" },
-    { id: "4880209", label: "HITS" },
+    { id: "4880209", label: "HITS (generic)" },
     { id: "4624769", label: "USHJA" },
     { id: "5319183", label: "Split Rock" }
   ];
 
-  // ------------------------------------------------
-  // DOM
-  // ------------------------------------------------
-  const venueSelect = document.getElementById("venue-select");
-  const btnStart = document.getElementById("session-start-btn");
-  const btnRestart = document.getElementById("session-restart-btn");
-  const btnSend = document.getElementById("session-send-btn");
-  const statusEl = document.getElementById("session-status");
-  const logEl = document.getElementById("session-log");
+  // -----------------------------
+  // State + DOM refs
+  // -----------------------------
+  const state = {
+    isLoading: false,
+    sessionId: null,
+    filterId: null
+  };
 
-  // ------------------------------------------------
+  let venueSelectEl;
+  let btnStartEl;
+  let btnRestartEl;
+  let btnSendEl;
+  let statusEl;
+  let logEl;
+
+  // -----------------------------
   // Helpers
-  // ------------------------------------------------
-  function appendLog(message) {
+  // -----------------------------
+  function appendLog(line) {
     if (!logEl) return;
     const ts = new Date().toISOString();
-    logEl.textContent = `[${ts}] ${message}\n` + logEl.textContent;
+    logEl.textContent += `[${ts}] ${line}\n`;
   }
 
-  function updateStatus(message) {
-    if (statusEl) statusEl.textContent = message;
+  function logConsole(...args) {
+    console.log("[CRT]", ...args);
+  }
+
+  function updateStatus(msg) {
+    if (statusEl) statusEl.textContent = msg;
+    appendLog(msg);
   }
 
   function generateSessionId() {
@@ -93,25 +104,42 @@
     );
   }
 
-  function clearStorage() {
+  function clearSessionStorageKeys() {
     Object.values(STORAGE_KEYS).forEach((key) => {
       try {
         sessionStorage.removeItem(key);
       } catch (err) {
-        console.warn("Failed removing sessionStorage key:", key, err);
+        logConsole("Failed to remove key", key, err);
       }
     });
   }
 
-  function safeJsonParse(text) {
-    if (text == null) return null;
+  function safeJsonParse(value) {
+    if (value == null) return null;
+    if (typeof value === "object") return value;
+    if (typeof value !== "string") return null;
     try {
-      return JSON.parse(String(text));
+      return JSON.parse(value);
     } catch (err) {
-      console.error("JSON parse error:", err);
-      appendLog(`JSON parse error: ${err.message}`);
+      logConsole("JSON parse error:", err, value);
+      appendLog("JSON parse error; see console.");
       return null;
     }
+  }
+
+  // Try to pull a primitive from a Rows cell (handles objects / data cells)
+  function getCellPrimitive(cell) {
+    if (cell == null) return null;
+    if (typeof cell === "object") {
+      if ("value" in cell) return getCellPrimitive(cell.value);
+      if ("values" in cell) return getCellPrimitive(cell.values);
+      if ("stringValue" in cell) return cell.stringValue;
+      if ("numberValue" in cell) return cell.numberValue;
+      if ("boolValue" in cell) return cell.boolValue;
+      // Fallback: stringify
+      return JSON.stringify(cell);
+    }
+    return cell;
   }
 
   function buildRowsUrl(sheetId, tableId, rangeA1) {
@@ -126,13 +154,14 @@
     ].join("/");
   }
 
-  async function fetchSelectorRow(filterId) {
+  async function fetchSelectorRowForFilter(filterId) {
     const url = buildRowsUrl(
       SELECTOR_SHEET_ID,
       SELECTOR_TABLE_ID,
       SELECTOR_RANGE
     );
-    appendLog(`Rows URL: ${url}`);
+    logConsole("Fetching selector-data from", url);
+    appendLog(`GET selector-data for filter_id=${filterId}`);
 
     const res = await fetch(url, {
       method: "GET",
@@ -142,195 +171,188 @@
       }
     });
 
-    appendLog(`Rows HTTP status: ${res.status}`);
-
     if (!res.ok) {
-      throw new Error(`Rows GET failed (${res.status})`);
+      const msg = `Rows GET failed (${res.status})`;
+      appendLog(msg);
+      throw new Error(msg);
     }
 
     const data = await res.json();
-    const items = Array.isArray(data.items) ? data.items : [];
+    const rows =
+      (Array.isArray(data.items) && data.items) ||
+      (Array.isArray(data.values) && data.values) ||
+      [];
 
-    appendLog(
-      `Rows payload: items type=${Object.prototype.toString.call(
-        items
-      )}, length=${items.length}`
-    );
+    logConsole("Raw selector-data rows:", rows);
+    appendLog(`selector-data rows length=${rows.length}`);
 
-    items.slice(0, 5).forEach((r, idx) => {
-      const col0 = r && r[0];
-      appendLog(
-        `row[${idx}] raw=${JSON.stringify(
-          r
-        )}, col0=${JSON.stringify(col0)}, typeof col0=${typeof col0}`
-      );
-    });
+    const filterIdStr = String(filterId);
+    let match = null;
 
-    const row = items.find(
-      (r) => Array.isArray(r) && String(r[0]) === String(filterId)
-    );
+    for (const row of rows) {
+      const rawKey = row[0];
+      const keyVal = getCellPrimitive(rawKey);
+      logConsole("Row[0] raw:", rawKey, "primitive:", keyVal);
+      appendLog(`check key=${String(keyVal)} vs ${filterIdStr}`);
+      if (keyVal != null && String(keyVal) === filterIdStr) {
+        match = row;
+        break;
+      }
+    }
 
-    if (!row) {
-      appendLog(`No row found for filter_id=${filterId}.`);
+    if (!match) {
+      appendLog(`No row found for filter_id=${filterIdStr}.`);
       return null;
     }
 
-    appendLog(`Matched row for filter_id=${filterId}: ${JSON.stringify(row)}`);
+    appendLog(`Matched row for filter_id=${filterIdStr}.`);
 
-    const placesCell = row[1];
-    const collectionCell = row[2];
+    const placesCell = match[1];
+    const collectionCell = match[2];
 
-    appendLog(
-      `places cell typeof=${typeof placesCell}, preview=${JSON.stringify(
-        placesCell
-      ).slice(0, 120)}`
-    );
-    appendLog(
-      `collection cell typeof=${typeof collectionCell}, preview=${JSON.stringify(
-        collectionCell
-      ).slice(0, 120)}`
-    );
+    const placesPrimitive = getCellPrimitive(placesCell);
+    const collectionPrimitive = getCellPrimitive(collectionCell);
 
-    const placesStr =
-      placesCell != null && typeof placesCell !== "string"
-        ? JSON.stringify(placesCell)
-        : placesCell || "";
-    const collectionStr =
-      collectionCell != null && typeof collectionCell !== "string"
-        ? JSON.stringify(collectionCell)
-        : collectionCell || "";
+    logConsole("places cell primitive:", placesPrimitive);
+    logConsole("collection cell primitive:", collectionPrimitive);
 
-    const places = placesStr ? safeJsonParse(placesStr) : null;
-    const collection = collectionStr ? safeJsonParse(collectionStr) : null;
+    const placesJson = safeJsonParse(placesPrimitive);
+    const collectionJson = safeJsonParse(collectionPrimitive);
 
     return {
-      filterId: String(filterId),
-      placesStr,
-      collectionStr,
-      places,
-      collection
+      filterId: filterIdStr,
+      places: placesJson,
+      collection: collectionJson
     };
   }
 
-  function populateVenueOptions() {
-    if (!venueSelect) return;
-
-    // Keep first option (placeholder), clear the rest.
-    while (venueSelect.options.length > 1) {
-      venueSelect.remove(1);
-    }
-
-    VENUES.forEach((v) => {
-      const opt = document.createElement("option");
-      opt.value = v.id;
-      opt.textContent = `${v.label} (${v.id})`;
-      venueSelect.appendChild(opt);
-    });
-  }
-
-  // ------------------------------------------------
+  // -----------------------------
   // Core flows
-  // ------------------------------------------------
-  async function handleStart() {
-    if (!venueSelect) {
-      appendLog("venue-select not found in DOM.");
+  // -----------------------------
+  async function startSession() {
+    if (state.isLoading) return;
+
+    const selectedId = venueSelectEl ? venueSelectEl.value : "";
+    if (!selectedId) {
+      updateStatus("Select a venue before starting.");
       return;
     }
 
-    const filterId = venueSelect.value.trim();
-    if (!filterId) {
-      updateStatus("Select a venue first.");
-      appendLog("Start blocked: no venue selected.");
-      return;
-    }
+    state.isLoading = true;
+    updateStatus(`Starting session for filter_id=${selectedId}…`);
 
-    clearStorage();
-    updateStatus("Loading from Rows…");
-    appendLog(`Fetching selector-data for filter_id=${filterId}…`);
+    clearSessionStorageKeys();
+
+    const sessionId = generateSessionId();
+    state.sessionId = sessionId;
+    state.filterId = selectedId;
 
     try {
-      const row = await fetchSelectorRow(filterId);
-      if (!row) {
-        updateStatus(`No Rows row found for filter_id ${filterId}.`);
-        return;
-      }
+      const selectorRow = await fetchSelectorRowForFilter(selectedId);
 
-      const sessionId = generateSessionId();
       const indexObj = {
         session_id: sessionId,
-        filter_id: row.filterId,
+        filter_id: selectedId,
+        venue_name: venueSelectEl
+          ? venueSelectEl.options[venueSelectEl.selectedIndex].text
+          : null,
         created_at: new Date().toISOString(),
         payloads: {
-          places: !!row.places,
-          collection: !!row.collection
+          places: !!(selectorRow && selectorRow.places),
+          collection: !!(selectorRow && selectorRow.collection)
         }
       };
 
-      try {
-        sessionStorage.setItem(STORAGE_KEYS.index, JSON.stringify(indexObj));
-        if (row.places) {
-          sessionStorage.setItem(
-            STORAGE_KEYS.places,
-            JSON.stringify(row.places)
-          );
-        }
-        if (row.collection) {
-          sessionStorage.setItem(
-            STORAGE_KEYS.collection,
-            JSON.stringify(row.collection)
-          );
-        }
-      } catch (err) {
-        console.error("sessionStorage write error:", err);
-        appendLog(`sessionStorage write error: ${err.message}`);
+      if (selectorRow && selectorRow.places) {
+        sessionStorage.setItem(
+          STORAGE_KEYS.places,
+          JSON.stringify(selectorRow.places)
+        );
       }
+      if (selectorRow && selectorRow.collection) {
+        sessionStorage.setItem(
+          STORAGE_KEYS.collection,
+          JSON.stringify(selectorRow.collection)
+        );
+      }
+      sessionStorage.setItem(STORAGE_KEYS.index, JSON.stringify(indexObj));
 
+      logConsole("Session index:", indexObj);
       appendLog(
-        `Session ${sessionId} loaded: filter_id=${row.filterId}, places=${!!row.places}, collection=${!!row.collection}.`
+        `Session ready. places=${indexObj.payloads.places}, collection=${indexObj.payloads.collection}`
       );
-      updateStatus(`Session ready for filter_id ${row.filterId}.`);
+      updateStatus(
+        `Session ready for ${indexObj.venue_name || selectedId}.`
+      );
     } catch (err) {
-      console.error(err);
-      appendLog(`Error loading Rows: ${err.message}`);
-      updateStatus("Error loading Rows data.");
-      clearStorage();
+      logConsole("Error in startSession:", err);
+      updateStatus("Error loading selector-data. See console.");
+      clearSessionStorageKeys();
+      state.sessionId = null;
+      state.filterId = null;
+    } finally {
+      state.isLoading = false;
     }
   }
 
-  function handleRestart() {
-    clearStorage();
-    updateStatus("Session cleared.");
-    appendLog("Session cleared via Restart button.");
+  function restartSession() {
+    appendLog("Restart requested.");
+    startSession();
   }
 
-  function handleSend() {
-    const indexRaw = sessionStorage.getItem(STORAGE_KEYS.index);
-    const placesRaw = sessionStorage.getItem(STORAGE_KEYS.places);
-    const collectionRaw = sessionStorage.getItem(STORAGE_KEYS.collection);
-
-    const payload = {
-      index: indexRaw ? safeJsonParse(indexRaw) : null,
-      places: placesRaw ? safeJsonParse(placesRaw) : null,
-      collection: collectionRaw ? safeJsonParse(collectionRaw) : null
-    };
-
-    appendLog("Send session (preview only):");
-    appendLog(JSON.stringify(payload, null, 2));
+  function sendSession() {
+    appendLog("Send session clicked (no-op stub for now).");
+    // Placeholder: here you would gather index + payloads and POST them
+    // to your webhook/server when you're ready.
   }
 
-  // ------------------------------------------------
-  // Init
-  // ------------------------------------------------
+  // -----------------------------
+  // DOM + init
+  // -----------------------------
+  function initDomRefs() {
+    venueSelectEl = document.getElementById("venue-select");
+    btnStartEl = document.getElementById("session-start-btn");
+    btnRestartEl = document.getElementById("session-restart-btn");
+    btnSendEl = document.getElementById("session-send-btn");
+    statusEl = document.getElementById("session-status");
+    logEl = document.getElementById("session-log");
+  }
+
+  function populateVenueSelect() {
+    if (!venueSelectEl) return;
+    venueSelectEl.innerHTML = "";
+
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "Select a venue…";
+    venueSelectEl.appendChild(defaultOpt);
+
+    VENUE_OPTIONS.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = `${v.label} (${v.id})`;
+      venueSelectEl.appendChild(opt);
+    });
+  }
+
   function bindEvents() {
-    if (btnStart) btnStart.addEventListener("click", handleStart);
-    if (btnRestart) btnRestart.addEventListener("click", handleRestart);
-    if (btnSend) btnSend.addEventListener("click", handleSend);
+    if (btnStartEl) {
+      btnStartEl.addEventListener("click", startSession);
+    }
+    if (btnRestartEl) {
+      btnRestartEl.addEventListener("click", restartSession);
+    }
+    if (btnSendEl) {
+      btnSendEl.addEventListener("click", sendSession);
+    }
   }
 
   function init() {
-    populateVenueOptions();
+    initDomRefs();
+    populateVenueSelect();
     bindEvents();
     appendLog("CRT Session Tool initialized.");
+    updateStatus("Ready. Select a venue and start session.");
   }
 
   if (document.readyState === "loading") {
@@ -339,3 +361,4 @@
     init();
   }
 })();
+
