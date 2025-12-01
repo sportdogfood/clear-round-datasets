@@ -1,14 +1,27 @@
 // app.js
 // CRT Session Tool – Rows integration + sessionStorage cache
 // ----------------------------------------------------------
-// This script:
-// - Starts a new session on "Start session" click
-// - Fetches two Rows payloads (competitions + destinations)
-// - Stores them in sessionStorage
-// - Maintains a lightweight session "index" for overwrite/clear logic
-// - Clears everything on "End session"
-// 
-// Replace the CONFIG constants (API key + table IDs) with your real values.
+// - User selects a venue by name (hardcoded map -> filter_id).
+// - Start session:
+//     * Fetches one Rows table (filter-key, places-json, collection-json).
+//     * Finds the row where filter-key === selected filter_id.
+//     * Parses places-json + collection-json and stores them in sessionStorage.
+//     * Writes a small index object to sessionStorage for overwrite/clear logic.
+// - Restart session:
+//     * Clears sessionStorage keys and log, keeps current venue selection.
+// - Send session:
+//     * Builds a lightweight outbound payload preview and writes it to the debug log
+//       (no POST yet).
+//
+// Requirements:
+//   - index.html must include:
+//       * #session-start-btn
+//       * #session-restart-btn
+//       * #session-send-btn
+//       * #session-status
+//       * #debug-panel
+//       * #session-log
+//   - A global ROWS API key can be provided as window.CRT_ROWS_API_KEY.
 
 (() => {
   // ------------------------------------------------
@@ -16,46 +29,82 @@
   // ------------------------------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
 
-  // IMPORTANT: put your real Rows API key here (or inject via <script> before this file)
-  const ROWS_API_KEY = window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
+  // Prefer a global key if injected; fall back to literal.
+  const ROWS_API_KEY =
+    window.CRT_ROWS_API_KEY || "REPLACE_WITH_ROWS_API_KEY";
 
-  // GET: competition payload rows
-  // Shape: { items: [ [creation_id, payload_json_string], ... ] }
-  const COMPETITIONS_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
-  const COMPETITIONS_TABLE_ID = "18be0a0d-dbea-43ea-811f-f7bcbf4982d3"; // from openapi-rows
-  const COMPETITIONS_RANGE = "A2:B999";
+  // Single table with:
+  //   A: filter-key (filter_id)
+  //   B: places-json
+  //   C: collection-json
+  const SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
+  const TABLE_ID = "a34b24a6-386b-457d-a9d4-beb2c7c13543";
+  const RANGE_A1 = "A2:C999";
 
-  // GET: destinations/hub payload rows (stay/dine/essentials)
-  // You must replace DESTINATIONS_TABLE_ID and DESTINATIONS_RANGE with your real values.
-  const DESTINATIONS_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
-  const DESTINATIONS_TABLE_ID = "52d0a628-4e75-4b93-8acd-121a5e860e2e";
-  const DESTINATIONS_RANGE = "A2:B999";
+  // Hardcoded venue choices for the dropdown
+  const VENUES = [
+    { id: "6565", name: "Fox Lea" },
+    { id: "177", name: "Devon" },
+    { id: "276", name: "Hampton Classic" },
+    { id: "497", name: "PA National Horse Show" },
+    { id: "4993509", name: "WEF" },
+    { id: "5388360", name: "WEC" },
+    { id: "5692036", name: "WEC" },
+    { id: "5126822", name: "Old Salem" },
+    { id: "5368663", name: "Traverse City" },
+    { id: "5659122", name: "Terranova" },
+    { id: "5278924", name: "Tryon" },
+    { id: "4597285", name: "Kentucky Horse Park" },
+    { id: "3501105", name: "Prince Gerorge Eq Cntr" },
+    { id: "541", name: "Colorado Horse Park" },
+    { id: "263", name: "Great Southwest Eq Cntr" },
+    { id: "5445344", name: "Virginia Horse Center" },
+    { id: "997", name: "Galway Downs Equestrian Park" },
+    { id: "5606921", name: "Desert" },
+    { id: "999", name: "South Point" },
+    { id: "4880209-ocala", name: "HITS Ocala" },
+    { id: "4880209-saugerties", name: "HITS Saugerties" },
+    { id: "4880209-wayn", name: "HITS Lamplight" },
+    { id: "4880209-eastdorset", name: "HITS Vermont" },
+    { id: "4880209-delmar", name: "HITS Del Mar" },
+    { id: "4880209-culpeper", name: "HITS Culpeper" },
+    { id: "240211", name: "Capital Challenge" },
+    { id: "692", name: "Washington Intern Horse Show" },
+    { id: "431", name: "National Horse Show" },
+    { id: "597", name: "SFHJA" },
+    { id: "4880209", name: "HITS" },
+    { id: "4624769", name: "USHJA" },
+    { id: "5319183", name: "Split Rock" }
+  ];
 
   // sessionStorage keys we own
   const STORAGE_KEYS = {
     index: "crt_session_index",
-    competitions: "crt_session_competitions",
-    destinations: "crt_session_destinations"
+    places: "crt_session_places",
+    collection: "crt_session_collection"
   };
 
-  // Minimal in-memory state (for guarding double-clicks, etc.)
+  // Minimal in-memory state
   const state = {
     isLoading: false,
     sessionId: null,
-    creationId: null
+    filterId: null,
+    venueName: null
   };
 
   // ------------------------------------------------
-  // DOM refs (adjust IDs here if your markup differs)
+  // DOM refs
   // ------------------------------------------------
-  const btnStart = document.getElementById("btn-start-session");
-  const btnEnd = document.getElementById("btn-end-session");
+  const btnStart = document.getElementById("session-start-btn");
+  const btnRestart = document.getElementById("session-restart-btn");
+  const btnSend = document.getElementById("session-send-btn");
   const statusEl = document.getElementById("session-status");
+  const debugPanel = document.getElementById("debug-panel");
+  const sessionLog = document.getElementById("session-log");
+  const sessionControls = document.getElementById("session-controls");
 
-  const debugPanel =
-    document.getElementById("debug-panel") || null;
-  const debugPayload =
-    document.getElementById("debug-payload") || null;
+  // We’ll inject a <select> for venue choice into #session-controls.
+  let venueSelect = null;
 
   // ------------------------------------------------
   // Helpers
@@ -88,6 +137,7 @@
   }
 
   function safeJsonParse(text) {
+    if (typeof text !== "string") return null;
     try {
       return JSON.parse(text);
     } catch (err) {
@@ -96,7 +146,58 @@
     }
   }
 
-  async function fetchRowsPayload(url) {
+  function buildRowsUrl(sheetId, tableId, rangeA1) {
+    return [
+      ROWS_API_BASE,
+      "spreadsheets",
+      encodeURIComponent(sheetId),
+      "tables",
+      encodeURIComponent(tableId),
+      "values",
+      encodeURIComponent(rangeA1)
+    ].join("/");
+  }
+
+  function writeIndexToStorage(indexObj) {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEYS.index,
+        JSON.stringify(indexObj)
+      );
+    } catch (err) {
+      console.error("Failed to write session index:", err);
+    }
+  }
+
+  function logSnapshot(obj) {
+    if (!debugPanel || !sessionLog) return;
+    debugPanel.hidden = false;
+    sessionLog.textContent = JSON.stringify(obj, null, 2);
+  }
+
+  function appendLogLine(line) {
+    if (!sessionLog) return;
+    const now = new Date().toISOString();
+    const prefix = `[${now}] `;
+    sessionLog.textContent =
+      prefix + line + "\n" + (sessionLog.textContent || "");
+  }
+
+  function getSelectedVenue() {
+    if (!venueSelect) return null;
+    const id = venueSelect.value;
+    if (!id) return null;
+    const found = VENUES.find((v) => v.id === id);
+    if (!found) return null;
+    return found;
+  }
+
+  // ------------------------------------------------
+  // Rows fetch
+  // ------------------------------------------------
+  async function fetchRowByFilterId(filterId) {
+    const url = buildRowsUrl(SHEET_ID, TABLE_ID, RANGE_A1);
+
     const res = await fetch(url, {
       method: "GET",
       headers: {
@@ -112,163 +213,242 @@
     const data = await res.json();
     const items = Array.isArray(data.items) ? data.items : [];
 
-    if (!items.length || !Array.isArray(items[0]) || items[0].length < 2) {
-      // Nothing usable; return null rather than throwing
+    // Find row with A == filterId
+    const match = items.find(
+      (row) => Array.isArray(row) && String(row[0]) === String(filterId)
+    );
+
+    if (!match) {
       return null;
     }
 
-    const [creationId, payloadString] = items[0];
+    const placesString = match[1] || null;
+    const collectionString = match[2] || null;
 
-    if (typeof payloadString !== "string") {
-      throw new Error("Rows payload_json cell is not a string");
-    }
-
-    const parsed = safeJsonParse(payloadString);
-    if (!parsed) {
-      throw new Error("Rows payload_json could not be parsed as JSON");
-    }
+    const places = placesString ? safeJsonParse(placesString) : null;
+    const collection = collectionString ? safeJsonParse(collectionString) : null;
 
     return {
-      creationId: creationId || parsed.creation_id || null,
-      payload: parsed,
-      raw: payloadString
+      filterId: String(filterId),
+      places,
+      collection,
+      rawPlaces: placesString,
+      rawCollection: collectionString
     };
-  }
-
-  function buildRowsUrl(sheetId, tableId, rangeA1) {
-    // /spreadsheets/{sheetId}/tables/{tableId}/values/{range} 
-    return [
-      ROWS_API_BASE,
-      "spreadsheets",
-      encodeURIComponent(sheetId),
-      "tables",
-      encodeURIComponent(tableId),
-      "values",
-      encodeURIComponent(rangeA1)
-    ].join("/");
-  }
-
-  function writeIndexToStorage(indexObj) {
-    try {
-      sessionStorage.setItem(STORAGE_KEYS.index, JSON.stringify(indexObj));
-    } catch (err) {
-      console.error("Failed to write session index:", err);
-    }
-  }
-
-  function showDebugSnapshot(indexObj, comp, dest) {
-    if (!debugPanel || !debugPayload) return;
-    debugPanel.hidden = false;
-
-    const snapshot = {
-      index: indexObj,
-      competitions: comp ? { creation_id: comp.creationId } : null,
-      destinations: dest ? { creation_id: dest.creationId } : null
-    };
-
-    debugPayload.textContent = JSON.stringify(snapshot, null, 2);
   }
 
   // ------------------------------------------------
   // Core flows
   // ------------------------------------------------
-  async function startNewSession() {
-    if (state.isLoading) {
-      return; // guard against rapid double-clicks
+  async function startSession() {
+    if (state.isLoading) return;
+
+    const venue = getSelectedVenue();
+    if (!venue) {
+      updateStatus("Select a venue first.");
+      return;
+    }
+
+    if (!ROWS_API_KEY || ROWS_API_KEY === "REPLACE_WITH_ROWS_API_KEY") {
+      updateStatus("ROWS_API_KEY is not set.");
+      console.warn("[CRT] ROWS_API_KEY missing.");
+      return;
     }
 
     state.isLoading = true;
-    updateStatus("Loading payloads from Rows…");
+    updateStatus(`Loading Rows payloads for ${venue.name} (${venue.id})…`);
 
-    // Always treat this as a fresh session:
+    // Fresh data every time start is clicked
     clearSessionStorageKeys();
 
     const sessionId = generateSessionId();
-    let competitionsResult = null;
-    let destinationsResult = null;
+    const filterId = venue.id;
+    const venueName = venue.name;
 
     try {
-      const competitionsUrl = buildRowsUrl(
-        COMPETITIONS_SHEET_ID,
-        COMPETITIONS_TABLE_ID,
-        COMPETITIONS_RANGE
-      );
-      const destinationsUrl = buildRowsUrl(
-        DESTINATIONS_SHEET_ID,
-        DESTINATIONS_TABLE_ID,
-        DESTINATIONS_RANGE
-      );
+      const rowResult = await fetchRowByFilterId(filterId);
 
-      // Fetch both in parallel
-      const [compRes, destRes] = await Promise.all([
-        fetchRowsPayload(competitionsUrl),
-        fetchRowsPayload(destinationsUrl)
-      ]);
+      if (!rowResult) {
+        updateStatus(
+          `No Rows row found for filter_id ${filterId}.`
+        );
+        appendLogLine(
+          `No row found for filter_id=${filterId}.`
+        );
+        state.sessionId = null;
+        state.filterId = null;
+        state.venueName = null;
+        return;
+      }
 
-      competitionsResult = compRes;
-      destinationsResult = destRes;
-
-      // Write payloads into sessionStorage (if present)
-      if (compRes && compRes.payload) {
+      // Write parsed payloads into sessionStorage
+      if (rowResult.places) {
         sessionStorage.setItem(
-          STORAGE_KEYS.competitions,
-          JSON.stringify(compRes.payload)
+          STORAGE_KEYS.places,
+          JSON.stringify(rowResult.places)
         );
       }
 
-      if (destRes && destRes.payload) {
+      if (rowResult.collection) {
         sessionStorage.setItem(
-          STORAGE_KEYS.destinations,
-          JSON.stringify(destRes.payload)
+          STORAGE_KEYS.collection,
+          JSON.stringify(rowResult.collection)
         );
       }
-
-      const creationId =
-        (compRes && compRes.creationId) ||
-        (destRes && destRes.creationId) ||
-        null;
 
       const indexObj = {
         session_id: sessionId,
-        creation_id: creationId,
+        filter_id: filterId,
+        venue_name: venueName,
         created_at: new Date().toISOString(),
         payloads: {
-          competitions: !!(compRes && compRes.payload),
-          destinations: !!(destRes && destRes.payload)
+          places: !!rowResult.places,
+          collection: !!rowResult.collection
         }
       };
 
       state.sessionId = sessionId;
-      state.creationId = creationId;
+      state.filterId = filterId;
+      state.venueName = venueName;
 
       writeIndexToStorage(indexObj);
-      showDebugSnapshot(indexObj, compRes, destRes);
+
+      logSnapshot({
+        index: indexObj,
+        meta: {
+          places_keys: rowResult.places
+            ? Object.keys(rowResult.places)
+            : null,
+          collection_keys: rowResult.collection
+            ? Object.keys(rowResult.collection)
+            : null
+        }
+      });
 
       updateStatus(
-        `Session ready (${sessionId}).` +
-          (creationId ? ` creation_id: ${creationId}` : "")
+        `Session ready (${sessionId}) for ${venueName} (${filterId}).`
+      );
+      appendLogLine(
+        `Loaded session_id=${sessionId}, filter_id=${filterId}, venue=${venueName}.`
       );
     } catch (err) {
       console.error("Error starting session:", err);
-      updateStatus("Error loading payloads from Rows. See console for details.");
-      // In case of failure, make sure we don't leave half-written keys
+      updateStatus("Error loading Rows payloads. See console for details.");
       clearSessionStorageKeys();
       state.sessionId = null;
-      state.creationId = null;
+      state.filterId = null;
+      state.venueName = null;
     } finally {
       state.isLoading = false;
     }
   }
 
-  function endSession() {
+  function restartSession() {
     clearSessionStorageKeys();
+    const venue = getSelectedVenue();
     state.sessionId = null;
-    state.creationId = null;
-    updateStatus("Session cleared.");
-    if (debugPanel && debugPayload) {
-      debugPanel.hidden = true;
-      debugPayload.textContent = "";
+    // Keep filter selection; just clear data.
+    updateStatus(
+      venue
+        ? `Session cleared for ${venue.name}. Click Start session to reload payloads.`
+        : "Session cleared. Select a venue and click Start session."
+    );
+    if (debugPanel && sessionLog) {
+      debugPanel.hidden = false;
+      sessionLog.textContent = "";
     }
+    appendLogLine("Session storage cleared.");
+  }
+
+  function sendSession() {
+    if (!state.sessionId || !state.filterId || !state.venueName) {
+      updateStatus("No active session to send.");
+      appendLogLine("Send skipped: no active session.");
+      return;
+    }
+
+    let indexJson = null;
+    let placesJson = null;
+    let collectionJson = null;
+
+    try {
+      const idx = sessionStorage.getItem(STORAGE_KEYS.index);
+      indexJson = idx ? JSON.parse(idx) : null;
+    } catch (err) {
+      console.warn("Failed to parse index from storage:", err);
+    }
+
+    try {
+      const p = sessionStorage.getItem(STORAGE_KEYS.places);
+      placesJson = p ? JSON.parse(p) : null;
+    } catch (err) {
+      console.warn("Failed to parse places from storage:", err);
+    }
+
+    try {
+      const c = sessionStorage.getItem(STORAGE_KEYS.collection);
+      collectionJson = c ? JSON.parse(c) : null;
+    } catch (err) {
+      console.warn("Failed to parse collection from storage:", err);
+    }
+
+    const outbound = {
+      session_id: state.sessionId,
+      filter_id: state.filterId,
+      venue_name: state.venueName,
+      prepared_at: new Date().toISOString(),
+      index: indexJson,
+      // Only include very light meta for now; full objects live in sessionStorage.
+      meta: {
+        has_places: !!placesJson,
+        has_collection: !!collectionJson
+      }
+    };
+
+    logSnapshot(outbound);
+    updateStatus("Session payload prepared (preview only, no POST wired yet).");
+    appendLogLine("Session payload preview generated.");
+  }
+
+  // ------------------------------------------------
+  // UI: venue dropdown
+  // ------------------------------------------------
+  function ensureVenueSelect() {
+    if (venueSelect || !sessionControls) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.id = "venue-select-wrapper";
+
+    const label = document.createElement("label");
+    label.setAttribute("for", "venue-select");
+    label.textContent = "Venue";
+
+    const select = document.createElement("select");
+    select.id = "venue-select";
+
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "Select a venue…";
+    select.appendChild(defaultOpt);
+
+    VENUES.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = `${v.name} (${v.id})`;
+      select.appendChild(opt);
+    });
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(select);
+
+    // Insert before status element if possible, otherwise append at end.
+    if (statusEl && statusEl.parentNode === sessionControls) {
+      sessionControls.insertBefore(wrapper, statusEl);
+    } else {
+      sessionControls.appendChild(wrapper);
+    }
+
+    venueSelect = select;
   }
 
   // ------------------------------------------------
@@ -276,31 +456,32 @@
   // ------------------------------------------------
   function bindEvents() {
     if (btnStart) {
-      btnStart.addEventListener("click", () => {
-        // Treat every click as "start/restart" – always overwrites prior session.
-        startNewSession();
-      });
+      btnStart.addEventListener("click", startSession);
     } else {
-      console.warn("btn-start-session not found in DOM.");
+      console.warn("#session-start-btn not found.");
     }
 
-    if (btnEnd) {
-      btnEnd.addEventListener("click", () => {
-        endSession();
-      });
+    if (btnRestart) {
+      btnRestart.addEventListener("click", restartSession);
     } else {
-      console.warn("btn-end-session not found in DOM.");
+      console.warn("#session-restart-btn not found.");
+    }
+
+    if (btnSend) {
+      btnSend.addEventListener("click", sendSession);
+    } else {
+      console.warn("#session-send-btn not found.");
     }
   }
 
   function init() {
-    if (!ROWS_API_KEY || ROWS_API_KEY === "REPLACE_WITH_ROWS_API_KEY") {
-      console.warn(
-        "[CRT] ROWS_API_KEY is not set. Set window.CRT_ROWS_API_KEY or edit app.js."
-      );
-    }
+    ensureVenueSelect();
     bindEvents();
-    updateStatus("Ready. Start a new session to load Rows payloads.");
+    if (debugPanel) {
+      debugPanel.hidden = false;
+    }
+    updateStatus("Ready. Select a venue and click Start session.");
+    appendLogLine("CRT Session Tool initialized.");
   }
 
   if (document.readyState === "loading") {
