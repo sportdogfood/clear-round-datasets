@@ -1,16 +1,6 @@
 // File: expeditor.js
-// Version: v1.0-bottom – 2025-12-01
-// Contract-Aligned Revision (includes all known conflicts + safety rules)
-// NOTE: This file now enforces:
-// - STRICT pass-through of CompetitionPayload + DestinationPayload
-// - NO data validation, NO verification, NO guessing
-// - researcher receives ONLY the fields it must use as context
-// - researcher does NOT verify upstream fields; only performs its tasks
-// - writer ignores "" and "could-not-verify" fields
-// - troubleshooting logs for: load_fail, shape_mismatch, commit_fail
-// - zero assumptions about present/absent optional fields
-// - NO top-runner cross-contamination
-// - NO fabrications
+// Version: v1.1-bottom – 2025-12-01
+// LIVE-SHAPE CORRECTED VERSION (matches successful pipeline output)
 
 const DEFAULT_ITEMS_BASE = "https://items.clearroundtravel.com";
 const DEFAULT_DOCS_BASE = "https://docs.clearroundtravel.com";
@@ -80,25 +70,21 @@ async function commitDocs(docsBase, message, files) {
 }
 
 // ------------------------------------------------------------
-// small utilities
+// utilities
 // ------------------------------------------------------------
 
-// convert "", null, undefined → "could-not-verify"
-// leave normal values unchanged
 function normalizeField(v) {
   if (v === null || v === undefined) return "could-not-verify";
   if (typeof v === "string" && v.trim() === "") return "could-not-verify";
   return v;
 }
 
-// numeric parse or null
 function numOrNull(v) {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
 
-// safe nested lookup
 function safeGet(obj, pathArr) {
   let cur = obj;
   for (const p of pathArr) {
@@ -111,44 +97,35 @@ function safeGet(obj, pathArr) {
 
 // ------------------------------------------------------------
 // BUILD locale_research_input
+// EXACTLY the shape used in the LIVE runner
 // ------------------------------------------------------------
-// researcher will NOT verify any of these fields — they are context only
-// researcher WILL output "could-not-verify" ONLY on its own task failures
-// (not missing fields from this file)
 
 function buildLocaleResearchInput(creationId, cp) {
-  const city = normalizeField(cp.city);
-  const state = normalizeField(cp.state);
-  const venue_name = normalizeField(cp.venue_name);
-
-  // BOOLEAN ZERO-ASSUMPTION PARSING:
-  // For season_label → do NOT “verify”, do NOT “confirm”
-  // If CP provides span_season → pass through
-  // Else if zoom_season → pass through
-  // Else → "could-not-verify"
-  let season_label = "could-not-verify";
-  if (cp.span_season && cp.span_season.trim() !== "") {
-    season_label = cp.span_season.trim();
-  } else if (cp.zoom_season && cp.zoom_season.trim() !== "") {
-    season_label = cp.zoom_season.trim();
-  }
-
   return {
     creation_id: creationId,
-    locale_input: {
-      event_name:
-        safeGet(cp, ["collection_primary", "zoom_leg_name"]) ||
-        safeGet(cp, ["collection_primary", "comp_name"]) ||
-        "could-not-verify",
-      venue_name,
-      city,
-      state,
+
+    event_identity: {
+      venue_name: normalizeField(cp.venue_name),
+      venue_acronym: normalizeField(cp.venue_acronym),
+      city: normalizeField(cp.city),
+      state: normalizeField(cp.state),
       zone: normalizeField(cp.zone),
+
+      span_season: normalizeField(cp.span_season),
+      span_season_city_slug: normalizeField(cp.span_season_city_slug),
+
+      zoom_season: normalizeField(cp.zoom_season),
+      zoom_season_city_slug: normalizeField(cp.zoom_season_city_slug),
+
       span_start_date: normalizeField(cp.span_start_date),
       span_end_date: normalizeField(cp.span_end_date),
-      span_season: season_label,
 
-      // pass-through; researcher does NOT validate lat/lng
+      zoom_start_date: normalizeField(cp.zoom_start_date),
+      zoom_end_date: normalizeField(cp.zoom_end_date)
+    },
+
+    maps_anchor: {
+      place_id: normalizeField(cp.place_id),
       lat: numOrNull(cp.lat),
       lng: numOrNull(cp.lng)
     }
@@ -156,45 +133,41 @@ function buildLocaleResearchInput(creationId, cp) {
 }
 
 // ------------------------------------------------------------
-// BUILD bottomblock_writer_input
+// BUILD bottomblock-writer-input
+// EXACTLY the shape consumed by the LIVE writer
 // ------------------------------------------------------------
-// EXACT pass-through of curated DestinationPayload structure
-// We DO NOT rename list-only → list_only here (writer handles keys later)
-// No verification. No assumptions. No corrections.
 
-function buildBottomWriterInput(destPayload) {
+function buildBottomWriterInput(dest) {
   return {
-    creation_id: destPayload.creation_id || "could-not-verify",
+    creation_id: dest.creation_id || "could-not-verify",
+
     hub_meta: {
       hub_title_override:
         normalizeField(
-          safeGet(destPayload, ["hub_meta", "hub_title_override"])
-        ) || "could-not-verify"
+          safeGet(dest, ["hub_meta", "hub_title_override"])
+        )
     },
 
-    // preserve EXACT structure from DestinationPayload
     stay: {
-      feature: Array.isArray(destPayload.stay?.feature)
-        ? destPayload.stay.feature
-        : [],
-      "list-only": Array.isArray(destPayload.stay?.["list-only"])
-        ? destPayload.stay["list-only"]
+      feature: Array.isArray(dest?.stay?.feature) ? dest.stay.feature : [],
+      list_only: Array.isArray(dest?.stay?.["list-only"])
+        ? dest.stay["list-only"]
         : []
     },
+
     dine: {
-      feature: Array.isArray(destPayload.dine?.feature)
-        ? destPayload.dine.feature
-        : [],
-      "list-only": Array.isArray(destPayload.dine?.["list-only"])
-        ? destPayload.dine["list-only"]
+      feature: Array.isArray(dest?.dine?.feature) ? dest.dine.feature : [],
+      list_only: Array.isArray(dest?.dine?.["list-only"])
+        ? dest.dine["list-only"]
         : []
     },
+
     essentials: {
-      feature: Array.isArray(destPayload.essentials?.feature)
-        ? destPayload.essentials.feature
+      feature: Array.isArray(dest?.essentials?.feature)
+        ? dest.essentials.feature
         : [],
-      "list-only": Array.isArray(destPayload.essentials?.["list-only"])
-        ? destPayload.essentials["list-only"]
+      list_only: Array.isArray(dest?.essentials?.["list-only"])
+        ? dest.essentials["list-only"]
         : []
     }
   };
@@ -203,6 +176,7 @@ function buildBottomWriterInput(destPayload) {
 // ------------------------------------------------------------
 // main
 // ------------------------------------------------------------
+
 async function main() {
   const args = process.argv.slice(2);
   const CREATION_ID = process.env.CREATION_ID || args[0] || "";
@@ -224,15 +198,11 @@ async function main() {
   if (!BOTTOM_PAYLOAD_PATH)
     throw new Error("load_fail: missing BOTTOM_PAYLOAD_PATH");
 
-  // ------------------------------------------------------------
-  // 1. LOAD
-  // ------------------------------------------------------------
+  // LOAD
   const competitionPayload = await httpGetJson(ITEMS_BASE, TOP_PAYLOAD_PATH);
   const destinationPayload = await httpGetJson(ITEMS_BASE, BOTTOM_PAYLOAD_PATH);
 
-  // ------------------------------------------------------------
-  // 2. BUILD INPUTS
-  // ------------------------------------------------------------
+  // BUILD INPUTS
   const locale_research_input = buildLocaleResearchInput(
     CREATION_ID,
     competitionPayload
@@ -240,16 +210,14 @@ async function main() {
 
   const bottom_writer_input = buildBottomWriterInput(destinationPayload);
 
-  // ------------------------------------------------------------
-  // 3. COMMIT LOGS
-  // ------------------------------------------------------------
+  // COMMIT LOGS
   const files = [
     {
-      path: `docs/runner/bottom/logs/${CREATION_ID}-locale_research_input.json`,
+      path: `docs/runner/bottom/logs/${CREATION_ID}-locale-research-input.json`,
       content: locale_research_input
     },
     {
-      path: `docs/runner/bottom/logs/${CREATION_ID}-bottomblock_writer_input.json`,
+      path: `docs/runner/bottom/logs/${CREATION_ID}-bottomblock-writer-input.json`,
       content: bottom_writer_input
     }
   ];
@@ -274,7 +242,6 @@ async function main() {
   );
 }
 
-// ------------------------------------------------------------
 main().catch(err => {
   console.error(
     JSON.stringify(
