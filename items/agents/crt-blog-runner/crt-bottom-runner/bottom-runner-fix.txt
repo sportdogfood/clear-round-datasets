@@ -1,0 +1,109 @@
+Session ID: bottom-runner-fix-2025-12-01T07-xx-ET
+Timestamp: 2025-12-01T07-xx-05:00 (America/New_York)
+
+CRT Bottom-Runner Fix Contract
+
+1) Scope
+- This contract applies only to the crt-bottom-runner project.
+- All work is limited to the files you explicitly bring into this session.
+- No behavior, stages, or naming is imported from top-runner or from older chats.
+
+2) Files in scope
+When you choose to work on them, the following bottom-runner files are in scope:
+- instructions.txt
+- instructions-mini.txt
+- expeditor-spec.txt
+- expeditor.js
+- research-locale-prompt.txt
+- prompt-bottom-writer.txt
+- prompt-bottom-rewriter.txt
+
+openapi-rows and openapi-git will be reviewed later, only when you explicitly provide them.
+
+3) Upstream payload contract
+- CompetitionPayload and DestinationPayload from Rows are permanent, read-only schemas.
+- I will not propose or assume any changes to these payloads.
+- All files in scope must adapt to these fixed payloads, including:
+  - Handling missing season_label and span_season via fallbacks.
+  - Reading the real key "list-only" and treating a missing lane as [].
+  - Treating editorial_overview as optional.
+
+4) Known conflicts that must be fixed
+All edits must respect these rules:
+- No changes to any Rows JSON.
+- season_label and span_season:
+  - May be set to "could-not-verify".
+  - Must never cause a halt; uncertainty is logged instead of throwing.
+- editorial_overview:
+  - Optional; its absence must not stop any lane.
+- "list-only":
+  - Must be read correctly and treated as an empty list when missing.
+- Runner execution:
+  - Must not stop after rows_fetch unless there is a real, surfaced error.
+  - Must not simulate; it must run all stages 1–7 with real tool calls.
+
+5) Full-file, no-precision-edit rule
+- When you say START and provide a file:
+  - I will treat the pasted file as the complete and authoritative version.
+  - I will read and reason over the entire file, not just the first section.
+- I will not perform precision edits on snippets or fragments.
+- Any time you ask me to modify a file:
+  - I will return the entire updated file in a single code block.
+  - The file I send is intended as a full replacement drop.
+
+6) No silent loss of functionality
+- Before changing a file, I will account for what it currently does.
+- Edits will be limited to what is required to:
+  - Align with the upstream payload contract.
+  - Resolve the known conflicts in section 4.
+  - Add minimal troubleshooting / tracing where clearly needed.
+- I will not intentionally remove existing behaviors.
+- I will not:
+  - Add TODO markers.
+  - Add placeholder tokens (e.g., FILL_ME_IN).
+  - Introduce hidden variables waiting to be set.
+
+7) instructions-mini.txt length constraint
+- instructions-mini.txt is the only file constrained by the customGPT/OpenAPI limit.
+- When editing instructions-mini.txt:
+  - I will keep additions tight and focused on behavior.
+  - If length becomes a concern, I will explicitly state what can be shortened or removed.
+- All other files are assumed to have no artificial length limit.
+
+8) Troubleshooting additions
+- Where needed, I may propose minimal, explicit trace/debug behavior (e.g., clear stage markers or simple debug flags).
+- These additions will:
+  - Be clearly described as troubleshooting helpers.
+  - Avoid changing business logic unless that change is explicitly discussed.
+
+9) No cached-memory or history-based assumptions
+- I will not rely on cached memory, previous runner designs, or user history to define behavior.
+- For each file and stage, decisions will be based only on:
+  - The file content you provide in this session.
+  - The fixed rules stated in this contract.
+
+10) “I don’t know” instead of guessing
+- If any part of a file or stage is ambiguous or underspecified based on:
+  - The file itself, and
+  - This contract,
+  I will not invent behavior.
+- Instead, I will:
+  - Treat the behavior as unknown.
+  - Ask for clarification or present clearly labeled options, instead of silently choosing one.
+
+11) Exchange format
+- Every time I return a modified file:
+  - It will be the full file, not a diff.
+  - It will be wrapped in a single code block.
+- No partial edits, no ellipses, and no omitted sections.
+
+12) How START works
+- When you say START for a given file:
+  1) You paste the full current file.
+  2) I apply this contract:
+     - Respect permanent Rows schemas.
+     - Fix only the known conflicts.
+     - Add only minimal, explicit troubleshooting.
+     - Preserve existing behavior unless a change is clearly required.
+  3) I return the entire updated file in one code block, ready to replace the original.
+- If at any point the intent for a stage or field is not clear from the file plus this contract, I will stop and say “I don’t know” instead of extrapolating.
