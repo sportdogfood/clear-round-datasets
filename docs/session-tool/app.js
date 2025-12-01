@@ -13,7 +13,7 @@
   // ------------------------------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
-    window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
+    window.CRT_ROWS_API_KEY || "REPLACE_WITH_ROWS_API_KEY";
 
   // selector-data table: filter-key | places-json | collection-json | ...
   const SELECTOR_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
@@ -109,6 +109,7 @@
       return JSON.parse(String(text));
     } catch (err) {
       console.error("JSON parse error:", err);
+      appendLog(`JSON parse error: ${err.message}`);
       return null;
     }
   }
@@ -131,6 +132,7 @@
       SELECTOR_TABLE_ID,
       SELECTOR_RANGE
     );
+    appendLog(`Rows URL: ${url}`);
 
     const res = await fetch(url, {
       method: "GET",
@@ -140,6 +142,8 @@
       }
     });
 
+    appendLog(`Rows HTTP status: ${res.status}`);
+
     if (!res.ok) {
       throw new Error(`Rows GET failed (${res.status})`);
     }
@@ -147,7 +151,21 @@
     const data = await res.json();
     const items = Array.isArray(data.items) ? data.items : [];
 
-    // IMPORTANT: compare as strings so "4993509" and 4993509 both match.
+    appendLog(
+      `Rows payload: items type=${Object.prototype.toString.call(
+        items
+      )}, length=${items.length}`
+    );
+
+    items.slice(0, 5).forEach((r, idx) => {
+      const col0 = r && r[0];
+      appendLog(
+        `row[${idx}] raw=${JSON.stringify(
+          r
+        )}, col0=${JSON.stringify(col0)}, typeof col0=${typeof col0}`
+      );
+    });
+
     const row = items.find(
       (r) => Array.isArray(r) && String(r[0]) === String(filterId)
     );
@@ -157,8 +175,30 @@
       return null;
     }
 
-    const placesStr = row[1] != null ? String(row[1]) : "";
-    const collectionStr = row[2] != null ? String(row[2]) : "";
+    appendLog(`Matched row for filter_id=${filterId}: ${JSON.stringify(row)}`);
+
+    const placesCell = row[1];
+    const collectionCell = row[2];
+
+    appendLog(
+      `places cell typeof=${typeof placesCell}, preview=${JSON.stringify(
+        placesCell
+      ).slice(0, 120)}`
+    );
+    appendLog(
+      `collection cell typeof=${typeof collectionCell}, preview=${JSON.stringify(
+        collectionCell
+      ).slice(0, 120)}`
+    );
+
+    const placesStr =
+      placesCell != null && typeof placesCell !== "string"
+        ? JSON.stringify(placesCell)
+        : placesCell || "";
+    const collectionStr =
+      collectionCell != null && typeof collectionCell !== "string"
+        ? JSON.stringify(collectionCell)
+        : collectionCell || "";
 
     const places = placesStr ? safeJsonParse(placesStr) : null;
     const collection = collectionStr ? safeJsonParse(collectionStr) : null;
@@ -242,6 +282,7 @@
         }
       } catch (err) {
         console.error("sessionStorage write error:", err);
+        appendLog(`sessionStorage write error: ${err.message}`);
       }
 
       appendLog(
