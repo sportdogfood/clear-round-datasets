@@ -57,6 +57,13 @@ Tool usage
   - All paths you write for this runner MUST start with:
     - docs/runner/bottom/...
   - You must NOT write any path that starts with items/.
+  - Every /docs/commit-bulk call MUST send a JSON body with:
+    - message: short commit label including stage and creation_id.
+    - overwrite: true.
+    - files: array of one or more FileItem objects, each with:
+      - path: "docs/runner/bottom/..."
+      - content_type: "application/json"
+      - content_base64: base64-encoded JSON bytes (no data: prefix).
 
 - General:
   - Never just describe what you “would” do; actually call the tools.
@@ -302,11 +309,14 @@ Using research-locale-prompt.txt:
 
 You must commit this as a Docs log:
 
-- Call /docs/commit-bulk with:
-  - files: one FileItem:
-    - path: "docs/runner/bottom/logs/{creation_id}-locale_research.json"
-    - content_base64: base64-encoded locale_research JSON (UTF-8)
-    - content_type: "application/json"
+- Call /docs/commit-bulk with a JSON body:
+  - message: "crt-bottom-runner locale_research {creation_id}"
+  - overwrite: true
+  - files:
+    - One FileItem object with:
+      - path: "docs/runner/bottom/logs/{creation_id}-locale_research.json"
+      - content_type: "application/json"
+      - content_base64: base64-encoded locale_research JSON (UTF-8)
 
 On failure:
 - Stop with:
@@ -373,11 +383,14 @@ Normalize strings to ASCII where possible (no smart quotes, no em-dashes).
 
 Commit this bundle to Docs:
 
-- /docs/commit-bulk with:
-  - files: one FileItem:
-    - path: "docs/runner/bottom/logs/{creation_id}-bottomblock_research_clean.json"
-    - content_base64: bottomblock_research_clean JSON.
-    - content_type: "application/json"
+- Call /docs/commit-bulk with a JSON body:
+  - message: "crt-bottom-runner merge_bundle {creation_id}"
+  - overwrite: true
+  - files:
+    - One FileItem object with:
+      - path: "docs/runner/bottom/logs/{creation_id}-bottomblock_research_clean.json"
+      - content_type: "application/json"
+      - content_base64: base64-encoded bottomblock_research_clean JSON (UTF-8)
 
 On failure:
 - Stop with:
@@ -466,11 +479,14 @@ Writer MAY:
 
 Commit writer output:
 
-- /docs/commit-bulk with:
-  - files: one FileItem:
-    - path: "docs/runner/bottom/logs/{creation_id}-bottomblock_writer.json"
-    - content_base64: writer JSON.
-    - content_type: "application/json"
+- Call /docs/commit-bulk with a JSON body:
+  - message: "crt-bottom-runner bottomblock_writer {creation_id}"
+  - overwrite: true
+  - files:
+    - One FileItem object with:
+      - path: "docs/runner/bottom/logs/{creation_id}-bottomblock_writer.json"
+      - content_type: "application/json"
+      - content_base64: base64-encoded writer JSON (UTF-8)
 
 On failure:
 - Stop with:
@@ -511,13 +527,18 @@ Rewriter must:
 
 You must commit TWO files in a single /docs/commit-bulk call:
 
-1) Log copy
-   - path: "docs/runner/bottom/logs/{creation_id}-bottomblock_final.json"
-   - content: final JSON.
-
-2) Final publish file
-   - path: "docs/runner/bottom/finals/{creation_id}-bottomblock_final.json"
-   - content: same final JSON.
+- Call /docs/commit-bulk with a JSON body:
+  - message: "crt-bottom-runner bottomblock_final {creation_id}"
+  - overwrite: true
+  - files:
+    - FileItem 1 (log copy):
+      - path: "docs/runner/bottom/logs/{creation_id}-bottomblock_final.json"
+      - content_type: "application/json"
+      - content_base64: base64-encoded final JSON (UTF-8)
+    - FileItem 2 (final publish file):
+      - path: "docs/runner/bottom/finals/{creation_id}-bottomblock_final.json"
+      - content_type: "application/json"
+      - content_base64: same base64-encoded final JSON (UTF-8)
 
 On failure:
 - Stop with:
