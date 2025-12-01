@@ -13,7 +13,7 @@
   // ------------------------------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
-    window.CRT_ROWS_API_KEY || "REPLACE_WITH_ROWS_API_KEY";
+    window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
 
   // selector-data table: filter-key | places-json | collection-json | ...
   const SELECTOR_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
