@@ -1,216 +1,186 @@
 # File: expeditor-spec.txt
-# Purpose: Define the exact transformations performed by the expeditor stage
-#          in the CRT bottom-runner pipeline. The expeditor is a pure
-#          in-memory transformer. It does NOT call any external APIs and
-#          does NOT read/write Items/Docs paths.
+# Version: v2025-12-01T08:27ET
+# Runner: CRT bottom-runner (Expeditor)
+# Status: UPDATED to authoritative schema + no-guessing contract
 
 ------------------------------------------------------------
-0. Overview
+Role
 ------------------------------------------------------------
-Expeditor receives TWO raw inputs from Rows:
+This expeditor prepares the two mechanical inputs required by
+the CRT bottom-runner:
+1) locale-research-input.json
+2) bottomblock-writer-input.json
 
-A) competition_payload (parsed JSON)
-B) destination_payload (parsed JSON)
+It performs ONLY shaping and passthrough rules.
+It NEVER generates prose.
+It NEVER verifies facts against outside sources.
+It NEVER fabricates missing data.
 
-Expeditor MUST produce TWO output objects IN MEMORY:
-
-1) locale_research_input
-2) bottomblock_writer_input (initial form, before locale merge)
-
-These outputs MUST strictly follow the schemas in this file.
-
-Expeditor MUST NOT:
-- invent fields not present in CompetitionPayload
-- alter naming or spelling of venue, city, state
-- rewrite dates or seasons
-- change place objects
-- write to Items or Docs
-- call any tools
+All deeper logic (research → writer → rewriter) lives in their
+respective modules—not here.
 
 ------------------------------------------------------------
-1. Input Requirements
+Inputs (read-only JSON files)
 ------------------------------------------------------------
 
-competition_payload MUST contain:
-  - creation_id
-  - span_start_date
-  - span_end_date
-  - span_season
-  - venue_name
-  - venue_acronym
-  - venue_official_url
-  - city
-  - state
-  - zone
-  - lat
-  - lng
-  - collection_primary.zoom_leg_name
+1) CompetitionPayload  (from Rows CompetitionPayload sheet)
+   Contains location, season, venue, dates, collection_primary,
+   comps[], and all factual fields required for bottom-runner.
 
-destination_payload MUST contain:
-  - creation_id
-  - hub_meta (may be empty)
-  - stay.feature, stay.list-only
-  - dine.feature, dine.list-only
-  - essentials.feature, essentials.list-only
+   Required fields (minimum):
+   - creation_id
+   - venue_name
+   - venue_acronym
+   - venue_official_url
+   - place_id
+   - lat, lng
+   - city, state, city_slug, zone
+   - span_start_date, span_end_date
+   - span_season, span_season_city_slug
+   - zoom_start_date, zoom_end_date
+   - zoom_season, zoom_season_city_slug
+   - collection_primary.zoom_leg_name
+   - collection_primary.comp_name
+   - Additional fields may be present; expeditor passes them
+     through ONLY where specified by this file.
 
-Expeditor MUST validate:
-- creation_id matches for both payloads
-- required fields are present
-- arrays exist (empty is allowed)
-
-If any required input is missing, expeditor returns an error object
-to the runner:
-
-{ "stage": "expeditor", "message": "..." }
-
+2) DestinationPayload (BottomPayload)
+   - creation_id
+   - hub_meta.hub_title_override
+   - stay.feature[] / stay.list-only[]
+   - dine.feature[] / dine.list-only[]
+   - essentials.feature[] / essentials.list-only[]
+   Each place row is curated from Rows and MUST be passed
+   through with minimal filtering.
 
 ------------------------------------------------------------
-2. Output #1 — locale_research_input
+Fallback policy (GLOBAL)
 ------------------------------------------------------------
+Missing OR empty-string fields become:
+    "could-not-verify"
 
-Expeditor MUST produce the following object:
+Writer and rewriter will IGNORE "could-not-verify" and
+will not assume any missing details. This prevents accidental
+fabrication and avoids JSON malformed blanks.
 
-locale_research_input = {
-  "creation_id": competition_payload.creation_id,
-  "locale_input": {
-    "event_name": competition_payload.collection_primary.zoom_leg_name,
-    "venue_name": competition_payload.venue_name,
-    "city": competition_payload.city,
-    "state": competition_payload.state,
-    "zone": competition_payload.zone,
-    "span_start_date": competition_payload.span_start_date,
-    "span_end_date": competition_payload.span_end_date,
-    "span_season": competition_payload.span_season,
-    "lat": number(competition_payload.lat),
-    "lng": number(competition_payload.lng)
+------------------------------------------------------------
+Output #1 — locale-research-input.json
+------------------------------------------------------------
+Purpose:
+Provide the locale researcher with the exact anchor facts
+they need for city/season/venue/positioning lanes. They do
+NOT re-verify these values. They ONLY use them to perform
+their descriptive task. They will not replace blanks and will
+not guess missing data.
+
+Required shape:
+
+{
+  "creation_id": "<cid>",
+  "event_identity": {
+    "venue_name": "<CompetitionPayload.venue_name>",
+    "venue_acronym": "<CompetitionPayload.venue_acronym>",
+    "city": "<CompetitionPayload.city>",
+    "state": "<CompetitionPayload.state>",
+    "zone": "<CompetitionPayload.zone>",
+    "span_season": "<CompetitionPayload.span_season>",
+    "span_season_city_slug": "<CompetitionPayload.span_season_city_slug>",
+    "zoom_season": "<CompetitionPayload.zoom_season>",
+    "zoom_season_city_slug": "<CompetitionPayload.zoom_season_city_slug>",
+    "span_start_date": "<CompetitionPayload.span_start_date>",
+    "span_end_date": "<CompetitionPayload.span_end_date>",
+    "zoom_start_date": "<CompetitionPayload.zoom_start_date>",
+    "zoom_end_date": "<CompetitionPayload.zoom_end_date>"
+  },
+  "maps_anchor": {
+    "place_id": "<CompetitionPayload.place_id>",
+    "lat": "<CompetitionPayload.lat>",
+    "lng": "<CompetitionPayload.lng>"
   }
 }
 
-Rules:
-- All fields MUST be copied exactly, except lat/lng must be coerced to numbers.
-- If span_season is empty or missing, use "could-not-verify".
-- City/state spelling MUST NOT be changed from input.
-- No additional fields allowed.
+Fallback rule:
+- ANY missing or "" → "could-not-verify"
+- lat/lng become null ONLY if non-numeric
 
-
-------------------------------------------------------------
-3. Output #2 — bottomblock_writer_input (initial)
-------------------------------------------------------------
-
-Expeditor MUST produce:
-
-bottomblock_writer_input = {
-  "creation_id": competition_payload.creation_id,
-
-  "identity": {
-    "venue_name": competition_payload.venue_name,
-    "venue_acronym": competition_payload.venue_acronym,
-    "city": competition_payload.city,
-    "state": competition_payload.state,
-    "span_season": competition_payload.span_season,
-    "span_start_date": competition_payload.span_start_date,
-    "span_end_date": competition_payload.span_end_date,
-    "zoom_leg_name": competition_payload.collection_primary.zoom_leg_name,
-    "venue_official_url": competition_payload.venue_official_url,
-    "lat": number(competition_payload.lat),
-    "lng": number(competition_payload.lng)
-  },
-
-  "hub_meta": {
-    "hub_title_override": destination_payload.hub_meta.hub_title_override
-      OR ""
-  },
-
-  "stay": {
-    "feature": normalize_places_array(destination_payload.stay.feature),
-    "list_only": normalize_places_array(destination_payload.stay["list-only"])
-  },
-
-  "dine": {
-    "feature": normalize_places_array(destination_payload.dine.feature),
-    "list_only": normalize_places_array(destination_payload.dine["list-only"])
-  },
-
-  "essentials": {
-    "feature": normalize_places_array(destination_payload.essentials.feature),
-    "list_only": normalize_places_array(destination_payload.essentials["list-only"])
-  },
-
-  "locale_research": null  # populated after researcher stage
-}
-
-Rules:
-- Expeditor must pass through place objects unchanged EXCEPT:
-  - lat/lng must be coercible to numbers
-  - no field renaming allowed
-  - editorial_overview is preserved
-- If hub_meta is missing entirely: set hub_meta = { "hub_title_override": "" }
-- If price_band, price_level, editorial_overview are empty strings, they remain empty strings.
-- list-only → list_only (rename required).
-- All other place object fields MUST be preserved EXACTLY.
-
+Researcher will never attempt to validate or override these.
 
 ------------------------------------------------------------
-4. Validation Rules
+Output #2 — bottomblock-writer-input.json
 ------------------------------------------------------------
+Purpose:
+Provide writer with ALL curated listings for stay/dine/
+essentials. Writer will generate:
+- 1 short equestrian-first paragraph per lane
+- 1 mobile-first list/table per lane
+Writer does NOT verify any fact and does NOT fabricate.
 
-Expeditor MUST validate:
-
-- competition_payload.creation_id === destination_payload.creation_id
-- competition_payload.venue_name exists
-- competition_payload.city exists
-- competition_payload.state exists
-- competition_payload.lat/lng are parseable numbers
-- destination_payload.stay/dine/essentials contain arrays:
-    feature: array (may be empty)
-    list-only: array (may be empty)
-
-If any check fails:
-  Return:
-    { "stage": "expeditor", "message": "..." }
-
-
-------------------------------------------------------------
-5. Internal Helpers
-------------------------------------------------------------
-
-normalize_places_array(inputArray):
-  - If inputArray is missing → return []
-  - For each item:
-      - lat = number(lat)
-      - lng = number(lng)
-      - Keep ALL other fields unchanged
-  - Return the transformed array.
-
-
-------------------------------------------------------------
-6. No Drift, No Invention
-------------------------------------------------------------
-
-Expeditor MUST:
-- never rename fields other than list-only → list_only
-- never add new attributes
-- never infer missing venue/city/state
-- never reorder fields inside a place object
-- never modify editorial_overview or descriptive text
-- never "correct" website URLs or place_ids
-- never fabricate a season, event name, or zone
-
-All outputs MUST remain strict copies of inputs except:
-- numeric coercion for lat/lng
-- required structural reorganization described above
-
-
-------------------------------------------------------------
-7. Handoff to Runner
-------------------------------------------------------------
-
-Expeditor returns BOTH objects to the runner as:
+Required shape:
 
 {
-  "locale_research_input": {...},
-  "bottomblock_writer_input": {...}
+  "creation_id": "<cid>",
+  "hub_meta": {
+    "hub_title_override": "<DestinationPayload.hub_meta.hub_title_override>"
+  },
+  "stay": {
+    "feature": [ { passthrough place rows } ],
+    "list_only": [ { passthrough place rows } ]
+  },
+  "dine": {
+    "feature": [ { passthrough place rows } ],
+    "list_only": [ { passthrough place rows } ]
+  },
+  "essentials": {
+    "feature": [ { passthrough place rows } ],
+    "list_only": [ { passthrough place rows } ]
+  }
 }
 
-These objects are then passed to Stage 3 (research)
-and Stage 4 (writer).
+Where each place object MUST preserve, at minimum:
+- place_uid (REQUIRED)
+- name, name2, entity
+- price_band, price_level
+- distance_bucket, distance_text, duration_text
+- top_rated, preferred
+- website
+- editorial_overview
+- formatted_address
+- lat, lng (if present)
+- rating, user_ratings_total (if present)
+- chain_slug, chain_types, all_types (if present)
+- ANY other curated field should be preserved unless it
+  is a meaningless internal metric.
+
+Empty or missing fields → "could-not-verify" (except lat/lng → null).
+
+------------------------------------------------------------
+Error Handling
+------------------------------------------------------------
+Expeditor MUST stop and raise error if:
+- Either input file missing or unparseable
+- creation_id mismatch between CompetitionPayload and
+  DestinationPayload
+
+Expeditor MAY continue with empty arrays if a lane is missing.
+
+------------------------------------------------------------
+Non-goals
+------------------------------------------------------------
+Expeditor MUST NOT:
+- Generate paragraphs or editorial text
+- Recalculate price_band, rating, safety, etc.
+- Invent any data
+- Hit external APIs
+- Perform research
+- Combine research + writing (other modules handle that)
+
+------------------------------------------------------------
+Contract alignment notes (2025-12-01)
+------------------------------------------------------------
+- Entire pipeline must avoid assumptions.
+- locale_research_input mirrors EXACT expected JSON shape.
+- writer_input carries all curated places unchanged.
+- Missing → "could-not-verify" unifies downstream behavior.
+- All conform to bottom-runner researcher/writer contract.
+
+# END OF FILE
