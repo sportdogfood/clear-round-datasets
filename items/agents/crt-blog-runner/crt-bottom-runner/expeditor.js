@@ -1,18 +1,18 @@
- // File: expeditor.js
-// Version: v0.1-bottom – 2025-11-29
+// File: expeditor.js
+// Version: v0.2-bottom – 2025-12-01
 // Purpose: Expeditor for CRT bottom-runner.
 // Scope:
 // - Read top-level CompetitionPayload (for locale lane).
 // - Read bottom “places” payload (stay / dine / essentials).
-// - Build a small locale-research input JSON for the locale researcher.
-// - Optionally log both inputs under docs/ for debugging.
-// - No writing of prose; no research; no writer/rewriter logic here.
+// - Build a locale-research input JSON matching research-locale-prompt.txt.
+// - Log both inputs under docs/ for debugging.
+// - No writer/rewriter logic, no prose generation, no assumptions.
 
 const DEFAULT_ITEMS_BASE = "https://items.clearroundtravel.com";
 const DEFAULT_DOCS_BASE = "https://docs.clearroundtravel.com";
 
 // -----------------------------------------------------------------------------
-// Small HTTP helpers (adapt to match your existing runner-light helpers)
+// HTTP helpers
 // -----------------------------------------------------------------------------
 
 async function httpGetJson(baseUrl, path) {
@@ -29,14 +29,16 @@ async function httpGetJson(baseUrl, path) {
   }
 }
 
-// commit-bulk wrapper: write one or more files into Docs
 async function commitDocs(docsBase, message, files) {
   const url = `${docsBase.replace(/\/+$/, "")}/docs/commit-bulk`;
   const body = {
     message,
     files: files.map(({ path, content }) => ({
       path,
-      content: typeof content === "string" ? content : JSON.stringify(content, null, 2),
+      content:
+        typeof content === "string"
+          ? content
+          : JSON.stringify(content, null, 2),
     })),
   };
 
@@ -49,7 +51,10 @@ async function commitDocs(docsBase, message, files) {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `POST ${url} failed with ${res.status} ${res.statusText}: ${text.slice(0, 500)}`
+      `POST ${url} failed with ${res.status} ${res.statusText}: ${text.slice(
+        0,
+        500
+      )}`
     );
   }
 
@@ -57,56 +62,49 @@ async function commitDocs(docsBase, message, files) {
 }
 
 // -----------------------------------------------------------------------------
-// Builders
+// Locale Research Input Builder
+// Matches EXACTLY the schema required by research-locale-prompt.txt.
 // -----------------------------------------------------------------------------
 
-// CompetitionPayload → locale-research-input.json
-// This keeps the shape intentionally small and generic; adjust fields as needed
-// once you wire it to the actual CompetitionPayload shape.
-function buildLocaleResearchInput(creationId, competitionPayload) {
-  // These paths assume a CompetitionPayload similar to top-runner:
-  // - top-level city/state/zone
-  // - collection_primary as the main leg
-  const cp = competitionPayload || {};
-  const primary = cp.collection_primary || {};
+function buildLocaleResearchInput(creationId, cp) {
+  const competition = cp || {};
 
+  // Required keys (no assumptions, no invention).
   const eventName =
-    primary.zoom_leg_name ||
-    primary.comp_name ||
-    cp.event_name ||
-    cp.title ||
+    competition.event_name ||
+    competition.zoom_leg_name ||
+    competition.comp_name ||
     "";
+  const venueName = competition.venue_name || "";
+  const city = competition.city || "";
+  const state = competition.state || "";
+  const zone = competition.zone || "";
 
-  const venueName =
-    primary.venue_name ||
-    cp.venue_name ||
-    "";
+  // Dates (research prompt uses span_start_date / span_end_date directly)
+  const spanStart = competition.span_start_date || "";
+  const spanEnd = competition.span_end_date || "";
 
-  const city = primary.city || cp.city || "";
-  const state = primary.state || cp.state || "";
+  // Season (do NOT invent; use cp.span_season if present)
+  const spanSeason = competition.span_season || "";
 
-  // Dates / seasons – keep loose; top-runner is already the source of truth.
-  const zoomStart = primary.zoom_start_date || cp.zoom_start_date || cp.span_start_date || "";
-  const zoomEnd = primary.zoom_end_date || cp.zoom_end_date || cp.span_end_date || "";
-  const seasonLabel =
-    primary.zoom_season ||
-    cp.zoom_season ||
-    cp.span_season ||
-    "";
+  // Coordinates (required by prompt, empty if missing)
+  const lat = competition.lat || "";
+  const lng = competition.lng || "";
 
   return {
     creation_id: creationId,
-    locale_identity: {
+    locale_input: {
       event_name: eventName,
       venue_name: venueName,
       city,
       state,
-      season_label: seasonLabel,
-      zoom_start_date: zoomStart,
-      zoom_end_date: zoomEnd,
+      zone,
+      span_start_date: spanStart,
+      span_end_date: spanEnd,
+      span_season: spanSeason,
+      lat,
+      lng,
     },
-    // The researcher prompt (research-locale-prompt) will see this object and
-    // is responsible for turning it into city/locale “things to do” research.
   };
 }
 
@@ -117,16 +115,10 @@ function buildLocaleResearchInput(creationId, competitionPayload) {
 async function main() {
   const args = process.argv.slice(2);
 
-  // Inputs from env / CLI; these are deliberately flexible so you can wire
-  // actual paths in your trigger config, not hard-coded here.
   const CREATION_ID =
-    process.env.CREATION_ID ||
-    args[0] ||
-    "";
+    process.env.CREATION_ID || args[0] || "";
   const AGENT_KEY =
-    process.env.AGENT_KEY ||
-    args[1] ||
-    "crt-bottom-runner";
+    process.env.AGENT_KEY || args[1] || "crt-bottom-runner";
 
   if (!CREATION_ID) {
     throw new Error("CREATION_ID is required (env CREATION_ID or first CLI arg).");
@@ -135,22 +127,10 @@ async function main() {
   const ITEMS_BASE = process.env.CRT_ITEMS_BASE || DEFAULT_ITEMS_BASE;
   const DOCS_BASE = process.env.CRT_DOCS_BASE || DEFAULT_DOCS_BASE;
 
-  // Paths (set these via env so we don’t bake in any new scheme):
-  //
-  // - TOP_PAYLOAD_PATH: CompetitionPayload JSON (same as top-runner uses)
-  // - BOTTOM_PAYLOAD_PATH: bottom “places” payload JSON (the big stay/dine/essentials object)
-  //
-  // Example (you will set the real ones in your trigger):
-  //   CRT_TOP_PAYLOAD_PATH=agents/wec-ocala-test-runner/CompetitionPayload.json
-  //   CRT_BOTTOM_PAYLOAD_PATH=agents/crt-bottom-runner/bottom_payload.json
   const TOP_PAYLOAD_PATH =
-    process.env.CRT_TOP_PAYLOAD_PATH ||
-    args[2] ||
-    "";
+    process.env.CRT_TOP_PAYLOAD_PATH || args[2] || "";
   const BOTTOM_PAYLOAD_PATH =
-    process.env.CRT_BOTTOM_PAYLOAD_PATH ||
-    args[3] ||
-    "";
+    process.env.CRT_BOTTOM_PAYLOAD_PATH || args[3] || "";
 
   if (!TOP_PAYLOAD_PATH) {
     throw new Error("CRT_TOP_PAYLOAD_PATH is required (env or CLI).");
@@ -159,8 +139,6 @@ async function main() {
     throw new Error("CRT_BOTTOM_PAYLOAD_PATH is required (env or CLI).");
   }
 
-  // Output paths under Docs. These are the only new files this expeditor
-  // is responsible for. They are intentionally simple and bottom-runner-specific.
   const LOCALE_RESEARCH_INPUT_PATH =
     process.env.CRT_LOCALE_RESEARCH_INPUT_PATH ||
     `agents/${AGENT_KEY}/locale_research_input.json`;
@@ -170,20 +148,23 @@ async function main() {
     `agents/${AGENT_KEY}/bottom_places_payload.json`;
 
   // ---------------------------------------------------------------------------
-  // 1) Load inputs
+  // 1) Load inputs (no transformations)
   // ---------------------------------------------------------------------------
 
   const competitionPayload = await httpGetJson(ITEMS_BASE, TOP_PAYLOAD_PATH);
   const bottomPlacesPayload = await httpGetJson(ITEMS_BASE, BOTTOM_PAYLOAD_PATH);
 
   // ---------------------------------------------------------------------------
-  // 2) Build locale research input (city/season “things to do” lane)
+  // 2) Build locale-research input EXACTLY matching the prompt schema
   // ---------------------------------------------------------------------------
 
-  const localeResearchInput = buildLocaleResearchInput(CREATION_ID, competitionPayload);
+  const localeResearchInput = buildLocaleResearchInput(
+    CREATION_ID,
+    competitionPayload
+  );
 
   // ---------------------------------------------------------------------------
-  // 3) Commit outputs to Docs
+  // 3) Commit both files as logs for downstream stages
   // ---------------------------------------------------------------------------
 
   const message = `[expeditor-bottom] ${AGENT_KEY} ${CREATION_ID} – locale input + bottom payload`;
@@ -201,8 +182,6 @@ async function main() {
 
   await commitDocs(DOCS_BASE, message, filesToCommit);
 
-  // If your runner-light wiring expects console output, keep this minimal and
-  // machine-readable.
   console.log(
     JSON.stringify(
       {
