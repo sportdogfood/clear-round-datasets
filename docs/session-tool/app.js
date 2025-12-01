@@ -17,7 +17,7 @@
 
   // selector-data table: filter-key | places-json | collection-json | ...
   const SELECTOR_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
-  const SELECTOR_TABLE_ID = "a34b24a6-386b-457d-a9d4-beb2c7c13543";
+  const SELECTOR_TABLE_ID = "ac426c27-747f-44f7-a581-d856c7ac23d6";
   const SELECTOR_RANGE = "A2:C999";
 
   const STORAGE_KEYS = {
