@@ -1,228 +1,216 @@
-File: expeditor-spec.txt
-Runner: crt-bottom-runner
-Version: v0.2 – 2025-12-01
+# File: expeditor-spec.txt
+# Purpose: Define the exact transformations performed by the expeditor stage
+#          in the CRT bottom-runner pipeline. The expeditor is a pure
+#          in-memory transformer. It does NOT call any external APIs and
+#          does NOT read/write Items/Docs paths.
 
-ROLE
-- Defines the mechanical responsibilities of the bottom-runner expeditor.
-- Expeditor performs ONLY fan-out and safe shaping.
-- Expeditor does NOT:
-  - generate prose,
-  - research,
-  - modify curated data,
-  - add assumed fields,
-  - perform business lookups,
-  - depend on any top-runner logic.
+------------------------------------------------------------
+0. Overview
+------------------------------------------------------------
+Expeditor receives TWO raw inputs from Rows:
 
-SCOPE (BOTTOM-RUNNER)
-For one creation_id, the expeditor:
+A) competition_payload (parsed JSON)
+B) destination_payload (parsed JSON)
 
-1. Reads curated CompetitionPayload (Category A identity).
-2. Reads curated DestinationPayload (“BottomPayload”: stay/dine/essentials).
-3. Builds exactly TWO internal inputs:
-   - locale_research_input.json
-   - bottom_payload_normalized (later merged into bottomblock_research_clean.json)
-4. Writes BOTH as docs logs for debugging.
-5. Must NOT halt unless the payloads are missing or invalid JSON.
+Expeditor MUST produce TWO output objects IN MEMORY:
 
-INPUTS (READ-ONLY)
+1) locale_research_input
+2) bottomblock_writer_input (initial form, before locale merge)
 
------------------------------------------------
-1) CompetitionPayload (permanent schema)
------------------------------------------------
-- Fetched by runner-logic via Rows API, not by expeditor.
-- Expeditor receives this already-loaded object.
-- Expeditor MUST adapt to the fixed payload shape (NO assumptions, NO top-runner inheritance).
-
-Required fields (these may exist or be empty, but never fabricated):
-- creation_id
-- venue_name
-- city
-- state
-- zone
-- span_start_date
-- span_end_date
-- span_season
-- lat
-- lng
+These outputs MUST strictly follow the schemas in this file.
 
 Expeditor MUST NOT:
-- expect season_label,
-- expect zoom fields,
-- expect collection_primary,
-- expect editorial_overview,
-- expect top-runner style structures.
+- invent fields not present in CompetitionPayload
+- alter naming or spelling of venue, city, state
+- rewrite dates or seasons
+- change place objects
+- write to Items or Docs
+- call any tools
 
-Expeditor MUST accept missing fields and use "" for missing strings.
+------------------------------------------------------------
+1. Input Requirements
+------------------------------------------------------------
 
------------------------------------------------
-2) DestinationPayload (BottomPayload)
------------------------------------------------
-Permanent curated schema from Rows:
+competition_payload MUST contain:
+  - creation_id
+  - span_start_date
+  - span_end_date
+  - span_season
+  - venue_name
+  - venue_acronym
+  - venue_official_url
+  - city
+  - state
+  - zone
+  - lat
+  - lng
+  - collection_primary.zoom_leg_name
 
-{
-  "creation_id": "creator-abc",
-  "hub_meta": { "hub_title_override": "..." },
-  "stay": {
-    "feature": [ { … place row … } ],
-    "list-only": [ { … place row … } ]
-  },
-  "dine": {
-    "feature": [ { … place row … } ],
-    "list-only": [ { … place row … } ]
-  },
-  "essentials": {
-    "feature": [ { … place row … } ],
-    "list-only": [ { … place row … } ]
-  }
-}
+destination_payload MUST contain:
+  - creation_id
+  - hub_meta (may be empty)
+  - stay.feature, stay.list-only
+  - dine.feature, dine.list-only
+  - essentials.feature, essentials.list-only
 
-Each place row includes curated, immutable fields such as:
-- place_uid (required)
-- name, name2
-- entity
-- distance_bucket, distance_text, duration_text
-- price_band, price_level (optional)
-- top_rated, preferred
-- website (optional)
-- editorial_overview (optional)
-- lane-type fields (e.g. dine_lane)
-- passthrough keys (chain_slug, all_types, etc.)
+Expeditor MUST validate:
+- creation_id matches for both payloads
+- required fields are present
+- arrays exist (empty is allowed)
 
-Expeditor MUST:
-- Preserve all keys as-is.
-- NEVER correct, infer, or invent data.
-- NEVER search for missing fields.
+If any required input is missing, expeditor returns an error object
+to the runner:
 
------------------------------------------------
-OUTPUTS (EXPEDITOR WRITES)
------------------------------------------------
+{ "stage": "expeditor", "message": "..." }
 
-The expeditor writes EXACTLY TWO JSON files into docs logs:
 
-1) locale_research_input.json  
-2) bottom_places_payload.json (debug copy of DestinationPayload)
+------------------------------------------------------------
+2. Output #1 — locale_research_input
+------------------------------------------------------------
 
-These files are NOT used directly by the writer; they are used by:
-- locale researcher → locale_research
-- merge stage → bottomblock_research_clean.json
+Expeditor MUST produce the following object:
 
-These outputs must use ASCII-only and must preserve original data.
-
------------------------------------------------
-1) locale-research-input.json
------------------------------------------------
-MUST conform to research-locale-prompt.txt.
-
-Exact shape:
-
-{
-  "creation_id": "<CompetitionPayload.creation_id>",
+locale_research_input = {
+  "creation_id": competition_payload.creation_id,
   "locale_input": {
-    "event_name": "<CompetitionPayload.event_name OR empty>",
-    "venue_name": "<CompetitionPayload.venue_name>",
-    "city": "<CompetitionPayload.city>",
-    "state": "<CompetitionPayload.state>",
-    "zone": "<CompetitionPayload.zone>",
-    "span_start_date": "<CompetitionPayload.span_start_date>",
-    "span_end_date": "<CompetitionPayload.span_end_date>",
-    "span_season": "<CompetitionPayload.span_season>",
-    "lat": "<CompetitionPayload.lat>",
-    "lng": "<CompetitionPayload.lng>"
+    "event_name": competition_payload.collection_primary.zoom_leg_name,
+    "venue_name": competition_payload.venue_name,
+    "city": competition_payload.city,
+    "state": competition_payload.state,
+    "zone": competition_payload.zone,
+    "span_start_date": competition_payload.span_start_date,
+    "span_end_date": competition_payload.span_end_date,
+    "span_season": competition_payload.span_season,
+    "lat": number(competition_payload.lat),
+    "lng": number(competition_payload.lng)
   }
 }
 
 Rules:
-- NO zoom fields.
-- NO derived season_label.
-- NO top-runner identities.
-- NO business lists.
-- Default "" where fields are missing.
-- MUST NOT invent values.
-- MUST use exactly “locale_input”.
+- All fields MUST be copied exactly, except lat/lng must be coerced to numbers.
+- If span_season is empty or missing, use "could-not-verify".
+- City/state spelling MUST NOT be changed from input.
+- No additional fields allowed.
 
------------------------------------------------
-2) bottom_payload_normalized (debug copy)
------------------------------------------------
 
-Expeditor logs bottom places payload as-is:
+------------------------------------------------------------
+3. Output #2 — bottomblock_writer_input (initial)
+------------------------------------------------------------
 
-{
-  "creation_id": "<BottomPayload.creation_id>",
+Expeditor MUST produce:
+
+bottomblock_writer_input = {
+  "creation_id": competition_payload.creation_id,
+
+  "identity": {
+    "venue_name": competition_payload.venue_name,
+    "venue_acronym": competition_payload.venue_acronym,
+    "city": competition_payload.city,
+    "state": competition_payload.state,
+    "span_season": competition_payload.span_season,
+    "span_start_date": competition_payload.span_start_date,
+    "span_end_date": competition_payload.span_end_date,
+    "zoom_leg_name": competition_payload.collection_primary.zoom_leg_name,
+    "venue_official_url": competition_payload.venue_official_url,
+    "lat": number(competition_payload.lat),
+    "lng": number(competition_payload.lng)
+  },
+
+  "hub_meta": {
+    "hub_title_override": destination_payload.hub_meta.hub_title_override
+      OR ""
+  },
+
   "stay": {
-    "feature": [ ... ],
-    "list-only": [ ... ]
+    "feature": normalize_places_array(destination_payload.stay.feature),
+    "list_only": normalize_places_array(destination_payload.stay["list-only"])
   },
+
   "dine": {
-    "feature": [ ... ],
-    "list-only": [ ... ]
+    "feature": normalize_places_array(destination_payload.dine.feature),
+    "list_only": normalize_places_array(destination_payload.dine["list-only"])
   },
+
   "essentials": {
-    "feature": [ ... ],
-    "list-only": [ ... ]
+    "feature": normalize_places_array(destination_payload.essentials.feature),
+    "list_only": normalize_places_array(destination_payload.essentials["list-only"])
   },
-  "hub_meta": { ... }
+
+  "locale_research": null  # populated after researcher stage
 }
 
-Expeditor MUST:
-- Keep “list-only”.
-- NOT rename keys to “list_only”.
-- NOT drop fields.
-- NOT modify place objects.
+Rules:
+- Expeditor must pass through place objects unchanged EXCEPT:
+  - lat/lng must be coercible to numbers
+  - no field renaming allowed
+  - editorial_overview is preserved
+- If hub_meta is missing entirely: set hub_meta = { "hub_title_override": "" }
+- If price_band, price_level, editorial_overview are empty strings, they remain empty strings.
+- list-only → list_only (rename required).
+- All other place object fields MUST be preserved EXACTLY.
 
------------------------------------------------
-BEHAVIOR RULES
------------------------------------------------
 
-NO BUSINESS LOGIC
-- No recomputation of distance_bucket, price_band, or any field.
-- No enrichment.
-- No fallback heuristics.
-- No assumptions about missing fields.
-- Do not remove “could-not-verify” fields if present.
+------------------------------------------------------------
+4. Validation Rules
+------------------------------------------------------------
 
-NO PROSE GENERATION
-- No paragraphs.
-- No rewriting.
-- No suggestions.
+Expeditor MUST validate:
 
-NO TOP-RUNNER CROSS-CONTAMINATION
-- No zoom_season, collection_primary, zoom_leg_name.
-- No season_label expected from upstream.
-- No top-runner file paths.
+- competition_payload.creation_id === destination_payload.creation_id
+- competition_payload.venue_name exists
+- competition_payload.city exists
+- competition_payload.state exists
+- competition_payload.lat/lng are parseable numbers
+- destination_payload.stay/dine/essentials contain arrays:
+    feature: array (may be empty)
+    list-only: array (may be empty)
 
-ERROR HANDLING (STRICT)
-- Expeditor halts ONLY if:
-  - CompetitionPayload is missing OR invalid JSON.
-  - DestinationPayload is missing OR invalid JSON.
+If any check fails:
+  Return:
+    { "stage": "expeditor", "message": "..." }
 
-Otherwise:
-- Expeditor must proceed, even if fields are blank or incomplete.
-- Missing fields → "" or empty arrays (permanent rule).
-- NEVER halt due to missing span_season, editorial_overview, or season_label.
 
------------------------------------------------
-NON-GOALS
------------------------------------------------
+------------------------------------------------------------
+5. Internal Helpers
+------------------------------------------------------------
 
-Expeditor does NOT:
-- Perform research.
-- Create any writer/rewriter inputs directly.
-- Write final outputs.
-- Call the Rows API.
-- Change any curated schema.
-- Validate URL correctness.
-- Apply ranking or filtering.
+normalize_places_array(inputArray):
+  - If inputArray is missing → return []
+  - For each item:
+      - lat = number(lat)
+      - lng = number(lng)
+      - Keep ALL other fields unchanged
+  - Return the transformed array.
 
------------------------------------------------
-SUMMARY (MECHANICAL CONTRACT)
------------------------------------------------
+
+------------------------------------------------------------
+6. No Drift, No Invention
+------------------------------------------------------------
 
 Expeditor MUST:
-1. Consume CompetitionPayload and DestinationPayload exactly as they exist.
-2. Build locale_research_input.json exactly matching the research prompt.
-3. Log both inputs to Docs without altering curated data.
-4. Never assume top-runner schemas.
-5. Never require editorial_overview, season_label, zoom fields.
-6. Never halt unless payloads are missing or invalid JSON.
+- never rename fields other than list-only → list_only
+- never add new attributes
+- never infer missing venue/city/state
+- never reorder fields inside a place object
+- never modify editorial_overview or descriptive text
+- never "correct" website URLs or place_ids
+- never fabricate a season, event name, or zone
 
-END OF FILE
+All outputs MUST remain strict copies of inputs except:
+- numeric coercion for lat/lng
+- required structural reorganization described above
+
+
+------------------------------------------------------------
+7. Handoff to Runner
+------------------------------------------------------------
+
+Expeditor returns BOTH objects to the runner as:
+
+{
+  "locale_research_input": {...},
+  "bottomblock_writer_input": {...}
+}
+
+These objects are then passed to Stage 3 (research)
+and Stage 4 (writer).
