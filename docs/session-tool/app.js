@@ -31,7 +31,7 @@
 
   // Prefer a global key if injected; fall back to literal.
   const ROWS_API_KEY =
-    window.CRT_ROWS_API_KEY || "REPLACE_WITH_ROWS_API_KEY";
+    window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
 
   // Single table with:
   //   A: filter-key (filter_id)
