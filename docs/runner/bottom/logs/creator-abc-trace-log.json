@@ -1,0 +1,10 @@
+{
+  "creation_id": "creator-abc",
+  "pipeline_trace": {
+    "stage1": "Loaders: Competition & Destination payloads validated & matched successfully.",
+    "stage2": "EXPEDITOR: Created locale-research-input.json & bottomblock-writer-input.json with field normalization.",
+    "stage3": "LOCALE RESEARCHER: Structured locale context from event identity; no internal lookups.",
+    "stage4": "WRITER: Converted destination places into equestrian-first paragraph (stay, dine, essentials).",
+    "stage5": "REWRITER: Cleaned and streamlined output text without altering facts.",
+    "stage6": "COMMIT: Successfully committed to github: https://github.com/sportdogfood/clear-round-datasets/commit/9b95898a2e90c0bb35ded1821c64a7b57d21d6f7"}
+}
