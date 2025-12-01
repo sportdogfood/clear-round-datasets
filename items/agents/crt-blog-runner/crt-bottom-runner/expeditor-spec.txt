@@ -1,126 +1,126 @@
 # File: expeditor-spec.txt
-# Version: v2025-12-01T08:27ET
 # Runner: CRT bottom-runner (Expeditor)
-# Status: UPDATED to authoritative schema + no-guessing contract
+# Version: v2025-12-01T18:40ET (LIVE-SHAPE CORRECTED)
 
 ------------------------------------------------------------
-Role
+ROLE
 ------------------------------------------------------------
-This expeditor prepares the two mechanical inputs required by
-the CRT bottom-runner:
-1) locale-research-input.json
-2) bottomblock-writer-input.json
+The expeditor performs ONLY mechanical shaping:
 
-It performs ONLY shaping and passthrough rules.
-It NEVER generates prose.
-It NEVER verifies facts against outside sources.
-It NEVER fabricates missing data.
+1) locale-research-input.json  
+2) bottomblock-writer-input.json  
 
-All deeper logic (research → writer → rewriter) lives in their
-respective modules—not here.
+It:
+- NEVER fabricates  
+- NEVER verifies  
+- NEVER infers  
+- NEVER rewrites meaning  
+- Applies the global fallback rule  
+- Preserves ALL curated place rows exactly  
+- Emits shapes EXACTLY as defined below  
+
+All deeper logic (researcher, writer, rewriter) depends on these
+shapes and MUST NOT receive any other shape or field name.
 
 ------------------------------------------------------------
-Inputs (read-only JSON files)
+REQUIRED INPUTS
 ------------------------------------------------------------
 
-1) CompetitionPayload  (from Rows CompetitionPayload sheet)
-   Contains location, season, venue, dates, collection_primary,
-   comps[], and all factual fields required for bottom-runner.
-
-   Required fields (minimum):
+1) CompetitionPayload  
+   Required minimum fields:
    - creation_id
    - venue_name
    - venue_acronym
-   - venue_official_url
+   - city
+   - state
+   - zone
+   - span_start_date
+   - span_end_date
+   - span_season
+   - span_season_city_slug
+   - zoom_start_date
+   - zoom_end_date
+   - zoom_season
+   - zoom_season_city_slug
    - place_id
    - lat, lng
-   - city, state, city_slug, zone
-   - span_start_date, span_end_date
-   - span_season, span_season_city_slug
-   - zoom_start_date, zoom_end_date
-   - zoom_season, zoom_season_city_slug
-   - collection_primary.zoom_leg_name
-   - collection_primary.comp_name
-   - Additional fields may be present; expeditor passes them
-     through ONLY where specified by this file.
 
-2) DestinationPayload (BottomPayload)
+   Fallback:
+   - missing/"" → "could-not-verify"
+   - lat/lng → null if not numeric
+
+2) DestinationPayload  
+   Required minimum fields:
    - creation_id
    - hub_meta.hub_title_override
    - stay.feature[] / stay.list-only[]
    - dine.feature[] / dine.list-only[]
    - essentials.feature[] / essentials.list-only[]
-   Each place row is curated from Rows and MUST be passed
-   through with minimal filtering.
+
+   Each place row MUST preserve:
+   - place_uid
+   - name, name2, entity
+   - price_band, price_level
+   - distance_bucket, distance_text, duration_text
+   - website
+   - editorial_overview
+   - formatted_address
+   - rating, user_ratings_total
+   - chain_slug, chain_types, all_types
+   - top_rated, preferred
+   - lat, lng
+   - any other curated field unless meaningless
+
+   All missing/"" → "could-not-verify" (except lat/lng → null)
 
 ------------------------------------------------------------
-Fallback policy (GLOBAL)
+OUTPUT #1
+locale-research-input.json
 ------------------------------------------------------------
-Missing OR empty-string fields become:
-    "could-not-verify"
 
-Writer and rewriter will IGNORE "could-not-verify" and
-will not assume any missing details. This prevents accidental
-fabrication and avoids JSON malformed blanks.
-
-------------------------------------------------------------
-Output #1 — locale-research-input.json
-------------------------------------------------------------
-Purpose:
-Provide the locale researcher with the exact anchor facts
-they need for city/season/venue/positioning lanes. They do
-NOT re-verify these values. They ONLY use them to perform
-their descriptive task. They will not replace blanks and will
-not guess missing data.
-
-Required shape:
+EXACT REQUIRED SHAPE:
 
 {
   "creation_id": "<cid>",
   "event_identity": {
-    "venue_name": "<CompetitionPayload.venue_name>",
-    "venue_acronym": "<CompetitionPayload.venue_acronym>",
-    "city": "<CompetitionPayload.city>",
-    "state": "<CompetitionPayload.state>",
-    "zone": "<CompetitionPayload.zone>",
-    "span_season": "<CompetitionPayload.span_season>",
-    "span_season_city_slug": "<CompetitionPayload.span_season_city_slug>",
-    "zoom_season": "<CompetitionPayload.zoom_season>",
-    "zoom_season_city_slug": "<CompetitionPayload.zoom_season_city_slug>",
-    "span_start_date": "<CompetitionPayload.span_start_date>",
-    "span_end_date": "<CompetitionPayload.span_end_date>",
-    "zoom_start_date": "<CompetitionPayload.zoom_start_date>",
-    "zoom_end_date": "<CompetitionPayload.zoom_end_date>"
+    "venue_name": "<payload>",
+    "venue_acronym": "<payload>",
+    "city": "<payload>",
+    "state": "<payload>",
+    "zone": "<payload>",
+    "span_season": "<payload>",
+    "span_season_city_slug": "<payload>",
+    "zoom_season": "<payload>",
+    "zoom_season_city_slug": "<payload>",
+    "span_start_date": "<payload>",
+    "span_end_date": "<payload>",
+    "zoom_start_date": "<payload>",
+    "zoom_end_date": "<payload>"
   },
   "maps_anchor": {
-    "place_id": "<CompetitionPayload.place_id>",
-    "lat": "<CompetitionPayload.lat>",
-    "lng": "<CompetitionPayload.lng>"
+    "place_id": "<payload>",
+    "lat": <number|null>,
+    "lng": <number|null>
   }
 }
 
-Fallback rule:
-- ANY missing or "" → "could-not-verify"
-- lat/lng become null ONLY if non-numeric
-
-Researcher will never attempt to validate or override these.
+NOTES:
+- No “locale_input”
+- No “event_name”
+- No additional fields are allowed
+- This is the LIVE shape confirmed during debugging
 
 ------------------------------------------------------------
-Output #2 — bottomblock-writer-input.json
+OUTPUT #2
+bottomblock-writer-input.json
 ------------------------------------------------------------
-Purpose:
-Provide writer with ALL curated listings for stay/dine/
-essentials. Writer will generate:
-- 1 short equestrian-first paragraph per lane
-- 1 mobile-first list/table per lane
-Writer does NOT verify any fact and does NOT fabricate.
 
-Required shape:
+EXACT REQUIRED SHAPE:
 
 {
   "creation_id": "<cid>",
   "hub_meta": {
-    "hub_title_override": "<DestinationPayload.hub_meta.hub_title_override>"
+    "hub_title_override": "<value>"
   },
   "stay": {
     "feature": [ { passthrough place rows } ],
@@ -136,51 +136,57 @@ Required shape:
   }
 }
 
-Where each place object MUST preserve, at minimum:
-- place_uid (REQUIRED)
-- name, name2, entity
-- price_band, price_level
-- distance_bucket, distance_text, duration_text
-- top_rated, preferred
-- website
-- editorial_overview
-- formatted_address
-- lat, lng (if present)
-- rating, user_ratings_total (if present)
-- chain_slug, chain_types, all_types (if present)
-- ANY other curated field should be preserved unless it
-  is a meaningless internal metric.
-
-Empty or missing fields → "could-not-verify" (except lat/lng → null).
+NOTES:
+- Key is “list_only” (underscore)  
+- NEVER “list-only”  
+- Absolutely required to match LIVE writer behavior  
 
 ------------------------------------------------------------
-Error Handling
+FALLBACK RULES (GLOBAL)
 ------------------------------------------------------------
-Expeditor MUST stop and raise error if:
-- Either input file missing or unparseable
-- creation_id mismatch between CompetitionPayload and
-  DestinationPayload
 
-Expeditor MAY continue with empty arrays if a lane is missing.
+- Any missing or "" → "could-not-verify"
+- lat/lng → null if not numeric
+- No deletions
+- No type assumptions
+- No renaming of curated fields
+
+Writer + rewriter IGNORE “could-not-verify”.
 
 ------------------------------------------------------------
-Non-goals
+ERROR STOP CONDITIONS
 ------------------------------------------------------------
+
+STOP the pipeline immediately if:
+- Either payload missing or unparseable
+- creation_id mismatch
+
+Pipeline MAY continue with empty arrays if a lane has no items.
+
+------------------------------------------------------------
+NON-GOALS (FORBIDDEN BEHAVIORS)
+------------------------------------------------------------
+
 Expeditor MUST NOT:
-- Generate paragraphs or editorial text
-- Recalculate price_band, rating, safety, etc.
-- Invent any data
-- Hit external APIs
-- Perform research
-- Combine research + writing (other modules handle that)
+- Generate text
+- Provide research
+- Upgrade seasons or dates
+- Replace venue fields
+- Rename curated fields
+- Do cross-runner merging
+- Validate facts
+- Query external APIs
+- Correct or enhance place rows
 
 ------------------------------------------------------------
-Contract alignment notes (2025-12-01)
+LIVE ALIGNMENT NOTES (2025-12-01)
 ------------------------------------------------------------
-- Entire pipeline must avoid assumptions.
-- locale_research_input mirrors EXACT expected JSON shape.
-- writer_input carries all curated places unchanged.
-- Missing → "could-not-verify" unifies downstream behavior.
-- All conform to bottom-runner researcher/writer contract.
+
+✓ Shape now matches LIVE debugger output exactly  
+✓ locale-research-input.json corrected to final shape  
+✓ list_only key fixed to underscore version  
+✓ No legacy keys remain  
+✓ Fully aligned with writer.js and researcher.js expectations  
+✓ Safe for production use for all upcoming bottom-runs
 
 # END OF FILE
