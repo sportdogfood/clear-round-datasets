@@ -12,15 +12,25 @@
     <!-- Header -->
     <header id="session-header">
       <h1>CRT Session Tool</h1>
-      <p>Start a new session, load data from Rows, and submit a selection payload.</p>
+      <p>Select a venue, load data from Rows into sessionStorage, and prepare a session payload.</p>
     </header>
 
     <!-- Session controls -->
     <section id="session-controls">
-      <button id="btn-start-session" type="button">Start session</button>
-      <button id="btn-end-session" type="button">End session</button>
-      <button id="session-restart-btn" type="button">Restart session</button>
-      <button id="session-send-btn" type="button">Send session</button>
+      <label for="venue-select">
+        Venue
+        <select id="venue-select">
+          <option value="">Select a venue…</option>
+          <!-- Options populated by app.js -->
+        </select>
+      </label>
+
+      <div class="session-buttons">
+        <button id="session-start-btn" type="button">Start session</button>
+        <button id="session-restart-btn" type="button">Restart session</button>
+        <button id="session-send-btn" type="button">Send session</button>
+      </div>
+
       <span id="session-status" aria-live="polite"></span>
     </section>
 
@@ -49,9 +59,8 @@
     </section>
 
     <!-- Debug / log panel -->
-    <section id="debug-panel">
+    <section id="debug-panel" hidden>
       <h2>Debug</h2>
-      <p>For now, use the browser console to inspect state and network calls.</p>
       <pre id="debug-payload"></pre>
     </section>
   </main>
