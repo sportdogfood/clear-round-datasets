@@ -1,192 +1,257 @@
 # File: expeditor-spec.txt
-# Runner: CRT bottom-runner (Expeditor)
-# Version: v2025-12-01T18:40ET (LIVE-SHAPE CORRECTED)
+# Runner: CRT bottom-runner — EXPEDITOR SPEC
+# Version: v2025-12-02T14:10ET — Bottom-Runner-Only
 
-------------------------------------------------------------
-ROLE
-------------------------------------------------------------
-The expeditor performs ONLY mechanical shaping:
+You are defining the EXPEDITOR STAGE for CRT bottom-runner.
 
-1) locale-research-input.json  
-2) bottomblock-writer-input.json  
+This file describes ONLY:
+- Inputs (Rows payloads),
+- Normalization rules,
+- Output JSON shapes for:
+  - locale-research-input.json
+  - bottomblock-writer-input.json
+- Forbidden behaviors.
 
-It:
-- NEVER fabricates  
-- NEVER verifies  
-- NEVER infers  
-- NEVER rewrites meaning  
-- Applies the global fallback rule  
-- Preserves ALL curated place rows exactly  
-- Emits shapes EXACTLY as defined below  
+All truth, schema, and pipeline rules are governed by instructions.txt.
+This spec must match instructions-mini.txt and instructions.txt exactly.
 
-All deeper logic (researcher, writer, rewriter) depends on these
-shapes and MUST NOT receive any other shape or field name.
+============================================================
+1. ROLE OF EXPEDITOR
+============================================================
+Expeditor is STAGE 2 in the bottom-runner pipeline:
 
-------------------------------------------------------------
-REQUIRED INPUTS
-------------------------------------------------------------
+  LOAD → EXPEDITOR → LOCALE RESEARCHER →
+  WRITER → REWRITER → COMMIT
 
-1) CompetitionPayload  
-   Required minimum fields:
-   - creation_id
-   - venue_name
-   - venue_acronym
-   - city
-   - state
-   - zone
-   - span_start_date
-   - span_end_date
-   - span_season
-   - span_season_city_slug
-   - zoom_start_date
-   - zoom_end_date
-   - zoom_season
-   - zoom_season_city_slug
-   - place_id
-   - lat, lng
+Its job is purely mechanical:
 
-   Fallback:
-   - missing/"" → "could-not-verify"
-   - lat/lng → null if not numeric
+- Read CompetitionPayload + DestinationPayload for ONE creation_id.
+- Validate that creation_id matches in both payloads.
+- Normalize fields using unified fallback rules.
+- Emit TWO JSON files in the exact shapes required by:
+  - Locale Researcher (locale-research-input.json)
+  - Writer       (bottomblock-writer-input.json)
 
-2) DestinationPayload  
-   Required minimum fields:
-   - creation_id
-   - hub_meta.hub_title_override
-   - stay.feature[] / stay.list-only[]
-   - dine.feature[] / dine.list-only[]
-   - essentials.feature[] / essentials.list-only[]
+Expeditor MUST NOT:
+- Perform any research or external lookups.
+- Invent or “upgrade” real-world facts.
+- Generate narrative or editorial content.
+- Modify curated place IDs or add/remove rows.
 
-   Each place row MUST preserve:
-   - place_uid
-   - name, name2, entity
-   - price_band, price_level
-   - distance_bucket, distance_text, duration_text
-   - website
-   - editorial_overview
-   - formatted_address
-   - rating, user_ratings_total
-   - chain_slug, chain_types, all_types
-   - top_rated, preferred
-   - lat, lng
-   - any other curated field unless meaningless
+============================================================
+2. INPUTS (from Rows)
+============================================================
 
-   All missing/"" → "could-not-verify" (except lat/lng → null)
+2.1 CompetitionPayload (CP)
+Required fields before normalization:
 
-------------------------------------------------------------
-OUTPUT #1
-locale-research-input.json
-------------------------------------------------------------
+- creation_id
+- venue_name
+- venue_acronym
+- city
+- state
+- zone
+- span_season
+- span_season_city_slug
+- zoom_season
+- zoom_season_city_slug
+- span_start_date
+- span_end_date
+- zoom_start_date
+- zoom_end_date
+- place_id
+- lat
+- lng
 
-EXACT REQUIRED SHAPE:
+2.2 DestinationPayload (DP)
+Required fields before normalization:
+
+- creation_id
+- hub_meta.hub_title_override
+- stay.feature[] / stay["list-only"][]
+- dine.feature[] / dine["list-only"][]
+- essentials.feature[] / essentials["list-only"][]
+
+Expeditor MUST STOP with an error if:
+- Either payload is missing or unreadable.
+- creation_id does not match between CP and DP.
+
+(LOAD/STOP behavior is fully defined in instructions.txt; this spec
+only restates the requirement for expeditor inputs.)
+
+============================================================
+3. NORMALIZATION RULES
+============================================================
+
+All normalization happens ONLY in Expeditor.
+
+3.1 Scalar text fields (CP + DP)
+For ANY scalar text field that Expeditor uses:
+
+- If the value is missing, null, or "":
+  - Replace with the sentinel: "could-not-verify".
+
+Expeditor MUST NOT:
+- Replace non-empty text with "could-not-verify".
+- Invent replacement values.
+
+3.2 lat / lng (from CP)
+- If lat or lng is a valid numeric value:
+  - Keep as number.
+- If lat or lng is missing, non-numeric, or invalid:
+  - Set that field to null.
+
+3.3 Arrays in DP
+For each lane (stay, dine, essentials):
+
+- feature arrays:
+  - If missing → set to [].
+- list arrays:
+  - If key "list-only" is missing → treat as [].
+  - If key exists but is empty → keep [].
+
+3.4 Key mapping: list-only → list_only
+DestinationPayload is allowed to use the Rows key:
+
+- "list-only"
+
+Expeditor MUST output writer input using ONLY:
+
+- "list_only"
+
+This is the ONLY allowed key rename for DP:
+
+- stay["list-only"]   → stay.list_only
+- dine["list-only"]   → dine.list_only
+- essentials["list-only"] → essentials.list_only
+
+All other keys must be preserved as-is.
+
+============================================================
+4. OUTPUT 1: locale-research-input.json
+============================================================
+
+Expeditor MUST produce locale-research-input.json with the shape:
 
 {
   "creation_id": "<cid>",
   "event_identity": {
-    "venue_name": "<payload>",
-    "venue_acronym": "<payload>",
-    "city": "<payload>",
-    "state": "<payload>",
-    "zone": "<payload>",
-    "span_season": "<payload>",
-    "span_season_city_slug": "<payload>",
-    "zoom_season": "<payload>",
-    "zoom_season_city_slug": "<payload>",
-    "span_start_date": "<payload>",
-    "span_end_date": "<payload>",
-    "zoom_start_date": "<payload>",
-    "zoom_end_date": "<payload>"
+    "venue_name": "...",
+    "venue_acronym": "...",
+    "city": "...",
+    "state": "...",
+    "zone": "...",
+    "span_season": "...",
+    "span_season_city_slug": "...",
+    "zoom_season": "...",
+    "zoom_season_city_slug": "...",
+    "span_start_date": "...",
+    "span_end_date": "...",
+    "zoom_start_date": "...",
+    "zoom_end_date": "..."
   },
   "maps_anchor": {
-    "place_id": "<payload>",
+    "place_id": "...",
     "lat": <number|null>,
     "lng": <number|null>
   }
 }
 
-NOTES:
-- No “locale_input”
-- No “event_name”
-- No additional fields are allowed
-- This is the LIVE shape confirmed during debugging
+Rules:
 
-------------------------------------------------------------
-OUTPUT #2
-bottomblock-writer-input.json
-------------------------------------------------------------
+- All scalar text fields MUST already follow the scalar rule:
+  - empty/missing/null → "could-not-verify".
+- lat/lng MUST be:
+  - number OR null (never "", never "could-not-verify").
+- creation_id MUST match the CP/DP creation_id.
 
-EXACT REQUIRED SHAPE:
+Expeditor MUST NOT:
+- Drop any of the event_identity keys listed above.
+- Insert extra keys not defined in instructions.txt.
+
+============================================================
+5. OUTPUT 2: bottomblock-writer-input.json
+============================================================
+
+Expeditor MUST produce bottomblock-writer-input.json with the shape:
 
 {
   "creation_id": "<cid>",
   "hub_meta": {
-    "hub_title_override": "<value>"
+    "hub_title_override": "..."
   },
   "stay": {
-    "feature": [ { passthrough place rows } ],
-    "list_only": [ { passthrough place rows } ]
+    "feature":   [ /* curated place rows */ ],
+    "list_only": [ /* curated place rows */ ]
   },
   "dine": {
-    "feature": [ { passthrough place rows } ],
-    "list_only": [ { passthrough place rows } ]
+    "feature":   [ /* curated place rows */ ],
+    "list_only": [ /* curated place rows */ ]
   },
   "essentials": {
-    "feature": [ { passthrough place rows } ],
-    "list_only": [ { passthrough place rows } ]
+    "feature":   [ /* curated place rows */ ],
+    "list_only": [ /* curated place rows */ ]
   }
 }
 
-NOTES:
-- Key is “list_only” (underscore)  
-- NEVER “list-only”  
-- Absolutely required to match LIVE writer behavior  
+Rules:
 
-------------------------------------------------------------
-FALLBACK RULES (GLOBAL)
-------------------------------------------------------------
-
-- Any missing or "" → "could-not-verify"
-- lat/lng → null if not numeric
-- No deletions
-- No type assumptions
-- No renaming of curated fields
-
-Writer + rewriter IGNORE “could-not-verify”.
-
-------------------------------------------------------------
-ERROR STOP CONDITIONS
-------------------------------------------------------------
-
-STOP the pipeline immediately if:
-- Either payload missing or unparseable
-- creation_id mismatch
-
-Pipeline MAY continue with empty arrays if a lane has no items.
-
-------------------------------------------------------------
-NON-GOALS (FORBIDDEN BEHAVIORS)
-------------------------------------------------------------
+- creation_id:
+  - MUST match CP/DP creation_id.
+- hub_meta.hub_title_override:
+  - If empty/missing/null in DP → "could-not-verify".
+- stay/dine/essentials:
+  - feature and list_only MUST exist and be arrays:
+    - [] if no rows.
+- Place rows:
+  - Each row MUST preserve all curated DP fields exactly,
+    except for:
+    - scalar empty → "could-not-verify" (as per Section 3.1).
+  - No added or removed rows.
+  - No changed IDs.
 
 Expeditor MUST NOT:
-- Generate text
-- Provide research
-- Upgrade seasons or dates
-- Replace venue fields
-- Rename curated fields
-- Do cross-runner merging
-- Validate facts
-- Query external APIs
-- Correct or enhance place rows
+- Invent new places or attributes.
+- Reorder or filter place rows in a way that changes meaning,
+  unless explicitly defined in instructions.txt (normally, no).
 
-------------------------------------------------------------
-LIVE ALIGNMENT NOTES (2025-12-01)
-------------------------------------------------------------
+============================================================
+6. LOGGING CONTRACT (NAMES ONLY)
+============================================================
 
-✓ Shape now matches LIVE debugger output exactly  
-✓ locale-research-input.json corrected to final shape  
-✓ list_only key fixed to underscore version  
-✓ No legacy keys remain  
-✓ Fully aligned with writer.js and researcher.js expectations  
-✓ Safe for production use for all upcoming bottom-runs
+Expeditor is responsible for PRODUCING these two filenames
+for downstream logging:
 
-# END OF FILE
+- {creation_id}-locale-research-input.json
+- {creation_id}-bottomblock-writer-input.json
+
+The runner’s COMMIT stage (not Expeditor itself) will write them under:
+
+- docs/runner/bottom/logs/{creation_id}-locale-research-input.json
+- docs/runner/bottom/logs/{creation_id}-bottomblock-writer-input.json
+
+File names here MUST stay in sync with instructions.txt and any
+runner logic that references them.
+
+============================================================
+7. FORBIDDEN BEHAVIORS
+============================================================
+
+Expeditor MUST NOT:
+
+- Call any external APIs or tools.
+- Perform any web search or locale research.
+- Fabricate or “upgrade” real-world facts.
+- Change curated IDs or remove/insert place rows.
+- Alter JSON structure beyond:
+  - scalar fallback → "could-not-verify",
+  - lat/lng → null,
+  - arrays → [],
+  - "list-only" → "list_only".
+
+If CP/DP are invalid beyond these normalizations, Expeditor MUST
+surface an error for the LOAD/validation stage to STOP the pipeline.
+
+============================================================
+END OF FILE
+============================================================
