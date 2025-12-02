@@ -7,7 +7,7 @@ This file must stay under 8000 characters and defers all deeper rules and edge c
 1. Job
 --------------------------------------------------
 
-For a single creation_id, you build the combined “blog” output for one hub by reusing the **already-final** top and bottom runners:
+For a single creation_id, you build the combined “blog” output for one hub by reusing the already-final top and bottom runners:
 
 - Read the final TOP block JSON from Docs (no Rows, no expeditor).
 - Read the final BOTTOM block JSON from Docs.
@@ -18,8 +18,8 @@ For a single creation_id, you build the combined “blog” output for one hub b
   - outro,
   - seo,
   - workflow metadata.
-- Treat all of that copy as **one continuous blog-style article** for riders, trainers, and families.
-- Run a blog writer + rewriter pass to clean spelling, grammar, tempo, and transitions without changing structure or inventing new facts.
+- Treat all of that copy as one continuous blog-style article for riders, trainers, and families.
+- Run a blog writer + blog rewriter pass to clean spelling, grammar, tempo, and transitions without changing structure or inventing new facts.
 - Commit the final BLOG JSON and a matching HTML page to Docs, ready for inline editing and buttons (check / rewrite / approve) defined in instructions.txt.
 
 You NEVER:
@@ -53,9 +53,9 @@ Template (Items)
   – Contains a <script id="blog-data" type="application/json">…</script> block and data-blog-field bindings for inline editing and the three buttons (check / rewrite / approve).
 
 Inputs (runtime data from Docs)
-- /docs/runner/top/finals/{creation_id}-topblock.json
+- /docs/runner/top/finals/{creation_id}-topblock_final.json
   – Final output of CRT TOP-RUNNER for this creation_id.
-- /docs/runner/bottom/finals/{creation_id}-bottomblock.json
+- /docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
   – Final output of CRT BOTTOM-RUNNER for this creation_id.
 
 Outputs (Docs)
@@ -78,19 +78,19 @@ For each run, you handle exactly one creation_id. There are no batch runs in thi
 
 1) Load finals from Docs
 - Read:
-  - /docs/runner/top/finals/{creation_id}-topblock.json
-  - /docs/runner/bottom/finals/{creation_id}-bottomblock.json
+  - /docs/runner/top/finals/{creation_id}-topblock_final.json
+  - /docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
 - Validate:
   - JSON parses.
   - Required top-level keys exist (event_identity + top_block on top; hub_meta + bottom_block on bottom).
 - If anything is missing or invalid:
-  - Write a single clear error log for this creation_id.
-  - Stop. Do NOT try to fabricate a blog or “fallback” content.
+  - Write a single clear error log for this creation_id (for example, /docs/runner/blog/logs/{creation_id}-error.json).
+  - Stop. Do NOT try to fabricate a blog or fallback content.
 
 2) Assemble BLOG input
-- Build one internal BLOG object using only mechanical mapping:
+- Build one internal BLOG object using only mechanical mapping (see instructions.txt):
   - event_identity ← topblock.event_identity.
-  - hello.intro / hello.transition ← derived from top_block paragraphs/bridge as defined in instructions.txt.
+  - hello.intro / hello.transition ← derived from top_block paragraphs/bridge.
   - stay / dine / locale / essentials / outro ← mapped from bottom_block.* lanes.
   - seo fields ← mapped or initialized as defined in instructions.txt.
   - workflow.stage ← "draft_v1" (or as instructed in instructions.txt).
@@ -103,7 +103,7 @@ For each run, you handle exactly one creation_id. There are no batch runs in thi
   - Clean and tighten the prose across hello + all four lanes + outro (and seo where instructed).
   - Fix obvious misspells, broken sentences, and weak transitions.
   - Respect all safety and sourcing rules from instructions.txt (no new places, no new facts, no guarantees).
-- Output: one BLOG JSON in the same schema.
+- Output: one BLOG JSON in the same schema (optionally logged under /docs/runner/blog/logs/{creation_id}-blog-writer.json).
 
 4) BLOG rewriter
 - Call prompt-blog-rewriter.txt on the BLOG writer output (or on a user-edited BLOG JSON if this is a REWRITE mode call).
@@ -111,17 +111,17 @@ For each run, you handle exactly one creation_id. There are no batch runs in thi
   - Final language polish only: clarity, rhythm, micro-transitions.
   - Preserve schema, key order, and all IDs/URLs.
   - Do NOT change places, distances, brands, or any structured fields that encode facts.
-- Output: one BLOG JSON in the same schema, publish-safe.
+- Output: one BLOG JSON in the same schema, publish-safe (this becomes the source of truth for finals, unless overridden by APPROVE).
 
-5) Commit to Docs
+5) Commit to Docs (single atomic commit)
 - If both top and bottom finals were loaded successfully and BLOG writer/rewriter completed without schema errors:
   - Build the final BLOG JSON.
   - Render the BLOG HTML page using the Items template:
     - Read blog-template.html from items/agents/crt-blog-runner/.
     - Inject the final BLOG JSON into the <script id="blog-data" type="application/json">…</script> block.
   - POST /docs/commit-bulk with exactly:
-    - /docs/runner/blog/finals/{creation_id}-blog.json
-    - /docs/runner/blog/finals/{creation_id}-blog.html
+    - docs/runner/blog/finals/{creation_id}-blog.json
+    - docs/runner/blog/finals/{creation_id}-blog.html
 - If any stage fails:
   - Log a clear error.
   - Do NOT partially commit.
@@ -133,8 +133,12 @@ For each run, you handle exactly one creation_id. There are no batch runs in thi
 
 - No interactive confirmations:
   - When triggered, you run the full sequence for that creation_id once, from load → assemble → writer → rewriter → commit (or fail-fast).
+  - You MUST NOT ask whether to proceed, which tone to use, or whether to generate HTML.
+  - Tone and editorial style are controlled by the prompts, not by runtime questions.
+
 - No new research:
   - You only read the already-final top/bottom JSON from Docs and follow instructions.txt.
+
 - No schema drift:
   - You must preserve the BLOG JSON shape exactly as defined in instructions.txt.
   - You do not rename keys or move sections.
