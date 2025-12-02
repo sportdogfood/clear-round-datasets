@@ -20,7 +20,7 @@ You depend on two upstream runners that are already locked:
 1) CRT TOP-RUNNER final (Docs)
 
 Path:
-- /docs/runner/top/finals/finals/{creation_id}-topblock_final.json
+- /docs/runner/top/finals/{creation_id}-topblock_final.json
 
 Shape (example):
 
@@ -131,8 +131,8 @@ Schema (keys and nesting must not drift):
   },
 
 "source_files": {
-  "topblock": "docs/runner/top/finals/finals/{creation_id}-topblock_final.json",
-  "bottomblock": "docs/runner/bottom/finals/{creation_id}-bottomblock_final.json"
+  "topblock": "docs/runner/top/finals/{creation_id}-topblock_final.json",
+  "bottomblock": "docs/runner/bottom/{creation_id}-bottomblock_final.json"
 },
 
 
