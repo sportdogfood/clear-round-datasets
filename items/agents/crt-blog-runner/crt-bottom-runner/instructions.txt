@@ -350,24 +350,115 @@ Rewriter output MUST be logged:
 - docs/runner/bottom/logs/{creation_id}-bottomblock_final.json
 
 --------------------------------------------------------------------
-6) COMMIT (automatic, non-interactive)
+6) LOGGING AND COMMIT (automatic, non-interactive)
 --------------------------------------------------------------------
-Runner MUST commit all stage outputs using docs/commit-bulk with
-overwrite=true.
 
-LOGS:
-- docs/runner/bottom/logs/{creation_id}-locale-research-input.json
-- docs/runner/bottom/logs/{creation_id}-bottomblock-writer-input.json
-- docs/runner/bottom/logs/{creation_id}-locale-research-output.json
-- docs/runner/bottom/logs/{creation_id}-bottomblock-writer-output.json
-- docs/runner/bottom/logs/{creation_id}-bottomblock_final.json
+For each run with creation_id = {creation_id}, the runner MUST
+produce FIVE stage-level JSON logs under:
 
-FINALS:
-- docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
+  docs/runner/bottom/logs/
+
+with these exact filenames and contents:
+
+1) LOAD log
+   Path:
+     docs/runner/bottom/logs/{creation_id}-load.json
+
+   Shape:
+   {
+     "stage": "LOAD",
+     "status": "success" | "error",
+     "creation_id": "...",
+     "details": {
+       "competition_payload_found": true | false,
+       "destination_payload_found": true | false,
+       "creation_id_match": true | false
+     }
+   }
+
+2) EXPEDITOR log
+   Path:
+     docs/runner/bottom/logs/{creation_id}-expeditor.json
+
+   Shape:
+   {
+     "stage": "EXPEDITOR",
+     "status": "success" | "error",
+     "creation_id": "...",
+     "locale_research_input": { ... },       // full locale-research-input.json
+     "bottomblock_writer_input": { ... }     // full bottomblock-writer-input.json
+   }
+
+3) LOCALE RESEARCH log
+   Path:
+     docs/runner/bottom/logs/{creation_id}-locale-research.json
+
+   Shape:
+   {
+     "stage": "LOCALE_RESEARCH",
+     "status": "success" | "error",
+     "creation_id": "...",
+     "locale_research_output": { ... }       // full locale-research-output.json
+   }
+
+4) WRITER log
+   Path:
+     docs/runner/bottom/logs/{creation_id}-writer.json
+
+   Shape:
+   {
+     "stage": "WRITER",
+     "status": "success" | "error",
+     "creation_id": "...",
+     "bottomblock_writer_output": { ... }    // full bottomblock-writer-output.json
+   }
+
+5) REWRITER log
+   Path:
+     docs/runner/bottom/logs/{creation_id}-rewriter.json
+
+   Shape:
+   {
+     "stage": "REWRITER",
+     "status": "success" | "error",
+     "creation_id": "...",
+     "bottomblock_final": { ... }            // full bottomblock_final.json
+   }
+
+All five logs MUST:
+
+- Be valid JSON.
+- Include "stage", "status", and "creation_id".
+- Include the nested object named above when the stage succeeds.
+
+In addition, the runner MUST write ONE final JSON file containing
+only the cleaned final payload:
+
+  Path:
+    docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
+
+  Shape:
+  {
+    "creation_id": "...",
+    "bottomblock_final": { ... }  // same object as in the REWRITER log
+  }
+
+All SIX files (five logs + one final) MUST be written in a single
+/docs/commit-bulk call with:
+
+- overwrite = true
+- files[].path starting with "docs/"
+
+If commit succeeds:
+- Return a short success summary including the final path:
+  docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
 
 If commit fails:
-- Return a clear error JSON with stage="COMMIT" and reason.
+- Return a clear error JSON with:
+  "stage": "COMMIT"
+  "reason": short description of the failure.
 - Do NOT claim success.
+
 
 ====================================================================
 INPUT SPECS (Rows payloads)
