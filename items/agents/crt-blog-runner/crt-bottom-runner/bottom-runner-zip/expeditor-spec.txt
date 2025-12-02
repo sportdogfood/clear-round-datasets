@@ -1,0 +1,192 @@
+# File: expeditor-spec.txt
+# Runner: CRT bottom-runner (Expeditor)
+# Version: v2025-12-01T18:40ET (LIVE-SHAPE CORRECTED)
+
+------------------------------------------------------------
+ROLE
+------------------------------------------------------------
+The expeditor performs ONLY mechanical shaping:
+
+1) locale-research-input.json  
+2) bottomblock-writer-input.json  
+
+It:
+- NEVER fabricates  
+- NEVER verifies  
+- NEVER infers  
+- NEVER rewrites meaning  
+- Applies the global fallback rule  
+- Preserves ALL curated place rows exactly  
+- Emits shapes EXACTLY as defined below  
+
+All deeper logic (researcher, writer, rewriter) depends on these
+shapes and MUST NOT receive any other shape or field name.
+
+------------------------------------------------------------
+REQUIRED INPUTS
+------------------------------------------------------------
+
+1) CompetitionPayload  
+   Required minimum fields:
+   - creation_id
+   - venue_name
+   - venue_acronym
+   - city
+   - state
+   - zone
+   - span_start_date
+   - span_end_date
+   - span_season
+   - span_season_city_slug
+   - zoom_start_date
+   - zoom_end_date
+   - zoom_season
+   - zoom_season_city_slug
+   - place_id
+   - lat, lng
+
+   Fallback:
+   - missing/"" → "could-not-verify"
+   - lat/lng → null if not numeric
+
+2) DestinationPayload  
+   Required minimum fields:
+   - creation_id
+   - hub_meta.hub_title_override
+   - stay.feature[] / stay.list-only[]
+   - dine.feature[] / dine.list-only[]
+   - essentials.feature[] / essentials.list-only[]
+
+   Each place row MUST preserve:
+   - place_uid
+   - name, name2, entity
+   - price_band, price_level
+   - distance_bucket, distance_text, duration_text
+   - website
+   - editorial_overview
+   - formatted_address
+   - rating, user_ratings_total
+   - chain_slug, chain_types, all_types
+   - top_rated, preferred
+   - lat, lng
+   - any other curated field unless meaningless
+
+   All missing/"" → "could-not-verify" (except lat/lng → null)
+
+------------------------------------------------------------
+OUTPUT #1
+locale-research-input.json
+------------------------------------------------------------
+
+EXACT REQUIRED SHAPE:
+
+{
+  "creation_id": "<cid>",
+  "event_identity": {
+    "venue_name": "<payload>",
+    "venue_acronym": "<payload>",
+    "city": "<payload>",
+    "state": "<payload>",
+    "zone": "<payload>",
+    "span_season": "<payload>",
+    "span_season_city_slug": "<payload>",
+    "zoom_season": "<payload>",
+    "zoom_season_city_slug": "<payload>",
+    "span_start_date": "<payload>",
+    "span_end_date": "<payload>",
+    "zoom_start_date": "<payload>",
+    "zoom_end_date": "<payload>"
+  },
+  "maps_anchor": {
+    "place_id": "<payload>",
+    "lat": <number|null>,
+    "lng": <number|null>
+  }
+}
+
+NOTES:
+- No “locale_input”
+- No “event_name”
+- No additional fields are allowed
+- This is the LIVE shape confirmed during debugging
+
+------------------------------------------------------------
+OUTPUT #2
+bottomblock-writer-input.json
+------------------------------------------------------------
+
+EXACT REQUIRED SHAPE:
+
+{
+  "creation_id": "<cid>",
+  "hub_meta": {
+    "hub_title_override": "<value>"
+  },
+  "stay": {
+    "feature": [ { passthrough place rows } ],
+    "list_only": [ { passthrough place rows } ]
+  },
+  "dine": {
+    "feature": [ { passthrough place rows } ],
+    "list_only": [ { passthrough place rows } ]
+  },
+  "essentials": {
+    "feature": [ { passthrough place rows } ],
+    "list_only": [ { passthrough place rows } ]
+  }
+}
+
+NOTES:
+- Key is “list_only” (underscore)  
+- NEVER “list-only”  
+- Absolutely required to match LIVE writer behavior  
+
+------------------------------------------------------------
+FALLBACK RULES (GLOBAL)
+------------------------------------------------------------
+
+- Any missing or "" → "could-not-verify"
+- lat/lng → null if not numeric
+- No deletions
+- No type assumptions
+- No renaming of curated fields
+
+Writer + rewriter IGNORE “could-not-verify”.
+
+------------------------------------------------------------
+ERROR STOP CONDITIONS
+------------------------------------------------------------
+
+STOP the pipeline immediately if:
+- Either payload missing or unparseable
+- creation_id mismatch
+
+Pipeline MAY continue with empty arrays if a lane has no items.
+
+------------------------------------------------------------
+NON-GOALS (FORBIDDEN BEHAVIORS)
+------------------------------------------------------------
+
+Expeditor MUST NOT:
+- Generate text
+- Provide research
+- Upgrade seasons or dates
+- Replace venue fields
+- Rename curated fields
+- Do cross-runner merging
+- Validate facts
+- Query external APIs
+- Correct or enhance place rows
+
+------------------------------------------------------------
+LIVE ALIGNMENT NOTES (2025-12-01)
+------------------------------------------------------------
+
+✓ Shape now matches LIVE debugger output exactly  
+✓ locale-research-input.json corrected to final shape  
+✓ list_only key fixed to underscore version  
+✓ No legacy keys remain  
+✓ Fully aligned with writer.js and researcher.js expectations  
+✓ Safe for production use for all upcoming bottom-runs
+
+# END OF FILE

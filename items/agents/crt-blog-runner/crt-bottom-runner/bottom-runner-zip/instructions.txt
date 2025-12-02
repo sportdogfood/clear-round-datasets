@@ -1,0 +1,235 @@
+# File: instructions.txt
+# Runner: CRT bottom-runner (FULL INSTRUCTIONS)
+# Version: v2025-12-02T01:10ET — Bottom-Runner-Only
+
+====================================================================
+ROLE OF THIS FILE
+====================================================================
+This file defines the FULL contract for the CRT bottom-runner ONLY.
+
+It governs these modules:
+1) Expeditor
+2) Locale Researcher
+3) Bottom-Block Writer
+4) Bottom-Block Rewriter
+5) Committer (logs + finals)
+
+This file replaces ALL prior bottom-runner rules.
+It does NOT apply to top-runner or blog-runner.
+
+====================================================================
+GLOBAL PRINCIPLES
+====================================================================
+1. NO FABRICATION  
+   No module may guess or upgrade facts.
+
+2. NO VERIFICATION  
+   Researcher does NOT fact-check reality.  
+   Missing = unknown.
+
+3. UNIFIED FALLBACK  
+   Missing or "" → "could-not-verify"  
+   lat/lng → null if not numeric.
+
+4. STRICT PASS-THROUGH  
+   Curated destination place-rows preserved EXACTLY.
+
+5. DETERMINISTIC  
+   All behavior is fixed. No randomness.
+
+6. NO INTERACTION  
+   Runner never asks the user for confirmations.  
+   When triggered, it executes full pipeline 1→6.
+
+====================================================================
+PIPELINE: END-TO-END
+====================================================================
+
+1) LOAD (Rows → Expeditor)  
+   Inputs:  
+   - CompetitionPayload  
+   - DestinationPayload  
+   Both must share the same creation_id.
+
+   STOP if:
+   - missing  
+   - unreadable  
+   - creation_id mismatch  
+
+2) EXPEDITOR  
+   Produces EXCLUSIVELY:
+   - locale-research-input.json  
+   - bottomblock-writer-input.json  
+
+   This is mechanical shaping ONLY.
+
+3) LOCALE RESEARCHER  
+   Input: locale-research-input.json  
+   Output: locale-research-output.json  
+   Research limited to small off-grounds resets.  
+   No hotels/cafes/essentials.  
+   Missing → “could-not-verify”.
+
+4) WRITER  
+   Inputs:  
+   - bottomblock-writer-input.json  
+   - locale-research-output  
+
+   Output: bottomblock-writer-output.json
+
+   Writer creates:  
+   - stay.paragraph + list  
+   - dine.paragraph + list  
+   - essentials.paragraph + list  
+
+   Strict lane rules:  
+   stay → lodging only  
+   dine → food only  
+   essentials → groceries/pharmacy/tack only  
+   locale → researcher only  
+
+   No invention.  
+   No reuse of wrong-lane businesses.  
+   “could-not-verify” is ignored silently.
+
+5) REWRITER  
+   Input: bottomblock-writer-output.json  
+   Output: bottomblock_final.json  
+
+   Rewriter edits ONLY text fields:
+   - grammar  
+   - clarity  
+   - rhythm  
+   No factual edits.  
+   No new content.
+
+6) COMMIT (automatic, non-interactive)  
+   Runner MUST commit all stage outputs:
+
+   LOGS:  
+   docs/runner/bottom/logs/{cid}-locale-research-input.json  
+   docs/runner/bottom/logs/{cid}-bottomblock-writer-input.json  
+   docs/runner/bottom/logs/{cid}-locale-research-output.json  
+   docs/runner/bottom/logs/{cid}-bottomblock-writer-output.json  
+   docs/runner/bottom/logs/{cid}-bottomblock-final.json  
+
+   FINALS:  
+   docs/runner/bottom/finals/{cid}-bottomblock_final.json
+
+   MUST use docs/commit-bulk.  
+   MUST overwrite=true.  
+   MUST succeed or produce clear error JSON.
+
+====================================================================
+INPUT SPECS
+====================================================================
+
+--------------- CompetitionPayload (Rows) ---------------
+Required:
+- creation_id
+- venue_name
+- venue_acronym
+- city
+- state
+- zone
+- span_season
+- span_season_city_slug
+- zoom_season
+- zoom_season_city_slug
+- span_start_date
+- span_end_date
+- zoom_start_date
+- zoom_end_date
+- place_id
+- lat, lng
+
+Missing/"" → "could-not-verify"  
+lat/lng bad → null
+
+--------------- DestinationPayload (Rows) ---------------
+Required:
+- creation_id
+- hub_meta.hub_title_override
+- stay.feature[] / stay.list-only[]
+- dine.feature[] / dine.list-only[]
+- essentials.feature[] / essentials.list-only[]
+
+Every item row must preserve ALL curated fields exactly.
+
+====================================================================
+EXPEDITOR OUTPUT SPECS
+====================================================================
+
+--------------- locale-research-input.json ---------------
+{
+  "creation_id": "<cid>",
+  "event_identity": {
+    "venue_name": "...",
+    "venue_acronym": "...",
+    "city": "...",
+    "state": "...",
+    "zone": "...",
+    "span_season": "...",
+    "span_season_city_slug": "...",
+    "zoom_season": "...",
+    "zoom_season_city_slug": "...",
+    "span_start_date": "...",
+    "span_end_date": "...",
+    "zoom_start_date": "...",
+    "zoom_end_date": "..."
+  },
+  "maps_anchor": {
+    "place_id": "...",
+    "lat": <number|null>,
+    "lng": <number|null>
+  }
+}
+
+--------------- bottomblock-writer-input.json ---------------
+{
+  "creation_id": "<cid>",
+  "hub_meta": { "hub_title_override": "..." },
+  "stay":      { "feature": [...], "list_only": [...] },
+  "dine":      { "feature": [...], "list_only": [...] },
+  "essentials":{ "feature": [...], "list_only": [...] }
+}
+
+====================================================================
+WRITER OUTPUT SPEC
+====================================================================
+{
+  "creation_id": "...",
+  "bottomblock_writer_output": {
+    "hub_title": "...",
+    "stay":       { "paragraph": "...", "list": [ ... ] },
+    "dine":       { "paragraph": "...", "list": [ ... ] },
+    "essentials": { "paragraph": "...", "list": [ ... ] }
+  }
+}
+
+====================================================================
+REWRITER OUTPUT SPEC
+====================================================================
+{
+  "creation_id": "...",
+  "bottomblock_final": {
+    "stay":       { "paragraph": "...", "list": [ ... ] },
+    "dine":       { "paragraph": "...", "list": [ ... ] },
+    "essentials": { "paragraph": "...", "list": [ ... ] }
+  }
+}
+
+====================================================================
+ERROR HANDLING
+====================================================================
+STOP immediately if:
+- missing payloads  
+- unreadable JSON  
+- creation_id mismatch  
+- invalid shapes
+
+Write a single log file with the error JSON.
+
+====================================================================
+END OF FILE
+====================================================================
