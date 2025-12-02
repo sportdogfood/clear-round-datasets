@@ -12,21 +12,28 @@
     <!-- Header -->
     <header id="session-header">
       <h1>CRT Session Tool</h1>
-      <p>Select a venue, load data from Rows into sessionStorage, and prepare a session payload.</p>
+      <p>Start a new session, load data from Rows, and submit a selection payload.</p>
     </header>
 
     <!-- Session controls -->
     <section id="session-controls">
-      <label for="venue-select">
-        Venue
-        <select id="venue-select">
-          <option value="">Select a venue…</option>
-          <!-- Options populated by app.js -->
+      <!-- Venue selector wired to app.js (filterIdSelect + filterIdInput) -->
+      <div>
+        <label for="filter-id-select">Venue</label>
+        <select id="filter-id-select">
+          <!-- Options are injected by app.js populateVenueSelect() -->
         </select>
-      </label>
+      </div>
 
-      <div class="session-buttons">
-        <button id="session-start-btn" type="button">Start session</button>
+      <div>
+        <label for="filter-id-input">Filter ID (optional override)</label>
+        <input id="filter-id-input" type="text" placeholder="e.g. 4993509" />
+      </div>
+
+      <div>
+        <!-- Start/End/Restart/Send buttons -->
+        <button id="btn-start-session" type="button">Start session</button>
+        <button id="btn-end-session" type="button">End session</button>
         <button id="session-restart-btn" type="button">Restart session</button>
         <button id="session-send-btn" type="button">Send session</button>
       </div>
@@ -61,7 +68,8 @@
     <!-- Debug / log panel -->
     <section id="debug-panel" hidden>
       <h2>Debug</h2>
-      <pre id="session-log"></pre>
+      <p>Inspect session index + selector row snapshot.</p>
+      <pre id="debug-payload"></pre>
     </section>
   </main>
 
