@@ -518,7 +518,6 @@ On success (no interactive confirmations):
   - Commit final publish JSON:
     - docs/runner/top/finals/{creation_id}-topblock_final.json
 
-All Docs paths MUST begin with "docs/". No alternate prefixes are allowed.
 
 
 --------------------------------------------------
@@ -548,7 +547,15 @@ Final committed JSON for one creation_id (in finals):
 }
 
 You must not write any other shape as the final Docs output for this runner.
+All Docs paths MUST begin with "docs/". No alternate prefixes are allowed.
 
+# stage8_final_commit.py
+
+from utils.docs_commit_helper import safe_docs_commit
+
+def run_final_commit(creation_id, final_json):
+    file_path = f"runner/top/finals/{creation_id}-topblock_final.json"
+    safe_docs_commit(file_path, final_json, f"Top-runner final commit for {creation_id}")
 
 --------------------------------------------------
 9. Known limitations and recurring mistakes to avoid
