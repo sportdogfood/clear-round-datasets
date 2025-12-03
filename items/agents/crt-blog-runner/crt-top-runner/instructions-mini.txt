@@ -1,17 +1,19 @@
+// File: instructions-mini.txt
+// Version: v2.1
+// Timestamp: 2025-12-03T23:00:00Z
+// Author: CRT Engineering
+// Purpose: Trace-enabled full runner definition with version + time metadata
+
 --------------------------------------------------
 Header
 --------------------------------------------------
 
-File: instructions-mini.txt
-Version: v2.1
-Timestamp: 2025-12-03T00:00:00Z
-
-Purpose:
-To run the CRT top-runner pipeline end-to-end for one creation_id
-with minimal noise but clear timestamped trace logs for learning and QA.
+This file defines the CRT Top-Runner behavior for a single creation_id.
+It enables live commits, ensures all eight stages run in order, and writes
+timestamped logs for human-readable review.
 
 --------------------------------------------------
-0. Trigger
+Trigger
 --------------------------------------------------
 
 Command:
@@ -21,75 +23,61 @@ Example:
   start crt-top-runner creator-abc
 
 --------------------------------------------------
-1. General Behavior
+Stage Sequence
 --------------------------------------------------
 
-- Execute all eight pipeline stages in sequence with no manual prompts.
-- Perform live commits when integrations are authenticated.
-- If authentication missing, run in safe simulation mode.
-- Never skip a stage silently.
-- Always record a full trace log, even on failure.
-
---------------------------------------------------
-2. Stage List
---------------------------------------------------
-
-1. rows_fetch          → read CompetitionPayload (Rows API)
+1. rows_fetch          → fetch CompetitionPayload
 2. expeditor           → build lane inputs
-3. event_research      → run event lane
-4. venue_research      → run venue lane
-5. city_research       → run city/season lane
-6. merge_bundle        → merge and validate research bundle
-7. topblock_writer     → generate top-block paragraphs
-8. topblock_rewriter   → clean language and commit finals
+3. event_research      → event lane
+4. venue_research      → venue lane
+5. city_research       → city/season lane
+6. merge_bundle        → combine and clean research data
+7. topblock_writer     → generate natural copy
+8. topblock_rewriter   → finalize and commit to docs
 
-All eight must run in order; if one fails, stop and log failure.
+All stages must run in order; stop and log if one fails.
 
 --------------------------------------------------
-3. Logging Rules
+Logging
 --------------------------------------------------
 
-Primary trace log:
+Trace log path:
   docs/runner/top/logs/{creation_id}-trace.log
 
-Each entry format:
-  [ISOtimestamp] [stage_name] [status] [brief message]
+Each entry:
+  [ISOtimestamp] [stage_name] [status] [short message]
 
-Example:
+Example entries:
   [2025-12-03T12:04:22Z] [rows_fetch] OK – payload loaded
-  [2025-12-03T12:04:25Z] [event_research] OK – sources verified
   [2025-12-03T12:04:35Z] [merge_bundle] OK – bundle built
-  [2025-12-03T12:04:40Z] [topblock_writer] OK – copy generated
   [2025-12-03T12:04:45Z] [topblock_rewriter] OK – final committed
 
-If a stage fails:
+If failure:
   [ISOtimestamp] [stage_name] FAIL – reason
 
 Always append chronologically; never overwrite an existing trace.
 
 --------------------------------------------------
-4. Outputs
+Outputs
 --------------------------------------------------
 
-- Stage JSONs:
-    docs/runner/top/logs/{creation_id}-event_research.json
-    docs/runner/top/logs/{creation_id}-venue_research.json
-    docs/runner/top/logs/{creation_id}-city_research.json
-    docs/runner/top/logs/{creation_id}-topblock_research_clean.json
-    docs/runner/top/logs/{creation_id}-topblock_writer.json
-    docs/runner/top/logs/{creation_id}-topblock_final.json
-    docs/runner/top/logs/{creation_id}-trace.log
+Logs:
+  docs/runner/top/logs/{creation_id}-event_research.json
+  docs/runner/top/logs/{creation_id}-venue_research.json
+  docs/runner/top/logs/{creation_id}-city_research.json
+  docs/runner/top/logs/{creation_id}-topblock_research_clean.json
+  docs/runner/top/logs/{creation_id}-topblock_writer.json
+  docs/runner/top/logs/{creation_id}-topblock_final.json
+  docs/runner/top/logs/{creation_id}-trace.log
 
-- Final publish file:
-    docs/runner/top/finals/{creation_id}-topblock_final.json
-
-Each file must include a version and timestamp header.
+Final file:
+  docs/runner/top/finals/{creation_id}-topblock_final.json
 
 --------------------------------------------------
-5. UI / Console Output
+UI Output
 --------------------------------------------------
 
-During execution show short trace lines:
+Show minimal console trace:
   [rows_fetch] …done  
   [event_research] …done  
   etc.
@@ -99,48 +87,35 @@ On success:
   Version: v2.1 | Timestamp: {run_start_ISO}
 
 On failure:
-  ❌ Stage [name] failed – see trace log for details.
+  ❌ Stage [name] failed – see trace log.
 
 --------------------------------------------------
-6. Safety and Validation
+Versioning Metadata
 --------------------------------------------------
 
-- Respect competition payload as the truth model.
-- Use “could-not-verify” only when validation fails.
-- Never hallucinate or upgrade prestige/rating.
-- Verify that event, venue, and city lanes exist before merge.
-- If any stage aborts, write a FAIL entry and halt.
+Each final JSON must include:
+  runner_version: v2.1
+  run_timestamp: {ISO8601 datetime}
+  creation_id
+  commit_sha (if available)
 
---------------------------------------------------
-7. Versioning and Provenance
---------------------------------------------------
-
-Each trace log and final JSON must include:
-  - runner_version: v2.1
-  - run_timestamp: {ISO8601 datetime}
-  - creation_id
-  - commit_sha (when available)
-
-Example JSON header:
+Example:
   {
     "runner_version": "v2.1",
     "run_timestamp": "2025-12-03T12:04:46Z",
     "creation_id": "creator-abc",
-    "commit_sha": "5ec193e1e2971db68d6eaa2e643010e819fc22c6",
-    ...
+    "commit_sha": "5ec193e1e2971db68d6eaa2e643010e819fc22c6"
   }
 
 --------------------------------------------------
-8. Learning and Review
+Safety
 --------------------------------------------------
 
-The trace log is the authoritative record for QA.
-Review it after every test to confirm:
-  - All stages executed in order
-  - No skipped lanes
-  - Realistic timing and durations
-
-Retain trace logs for regression comparisons between versions.
+- Respect CompetitionPayload as truth source.
+- No hallucinations or prestige upgrades.
+- Use “could-not-verify” only when sources fail validation.
+- Validate all three research lanes before merge.
+- Always log before aborting.
 
 --------------------------------------------------
 End of File
