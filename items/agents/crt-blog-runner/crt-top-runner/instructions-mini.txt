@@ -201,5 +201,23 @@ Stage 8: TOP-BLOCK REWRITER + finals
      city_research, merge_bundle, topblock_writer,
      topblock_rewriter, docs_commit).
 
+--------------------------------------------------
+5. Shared finals contract (summary)
+--------------------------------------------------
+
+For this runner and creation_id:
+
+- This runner writes ONE final:
+  - docs/runner/top/finals/{creation_id}-topblock_final.json
+
+- It NEVER writes:
+  - docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
+  - docs/runner/blog/finals/{creation_id}-blog_final.json
+  - docs/runner/blog/finals/{creation_id}-blog.html
+
+- CRT bottom-runner and CRT blog-runner treat
+  docs/runner/top/finals/{creation_id}-topblock_final.json
+  as read-only input and MUST NOT overwrite it.
+
 This mini file MUST remain under 8000 characters.
 All deeper rules and edge cases live in instructions.txt.
