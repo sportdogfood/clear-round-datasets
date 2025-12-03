@@ -28,11 +28,13 @@ instructions.txt is the full contract and wins on conflict.
 
 Once triggered for a creation_id:
 - Run ALL stages and commits in a single pass.
-- Do NOT ask for mode selection (no “run live” vs “simulate”).
-- Do NOT ask for per-stage confirmation.
-- UI should only show:
-  - Nothing or a single brief “run completed” status on success.
-  - One clear error message if something fails.
+- Do NOT ask for manual confirmation between stages.
+- When integrations are authenticated, perform real API calls and commits (live mode).
+- When integrations are not authenticated, fall back to simulation for safety.
+- UI should show concise real-time status:
+  - Display "✅ Commit successful" or equivalent on success.
+  - Display a clear error message naming the failing stage if anything fails.
+
 
 --------------------------------------------------
 0. Trigger
