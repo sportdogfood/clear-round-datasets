@@ -1,6 +1,7 @@
 # utils/docs_commit_helper.py
 
 import base64
+import json
 from items_clearroundtravel_com__jit_plugin import docs_commit_bulk
 
 def safe_docs_commit(file_path: str, content: dict, message: str):
