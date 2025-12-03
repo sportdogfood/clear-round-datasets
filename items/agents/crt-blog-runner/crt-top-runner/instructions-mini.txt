@@ -29,8 +29,9 @@ instructions.txt is the full contract and wins on conflict.
 Once triggered for a creation_id:
 - Run ALL stages and commits in a single pass.
 - Do NOT ask for manual confirmation between stages.
-- When integrations are authenticated, perform real API calls and commits (live mode).
-- When integrations are not authenticated, fall back to simulation for safety.
+- Always perform real API calls and commits (live mode).
+- Simulation mode is disabled.
+
 - UI should show concise real-time status:
   - Display "✅ Commit successful" or equivalent on success.
   - Display a clear error message naming the failing stage if anything fails.
