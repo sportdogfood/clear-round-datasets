@@ -1,6 +1,6 @@
 # File: instructions.txt
 # Runner: CRT bottom-runner (FULL INSTRUCTIONS)
-# Version: v2025-12-04T13:55ET — Bottom-Runner-Only
+# Version: v2025-12-02T18:45ET — Bottom-Runner-Only
 
 ====================================================================
 ROLE OF THIS FILE
@@ -8,464 +8,127 @@ ROLE OF THIS FILE
 This file defines the FULL contract for the CRT bottom-runner ONLY.
 
 It governs these modules:
-1) Expeditor
-2) Locale Researcher
-3) Bottom-Block Writer
-4) Bottom-Block Rewriter (Cleaner/Rewriter)
-5) Committer (logs + finals)
+1) LOAD
+2) Expeditor
+3) Locale Researcher
+4) Bottom-Block Writer
+5) Bottom-Block Rewriter
+6) Committer (logs + finals)
 
-This file replaces ALL prior bottom-runner rules.
-It does NOT apply to top-runner or blog-runner.
+It MUST be used together with instructions-mini.txt.
+This file does NOT apply to any other runner.
 
 ====================================================================
 GLOBAL PRINCIPLES
 ====================================================================
-1. NO FABRICATION
-   No module may invent or “upgrade” real-world facts
-   (places, brands, amenities, distances, times, numbers).
 
-2. CONTROLLED RESEARCH
-   - ONLY the Locale Researcher may call tools / external sources.
-   - Locale Researcher may add NEW LOCALE FACTS in its lane
-     (off-grounds resets) when directly supported by reputable
-     sources, using given anchors.
-   - NO module may verify/correct CompetitionPayload or
-     DestinationPayload identity/places.
+1) No fabrication
+- No module may invent or "upgrade" real-world facts.
+- All facts must come from:
+  - CompetitionPayload (Rows),
+  - DestinationPayload (Rows),
+  - locale-research-output.json (Locale Researcher only).
 
-3. SENTINEL FALLBACK
-   - Expeditor MUST convert empty scalar payload fields
-     (missing/null/"") to the sentinel "could-not-verify".
-   - Locale Researcher MUST use "could-not-verify" whenever it
-     cannot safely obtain a locale fact from the anchors.
-   - Writer and Rewriter MUST treat "could-not-verify" as a
-     hard “do not use this field” signal and MUST NOT backfill it
-     with guesses. They MUST NOT surface the literal text
-     "could-not-verify" to the user.
+2) No verification/correction of payloads
+- Locale Researcher may NOT “correct” CompetitionPayload or
+  DestinationPayload.
+- If payload fields are wrong, that is out of scope. Missing fields
+  become "could-not-verify".
 
-4. STRICT PASS-THROUGH OF PLACES
-   - DestinationPayload place rows are curated and MUST be preserved
-     exactly, except:
-       - the allowed key mapping "list-only" → "list_only";
-       - Expeditor’s scalar fallback to "could-not-verify" for
-         empty fields.
-   - No module may change curated place IDs or invented add/remove
-     rows.
+3) Unified fallback
+- For scalar string fields:
+  - empty / missing / null → "could-not-verify".
+- For lat/lng:
+  - valid numeric → number,
+  - otherwise → null.
+- For arrays:
+  - always emit arrays (never null); empty arrays are allowed.
 
-5. DETERMINISTIC BEHAVIOR
-   All behavior is fixed and repeatable for given inputs.
-   No randomness or sampling.
+4) Use of "could-not-verify"
+- "could-not-verify" is a sentinel meaning:
+  - “do not use this value in narrative”.
+- Writer and Rewriter MUST NOT:
+  - guess or fill in content for fields marked "could-not-verify".
+  - echo the literal string "could-not-verify" into user-facing text.
 
-6. NO INTERACTION
-   - When triggered, the runner executes the full pipeline in one
-     pass and returns a single result.
-   - It MUST NOT ask for confirmations or offer mode choices
-     (live/simulate, debug/trace, stage-by-stage).
+5) Curated place rows are pass-through
+- DestinationPayload stay/dine/essentials rows are curated.
+- Expeditor MUST preserve all row fields exactly in
+  bottomblock-writer-input.json (subject to list-only → list_only).
+- Writer uses those rows for narrative; Writer MUST NOT pretend to
+  know missing fields that are "could-not-verify".
+
+6) Deterministic behavior
+- No randomness. Given the same inputs, all stages MUST produce the
+  same outputs.
+
+7) No interactivity
+- Runner never asks user questions.
+- Runner never offers debug/trace modes.
+- On trigger, it runs LOAD → EXPEDITOR → LOCALE_RESEARCH →
+  WRITER → REWRITER → COMMIT once in order.
+
+8) Tools usage
+- ONLY Locale Researcher may call http_get or any external tool.
+- All other modules MUST operate purely on JSON inputs.
 
 ====================================================================
 PIPELINE: END-TO-END
 ====================================================================
 
-Trigger:
-- User sends:
-
-    start crt-bottom-runner {creation_id}
-
-- Runner parses `{creation_id}` and runs ALL stages 1–6:
-
-  LOAD → EXPEDITOR → LOCALE RESEARCHER →
-  WRITER → REWRITER → COMMIT
-
 --------------------------------------------------------------------
-1) LOAD (Rows → Expeditor)
+1) LOAD (Rows → in-memory payloads)
 --------------------------------------------------------------------
+
 Inputs:
-- CompetitionPayload (Rows)
-- DestinationPayload (Rows)
+- creation_id from trigger.
 
-Both MUST:
-- exist,
-- be readable JSON,
-- share the SAME creation_id.
+Tasks:
+- Fetch CompetitionPayload for creation_id.
+- Fetch DestinationPayload for creation_id.
+- Validate:
+  - Both payloads exist.
+  - Both are readable JSON.
+  - Both contain creation_id fields matching the trigger.
 
-STOP immediately if:
-- either payload is missing,
-- either payload is unreadable,
-- creation_id values do not match.
+STOP and return an error (no other stages run) if:
+- Either payload is missing.
+- Either payload is unreadable.
+- creation_id mismatch.
 
-On STOP:
-- Do NOT run later stages.
-- Return an error JSON with stage="LOAD" and reason.
+LOAD log content (shape hint, log is written at COMMIT time):
+
+{
+  "stage": "LOAD",
+  "status": "success" | "error",
+  "creation_id": "<cid>",
+  "details": {
+    "competition_payload_found": true | false,
+    "destination_payload_found": true | false,
+    "creation_id_match": true | false
+  }
+}
+
+On LOAD error:
+- status = "error"
+- details reflect the problem.
+- No further stages run.
+- No docs/commit-bulk call is made.
+
+On LOAD success:
+- status = "success"
+- details all true.
+- Pass payloads to Expeditor.
 
 --------------------------------------------------------------------
 2) EXPEDITOR
 --------------------------------------------------------------------
-Input:
-- Raw CompetitionPayload
-- Raw DestinationPayload
 
-Expeditor produces ONLY:
-- locale-research-input.json
-- bottomblock-writer-input.json
-
-Expeditor behavior:
-- Mechanical shaping ONLY (no narrative, no content rewriting).
-- Normalization of payload fields:
-
-  a) Scalar text fields (CP + DP):
-     - If missing, null, or "" → "could-not-verify".
-
-  b) lat/lng (from CompetitionPayload):
-     - If non-numeric or missing → null.
-
-  c) Arrays in DestinationPayload:
-     - stay/dine/essentials feature/list arrays:
-       - If missing → [].
-
-  d) Key mapping:
-     - Rows input MAY use "list-only".
-     - Expeditor MUST output "list_only" for writer input.
-     - This is the ONLY allowed key rename.
-
-Outputs:
-
-- locale-research-input.json
-  {
-    "creation_id": "<cid>",
-    "event_identity": {
-      "venue_name": "...",
-      "venue_acronym": "...",
-      "city": "...",
-      "state": "...",
-      "zone": "...",
-      "span_season": "...",
-      "span_season_city_slug": "...",
-      "zoom_season": "...",
-      "zoom_season_city_slug": "...",
-      "span_start_date": "...",
-      "span_end_date": "...",
-      "zoom_start_date": "...",
-      "zoom_end_date": "..."
-    },
-    "maps_anchor": {
-      "place_id": "...",
-      "lat": <number|null>,
-      "lng": <number|null>
-    }
-  }
-
-- bottomblock-writer-input.json
-  {
-    "creation_id": "<cid>",
-    "hub_meta": { "hub_title_override": "..." },
-    "stay": {
-      "feature":   [ /* rows */ ],
-      "list_only": [ /* rows */ ]
-    },
-    "dine": {
-      "feature":   [ /* rows */ ],
-      "list_only": [ /* rows */ ]
-    },
-    "essentials": {
-      "feature":   [ /* rows */ ],
-      "list_only": [ /* rows */ ]
-    }
-  }
-
-Both outputs MUST be logged under:
-- docs/runner/bottom/logs/{creation_id}-locale-research-input.json
-- docs/runner/bottom/logs/{creation_id}-bottomblock-writer-input.json
-
-Expeditor MUST NOT:
-- invent new places,
-- modify curated IDs,
-- change any semantics beyond the fallback and key mapping above.
-
---------------------------------------------------------------------
-3) LOCALE RESEARCHER
---------------------------------------------------------------------
-Input:
-- locale-research-input.json (from Expeditor ONLY)
-
-Allowed data sources:
-- Given anchors (city/state/season/place_id/lat/lng)
-- Reputable external sources/tools for locale context.
-
-Duties:
-- Discover facts in the “off-grounds reset” lane ONLY:
-  - e.g., nearby parks/trail systems/green spaces, simple reset
-    environments.
-- Produce a facts-only JSON:
-  - locale-research-output.json
-
-Locale Researcher MUST:
-- NOT verify, correct, or overwrite CompetitionPayload or
-  DestinationPayload identity/places.
-- NOT research or name hotels, restaurants, or essentials.
-- NOT output narrative paragraphs or editorial copy.
-
-Every defined field in locale-research-output.json MUST be:
-- either a concrete fact supported by a reputable source,
-- or the literal sentinel "could-not-verify".
-
-Locale Researcher MUST NOT:
-- leave defined fields blank or silently drop keys,
-- guess based on model memory,
-- use “typical city” assumptions.
-
-Output MUST be logged:
-- docs/runner/bottom/logs/{creation_id}-locale-research-output.json
-
---------------------------------------------------------------------
-4) WRITER
---------------------------------------------------------------------
 Inputs:
-- bottomblock-writer-input.json (normalized payload from Expeditor)
-- locale-research-output.json (facts-only locale data)
+- CompetitionPayload (CP)
+- DestinationPayload (DP)
 
-NO research:
-- Writer MUST NOT call tools or look anything up.
-- It may ONLY use the fields present in these JSONs.
-
-Writer creates:
-- bottomblock-writer-output.json
-
-Lanes (in bottomblock_writer_output):
-- stay:
-  - paragraph + list
-  - Lodging only, built from stay feature/list_only rows.
-- dine:
-  - paragraph + list
-  - Food only, built from dine rows.
-- essentials:
-  - paragraph + list
-  - Groceries/pharmacy/tack only, built from essentials rows.
-- locale:
-  - paragraph ONLY
-  - Built from locale-research facts; no new named places beyond
-    those provided by Locale Researcher (if any).
-- outro:
-  - paragraph ONLY
-  - Closing the block and pointing riders back toward practical
-    planning (stay/dine/essentials), without adding new facts.
-
-Lane boundaries:
-- stay/dine/essentials/locale MUST NOT share or reuse wrong-lane
-  businesses or places.
-
-Handling "could-not-verify":
-- Writer MUST treat "could-not-verify" as "do not use this field".
-- Writer MUST NOT:
-  - infer or imagine missing details (menus, amenities, views, etc.),
-  - echo "could-not-verify" into user-facing text.
-- When many fields are "could-not-verify", Writer may fall back to
-  simpler, generic but honest copy, never fantasy.
-
-Writer Output Spec:
-{
-  "creation_id": "...",
-  "bottomblock_writer_output": {
-    "hub_title": "...",
-    "stay": {
-      "paragraph": "...",
-      "list": [ /* lodging items */ ]
-    },
-    "dine": {
-      "paragraph": "...",
-      "list": [ /* dining items */ ]
-    },
-    "essentials": {
-      "paragraph": "...",
-      "list": [ /* essentials items */ ]
-    },
-    "locale": {
-      "paragraph": "..."
-    },
-    "outro": {
-      "paragraph": "..."
-    }
-  }
-}
-
-Writer output MUST be logged:
-- docs/runner/bottom/logs/{creation_id}-bottomblock-writer-output.json
-
---------------------------------------------------------------------
-5) REWRITER (Cleaner/Rewriter)
---------------------------------------------------------------------
-Input:
-- bottomblock-writer-output.json
-
-Output:
-- bottomblock_final.json
-
-Scope:
-- MAY rewrite and clean STRING FIELDS ONLY:
-  - fix spelling, grammar, punctuation,
-  - improve clarity, rhythm, and flow,
-  - merge/split/reorder sentences within a paragraph while preserving
-    meaning,
-  - remove or generalize clearly made-up specifics by reducing detail,
-    NOT by adding new facts,
-  - remove any literal "could-not-verify" that leaked into
-    user-facing text.
-
-HARD LIMITS:
-- MUST NOT call tools or perform research.
-- MUST NOT add new real-world facts:
-  - no new place names, brands, distances, times, amenities,
-    or numbers.
-- MUST NOT change JSON structure:
-  - no adding/removing lanes (stay/dine/essentials/locale/outro),
-  - no adding/removing list items,
-  - no change to array lengths or element order.
-- MUST NOT contradict payload or locale-research facts.
-
-Rewriter Output Spec:
-{
-  "creation_id": "...",
-  "bottomblock_final": {
-    "hub_title": "...",
-    "stay": {
-      "paragraph": "...",
-      "list": [ /* same length/items as Writer */ ]
-    },
-    "dine": {
-      "paragraph": "...",
-      "list": [ /* same length/items as Writer */ ]
-    },
-    "essentials": {
-      "paragraph": "...",
-      "list": [ /* same length/items as Writer */ ]
-    },
-    "locale": {
-      "paragraph": "..."
-    },
-    "outro": {
-      "paragraph": "..."
-    }
-  }
-}
-
-Rewriter output MUST be logged:
-- docs/runner/bottom/logs/{creation_id}-bottomblock_final.json
-
---------------------------------------------------------------------
-6) LOGGING AND COMMIT (automatic, non-interactive)
---------------------------------------------------------------------
-
-For each run with creation_id = {creation_id}, the runner MUST
-produce FIVE stage-level JSON logs under:
-
-  docs/runner/bottom/logs/
-
-with these exact filenames and contents:
-
-1) LOAD log
-   Path:
-     docs/runner/bottom/logs/{creation_id}-load.json
-
-   Shape:
-   {
-     "stage": "LOAD",
-     "status": "success" | "error",
-     "creation_id": "...",
-     "details": {
-       "competition_payload_found": true | false,
-       "destination_payload_found": true | false,
-       "creation_id_match": true | false
-     }
-   }
-
-2) EXPEDITOR log
-   Path:
-     docs/runner/bottom/logs/{creation_id}-expeditor.json
-
-   Shape:
-   {
-     "stage": "EXPEDITOR",
-     "status": "success" | "error",
-     "creation_id": "...",
-     "locale_research_input": { ... },       // full locale-research-input.json
-     "bottomblock_writer_input": { ... }     // full bottomblock-writer-input.json
-   }
-
-3) LOCALE RESEARCH log
-   Path:
-     docs/runner/bottom/logs/{creation_id}-locale-research.json
-
-   Shape:
-   {
-     "stage": "LOCALE_RESEARCH",
-     "status": "success" | "error",
-     "creation_id": "...",
-     "locale_research_output": { ... }       // full locale-research-output.json
-   }
-
-4) WRITER log
-   Path:
-     docs/runner/bottom/logs/{creation_id}-writer.json
-
-   Shape:
-   {
-     "stage": "WRITER",
-     "status": "success" | "error",
-     "creation_id": "...",
-     "bottomblock_writer_output": { ... }    // full bottomblock-writer-output.json
-   }
-
-5) REWRITER log
-   Path:
-     docs/runner/bottom/logs/{creation_id}-rewriter.json
-
-   Shape:
-   {
-     "stage": "REWRITER",
-     "status": "success" | "error",
-     "creation_id": "...",
-     "bottomblock_final": { ... }            // full bottomblock_final.json
-   }
-
-All five logs MUST:
-
-- Be valid JSON.
-- Include "stage", "status", and "creation_id".
-- Include the nested object named above when the stage succeeds.
-
-In addition, the runner MUST write ONE final JSON file containing
-only the cleaned final payload:
-
-  Path:
-    docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
-
-  Shape:
-  {
-    "creation_id": "...",
-    "bottomblock_final": { ... }  // same object as in the REWRITER log
-  }
-
-All SIX files (five logs + one final) MUST be written in a single
-/docs/commit-bulk call with:
-
-- overwrite = true
-- files[].path starting with "docs/"
-
-If commit succeeds:
-- Return a short success summary including the final path:
-  docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
-
-If commit fails:
-- Return a clear error JSON with:
-  "stage": "COMMIT"
-  "reason": short description of the failure.
-- Do NOT claim success.
-
-
-====================================================================
-INPUT SPECS (Rows payloads)
-====================================================================
-
---------------- CompetitionPayload (Rows) ---------------
-Required fields (before Expeditor normalization):
+Required CP fields (subset, normalized):
 - creation_id
 - venue_name
 - venue_acronym
@@ -481,39 +144,384 @@ Required fields (before Expeditor normalization):
 - zoom_start_date
 - zoom_end_date
 - place_id
-- lat
-- lng
+- lat, lng
 
-Expeditor applies:
-- Missing/""/null scalar → "could-not-verify"
-- lat/lng bad → null
-
---------------- DestinationPayload (Rows) ---------------
-Required:
+Required DP fields (subset, normalized):
 - creation_id
 - hub_meta.hub_title_override
-- stay.feature[] / stay["list-only"][]
-- dine.feature[] / dine["list-only"][]
-- essentials.feature[] / essentials["list-only"][]
+- stay.feature[] / stay.list-only[]
+- dine.feature[] / dine.list-only[]
+- essentials.feature[] / essentials.list-only[]
 
-Expeditor:
-- Preserves all curated fields exactly, except:
-  - scalar empties → "could-not-verify",
-  - "list-only" → "list_only",
-  - missing arrays → [].
+Tasks (mechanical only):
+- Normalize scalars:
+  - Any empty/missing string field in CP/DP → "could-not-verify".
+- Normalize lat/lng:
+  - If lat/lng parse as numbers → keep numeric.
+  - Otherwise → null.
+- Normalize arrays:
+  - stay/dine/essentials feature/list arrays MUST always be arrays.
+  - If missing/null → [].
+- Rename keys:
+  - In DestinationPayload-derived writer input:
+    - "list-only" → "list_only".
+- Build exactly TWO in-memory JSON objects:
+
+1) locale-research-input.json
+
+{
+  "creation_id": "<cid>",
+  "event_identity": {
+    "venue_name": "...",
+    "venue_acronym": "...",
+    "city": "...",
+    "state": "...",
+    "zone": "...",
+    "span_season": "...",
+    "span_season_city_slug": "...",
+    "zoom_season": "...",
+    "zoom_season_city_slug": "...",
+    "span_start_date": "...",
+    "span_end_date": "...",
+    "zoom_start_date": "...",
+    "zoom_end_date": "..."
+  },
+  "maps_anchor": {
+    "place_id": "...",
+    "lat": <number|null>,
+    "lng": <number|null>
+  }
+}
+
+2) bottomblock-writer-input.json
+
+{
+  "creation_id": "<cid>",
+  "hub_meta": {
+    "hub_title_override": "..."
+  },
+  "stay": {
+    "feature":   [ /* curated stay rows, unchanged */ ],
+    "list_only": [ /* curated stay list-only rows, unchanged */ ]
+  },
+  "dine": {
+    "feature":   [ /* curated dine rows, unchanged */ ],
+    "list_only": [ /* curated dine list-only rows, unchanged */ ]
+  },
+  "essentials": {
+    "feature":   [ /* curated essentials rows, unchanged */ ],
+    "list_only": [ /* curated essentials list-only rows, unchanged */ ]
+  }
+}
+
+No research. No narrative. No inference.
+
+EXPEDITOR log (written at COMMIT):
+
+{
+  "stage": "EXPEDITOR",
+  "status": "success" | "error",
+  "creation_id": "<cid>",
+  "locale_research_input": { ... },     // full object
+  "bottomblock_writer_input": { ... }   // full object
+}
+
+On EXPEDITOR error (shape/normalization failure):
+- status = "error"
+- include an "error" field describing what failed.
+- Later stages MUST NOT run.
+
+--------------------------------------------------------------------
+3) LOCALE RESEARCHER
+--------------------------------------------------------------------
+
+Prompt file:
+- research-locale-prompt.txt
+
+Input:
+- locale-research-input.json.
+
+Allowed tools:
+- May call http_get / external sources using the anchors:
+  - venue_name, city, state, zone, span/zoom seasons, lat/lng, place_id.
+
+Purpose:
+- Find factual off-grounds “reset spots” near the venue:
+  - parks, trails, green spaces, etc., suitable for riders/families.
+
+MUST NOT:
+- Research hotels, restaurants, or essentials.
+- Verify or correct CP/DP.
+- Generate narrative paragraphs.
+
+Output:
+- locale-research-output.json
+
+General shape (simplified):
+
+{
+  "creation_id": "<cid>",
+  "reset_spots": [
+    {
+      "name": "...",
+      "type": "...",        // park, trail, etc.
+      "distance": "...",    // short, fact-safe description or could-not-verify
+      "notes": "...",       // factual notes only
+      ...
+    }
+    // ...
+  ]
+}
+
+Rules:
+- Any field that cannot be supported by tools/sources:
+  - string → "could-not-verify"
+  - numeric → null
+- Never invent details without a source.
+
+LOCALE RESEARCH log (written at COMMIT):
+
+{
+  "stage": "LOCALE_RESEARCH",
+  "status": "success" | "error",
+  "creation_id": "<cid>",
+  "locale_research_output": { ... }
+}
+
+On LOCALE RESEARCH error:
+- status = "error"
+- include an "error" field.
+- WRITER and REWRITER MUST NOT run.
+
+--------------------------------------------------------------------
+4) WRITER
+--------------------------------------------------------------------
+
+Prompt file:
+- bottomblock-writer-prompt.txt
+  (alias: prompt-bottom-writer.txt)
+
+Inputs:
+- bottomblock-writer-input.json
+- locale-research-output.json
+
+No tools. No research.
+
+Output:
+- bottomblock-writer-output.json
+
+Required shape:
+
+{
+  "creation_id": "<cid>",
+  "bottomblock_writer_output": {
+    "hub_title": "...",
+    "stay": {
+      "paragraph": "...",
+      "list": [ /* lodging items derived from stay rows */ ]
+    },
+    "dine": {
+      "paragraph": "...",
+      "list": [ /* dining items derived from dine rows */ ]
+    },
+    "essentials": {
+      "paragraph": "...",
+      "list": [ /* essentials items derived from essentials rows */ ]
+    },
+    "locale": {
+      "paragraph": "..."
+    },
+    "outro": {
+      "paragraph": "..."
+    }
+  }
+}
+
+Lane rules:
+- stay:
+  - Lodging only (hotels, house rentals, RV parks, etc.).
+- dine:
+  - Food only (restaurants, cafes, coffee shops, bakeries).
+- essentials:
+  - Groceries, pharmacy, tack/feed, basic supplies.
+- locale:
+  - Off-grounds reset spots from locale-research-output.
+- Writer MUST NOT:
+  - reuse a wrong-lane business (no hotel in dine, etc.).
+  - invent businesses not present in DP or locale research.
+  - use any "could-not-verify" field as if it were real content.
+  - echo the literal string "could-not-verify" into copy.
+
+WRITER log (written at COMMIT):
+
+{
+  "stage": "WRITER",
+  "status": "success" | "error",
+  "creation_id": "<cid>",
+  "bottomblock_writer_output": { ... }
+}
+
+On WRITER error:
+- status = "error"
+- include an "error" field.
+- REWRITER MUST NOT run.
+
+--------------------------------------------------------------------
+5) REWRITER (Cleaner)
+--------------------------------------------------------------------
+
+Prompt file:
+- bottomblock-rewriter-prompt.txt
+  (alias: prompt-bottom-rewriter.txt)
+
+Input:
+- bottomblock-writer-output.json
+
+No tools. No research.
+
+Output:
+- bottomblock_final.json
+
+Required shape:
+
+{
+  "creation_id": "<cid>",
+  "bottomblock_final": {
+    "hub_title": "...",
+    "stay": {
+      "paragraph": "...",
+      "list": [ ... ]  // same length/order as writer
+    },
+    "dine": {
+      "paragraph": "...",
+      "list": [ ... ]  // same length/order as writer
+    },
+    "essentials": {
+      "paragraph": "...",
+      "list": [ ... ]  // same length/order as writer
+    },
+    "locale": {
+      "paragraph": "..."
+    },
+    "outro": {
+      "paragraph": "..."
+    }
+  }
+}
+
+Allowed changes:
+- Modify STRING FIELDS ONLY to:
+  - fix spelling, grammar, punctuation,
+  - improve clarity and flow,
+  - remove duplicated words and obvious broken sentences,
+  - soften or remove clearly hallucinated specifics by making
+    statements LESS specific and safer.
+
+Forbidden changes:
+- Add/remove keys.
+- Add/remove/reorder list items.
+- Change numeric/boolean/null values.
+- Invent new places, distances, times, or amenities.
+
+Handling "could-not-verify":
+- If any literal "could-not-verify" leaks into visible text,
+  Rewriter MUST remove or rewrite that phrase to a neutral,
+  fact-safe line.
+- Rewriter MUST NOT “fill in” missing details based on
+  "could-not-verify".
+
+REWRITER log (written at COMMIT):
+
+{
+  "stage": "REWRITER",
+  "status": "success" | "error",
+  "creation_id": "<cid>",
+  "bottomblock_final": { ... }
+}
+
+--------------------------------------------------------------------
+6) LOGGING AND COMMIT (terminal)
+--------------------------------------------------------------------
+
+docs_commit_bulk behavior:
+- A call to /docs/commit-bulk is TERMINAL.
+- Therefore:
+  - NO earlier stage may call /docs/commit-bulk.
+  - ONLY Stage 6 (COMMIT) may call /docs/commit-bulk.
+  - Stage 6 MUST commit ALL logs and the final JSON in one call.
+
+For creation_id = <cid>, Stage 6 MUST write exactly SIX files:
+
+Stage logs (5):
+
+1) LOAD log
+- path: docs/runner/bottom/logs/<cid>-load.json
+- content: LOAD log as defined in Section 1.
+
+2) EXPEDITOR log
+- path: docs/runner/bottom/logs/<cid>-expeditor.json
+- content: EXPEDITOR log as defined in Section 2.
+
+3) LOCALE RESEARCH log
+- path: docs/runner/bottom/logs/<cid>-locale-research.json
+- content: LOCALE RESEARCH log as defined in Section 3.
+
+4) WRITER log
+- path: docs/runner/bottom/logs/<cid>-writer.json
+- content: WRITER log as defined in Section 4.
+
+5) REWRITER log
+- path: docs/runner/bottom/logs/<cid>-rewriter.json
+- content: REWRITER log as defined in Section 5.
+
+Final JSON (1):
+
+6) Final bottom-block JSON
+- path: docs/runner/bottom/finals/<cid>-bottomblock_final.json
+- content: EXACTLY the bottomblock_final object from REWRITER,
+  wrapped with creation_id as defined above.
+
+Commit call:
+- Single POST to /docs/commit-bulk with a JSON body:
+
+{
+  "message": "crt-bottom-runner <cid>",
+  "overwrite": true,
+  "files": [
+    { "path": "docs/runner/bottom/logs/<cid>-load.json",          ... },
+    { "path": "docs/runner/bottom/logs/<cid>-expeditor.json",      ... },
+    { "path": "docs/runner/bottom/logs/<cid>-locale-research.json",... },
+    { "path": "docs/runner/bottom/logs/<cid>-writer.json",         ... },
+    { "path": "docs/runner/bottom/logs/<cid>-rewriter.json",       ... },
+    { "path": "docs/runner/bottom/finals/<cid>-bottomblock_final.json", ... }
+  ]
+}
+
+All FileItem.path values MUST start with "docs/".
+
+On COMMIT success:
+- Return the success JSON specified in instructions-mini.txt
+  (status, creation_id, stages, logs[], final, commit sha).
+
+On COMMIT failure:
+- Return an error JSON with:
+  - "status": "error"
+  - "stage": "COMMIT"
+  - "creation_id": "<cid>"
+  - "reason": short description.
+- Do NOT claim success.
 
 ====================================================================
-ERROR HANDLING
+ERROR HANDLING (SUMMARY)
 ====================================================================
-STOP pipeline immediately if:
-- missing payloads,
-- unreadable JSON,
-- creation_id mismatch,
-- invalid shapes at any stage that cannot be normalized.
 
-On STOP:
-- Write a single error JSON (including stage + reason),
-  and do not proceed to later stages.
+On first error at any stage:
+- Mark that stage’s log with status = "error" and a reason.
+- Do NOT run later stages.
+- Do NOT call docs/commit-bulk unless all stages 1–5
+  succeed.
+- Respond to the user with the error JSON defined in
+  instructions-mini.txt.
 
 ====================================================================
 END OF FILE
