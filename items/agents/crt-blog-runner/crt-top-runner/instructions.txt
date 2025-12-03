@@ -578,6 +578,104 @@ You must not write any other shape as the final Docs output for this runner.
 
 - Interactive confirmations:
   - Once triggered for a creation_id, the runner must execute all stages (lanes, merge, writer, rewriter, commits) in one pass without prompting the user for per-stage confirmations.
+====================================================================
+SHARED FINALS CONTRACT (TOP / BOTTOM / BLOG)
+====================================================================
+
+For any given creation_id (e.g. "creator-abc"), ALL runners must treat
+the following four files as the only official finals.
+
+--------------------------------------------------------------------
+1) TOP-RUNNER FINAL
+--------------------------------------------------------------------
+Writer:
+  - CRT top-runner
+
+Role:
+  - Produce the 2-paragraph travel opener + short bridge for this
+    competition week (the “top-block”).
+
+Required final output (JSON):
+  - docs/runner/top/finals/{creation_id}-topblock_final.json
+
+Notes:
+  - Must be valid JSON.
+  - Must include creation_id and a single top-block payload object
+    (field name and inner shape are defined in the top-runner’s own
+    instructions).
+  - No other runner overwrites this file.
+
+--------------------------------------------------------------------
+2) BOTTOM-RUNNER FINAL
+--------------------------------------------------------------------
+Writer:
+  - CRT bottom-runner
+
+Role:
+  - Produce the stay / dine / essentials bottom-block for the same
+    creation_id, using ONLY the curated payloads + locale research.
+
+Required final output (JSON):
+  - docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
+
+Notes:
+  - Must be valid JSON.
+  - Must include creation_id and a single bottom-block payload object
+    (field name and inner shape are defined in the bottom-runner’s
+    own instructions).
+  - No other runner overwrites this file.
+
+--------------------------------------------------------------------
+3) BLOG-RUNNER FINALS
+--------------------------------------------------------------------
+Writer:
+  - CRT blog-runner
+
+Role:
+  - Read BOTH top + bottom finals for the same creation_id.
+  - Merge them into one clean blog article, add SEO fields, and
+    produce a renderable HTML page.
+
+Required inputs (READ-ONLY from Docs):
+  - docs/runner/top/finals/{creation_id}-topblock_final.json
+  - docs/runner/bottom/finals/{creation_id}-bottomblock_final.json
+
+Required finals (BLOG-RUNNER writes):
+
+  JSON (blog data + SEO):
+    - docs/runner/blog/finals/{creation_id}-blog_final.json
+
+  HTML (published blog page):
+    - docs/runner/blog/finals/{creation_id}-blog.html
+      → served at:
+        https://blog.clearroundtravel.com/runner/blog/finals/{creation_id}-blog.html
+
+Notes:
+  - Blog-runner MUST NOT write into the top or bottom finals paths.
+  - Top and bottom treat blog finals as read-only.
+
+--------------------------------------------------------------------
+4) CROSS-RUNNER EXPECTATIONS
+--------------------------------------------------------------------
+- All three runners must agree on:
+  - The same creation_id string.
+  - The exact finals paths above (no alternate or duplicate paths).
+
+- Top-runner and bottom-runner:
+  - NEVER read each other’s finals.
+  - ONLY write their own final JSON under their own /finals directory.
+
+- Blog-runner:
+  - MUST treat the two input finals as ground truth.
+  - MUST NOT attempt to “correct” or overwrite them.
+  - May only transform them into:
+      - blog_final.json
+      - blog.html
+    under docs/runner/blog/finals/.
+
+====================================================================
+END SHARED FINALS CONTRACT
+====================================================================
 
 --------------------------------------------------
 END ORIGINAL INSTRUCTIONS.TXT
