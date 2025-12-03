@@ -1,0 +1,234 @@
+# Endpoint
+POST /crt/run
+Content-Type: application/json
+
+# Purpose
+- Single entry point to trigger ONE full runner pipeline for ONE creation_id.
+- Supports:
+  - crt-top-runner
+  - crt-bottom-runner
+  - crt-blog-runner
+- Always runs non-interactively (no “modes” in the request for now).
+
+--------------------------------------------------
+1) Request shape
+--------------------------------------------------
+
+Required JSON body:
+
+{
+  "runner": "crt-top-runner" | "crt-bottom-runner" | "crt-blog-runner",
+  "creation_id": "creator-abc"
+}
+
+Notes:
+- runner: must match exactly one of the three runners.
+- creation_id: single token; you enforce your own naming rules.
+- No other fields are required at this layer for main runs.
+- Future extension (not implemented yet):
+  - For blog inline actions, you can later add:
+    - "mode": "check" | "rewrite" | "approve"
+    - "blog": { ...blog-json... }
+  - But for now, /crt/run = “main pipeline only”.
+
+--------------------------------------------------
+2) Routing rules (conceptual)
+--------------------------------------------------
+
+Server logic (pseudocode):
+
+- Validate body.runner and body.creation_id.
+- If invalid → return HTTP 400 with error JSON (see Section 4).
+- Switch on runner:
+
+  - "crt-top-runner":
+      - Trigger TOP pipeline equivalent of:
+        "start crt-top-runner {creation_id}"
+      - Wait for runner completion (success or failure).
+      - Capture runner-level result.
+
+  - "crt-bottom-runner":
+      - Trigger BOTTOM pipeline equivalent of:
+        "start crt-bottom-runner {creation_id}"
+      - Wait for runner completion.
+      - Capture runner-level result.
+
+  - "crt-blog-runner":
+      - Trigger BLOG pipeline equivalent of:
+        "start crt-blog-runner {creation_id}"
+      - Wait for runner completion.
+      - Capture runner-level result.
+
+- Wrap the runner-level result in a consistent /crt/run envelope (Section 3).
+
+This keeps /crt/run stable even if internal runner outputs evolve slightly,
+as long as each runner still produces a clear success or error result.
+
+--------------------------------------------------
+3) Response shape (/crt/run envelope)
+--------------------------------------------------
+
+/crt/run always responds with a small envelope that says:
+- Did it work at all?
+- Which runner?
+- Which stage failed (if any)?
+- Where to look in Docs for details?
+
+Then, inside "result", you can pass through the runner’s own JSON or status.
+
+Success (generic):
+
+{
+  "ok": true,
+  "runner": "crt-bottom-runner",
+  "creation_id": "creator-abc",
+  "final_stage": "COMMIT",
+  "result": { ...runner_specific_success_payload... }
+}
+
+Error (generic):
+
+{
+  "ok": false,
+  "runner": "crt-bottom-runner",
+  "creation_id": "creator-abc",
+  "failed_stage": "LOAD" | "EXPEDITOR" | "LOCALE_RESEARCH" | "WRITER" | "REWRITER" | "COMMIT" | "rows_fetch" | "event_research" | "venue_research" | "city_research" | "merge_bundle" | "topblock_writer" | "topblock_rewriter" | "docs_commit" | "blog_load" | "blog_assemble" | "blog_writer" | "blog_rewriter" | "blog_commit",
+  "error": "short explanation",
+  "log_path": "docs/runner/{top|bottom|blog}/logs/{creation_id}-error.json"
+}
+
+Notes:
+- ok: high-level success/failure for the HTTP call + runner.
+- final_stage / failed_stage:
+  - For TOP: you can map to the stage names in its mini (rows_fetch, expeditor, event_research, etc.).
+  - For BOTTOM: map to LOAD / EXPEDITOR / LOCALE_RESEARCH / WRITER / REWRITER / COMMIT as in its mini.
+  - For BLOG: use blog_* stage names (blog_load, blog_assemble, blog_writer, blog_rewriter, blog_commit).
+- log_path:
+  - For TOP: error logs live wherever you choose in its full instructions (e.g. docs/runner/top/logs/... if you add them).
+  - For BOTTOM: already defined in its mini (docs/runner/bottom/logs/...).
+  - For BLOG: already defined (docs/runner/blog/logs/{creation_id}-error.json).
+
+--------------------------------------------------
+4) Runner-specific `result` payloads
+--------------------------------------------------
+
+You DO NOT have to normalize the internal runner payloads right away.
+You can simply embed each runner’s own “native” success JSON inside `result`.
+
+a) TOP-RUNNER (`result` suggestion)
+
+TOP mini only requires “one compact run completed status”.
+You can standardize it to something like:
+
+{
+  "status": "success",
+  "creation_id": "creator-abc",
+  "stages": [
+    "rows_fetch",
+    "expeditor",
+    "event_research",
+    "venue_research",
+    "city_research",
+    "merge_bundle",
+    "topblock_writer",
+    "topblock_rewriter",
+    "docs_commit"
+  ],
+  "final": "docs/runner/top/finals/creator-abc-topblock_final.json",
+  "logs": [
+    "docs/runner/top/logs/creator-abc-event_research.json",
+    "docs/runner/top/logs/creator-abc-venue_research.json",
+    "docs/runner/top/logs/creator-abc-city_research.json",
+    "docs/runner/top/logs/creator-abc-topblock_research_clean.json",
+    "docs/runner/top/logs/creator-abc-topblock_writer.json",
+    "docs/runner/top/logs/creator-abc-topblock_final.json"
+  ],
+  "commit": "<sha-or-null>"
+}
+
+You can evolve this later; /crt/run only cares that it’s JSON and that
+it can set `ok=true` when status === "success".
+
+b) BOTTOM-RUNNER (`result` is already defined in its mini)
+
+You already defined a success payload in bottom mini:
+
+{
+  "status": "success",
+  "creation_id": "<cid>",
+  "stages": ["LOAD","EXPEDITOR","LOCALE_RESEARCH","WRITER","REWRITER","COMMIT"],
+  "logs": [
+    "docs/runner/bottom/logs/<cid>-load.json",
+    "docs/runner/bottom/logs/<cid>-expeditor.json",
+    "docs/runner/bottom/logs/<cid>-locale-research.json",
+    "docs/runner/bottom/logs/<cid>-writer.json",
+    "docs/runner/bottom/logs/<cid>-rewriter.json"
+  ],
+  "final": "docs/runner/bottom/finals/<cid>-bottomblock_final.json",
+  "commit": "<sha>"
+}
+
+On error, the runner mini also defines:
+
+{
+  "status": "error",
+  "stage": "...",
+  "creation_id": "<cid>",
+  "reason": "short explanation"
+}
+
+For /crt/run:
+- You can set:
+  - ok = (status === "success")
+  - final_stage or failed_stage from result.stage / stages.
+  - log_path from the known pattern if you write an error log.
+
+c) BLOG-RUNNER (`result` suggestion)
+
+BLOG mini currently specifies a natural-language success line.
+For machine use, you can standardize a JSON like:
+
+{
+  "status": "success",
+  "creation_id": "creator-abc",
+  "stages": ["BLOG_LOAD","BLOG_ASSEMBLE","BLOG_WRITER","BLOG_REWRITER","BLOG_COMMIT"],
+  "final_json": "docs/runner/blog/finals/creator-abc-blog.json",
+  "final_html": "docs/runner/blog/finals/creator-abc-blog.html",
+  "commit": "<sha>"
+}
+
+On error:
+
+{
+  "status": "error",
+  "stage": "BLOG_LOAD" | "BLOG_ASSEMBLE" | "BLOG_WRITER" | "BLOG_REWRITER" | "BLOG_COMMIT",
+  "creation_id": "creator-abc",
+  "reason": "short explanation",
+  "log_path": "docs/runner/blog/logs/creator-abc-error.json"
+}
+
+Again, /crt/run wraps this under `result`.
+
+--------------------------------------------------
+5) Summary (what you implement now)
+--------------------------------------------------
+
+Minimal work to get started:
+
+- Add `POST /crt/run` to your server that:
+  - Validates `{ runner, creation_id }`.
+  - Switches on runner.
+  - Calls the appropriate runner implementation (however you wire it).
+  - Receives a runner-level JSON result.
+  - Wraps it in the /crt/run envelope:
+
+    {
+      "ok": (runner_result.status === "success"),
+      "runner": "...",
+      "creation_id": "...",
+      "final_stage" or "failed_stage": "...",
+      "result": { ...runner_result... }
+    }
+
+Next step (if you want): we can define the exact error codes and stage-name enum you want to enforce so logs, UIs, and runners all speak the same vocabulary.
+::contentReference[oaicite:0]{index=0}
