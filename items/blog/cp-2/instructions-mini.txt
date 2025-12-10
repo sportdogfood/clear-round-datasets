@@ -1,25 +1,25 @@
 # File: items/blog/cp-2/instructions-mini.txt
-# Runner: blog-cp:2 — MINI (end-to-end, single reply)
-# Version: v2025-12-11-min-01
+# Runner: blog-cp:2 — MINI (end-to-end)
+# Version: v2025-12-11-min-02
 
 # PURPOSE
-# - Single trigger: "start blog-cp:2"
+# - Trigger: "start blog-cp:2"
 # - Load job_definition from Rows
-# - Load house files from items/blog/cp-2/
+# - Load cp:2 house files
 # - Fetch datasets defined in job_definition
-# - Execute full run_order (exp → crr → cwr → prr → pwr → rwt) in one pass
-# - Commit final JSON + HTML using docs_finals_root
-# - Return ONE final summary message to the user
+# - Run full run_order (exp → crr → cwr → prr → pwr → rwt) in memory
+# - Commit final JSON + HTML using job_definition.paths.docs_finals_root
+# - Send ONE final success/failure summary to the user
 
 ============================================================
 1. TRIGGER
 ============================================================
 
-Accepted trigger pattern (no variants):
+Accept only:
 
-- User message: start blog-cp:2
+- start blog-cp:2
 
-On any other message: do NOT run this pipeline.
+On anything else: do nothing.
 
 Let:
 - street_token = "blog"
@@ -29,43 +29,39 @@ Let:
 2. LOAD job_definition (Rows)
 ============================================================
 
-2.1 Call the Rows GET tool:
+Call Rows:
 
 - GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
 
-2.2 From the returned `items` array:
+Interpret:
+- column A (items[row][0])   = trigger key
+- column B (items[row][1])   = JSON string
 
-- Treat column 0 (A) as the trigger key
-- Treat column 1 (B) as a JSON string
-
-2.3 Find the first row where:
-
+Find row where:
 - items[row][0] == "blog-cp:2"
 
-Parse items[row][1] as JSON → job_definition.
+Parse items[row][1] → job_definition.
 
-2.4 Validate minimally:
-
+Minimal checks:
 - job_definition.street == "blog"
 - job_definition.house  == "cp:2"
-- job_definition.run_order is an array
-- job_definition.datasets is a non-empty array
+- job_definition.run_order is array
+- job_definition.datasets is non-empty
 - job_definition.paths.docs_finals_root starts with "docs/"
 
-If any validation fails:
-- Stop and reply with a brief error message to the user.
-
-Keep job_definition in memory for all remaining steps.
+If any check fails:
+- STOP and reply with a short error message.
+Else keep job_definition in memory.
 
 ============================================================
 3. LOAD HOUSE FILES (cp:2)
 ============================================================
 
-Use `house_root` from runner.txt:
+Use house_root from runner.txt:
 
 - house_root = "items/blog/cp-2/"
 
-Read these files from house_root (non-interactive, internal use):
+Read (for internal use only):
 
 - pipeline-spec.json
 - style-spec.json
@@ -79,38 +75,30 @@ Read these files from house_root (non-interactive, internal use):
 - member-template-pr.prompt
 - member-template-pw.prompt
 - member-template-rwt.prompt
-- instructions.txt        (full lane rules)
+- instructions.txt
 
-If a non-critical file is missing:
-- Continue if you can still execute lanes.
-If a critical file (final-schema.json or member templates) is missing:
-- Stop with an internal error and tell the user the house is not fully configured.
+If final-schema.json or any needed member-template is missing:
+- STOP and tell user: house not fully configured.
 
-Do NOT send any intermediate messages here.
+No user messages yet.
 
 ============================================================
 4. FETCH DATASETS (Rows)
 ============================================================
 
-4.1 From job_definition:
+From job_definition.datasets, for each dataset:
 
-- datasets = job_definition.datasets
-
-Each dataset object includes at least:
-
-- role_key   (e.g. "cr0", "pr1")
-- domains    (list)
+- role_key
+- domains
 - sheet_id
 - table_id
 - range
 
-4.2 For each dataset in datasets:
-
-Call Rows GET:
+Call Rows:
 
 - GET /spreadsheets/{sheet_id}/tables/{table_id}/values/{range}
 
-Store results in memory using the role_key:
+Store in memory:
 
 - datasets_by_role[role_key] = {
     "role_key": role_key,
@@ -119,28 +107,21 @@ Store results in memory using the role_key:
   }
 
 If any dataset fetch fails:
-- Stop and report which role_key failed.
-- Do NOT proceed to expeditor.
+- STOP and send a short error naming the failing role_key.
 
-Still no user output yet.
+Still no progress updates to user.
 
 ============================================================
-5. EXECUTE PIPELINE (run_order)
+5. EXECUTE run_order IN MEMORY
 ============================================================
-
-Goal: Execute the full lane sequence from job_definition.run_order
-WITHOUT stopping to talk to the user.
 
 Let:
 
-- run_order      = job_definition.run_order
-- global_rules   = job_definition.global_rules
-- paths          = job_definition.paths
-- items_root     = paths.items_root
-- docs_finals    = paths.docs_finals_root
-- docs_logs      = paths.docs_logs_root
+- run_order    = job_definition.run_order
+- global_rules = job_definition.global_rules
+- paths        = job_definition.paths
 
-Maintain an in-memory state object:
+Maintain state:
 
 - state.exp_output
 - state.crr_output
@@ -149,205 +130,94 @@ Maintain an in-memory state object:
 - state.pwr_output
 - state.rwt_output
 
-Loop over each lane in run_order in order:
+Loop through run_order, strictly in order:
 
-------------------------------------------------------------
-5.1 Lane "exp"
-------------------------------------------------------------
+5.1 exp
+  - Input: job_definition, datasets_by_role, expeditor-* files, global_rules
+  - Normalize null/empty → "could-not-verify"
+  - Map roles/domains using expeditor-map.json
+  - Output:
+      state.exp_output = {
+        "cr0_input": <JSON>,
+        "pr1_input": <JSON>
+      }
 
-Input:
+5.2 crr
+  - Input: state.exp_output.cr0_input, global_rules, member-template-cr.prompt, instructions.txt
+  - Output: state.crr_output (facts-only JSON for event/venue/city_season)
 
-- job_definition
-- datasets_by_role (cr0, pr1)
-- expeditor-contract.json
-- expeditor-map.json
-- global_rules.truth_rules
-- global_rules.could_not_verify_rules
+5.3 cwr
+  - Input: state.crr_output, global_rules, member-template-cw.prompt, instructions.txt
+  - Output: state.cwr_output (narrative JSON for competitions track)
 
-Call the EXPEDITOR member (internal; defined by cp:2 house) using these inputs.
+5.4 prr
+  - Input: state.exp_output.pr1_input, global_rules, member-template-pr.prompt, instructions.txt
+  - Output: state.prr_output (facts-only JSON for stay/dine/essentials/locale)
 
-Expeditor responsibilities (high level):
+5.5 pwr
+  - Input: state.prr_output, global_rules, member-template-pw.prompt, instructions.txt
+  - Output: state.pwr_output (narrative JSON for places track)
 
-- Normalize null/empty/unusable fields → "could-not-verify" sentinel.
-- Respect domain mapping from expeditor-map.json.
-- Produce shaped JSON inputs for:
+5.6 rwt
+  - Input: state.cwr_output, state.pwr_output, final-schema.json, global_rules,
+           member-template-rwt.prompt, instructions.txt
+  - Responsibilities:
+      - merge collection + places narratives
+      - enforce final-schema.json
+      - polish wording only
+      - ensure no literal "could-not-verify" in visible text
+  - Output: state.rwt_output (final JSON)
 
-  - cr0_input (collection track: event / venue / city_season)
-  - pr1_input (places track: stay / dine / essentials / locale)
-
-Store in state:
-
-- state.exp_output = {
-    "cr0_input": <JSON>,
-    "pr1_input": <JSON>
-  }
-
-------------------------------------------------------------
-5.2 Lane "crr" (Collection Researcher)
-------------------------------------------------------------
-
-Input:
-
-- state.exp_output.cr0_input
-- global_rules
-- member-template-cr.prompt
-- instructions.txt (researcher rules)
-
-Call the CR Researcher member.
-
-Output:
-
-- state.crr_output (facts-only JSON for event/venue/city_season)
-
-------------------------------------------------------------
-5.3 Lane "cwr" (Collection Writer)
-------------------------------------------------------------
-
-Input:
-
-- state.crr_output
-- global_rules
-- member-template-cw.prompt
-- instructions.txt (writer rules)
-
-Call the C Writer member.
-
-Output:
-
-- state.cwr_output (narrative paragraphs for competitions track, JSON-shaped)
-
-------------------------------------------------------------
-5.4 Lane "prr" (Places Researcher)
-------------------------------------------------------------
-
-Input:
-
-- state.exp_output.pr1_input
-- global_rules
-- member-template-pr.prompt
-- instructions.txt (researcher rules)
-
-Call the P Researcher member.
-
-Output:
-
-- state.prr_output (facts-only JSON for stay/dine/essentials/locale)
-
-------------------------------------------------------------
-5.5 Lane "pwr" (Places Writer)
-------------------------------------------------------------
-
-Input:
-
-- state.prr_output
-- global_rules
-- member-template-pw.prompt
-- instructions.txt (writer rules)
-
-Call the P Writer member.
-
-Output:
-
-- state.pwr_output (narrative paragraphs for places track, JSON-shaped)
-
-------------------------------------------------------------
-5.6 Lane "rwt" (Rewriter / Merge)
-------------------------------------------------------------
-
-Input:
-
-- state.cwr_output
-- state.pwr_output
-- final-schema.json
-- global_rules
-- member-template-rwt.prompt
-- instructions.txt (rewriter rules)
-
-Call the RWT member.
-
-RWT responsibilities (high level):
-
-- Merge collection + places narratives into one JSON object.
-- Enforce final-schema.json structure.
-- Polish wording only (no new facts).
-- Ensure no literal "could-not-verify" remains in visible text.
-
-Output:
-
-- state.rwt_output (final JSON payload, schema-compliant)
+No user messages during any lane.
 
 ============================================================
-6. COMMIT FINAL OUTPUT (JSON + HTML)
+6. COMMIT FINAL JSON + HTML
 ============================================================
 
-6.1 Build JSON string:
-
-- final_json = JSON serialization of state.rwt_output
-
-6.2 Derive paths from job_definition.paths:
+From job_definition.paths:
 
 - finals_root = job_definition.paths.docs_finals_root
-  (example: "docs/blog/cp:2/finals/")
+  (e.g. "docs/blog/cp:2/finals/")
+- job_id      = job_definition.job_id
 
-- json_path  = finals_root + job_definition.job_id + ".json"
-- html_path  = finals_root + job_definition.job_id + ".html"
+Derive:
 
-6.3 Derive basic HTML for the same content (simple template):
+- json_path = finals_root + job_id + ".json"
+- html_path = finals_root + job_id + ".html"
 
-- html_output = minimal HTML page that embeds the main paragraphs
-  from state.rwt_output. (Implementation defined in instructions.txt.)
+Build:
 
-6.4 Base64-encode both payloads and call docs_commit_bulk
-(from the git_openapi.yaml connector) with:
+- final_json = JSON(state.rwt_output)
+- html_output = simple HTML page rendering the main paragraphs
+  (implementation defined in instructions.txt).
 
-- message:    "Final commit for " + job_definition.job_id
-- overwrite:  true
-- files: [
-    {
-      "path": json_path,
-      "content_type": "application/json",
-      "content_base64": <base64(final_json)>
-    },
-    {
-      "path": html_path,
-      "content_type": "text/html",
-      "content_base64": <base64(html_output)>
-    }
-  ]
+Base64-encode both and call docs_commit_bulk:
 
-On commit error:
-- Stop and report a concise failure message to the user.
+- message:   "Final commit for " + job_id
+- overwrite: true
+- files:
+  - { path: json_path, content_type: "application/json", content_base64: <json> }
+  - { path: html_path, content_type: "text/html",        content_base64: <html> }
+
+If commit fails:
+- STOP and send a concise error to the user.
 
 ============================================================
-7. USER-FACING BEHAVIOR (ONE REPLY)
+7. USER RESPONSE (ONE MESSAGE)
 ============================================================
 
-Do NOT send any user-visible messages between lanes.
+If everything succeeds:
 
-Only after:
+- Send ONE summary message:
+  - job_id
+  - executed run_order
+  - final JSON path
+  - final HTML path
+  - commit SHA (if returned)
 
-- run_order has fully executed, AND
-- docs_commit_bulk has returned success,
+If anything fails earlier:
+- Send ONE concise error, naming:
+  - failing phase (job load, datasets, lane name, commit)
+  - minimal reason.
 
-send ONE final summary to the user, including:
-
-- job_id
-- run_order executed
-- final JSON path
-- final HTML path
-- commit SHA (if returned)
-
-Example shape (paraphrased):
-
-- “✅ Pipeline blog-cp:2 completed.
-   Job: job-4434456
-   Final JSON: docs/blog/cp:2/finals/job-4434456.json
-   Final HTML: docs/blog/cp:2/finals/job-4434456.html
-   Commit: <sha>”
-
-If any step fails before commit:
-- Send ONE concise error summary to the user, describing:
-  - which phase failed (load job, fetch dataset, lane name, commit)
-  - minimal diagnostic info.
-
-No intermediate progress messages. Only final success or final failure.
+No step-by-step progress chatter; only final success or failure.
