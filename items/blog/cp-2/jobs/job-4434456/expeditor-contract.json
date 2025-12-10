@@ -3,6 +3,8 @@
     "only_shaper": true,
     "forbid_narrative": true,
     "forbid_inference": true,
-    "enforce_field_order": true
+    "enforce_field_order": true,
+    "forbid_fabrication": true,
+    "enforce_schema_validation": true
   }
 }
