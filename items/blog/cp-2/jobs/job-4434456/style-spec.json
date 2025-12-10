@@ -1,5 +1,19 @@
 {
   "format": "json",
   "structure": "flat",
-  "required_fields": ["job_id", "dataset_id", "items"]
+  "required_fields": [
+    "job_id",
+    "dataset_id",
+    "items"
+  ],
+  "field_order": [
+    "job_id",
+    "dataset_id",
+    "items"
+  ],
+  "validation_rules": {
+    "job_id": "string",
+    "dataset_id": "string",
+    "items": "array"
+  }
 }
