@@ -1,0 +1,14 @@
+# Simple Runner Configuration for cp:2
+
+run_order:
+  - exp
+  - cr0
+  - cw0
+  - pr1
+  - pw1
+  - rwt
+
+paths:
+  items_root: "items/blog/cp:2/jobs/job-4434456/"
+  docs_finals_root: "docs/blog/cp:2/finals/"
+  docs_logs_root: "docs/blog/cp:2/logs/"

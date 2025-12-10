@@ -1,0 +1,35 @@
+{
+  "pipeline": "cp:2",
+  "steps": [
+    {
+      "name": "exp",
+      "description": "Initial data shaping phase",
+      "type": "expeditor"
+    },
+    {
+      "name": "crr",
+      "description": "Event, venue, and city season research phase",
+      "type": "researcher"
+    },
+    {
+      "name": "cwr",
+      "description": "Continue processing event/venue/city season data",
+      "type": "writer"
+    },
+    {
+      "name": "prr",
+      "description": "Stay, dine, essentials, and locale data processing",
+      "type": "researcher"
+    },
+    {
+      "name": "pwr",
+      "description": "Continue processing stay/dine/essentials data",
+      "type": "writer"
+    },
+    {
+      "name": "rwt",
+      "description": "Final data merge and polish phase",
+      "type": "rewriter"
+    }
+  ]
+}

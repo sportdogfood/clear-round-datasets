@@ -1,0 +1,336 @@
+Here is the revised **PROJECT CONTRACT v1.0 — cp:2 Runner (BLOG STREET)** with updates aligned with the current state of the app and workflow:
+
+---
+
+## **PROJECT CONTRACT v1.0 — cp:2 Runner (BLOG STREET)**
+
+**Timestamp:** 2025-12-10 23:08 ET
+**Status:** Authoritative — Governs All Technical Work
+
+---
+
+### **Purpose**
+
+To freeze the *entire technical specification* for the **BLOG cp:2 runner**.
+This contract defines the required files, lane behaviors, schemas, naming rules, and execution flow. All future work must comply with this contract exactly. No file may be added, removed, renamed, or structurally altered without explicit user approval.
+
+This contract removes ambiguity, prevents architectural drift, and ensures the final runner is consistent, stable, testable, and ready for LIVE execution.
+
+---
+
+### **1. EXECUTION MODEL — UMTS LANE SYSTEM**
+
+The cp:2 runner uses **UMTS dynamic member lanes**:
+
+* **Lane Groups**:
+
+  * **Collection Track**: cr0 → cw0 → crw0
+  * **Places Track**: pr1 → pw1 → prw1
+  * **Final Stage**: rwt (merge & polish)
+
+**Authoritative run_order**:
+
+1. exp
+2. cr0
+3. cw0
+4. pr1
+5. pw1
+6. rwt
+
+No other lanes exist.
+No alternate sequences are allowed.
+No parallelization is allowed.
+
+---
+
+### **2. DOMAIN ASSIGNMENTS**
+
+**Collection domains (cs)**:
+
+* event
+* venue
+* city_season
+
+**Places domains (ps)**:
+
+* stay
+* dine
+* essentials
+* locale
+
+**Lane → Domain mapping**:
+
+* cr0 → cs
+* cw0 → cs
+* pr1 → ps
+* pw1 → ps
+* rwt → receives cw0 + pw1 output
+
+---
+
+### **3. REQUIRED FILES (FROZEN SET)**
+
+The cp:2 runner consists of **exactly 14 required files**, plus debug instrumentation.
+
+**3.1 Core Runner Files**:
+
+* runner.txt
+* runner-debug.txt
+* instructions-mini.txt
+* instructions.txt
+* job-definition.json
+
+**3.2 House Blueprint Files (cp:2)**:
+
+* pipeline-spec.json
+* style-spec.json
+* expeditor-contract.json
+* expeditor-map.json
+* final-schema.json
+* commit-spec.json
+* checker.json
+
+**3.3 UMTS Member Templates (Dynamic Lane Prototypes)**:
+
+* member-template-cr.prompt
+* member-template-cw.prompt
+* member-template-pr.prompt
+* member-template-pw.prompt
+* member-template-rwt.prompt
+
+No file may be added or removed without explicit user approval.
+This list is the **frozen canonical structure**.
+
+---
+
+### **4. EXPEDITOR CONTRACT — AUTHORITY AND LIMITS**
+
+The **expeditor** is the **only shaper** of data.
+It must:
+
+* read job-definition.json
+* fetch datasets from Rows (per sheet_id/table_id/range)
+* normalize null/empty → "could-not-verify"
+* build:
+
+  * crr-input.json
+  * prr-input.json
+  * cwr-input.json
+  * pwr-input.json
+  * rwt-input.json
+
+**Expeditor forbiddens**:
+
+* no narrative
+* no inference
+* no fabrication
+* no domain crossing
+* no restructuring
+* no schema deviation
+
+**Expeditor enforces**:
+
+* field order
+* no extra keys
+* no removed keys
+* domain boundaries
+* CNV invariants
+
+---
+
+### **5. RESEARCHER CONTRACT (cr0 / pr1)**
+
+Researchers produce **facts only**, shaped as structured JSON.
+
+Researchers **MUST**:
+
+* accept expeditor input as authoritative
+* return echo identity blocks unmodified
+* insert CNV only when required
+* produce no prose
+* produce no narrative
+* stay inside assigned domains
+
+Researchers **MUST NOT**:
+
+* guess
+* infer missing data
+* improve identity blocks
+* merge domains
+* alter schema
+* upgrade CNV
+
+---
+
+### **6. WRITER CONTRACT (cw0 / pw1)**
+
+Writers produce **narrative only**, shaped as text inside schema fields.
+
+Writers **MUST**:
+
+* use researcher output as factual floor
+* follow tone_rules, narrative_rules
+* maintain domain separation
+* acknowledge missing facts implicitly
+* avoid hype
+* stay grounded, practical, useful
+
+Writers **MUST NOT**:
+
+* add facts not in researcher output
+* repair CNV
+* reference unverified details
+* cross domain lines
+* change schema
+* call tools
+
+---
+
+### **7. RWT (REWRITER) CONTRACT**
+
+RWT performs **mechanical polish only**.
+
+RWT **MUST**:
+
+* accept cw0 + pw1 outputs
+* produce merged final JSON
+* fix grammar, clarity, flow — *not* meaning
+* maintain schema exactly
+* preserve all factual content
+
+RWT **MUST NOT**:
+
+* add content
+* remove content
+* modify meaning
+* change numeric structure
+* alter keys or field names
+
+---
+
+### **8. SCHEMA INVARIANTS**
+
+All schemas are **fixed**.
+No lane may add, remove, reorder, rename, or insert keys.
+
+Failure to match schema → runner must stop.
+
+final-schema.json defines:
+
+* fields for crr-output
+* fields for cw0-output
+* fields for pr1-output
+* fields for pw1-output
+* final merged fields
+
+Schema rules (immutable):
+
+* Keys cannot be added
+* Keys cannot be removed
+* Arrays have fixed shapes
+* Fields appear in canonical order
+* CNV behavior must follow global_rules
+
+---
+
+### **9. GLOBAL RULES (INTEGRATED FROM job-definition.json)**
+
+All lanes must honor:
+
+**truth_rules**:
+
+* no fabrication
+* no external research
+* no inference
+* no upgrading facts
+* CNV conditions
+
+**structure_rules**:
+
+* schemas fixed
+* valid JSON
+* field order preserved
+
+**governance_rules**:
+
+* lane boundaries strict
+* expeditor-only shaping
+* no tool calls in members
+
+**safety_rules**:
+
+* no invented hotels/restaurants
+* no invented amenities
+* no invented event/venue details
+
+**tone_rules**:
+
+* practical
+* grounded
+* clear
+* useful
+* avoid hype
+
+---
+
+### **10. API REQUIREMENTS**
+
+**10.1 Rows API (rows_openapi.yaml)**
+Used for:
+
+* job-definition lookup
+* dataset payload fetching
+
+Required:
+
+* use path: `/spreadsheets/{sheet_id}/tables/{table_id}/values/{range}`
+
+**10.2 Git Proxy API (git_openapi.yaml)**
+Used for:
+
+* commit-bulk final outputs
+* commit logs
+
+Required:
+
+* all commits must follow commit-spec.json rules
+* all writes must be UTF-8, base64 encoded
+
+---
+
+### **11. LOGGING CONTRACT (runner-debug.txt)**
+
+Debug log **MUST** include:
+
+* timestamp for each lane
+* dataset fetch report
+* run_order confirmation
+* expeditor normalization events
+* schema validation logs
+* output file paths
+* commit response SHA
+
+Debug log **MUST NOT**:
+
+* alter execution
+* suppress errors
+* fabricate data
+
+---
+
+### **12. COMPLETION DEFINITION**
+
+The cp:2 runner is considered **LIVE-ready** when:
+
+1. All 14 files are built exactly as defined
+2. job-definition.json is fully respected
+3. expeditor outputs pass schema validation
+4. researcher outputs are strictly factual
+5. writer outputs are narrative-only and compliant
+6. rwt output matches final-schema.json
+7. commit to docs/blog/cp:2/finals/ succeeds
+8. runner-debug.txt logs clean execution with no drift
+
+---
+
+Let me know if you'd like any adjustments!

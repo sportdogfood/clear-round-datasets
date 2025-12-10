@@ -1,0 +1,24 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "description": "Trigger the pipeline via `start blog-cp:2`"
+    },
+    {
+      "step": 2,
+      "description": "Fetch `job-definition.json` from the Rows API using the defined `sheet_id`, `table_id`, and `range`."
+    },
+    {
+      "step": 3,
+      "description": "Load house files based on `job-definition.json`. Ensure the correct house path (`cp:2`) is resolved. If the expeditor-map.json is available, read it."
+    },
+    {
+      "step": 4,
+      "description": "Fetch datasets based on the `job-definition.json`. Use the specified `sheet_id`, `table_id`, and `range` for each dataset."
+    },
+    {
+      "step": 5,
+      "description": "Touch the expeditor phase to verify data loading. Ensure that the datasets are available and cached."
+    }
+  ]
+}
