@@ -1,0 +1,85 @@
+Here’s a simplified breakdown of the **PROJECT CONTRACT v1.0 — cp:2 Runner (BLOG STREET)**, showing each step with 4 words max per step:
+
+---
+
+### **1. EXECUTION MODEL**
+
+* **Lane System**: cr0 → cw0 → crw0 → pr1 → pw1 → prw1 → rwt
+* **Run Order**: exp → cr0 → cw0 → pr1 → pw1 → rwt
+
+---
+
+### **2. DOMAIN ASSIGNMENTS**
+
+* **Collection Domains**: event, venue, city_season
+* **Places Domains**: stay, dine, essentials, locale
+
+---
+
+### **3. REQUIRED FILES**
+
+* **Core Runner Files**: runner.txt, runner-debug.txt, instructions-mini.txt, job-definition.json
+* **House Files**: pipeline-spec.json, style-spec.json, expeditor-contract.json
+* **Member Templates**: member-template-cr.prompt, member-template-cw.prompt, etc.
+
+---
+
+### **4. EXPEDITOR CONTRACT**
+
+* **Expeditor Role**: Only shaper, no narrative, enforces field order
+
+---
+
+### **5. RESEARCHER CONTRACT**
+
+* **Process Data**: cr0, pr1, factual output, no inference
+
+---
+
+### **6. WRITER CONTRACT**
+
+* **Narrative Generation**: Use researcher output, follow tone rules
+
+---
+
+### **7. RWT CONTRACT**
+
+* **Polishing**: Final output, preserve content
+
+---
+
+### **8. SCHEMA INVARIANTS**
+
+* **Fixed Schemas**: No key changes, preserve order
+
+---
+
+### **9. GLOBAL RULES**
+
+* **Truth Rules**: No fabrication, no inference
+* **Structure Rules**: Valid JSON, field order
+* **Governance Rules**: Lane boundaries, no tool calls
+* **Safety Rules**: No invented content
+
+---
+
+### **10. API REQUIREMENTS**
+
+* **Rows API**: job-definition and dataset fetching
+* **Git Proxy API**: Commit final output
+
+---
+
+### **11. LOGGING CONTRACT**
+
+* **Log Contents**: Dataset fetch, validation logs
+
+---
+
+### **12. COMPLETION DEFINITION**
+
+* **Final Output**: Commit success, clean execution logs
+
+---
+
+Each section is a simplified summary of the main actions, adhering to the four-word rule per step.
