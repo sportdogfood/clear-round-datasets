@@ -1,0 +1,60 @@
+# CRT BLOG-CP:2 — WORK SESSION OVERVIEW (STOP POINT + OBSTACLES)
+
+## 1. Where we stopped
+- Attempted to finalize **CRR (Core Researcher)** prompt.
+- CRR must: 
+  - Receive expeditor-normalized identity fields.
+  - Produce three factual blocks: event_research, venue_research, city_season_research.
+  - Echo back identity blocks so CWR can consume a single merged payload.
+- The CRR prompt draft exists but is **not finalized**, because:
+  - Inputs were not fully stabilized.
+  - Output shape and identity echoing were still being aligned.
+
+## 2. What is currently correct
+- CRR *must not* invent, infer, or correct anything.
+- CRR *must* output “could-not-verify” instead of any null or missing field.
+- Expeditor *must* normalize all nulls to “could-not-verify” before CRR sees them.
+- CRR *must* echo identity blocks unchanged for CWR.
+- CWR *must* receive:
+  - event_identity
+  - venue_identity
+  - city_identity
+  - event_research
+  - venue_research
+  - city_season_research
+
+## 3. Known blockers / unresolved items
+- CRR **input declaration** not finalized; still unclear which fields belong to:
+  - event_identity vs event_leg_payload
+- CRR **output shape** not fully locked (identity echoing vs research-only output).
+- Confusion over where **global_rules** are read and how they are supplied.
+- Confusion over **creation_id** (legacy use vs new model).
+- CWR prompt cannot be finalized until CRR output shape is frozen.
+- Expeditor responsibilities still not fully agreed:
+  - It does NOT "map"
+  - It MUST normalize all nulls to “could-not-verify”
+  - It MUST pass exactly the fields CRR declares — nothing more.
+
+## 4. Fragile areas identified
+- Overlap between c-rows data and expeditor identity blocks.
+- Rider_caliber positioning: who determines final value (CRR only).
+- Too much drift from legacy prompt → inconsistent expectations.
+- Excessive prompt blending across lanes → unclear boundaries.
+- Prompt text repeatedly ballooned with unnecessary branching, causing churn.
+
+## 5. What is missing to proceed
+- A **frozen minimal CRR input specification** (one short list).
+- A **frozen minimal CRR output specification** (one JSON shape).
+- That alone unblocks CWR and Expeditor immediately.
+- Without freezing these two shapes, no lane can proceed or be debugged.
+
+## 6. Emotional/Process Notes (factual)
+- Progress stalled due to repeated scope drift.
+- Writer and researcher responsibilities became intertwined again.
+- Attempting to “improve” instead of “finalize” caused rework.
+- The system became over-engineered relative to the immediate need.
+
+## 7. Next necessary step
+- Freeze **ONE** CRR I/O shape.
+- Then build CWR to consume it.
+- Then connect expeditor to produce exactly that shape.
