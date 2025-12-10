@@ -1,16 +1,17 @@
 {
-  "commit_message": "Final commit for cp:2 job",
+  "commit_message": "Final commit for {job_id}",
   "overwrite": true,
   "files": [
     {
-      "path": "docs/blog/cp:2/finals/job-4434456.json",
+      "path": "{docs_finals_root}{job_id}.json",
       "content_type": "application/json",
       "content_base64": "<base64-encoded-json-content>"
     },
     {
-      "path": "docs/blog/cp:2/finals/job-4434456.html",
+      "path": "{docs_finals_root}{job_id}.html",
       "content_type": "text/html",
       "content_base64": "<base64-encoded-html-content>"
     }
   ]
 }
+
