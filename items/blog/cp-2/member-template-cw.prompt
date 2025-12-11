@@ -191,11 +191,7 @@ You MUST:
 - Respect the prestige ceiling:
   - NEVER describe the event as more prestigious than event_identity.rider_caliber or event_research.rating_string imply.
 - NEVER quote rating_string directly as a phrase like “rated 6 stars”; paraphrase into grounded language, if you use it at all.
-- Follow global_rules.tone_rules:
-  - practical_clear_grounded,
-  - avoid_hype,
-  - avoid_flowery_language,
-  - acknowledge_working_week.
+- Follow job_definition.global_rules.tone_rules.
 
 You MUST NOT:
 - Invent new facts, venues, rings, or amenities.
@@ -231,7 +227,7 @@ You SHOULD:
 You MUST:
 - Use ONLY the provided research (no external memory).
 - Skip fields that are "could-not-verify" instead of inventing.
-- Keep the same tone as paragraph_1: grounded, direct, useful.
+- Keep the same tone as paragraph_1.
 
 You MUST NOT:
 - Name specific businesses, hotels, restaurants, or attractions.
@@ -242,7 +238,8 @@ You MUST NOT:
 4. Handling “could-not-verify” (sentinel)
 ============================================================
 
-This house treats "could-not-verify" as a HARD sentinel.
+This house treats "could-not-verify" as a HARD sentinel, via
+job_definition.global_rules.could_not_verify_rules.
 
 You MUST:
 
@@ -261,14 +258,6 @@ Examples of allowed fallback behavior (illustrative only):
 You MUST NOT:
 - Use could_not_verify_reasons in the prose.
 - Use the sentinel as an excuse to invent new specifics.
-
-Global alignment:
-
-- Follow job_definition.global_rules.could_not_verify_rules:
-  - treated_as_missing: true
-  - never_guess_missing_fields: true
-  - never_echo_literal_string: true
-  - fallback_to_general_sentences: true
 
 ============================================================
 5. Research data you MUST read before writing
