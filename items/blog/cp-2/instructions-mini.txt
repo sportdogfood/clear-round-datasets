@@ -1,6 +1,6 @@
 # File: items/blog/cp-2/instructions-mini.txt
 # Runner: blog-cp:2 — MINI (end-to-end)
-# Version: v2025-12-11-min-03
+# Version: v2025-12-11-min-02
 
 # PURPOSE
 # - Trigger: "start blog-cp:2"
@@ -8,8 +8,7 @@
 # - Load cp:2 house files
 # - Fetch datasets defined in job_definition
 # - Run full run_order (exp → crr → cwr → prr → pwr → rwt) in memory
-# - Commit FINAL JSON + HTML
-# - Commit LANE LOGS for exp / crr / cwr / prr / pwr / rwt
+# - Commit final JSON + HTML using job_definition.paths.docs_finals_root
 # - Send ONE final success/failure summary to the user
 
 ============================================================
@@ -35,8 +34,8 @@ Call Rows:
 - GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
 
 Interpret:
-- column A (items[row][0]) = trigger key
-- column B (items[row][1]) = JSON string
+- column A (items[row][0])   = trigger key
+- column B (items[row][1])   = JSON string
 
 Find row where:
 - items[row][0] == "blog-cp:2"
@@ -49,7 +48,6 @@ Minimal checks:
 - job_definition.run_order is array
 - job_definition.datasets is non-empty
 - job_definition.paths.docs_finals_root starts with "docs/"
-- job_definition.paths.docs_logs_root   starts with "docs/"
 
 If any check fails:
 - STOP and reply with a short error message.
@@ -145,61 +143,35 @@ Loop through run_order, strictly in order:
       }
 
 5.2 crr
-  - Input:
-      state.exp_output.cr0_input,
-      global_rules,
-      member-template-cr.prompt,
-      instructions.txt
-  - Output:
-      state.crr_output (facts-only JSON for event/venue/city_season)
+  - Input: state.exp_output.cr0_input, global_rules, member-template-cr.prompt, instructions.txt
+  - Output: state.crr_output (facts-only JSON for event/venue/city_season)
 
 5.3 cwr
-  - Input:
-      state.crr_output,
-      global_rules,
-      member-template-cw.prompt,
-      instructions.txt
-  - Output:
-      state.cwr_output (narrative JSON for collection track)
+  - Input: state.crr_output, global_rules, member-template-cw.prompt, instructions.txt
+  - Output: state.cwr_output (narrative JSON for competitions track)
 
 5.4 prr
-  - Input:
-      state.exp_output.pr1_input,
-      global_rules,
-      member-template-pr.prompt,
-      instructions.txt
-  - Output:
-      state.prr_output (facts-only JSON for stay/dine/essentials/locale)
+  - Input: state.exp_output.pr1_input, global_rules, member-template-pr.prompt, instructions.txt
+  - Output: state.prr_output (facts-only JSON for stay/dine/essentials/locale)
 
 5.5 pwr
-  - Input:
-      state.prr_output,
-      global_rules,
-      member-template-pw.prompt,
-      instructions.txt
-  - Output:
-      state.pwr_output (narrative JSON for places track)
+  - Input: state.prr_output, global_rules, member-template-pw.prompt, instructions.txt
+  - Output: state.pwr_output (narrative JSON for places track)
 
 5.6 rwt
-  - Input:
-      state.cwr_output,
-      state.pwr_output,
-      final-schema.json,
-      global_rules,
-      member-template-rwt.prompt,
-      instructions.txt
+  - Input: state.cwr_output, state.pwr_output, final-schema.json, global_rules,
+           member-template-rwt.prompt, instructions.txt
   - Responsibilities:
       - merge collection + places narratives
       - enforce final-schema.json
       - polish wording only
       - ensure no literal "could-not-verify" in visible text
-  - Output:
-      state.rwt_output (final JSON)
+  - Output: state.rwt_output (final JSON)
 
 No user messages during any lane.
 
 ============================================================
-6. COMMIT FINAL JSON + HTML + LOGS
+6. COMMIT FINAL JSON + HTML + LOG
 ============================================================
 
 From job_definition.paths:
@@ -210,68 +182,55 @@ From job_definition.paths:
   (e.g. "docs/blog/cp-2/logs/")
 - job_id      = job_definition.job_id
 
-Derive FINAL paths:
+Derive:
 
-- final_json_path = finals_root + job_id + ".json"
-- final_html_path = finals_root + job_id + ".html"
+- json_path = finals_root + job_id + ".json"
+- html_path = finals_root + job_id + ".html"
+- log_path  = logs_root   + job_id + "-rwt.json"
 
-Derive LOG paths:
+Build:
 
-- exp_log_path = logs_root + job_id + ".exp.json"
-- crr_log_path = logs_root + job_id + ".crr.json"
-- cwr_log_path = logs_root + job_id + ".cwr.json"
-- prr_log_path = logs_root + job_id + ".prr.json"
-- pwr_log_path = logs_root + job_id + ".pwr.json"
-- rwt_log_path = logs_root + job_id + ".rwt.json"
+- final_json  = JSON(state.rwt_output)
 
-Build FINAL artifacts:
+- html_output = HTML string rendering the main paragraphs, for example:
 
-- final_json   = JSON(state.rwt_output)
-- html_output  = simple HTML page rendering the main paragraphs
-                 (implementation defined in instructions.txt)
+  <html>
+    <body>
+      <p>{{collection_body.paragraph_1}}</p>
+      <p>{{collection_body.paragraph_2}}</p>
 
-Build LOG artifacts (lane snapshots):
+      <hr />
 
-- exp_log_json = JSON(state.exp_output)
-- crr_log_json = JSON(state.crr_output)
-- cwr_log_json = JSON(state.cwr_output)
-- prr_log_json = JSON(state.prr_output)
-- pwr_log_json = JSON(state.pwr_output)
-- rwt_log_json = JSON(state.rwt_output)
+      <p>{{places_body.stay_paragraph}}</p>
+      <p>{{places_body.dine_paragraph}}</p>
+      <p>{{places_body.essentials_paragraph}}</p>
+      <p>{{places_body.locale_paragraph}}</p>
+      <p>{{places_body.outro_paragraph}}</p>
+    </body>
+  </html>
 
-Base64-encode all bodies and call docs_commit_bulk using commit-spec.json
-shape (effective payload):
+- log_json = JSON({
+    "job_id": job_id,
+    "run_order": run_order,
+    "crr_output": state.crr_output,
+    "cwr_output": state.cwr_output,
+    "prr_output": state.prr_output,
+    "pwr_output": state.pwr_output,
+    "rwt_output": state.rwt_output
+  })
 
-- commit_message: "Final commit for " + job_id
+Base64-encode all three and call docs_commit_bulk:
+
+- message:   "Final commit for " + job_id
 - overwrite: true
 - files:
-  - { path: final_json_path,
-      content_type: "application/json",
-      content_base64: <final_json_base64> }
-  - { path: final_html_path,
-      content_type: "text/html",
-      content_base64: <html_output_base64> }
-  - { path: exp_log_path,
-      content_type: "application/json",
-      content_base64: <exp_log_base64> }
-  - { path: crr_log_path,
-      content_type: "application/json",
-      content_base64: <crr_log_base64> }
-  - { path: cwr_log_path,
-      content_type: "application/json",
-      content_base64: <cwr_log_base64> }
-  - { path: prr_log_path,
-      content_type: "application/json",
-      content_base64: <prr_log_base64> }
-  - { path: pwr_log_path,
-      content_type: "application/json",
-      content_base64: <pwr_log_base64> }
-  - { path: rwt_log_path,
-      content_type: "application/json",
-      content_base64: <rwt_log_base64> }
+  - { path: json_path, content_type: "application/json", content_base64: <json> }
+  - { path: html_path, content_type: "text/html",        content_base64: <html> }
+  - { path: log_path,  content_type: "application/json", content_base64: <log_json> }
 
 If commit fails:
 - STOP and send a concise error to the user.
+
 
 ============================================================
 7. USER RESPONSE (ONE MESSAGE)
@@ -279,12 +238,11 @@ If commit fails:
 
 If everything succeeds:
 
-- Send ONE summary message containing at least:
+- Send ONE summary message:
   - job_id
   - executed run_order
-  - final JSON path      (final_json_path)
-  - final HTML path      (final_html_path)
-  - log root             (logs_root)
+  - final JSON path
+  - final HTML path
   - commit SHA (if returned)
 
 If anything fails earlier:
