@@ -165,11 +165,11 @@ async function smokeLoadHouseFiles() {
 
   // Text / prompt files
   const textFiles = [
-    "member-template-cr.prompt",
-    "member-template-cw.prompt",
-    "member-template-pr.prompt",
-    "member-template-pw.prompt",
-    "member-template-rwt.prompt",
+    "member-template-cr-prompt.txt",
+    "member-template-cw-prompt.txt",
+    "member-template-pr-prompt.txt",
+    "member-template-pw-prompt.txt",
+    "member-template-rwt-prompt.txt",
     "instructions.txt",
     "instructions-mini.txt",
   ];
