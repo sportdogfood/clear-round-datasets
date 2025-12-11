@@ -1,36 +1,41 @@
-
 {
   "pipeline": "cp:2",
   "steps": [
     {
       "name": "exp",
-      "description": "Initial data shaping phase (normalize inputs, build lane inputs)",
-      "type": "expeditor"
+      "description": "Initial data shaping phase",
+      "type": "expeditor",
+      "prompt_file": null
     },
     {
       "name": "crr",
-      "description": "Facts-only research for event, venue, and city/season (collection track)",
-      "type": "researcher"
+      "description": "Event, venue, and city/season research phase",
+      "type": "researcher",
+      "prompt_file": "member-template-cr.prompt"
     },
     {
       "name": "cwr",
-      "description": "Two-paragraph narrative for event/venue/city/season (collection_body)",
-      "type": "writer"
+      "description": "Collection writer for event/venue/city-season body",
+      "type": "writer",
+      "prompt_file": "member-template-cw.prompt"
     },
     {
       "name": "prr",
-      "description": "Facts-only research for stay, dine, essentials, and locale (places track)",
-      "type": "researcher"
+      "description": "Stay, dine, essentials, and locale research phase",
+      "type": "researcher",
+      "prompt_file": "member-template-pr.prompt"
     },
     {
       "name": "pwr",
-      "description": "Narrative paragraphs for stay/dine/essentials/locale (places_body)",
-      "type": "writer"
+      "description": "Places writer for stay/dine/essentials/locale body",
+      "type": "writer",
+      "prompt_file": "member-template-pw.prompt"
     },
     {
       "name": "rwt",
-      "description": "Final prose cleanup pass on writer outputs (no structural changes)",
-      "type": "rewriter"
+      "description": "Final rewriter and polish phase",
+      "type": "rewriter",
+      "prompt_file": "member-template-rwt.prompt"
     }
   ]
 }
