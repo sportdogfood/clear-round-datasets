@@ -1,15 +1,20 @@
 # File: items/blog/cp-2/runner.txt
 # Runner: blog-cp:2 — config
+# Version: v2025-12-11
+# Updated: 2025-12-11T15:30:00Z
 
 runner_id: "blog-cp:2"
 
+# Always load job_definition for this runner.
 use_job_definition: true
 
 # House-level files live here (shared by all jobs using house cp:2)
-house_root: "blog/cp-2/"
+house_root: "items/blog/cp-2/"
 
-# Always read these from job_definition:
+# Always read these from job_definition (do NOT hard-code here):
 # - job_definition.run_order
+# - job_definition.mode
+# - job_definition.datasets
 # - job_definition.paths.items_root
 # - job_definition.paths.docs_finals_root
 # - job_definition.paths.docs_logs_root
