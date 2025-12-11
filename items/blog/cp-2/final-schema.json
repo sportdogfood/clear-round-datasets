@@ -2,11 +2,36 @@
   "fields": [
     "job_id",
     "dataset_id",
-    "items"
+    "collection_body",
+    "places_body"
   ],
   "types": {
     "job_id": "string",
     "dataset_id": "string",
-    "items": "array"
+    "collection_body": {
+      "type": "object",
+      "required": ["paragraph_1", "paragraph_2"],
+      "properties": {
+        "paragraph_1": "string",
+        "paragraph_2": "string"
+      }
+    },
+    "places_body": {
+      "type": "object",
+      "required": [
+        "stay_paragraph",
+        "dine_paragraph",
+        "essentials_paragraph",
+        "locale_paragraph",
+        "outro_paragraph"
+      ],
+      "properties": {
+        "stay_paragraph": "string",
+        "dine_paragraph": "string",
+        "essentials_paragraph": "string",
+        "locale_paragraph": "string",
+        "outro_paragraph": "string"
+      }
+    }
   }
 }
