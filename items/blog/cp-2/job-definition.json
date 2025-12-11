@@ -2,19 +2,99 @@
   "job_id": "job-4434456",
   "street": "blog",
   "house": "cp:2",
-  "run_order": ["exp", "crr", "cwr", "prr", "pwr", "rwt"],
-  "datasets": [
+  "output_format": "html",
+  "run_order": [
+    "exp",
+    "crr",
+    "cwr",
+    "prr",
+    "pwr",
+    "rwt"
+  ],
+
+  "global_rules":
+{
+  "truth_rules": {
+    "no_fabrication": true,
+    "no_research": true,
+    "no_external_sources": true,
+    "no_upgrading_facts": true,
+    "input_is_authoritative": true,
+    "no_cross_lane_inference": true,
+    "preserve_could_not_verify_semantics": true,
+    "never_echo_could_not_verify": true,
+    "empty_is_safer_than_guessing": true
+  },
+  "structure_rules": {
+    "schemas_are_fixed": true,
+    "output_shape_must_match_blueprint": true,
+    "no_extra_keys": true,
+    "no_removed_keys": true,
+    "array_shapes_fixed": true,
+    "field_order_preserved": true,
+    "final_output_must_be_valid_json": true
+  },
+  "governance_rules": {
+    "lane_boundaries_hard": true,
+    "expeditor_is_only_permitted_shaper": true,
+    "writers_generate_text_only": true,
+    "researchers_produce_facts_only": true,
+    "rewriter_text_only_edits": true,
+    "checker_must_validate_full_tree": true,
+    "members_cannot_call_tools": true
+  },
+  "safety_rules": {
+    "blocked_content": [],
+    "no_specific_promises": true,
+    "no_tourism_invention": true,
+    "no_event_invention": true,
+    "no_venue_details_not_in_input": true,
+    "no_specific_amenities_invention": true,
+    "no_specific_menu_items": true
+  },
+  "tone_rules": {
+    "audience": ["riders", "trainers", "families"],
+    "tone": "practical_clear_grounded",
+    "avoid_hype": true,
+    "avoid_flowery_language": true,
+    "focus_on_usefulness": true,
+    "acknowledge_working_week": true
+  },
+  "narrative_rules": {
+    "stay_lane_focus": "lodging_only",
+    "dine_lane_focus": "food_only",
+    "essentials_lane_focus": "groceries_pharmacy_tack_only",
+    "locale_lane_focus": "off_grounds_resets_only",
+    "outro_lane_focus": "practical_closing_for_riders"
+  },
+  "could_not_verify_rules": {
+    "treated_as_missing": true,
+    "never_guess_missing_fields": true,
+    "never_echo_literal_string": true,
+    "fallback_to_general_sentences": true
+  }
+},
+
+"datasets": [
     {
-      "dataset_id": "cr0",
+      "role_key": "cr0",
+      "domains": ["event", "venue", "city_season"],
       "sheet_id": "GqOwXTcrQ9u14dbdcTxWa",
       "table_id": "18be0a0d-dbea-43ea-811f-f7bcbf4982d3",
       "range": "A2:B999"
     },
     {
-      "dataset_id": "pr1",
+      "role_key": "pr1",
+      "domains": ["stay", "dine", "essentials", "locale"],
       "sheet_id": "GqOwXTcrQ9u14dbdcTxWa",
       "table_id": "52d0a628-4e75-4b93-8acd-121a5e860e2e",
       "range": "A2:B999"
     }
-  ]
+  ],
+
+  "paths": {
+    "items_root": "items/blog/cp-2/jobs/job-4434456/",
+    "docs_finals_root": "docs/blog/cp-2/finals/",
+    "docs_logs_root": "docs/blog/cp-2/logs/"
+  }
 }
