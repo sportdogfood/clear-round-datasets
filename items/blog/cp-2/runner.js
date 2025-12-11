@@ -14,7 +14,8 @@ import fetch from "node-fetch";
 
 // ---- CONFIG: adjust to your infra ----
 const ROWS_BASE = "https://api.rows.com/v1";
-const ITEMS_BASE = "https://items.clearroundtravel.com";
+const ITEMS_BASE = "https://items.clearroundtravel.com/items";
+
 
 // TEMP: hard-coded Rows key for testing.
 // Replace this string with your real key.
