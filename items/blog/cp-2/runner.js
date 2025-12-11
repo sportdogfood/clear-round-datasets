@@ -1,236 +1,143 @@
-// File: items/blog/cp-2/runner.js
-// Runner: blog-cp:2 — brains
-// Version: v2025-12-11T23:59Z
+/**
+ * File: items/blog/cp-2/brains.js
+ * Runner: blog-cp:2 — brains
+ * Version: v2025-12-12T03:25Z
+ *
+ * PURPOSE:
+ * - Accept pipeline request from runner.js
+ * - Execute 3 grouped steps:
+ *      A1 = CRR + CWR
+ *      A2 = PRR + PWR
+ *      A3 = RWT final pass
+ * - Return final_json + lane_logs back to runner.js
+ *
+ * NOTES:
+ * - No external APIs (OpenAI, etc.)
+ * - All prompting is done via "chatWithGPT()" which calls ChatGPT itself
+ *   through the runner-side handshake.
+ * - Each lane returns structured JSON; errors propagate upward.
+ */
 
-// NOTE (SMOKE TEST):
-// - Checks that Rows + Items + cp:2 house files + datasets are wired.
-// - Loads job_definition and all datasets listed there.
-// - Does NOT yet call model prompts or docs_commit_bulk.
-//
-// Run example:
-//   node runner.js start blog-cp:2
+import fs from "fs";
+import path from "path";
 
-import fetch from "node-fetch";
-
-// ---- CONFIG: adjust to your infra ----
-const ROWS_BASE = "https://api.rows.com/v1";
-const ITEMS_BASE = "https://items.clearroundtravel.com/items";
-
-
-// TEMP: hard-coded Rows key for testing.
-// Replace this string with your real key.
-const ROWS_API_KEY = "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
-
-// Items proxy usually needs no auth; leave null unless you add one.
-const ITEMS_API_KEY = null;
-
-// These match instructions-mini
-const JOB_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
-const JOB_TABLE_ID = "a2300cab-6557-4c6a-8e48-129b169bcc68";
-const JOB_RANGE    = "A2:B999";
-
-// House root as used by Items proxy (matches tool call path: "blog/cp-2/...").
-const HOUSE_ROOT = "blog/cp-2/";
-
-// -----------------------------------------------------
-// Helpers: HTTP wrappers
-// -----------------------------------------------------
-
-async function fetchJson(url, options = {}) {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} for ${url}: ${text}`);
-  }
-  return res.json();
-}
-
-async function fetchText(url, options = {}) {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} for ${url}: ${text}`);
-  }
-  return res.text();
-}
-
-function buildRowsHeaders() {
+// ---------------------------------------------------------
+// GPT handshake (local ChatGPT call through your wrapper)
+// ---------------------------------------------------------
+async function chatWithGPT(prompt) {
+  // You replace this with your actual ChatGPT call.
+  // For now, it acts as a placeholder that simply returns
+  // the prompt so the pipeline wiring can be tested.
   return {
-    "Authorization": `Bearer ${ROWS_API_KEY}`,
-    "Content-Type": "application/json",
+    ok: true,
+    data: { echo: prompt }
   };
 }
 
-// items.clearroundtravel.com usually just needs GET, no auth;
-// if you require auth later, add header here.
-function buildItemsHeaders() {
-  const h = { "Content-Type": "application/json" };
-  if (ITEMS_API_KEY) h["Authorization"] = `Bearer ${ITEMS_API_KEY}`;
-  return h;
+// ---------------------------------------------------------
+// Load a prompt template from Items (local file system)
+// ---------------------------------------------------------
+function loadPrompt(relPath) {
+  const p = path.join(process.cwd(), relPath);
+  return fs.readFileSync(p, "utf8");
 }
 
-// -----------------------------------------------------
-// 1. Load job_definition from Rows
-// -----------------------------------------------------
+// ---------------------------------------------------------
+// Helper: run one lane using a prompt template + JSON
+// ---------------------------------------------------------
+async function runLane(laneName, template, json) {
+  const payload = {
+    lane: laneName,
+    template,
+    json
+  };
 
-async function loadJobDefinition(triggerKey = "blog-cp:2") {
-  const url = `${ROWS_BASE}/spreadsheets/${JOB_SHEET_ID}/tables/${JOB_TABLE_ID}/values/${encodeURIComponent(JOB_RANGE)}`;
-  const data = await fetchJson(url, { headers: buildRowsHeaders() });
+  const resp = await chatWithGPT(payload);
 
-  const rows = data.items || data.values || [];
-  const row = rows.find(r => r[0] === triggerKey);
-  if (!row) {
-    throw new Error(`No job_definition row for trigger ${triggerKey}`);
-  }
-
-  let jobDef;
-  try {
-    jobDef = JSON.parse(row[1]);
-  } catch (e) {
-    throw new Error(`Failed to parse job_definition JSON: ${e.message}`);
+  if (!resp.ok) {
+    throw new Error(`Lane ${laneName} failed: ${resp.error || "unknown error"}`);
   }
 
-  // Minimal validation
-  if (jobDef.street !== "blog") {
-    throw new Error(`job_definition.street must be "blog", got ${jobDef.street}`);
-  }
-  if (jobDef.house !== "cp:2") {
-    throw new Error(`job_definition.house must be "cp:2", got ${jobDef.house}`);
-  }
-  if (!Array.isArray(jobDef.run_order) || jobDef.run_order.length === 0) {
-    throw new Error(`job_definition.run_order missing or empty`);
-  }
-  if (!Array.isArray(jobDef.datasets) || jobDef.datasets.length === 0) {
-    throw new Error(`job_definition.datasets missing or empty`);
-  }
-  if (!jobDef.paths || !jobDef.paths.docs_finals_root || !jobDef.paths.docs_logs_root) {
-    throw new Error(`job_definition.paths.docs_finals_root / docs_logs_root required`);
-  }
-
-  return jobDef;
+  return resp.data;
 }
 
-// -----------------------------------------------------
-// 2. Load datasets (payloads) from Rows
-// -----------------------------------------------------
+// ---------------------------------------------------------
+// MAIN brains() — 3 grouped calls
+// ---------------------------------------------------------
+export async function brains(requestBody) {
+  const {
+    runner_id,
+    mode,
+    job_definition,
+    datasets_by_role
+  } = requestBody;
 
-async function loadDatasets(jobDef) {
-  const datasetsByRole = {};
+  const logs = {
+    crr: null,
+    cwr: null,
+    prr: null,
+    pwr: null,
+    rwt: null
+  };
 
-  for (const ds of jobDef.datasets) {
-    const { role_key, domains, sheet_id, table_id, range } = ds;
+  // -----------------------------------------
+  // LOAD TEMPLATES
+  // -----------------------------------------
+  const t_cr  = loadPrompt("items/blog/cp-2/member-template-cr-prompt.txt");
+  const t_cw  = loadPrompt("items/blog/cp-2/member-template-cw-prompt.txt");
+  const t_pr  = loadPrompt("items/blog/cp-2/member-template-pr-prompt.txt");
+  const t_pw  = loadPrompt("items/blog/cp-2/member-template-pw-prompt.txt");
+  const t_rwt = loadPrompt("items/blog/cp-2/member-template-rwt-prompt.txt");
 
-    if (!role_key || !sheet_id || !table_id || !range) {
-      throw new Error(`Invalid dataset descriptor for role_key=${role_key || "UNKNOWN"}`);
-    }
-
-    const url = `${ROWS_BASE}/spreadsheets/${sheet_id}/tables/${table_id}/values/${encodeURIComponent(range)}`;
-    const data = await fetchJson(url, { headers: buildRowsHeaders() });
-    const rows = data.items || data.values || [];
-
-    datasetsByRole[role_key] = {
-      role_key,
-      domains,
-      items: rows,
-    };
+  // -----------------------------------------
+  // A1 = CRR + CWR
+  // -----------------------------------------
+  const exp_cr0 = datasets_by_role["cr0"];
+  if (!exp_cr0) {
+    throw new Error("Missing cr0 payload for A1 pipeline");
   }
 
-  return datasetsByRole;
-}
+  const crr_in = { data: exp_cr0.items };
+  const crr_out = await runLane("crr", t_cr, crr_in);
+  logs.crr = crr_out;
 
-// -----------------------------------------------------
-// 3. Load cp:2 house files from Items
-// -----------------------------------------------------
+  const cwr_in = { research: crr_out };
+  const cwr_out = await runLane("cwr", t_cw, cwr_in);
+  logs.cwr = cwr_out;
 
-async function loadHouseJson(relPath) {
-  const url = `${ITEMS_BASE}/${relPath}`;
-  return fetchJson(url, { headers: buildItemsHeaders() });
-}
-
-async function loadHouseText(relPath) {
-  const url = `${ITEMS_BASE}/${relPath}`;
-  return fetchText(url, { headers: buildItemsHeaders() });
-}
-
-async function smokeLoadHouseFiles() {
-  // JSON files
-  const jsonFiles = [
-    "pipeline-spec.json",
-    "style-spec.json",
-    "expeditor-contract.json",
-    "final-schema.json",
-    "commit-spec.json",
-    "checker.json",
-  ];
-
-  // Text / prompt files
-  const textFiles = [
-    "member-template-cr-prompt.txt",
-    "member-template-cw-prompt.txt",
-    "member-template-pr-prompt.txt",
-    "member-template-pw-prompt.txt",
-    "member-template-rwt-prompt.txt",
-    "instructions.txt",
-    "instructions-mini.txt",
-  ];
-
-  // Load JSON files
-  for (const file of jsonFiles) {
-    const rel = `${HOUSE_ROOT}${file}`;
-    await loadHouseJson(rel);
+  // -----------------------------------------
+  // A2 = PRR + PWR
+  // -----------------------------------------
+  const exp_pr1 = datasets_by_role["pr1"];
+  if (!exp_pr1) {
+    throw new Error("Missing pr1 payload for A2 pipeline");
   }
 
-  // Load text files
-  for (const file of textFiles) {
-    const rel = `${HOUSE_ROOT}${file}`;
-    await loadHouseText(rel);
-  }
+  const prr_in = { data: exp_pr1.items };
+  const prr_out = await runLane("prr", t_pr, prr_in);
+  logs.prr = prr_out;
+
+  const pwr_in = { research: prr_out };
+  const pwr_out = await runLane("pwr", t_pw, pwr_in);
+  logs.pwr = pwr_out;
+
+  // -----------------------------------------
+  // A3 = RWT (final merge + polish)
+  // -----------------------------------------
+  const rwt_in = {
+    collection: cwr_out,
+    places: pwr_out
+  };
+
+  const rwt_out = await runLane("rwt", t_rwt, rwt_in);
+  logs.rwt = rwt_out;
+
+  // -----------------------------------------
+  // RETURN
+  // -----------------------------------------
+  return {
+    job_id: job_definition.job_id,
+    final_json: rwt_out,
+    lane_logs: logs
+  };
 }
-
-// -----------------------------------------------------
-// 4. MAIN — smoke-test entrypoint
-// -----------------------------------------------------
-
-async function main() {
-  const [, , cmd, trigger] = process.argv;
-
-  if (cmd !== "start" || trigger !== "blog-cp:2") {
-    console.error(`Usage: node runner.js start blog-cp:2`);
-    process.exit(1);
-  }
-
-  try {
-    console.log("▶ Loading job_definition from Rows...");
-    const jobDef = await loadJobDefinition(trigger);
-    console.log("  job_id:", jobDef.job_id);
-    console.log("  mode:", jobDef.mode || "sandbox");
-    console.log("  run_order:", jobDef.run_order.join(" → "));
-    console.log("  datasets:", jobDef.datasets.map(d => d.role_key).join(", "));
-
-    console.log("\n▶ Fetching dataset payloads from Rows...");
-    const datasetsByRole = await loadDatasets(jobDef);
-
-    Object.entries(datasetsByRole).forEach(([role, payload]) => {
-      const count = Array.isArray(payload.items) ? payload.items.length : 0;
-      console.log(`  ${role}: ${count} rows (${(payload.domains || []).join(", ")})`);
-    });
-
-    console.log("\n▶ Loading cp:2 house files from Items...");
-    await smokeLoadHouseFiles();
-    console.log("  All required house files loaded successfully.");
-
-    console.log("\n✅ blog-cp:2 smoke test OK:");
-    console.log("   - job_definition loaded");
-    console.log("   - datasets fetched (payloads present)");
-    console.log("   - house files reachable via Items proxy");
-  } catch (err) {
-    console.error("\n❌ blog-cp:2 smoke test FAILED:");
-    console.error("   ", err.message);
-    process.exit(1);
-  }
-}
-
-main().catch(err => {
-  console.error("Unexpected error:", err);
-  process.exit(1);
-});
