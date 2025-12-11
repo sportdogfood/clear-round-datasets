@@ -1,34 +1,35 @@
+
 {
   "pipeline": "cp:2",
   "steps": [
     {
       "name": "exp",
-      "description": "Initial data shaping phase",
+      "description": "Initial data shaping phase (normalize inputs, build lane inputs)",
       "type": "expeditor"
     },
     {
       "name": "crr",
-      "description": "Event, venue, and city season research phase",
+      "description": "Facts-only research for event, venue, and city/season (collection track)",
       "type": "researcher"
     },
     {
       "name": "cwr",
-      "description": "Continue processing event/venue/city season data",
+      "description": "Two-paragraph narrative for event/venue/city/season (collection_body)",
       "type": "writer"
     },
     {
       "name": "prr",
-      "description": "Stay, dine, essentials, and locale data processing",
+      "description": "Facts-only research for stay, dine, essentials, and locale (places track)",
       "type": "researcher"
     },
     {
       "name": "pwr",
-      "description": "Continue processing stay/dine/essentials data",
+      "description": "Narrative paragraphs for stay/dine/essentials/locale (places_body)",
       "type": "writer"
     },
     {
       "name": "rwt",
-      "description": "Final data merge and polish phase",
+      "description": "Final prose cleanup pass on writer outputs (no structural changes)",
       "type": "rewriter"
     }
   ]
