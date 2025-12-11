@@ -5,13 +5,23 @@
     {
       "path": "{docs_finals_root}{job_id}.json",
       "content_type": "application/json",
-      "content_base64": "<base64-encoded-json-content>"
+      "content_base64": "<base64-encoded-final-json-content>"
     },
     {
       "path": "{docs_finals_root}{job_id}.html",
       "content_type": "text/html",
-      "content_base64": "<base64-encoded-html-content>"
+      "content_base64": "<base64-encoded-final-html-content>"
+    },
+
+    {
+      "path": "{docs_logs_root}{job_id}/cr-output.json",
+      "content_type": "application/json",
+      "content_base64": "<base64-encoded-cr-output-json>"
+    },
+    {
+      "path": "{docs_logs_root}{job_id}/cw-output.json",
+      "content_type": "application/json",
+      "content_base64": "<base64-encoded-cw-output-json>"
     }
   ]
 }
-
