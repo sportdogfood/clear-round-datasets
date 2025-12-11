@@ -12,16 +12,10 @@
       "content_type": "text/html",
       "content_base64": "<base64-encoded-final-html-content>"
     },
-
     {
-      "path": "{docs_logs_root}{job_id}/cr-output.json",
+      "path": "{docs_logs_root}{job_id}-rwt.json",
       "content_type": "application/json",
-      "content_base64": "<base64-encoded-cr-output-json>"
-    },
-    {
-      "path": "{docs_logs_root}{job_id}/cw-output.json",
-      "content_type": "application/json",
-      "content_base64": "<base64-encoded-cw-output-json>"
+      "content_base64": "<base64-encoded-rwt-log-json>"
     }
   ]
 }
