@@ -1,14 +1,15 @@
 # File: items/blog/cp-2/instructions-mini.txt
 # Runner: blog-cp:2 — MINI (end-to-end)
-# Version: v2025-12-11-min-02
+# Version: v2025-12-11-min-03
+# Updated: 2025-12-11T17:10:00Z
 
 # PURPOSE
 # - Trigger: "start blog-cp:2"
-# - Load job_definition from Rows
+# - Load job_definition from Rows (including mode)
 # - Load cp:2 house files
 # - Fetch datasets defined in job_definition
-# - Run full run_order (exp → crr → cwr → prr → pwr → rwt) in memory
-# - Commit final JSON + HTML using job_definition.paths.docs_finals_root
+# - Hand off full pipeline (exp → crr → cwr → prr → pwr → rwt) to git.brains
+# - Commit final JSON + HTML (+ log) using job_definition.paths.docs_finals_root / docs_logs_root
 # - Send ONE final success/failure summary to the user
 
 ============================================================
@@ -34,8 +35,8 @@ Call Rows:
 - GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
 
 Interpret:
-- column A (items[row][0])   = trigger key
-- column B (items[row][1])   = JSON string
+- column A (items[row][0]) = trigger key
+- column B (items[row][1]) = JSON string
 
 Find row where:
 - items[row][0] == "blog-cp:2"
@@ -49,9 +50,12 @@ Minimal checks:
 - job_definition.datasets is non-empty
 - job_definition.paths.docs_finals_root starts with "docs/"
 
+Derive:
+- mode = job_definition.mode if present, else "live"
+
 If any check fails:
 - STOP and reply with a short error message.
-Else keep job_definition in memory.
+Else keep job_definition and mode in memory.
 
 ============================================================
 3. LOAD HOUSE FILES (cp:2)
@@ -66,7 +70,6 @@ Read (for internal use only):
 - pipeline-spec.json
 - style-spec.json
 - expeditor-contract.json
-- expeditor-map.json
 - final-schema.json
 - commit-spec.json
 - checker.json
@@ -77,7 +80,11 @@ Read (for internal use only):
 - member-template-rwt.prompt
 - instructions.txt
 
-If final-schema.json or any needed member-template is missing:
+Notes:
+- pipeline-spec.json defines lane names, types, and prompt_file for each lane.
+- final-schema.json is enforced by git.brains / rwt, not by this MINI.
+
+If final-schema.json or any required member-template is missing:
 - STOP and tell user: house not fully configured.
 
 No user messages yet.
@@ -112,63 +119,52 @@ If any dataset fetch fails:
 Still no progress updates to user.
 
 ============================================================
-5. EXECUTE run_order IN MEMORY
+5. CALL git.brains FOR cp:2
 ============================================================
 
-Let:
+The MINI does NOT execute exp / crr / cwr / prr / pwr / rwt itself.
+It delegates the full pipeline to git.brains.
 
-- run_order    = job_definition.run_order
-- global_rules = job_definition.global_rules
-- paths        = job_definition.paths
+Build one request payload:
 
-Maintain state:
+brains_request = {
+  "runner_id": "blog-cp:2",
+  "mode": mode,                       # "live" or "sandbox"
+  "job_definition": job_definition,   # as loaded in step 2
+  "datasets_by_role": datasets_by_role
+}
 
-- state.exp_output
-- state.crr_output
-- state.cwr_output
-- state.prr_output
-- state.pwr_output
-- state.rwt_output
+Send brains_request to the configured cp:2 brains endpoint
+(implementation-specific; outside this MINI file).
 
-Loop through run_order, strictly in order:
+Expect a JSON response of the form:
 
-5.1 exp
-  - Input: job_definition, datasets_by_role, expeditor-* files, global_rules
-  - Normalize null/empty → "could-not-verify"
-  - Map roles/domains using expeditor-map.json
-  - Output:
-      state.exp_output = {
-        "cr0_input": <JSON>,
-        "pr1_input": <JSON>
-      }
+{
+  "job_id": "<job-4434456>",
+  "final_json": { ... },          # rwt-equivalent final tree
+  "lane_logs": {                  # OPTIONAL per-lane logs
+    "crr_output": { ... },
+    "cwr_output": { ... },
+    "prr_output": { ... },
+    "pwr_output": { ... },
+    "rwt_output": { ... }
+  }
+}
 
-5.2 crr
-  - Input: state.exp_output.cr0_input, global_rules, member-template-cr.prompt, instructions.txt
-  - Output: state.crr_output (facts-only JSON for event/venue/city_season)
+Minimal checks:
 
-5.3 cwr
-  - Input: state.crr_output, global_rules, member-template-cw.prompt, instructions.txt
-  - Output: state.cwr_output (narrative JSON for competitions track)
+- response.job_id == job_definition.job_id
+- response.final_json is a JSON object
 
-5.4 prr
-  - Input: state.exp_output.pr1_input, global_rules, member-template-pr.prompt, instructions.txt
-  - Output: state.prr_output (facts-only JSON for stay/dine/essentials/locale)
+If any check fails:
+- STOP and send a concise error naming "brains pipeline" as failing phase.
 
-5.5 pwr
-  - Input: state.prr_output, global_rules, member-template-pw.prompt, instructions.txt
-  - Output: state.pwr_output (narrative JSON for places track)
+If OK:
 
-5.6 rwt
-  - Input: state.cwr_output, state.pwr_output, final-schema.json, global_rules,
-           member-template-rwt.prompt, instructions.txt
-  - Responsibilities:
-      - merge collection + places narratives
-      - enforce final-schema.json
-      - polish wording only
-      - ensure no literal "could-not-verify" in visible text
-  - Output: state.rwt_output (final JSON)
+- state.rwt_output = response.final_json
+- state.lane_logs  = response.lane_logs (may be null/empty)
 
-No user messages during any lane.
+No user messages yet.
 
 ============================================================
 6. COMMIT FINAL JSON + HTML + LOG
@@ -190,7 +186,7 @@ Derive:
 
 Build:
 
-- final_json  = JSON(state.rwt_output)
+- final_json = JSON(state.rwt_output)
 
 - html_output = HTML string rendering the main paragraphs, for example:
 
@@ -211,15 +207,12 @@ Build:
 
 - log_json = JSON({
     "job_id": job_id,
-    "run_order": run_order,
-    "crr_output": state.crr_output,
-    "cwr_output": state.cwr_output,
-    "prr_output": state.prr_output,
-    "pwr_output": state.pwr_output,
-    "rwt_output": state.rwt_output
+    "mode": mode,
+    "run_order": job_definition.run_order,
+    "lane_logs": state.lane_logs
   })
 
-Base64-encode all three and call docs_commit_bulk:
+Base64-encode all three and call docs_commit_bulk (per commit-spec.json):
 
 - message:   "Final commit for " + job_id
 - overwrite: true
@@ -231,7 +224,6 @@ Base64-encode all three and call docs_commit_bulk:
 If commit fails:
 - STOP and send a concise error to the user.
 
-
 ============================================================
 7. USER RESPONSE (ONE MESSAGE)
 ============================================================
@@ -240,14 +232,16 @@ If everything succeeds:
 
 - Send ONE summary message:
   - job_id
+  - mode
   - executed run_order
   - final JSON path
   - final HTML path
+  - log JSON path
   - commit SHA (if returned)
 
 If anything fails earlier:
 - Send ONE concise error, naming:
-  - failing phase (job load, datasets, lane name, commit)
+  - failing phase (job load, datasets, brains pipeline, commit)
   - minimal reason.
 
 No step-by-step progress chatter; only final success or failure.
