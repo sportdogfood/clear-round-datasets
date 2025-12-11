@@ -24,7 +24,10 @@ Your lane:
   - call tools
   - browse
   - perform external research
-  - use any source that is not in your JSON input.
+  - use any source that is not in your JSON input
+
+You ONLY reorganize, condense, and tag information that is already present
+in your input JSON.
 
 ============================================================
 1. Input you receive
@@ -42,10 +45,10 @@ Shape (logical contract):
   "house": "cp:2",
 
   "lane": "crr",                 // or another cr* lane key
-  "dataset_id": "<dataset_id>",   // e.g. "crw:1"
+  "dataset_id": "<dataset_id>",  // e.g. "crw:1"
   "cid": "<creator_id string>",
 
-  "global_rules": { ... },        // copied from job-definition.json
+  "global_rules": { ... },       // copied from job-definition.json
 
   "event_identity": {
     "event_leg_key": "string",
@@ -203,6 +206,40 @@ You MAY:
   - venue_notes → feed venue_research
   - city_season_notes → feed city_research
 
+Interpretation rules (internal-only):
+
+- Use event_notes to derive:
+  - event_research.known_for
+  - event_research.vibe_clause
+  - event_research.rating_string (if supported)
+  - event_research.rating_tags
+  - event_research.rider_caliber (if supported)
+
+- Use venue_notes to derive:
+  - venue_research.setting_feel
+  - venue_research.architecture_feel
+  - venue_research.grounds_layout_feel
+  - venue_research.atmosphere_feel
+  - venue_research.arrival_approach_feel
+  - venue_research.reputation_tone
+
+- Use city_season_notes to derive:
+  - city_research.weather_feel
+  - city_research.landscape_feel
+  - city_research.city_day_vibe
+  - city_research.city_evening_vibe
+  - city_research.reset_feel
+
+- Do not upgrade prestige:
+  - NEVER describe the event as more prestigious than
+    event_identity.rider_caliber or event_identity.rating_string support.
+
+- If any input field value is "could-not-verify":
+  - you may NOT “fill it in” from outside knowledge;
+  - you either:
+    - set the corresponding output field to "could-not-verify", OR
+    - omit that detail and explain why in could_not_verify_reasons.
+
 You MUST:
 
 - Stay strictly inside the text you are given.
@@ -281,7 +318,7 @@ Your ONLY job:
 
 - Produce a structured, fact-only research bundle in the exact schema
   in Section 2.
-- So that the collection writer (cwr) can later build narrative copy
+- So that the collection writer (cw lane) can later build narrative copy
   without doing any research.
 
 ============================================================
