@@ -6,7 +6,7 @@ runner_id: "blog-cp:2"
 use_job_definition: true
 
 # House-level files live here (shared by all jobs using house cp:2)
-house_root: "items/blog/cp-2/"
+house_root: "blog/cp-2/"
 
 # Always read these from job_definition:
 # - job_definition.run_order
