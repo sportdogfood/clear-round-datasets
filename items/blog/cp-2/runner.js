@@ -1,29 +1,35 @@
 // File: items/blog/cp-2/runner.js
 // Runner: blog-cp:2 — brains
-// Version: v2025-12-11T23:45Z
+// Version: v2025-12-11T23:59Z
 
-// NOTE:
-// - This is a SMOKE-TEST runner.
-// - It checks that Rows + Items + house files + datasets are wired.
-// - It does NOT actually call model prompts or docs_commit_bulk yet.
-// - You can run it with: node runner.js start blog-cp:2
+// NOTE (SMOKE TEST):
+// - Checks that Rows + Items + cp:2 house files + datasets are wired.
+// - Loads job_definition and all datasets listed there.
+// - Does NOT yet call model prompts or docs_commit_bulk.
+//
+// Run example:
+//   node runner.js start blog-cp:2
 
-import fs from "fs";
-import path from "path";
 import fetch from "node-fetch";
 
 // ---- CONFIG: adjust to your infra ----
-const ROWS_BASE = "https://api.rows.com";
+const ROWS_BASE  = "https://api.rows.com";
 const ITEMS_BASE = "https://items.clearroundtravel.com";
-const ROWS_API_KEY = process.env.ROWS_API_KEY;     // set in env
-const ITEMS_API_KEY = process.env.ITEMS_API_KEY;   // if needed
+
+// TEMP: hard-coded Rows key for testing.
+// Replace this string with your real key.
+const ROWS_API_KEY = "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
+
+// Items proxy usually needs no auth; leave null unless you add one.
+const ITEMS_API_KEY = null;
 
 // These match instructions-mini
 const JOB_SHEET_ID = "GqOwXTcrQ9u14dbdcTxWa";
 const JOB_TABLE_ID = "a2300cab-6557-4c6a-8e48-129b169bcc68";
 const JOB_RANGE    = "A2:B999";
 
-const HOUSE_ROOT = "items/blog/cp-2/";  // as in runner.txt
+// House root as used by Items proxy (matches tool call path: "blog/cp-2/...").
+const HOUSE_ROOT = "blog/cp-2/";
 
 // -----------------------------------------------------
 // Helpers: HTTP wrappers
@@ -38,6 +44,15 @@ async function fetchJson(url, options = {}) {
   return res.json();
 }
 
+async function fetchText(url, options = {}) {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} for ${url}: ${text}`);
+  }
+  return res.text();
+}
+
 function buildRowsHeaders() {
   return {
     "Authorization": `Bearer ${ROWS_API_KEY}`,
@@ -46,7 +61,7 @@ function buildRowsHeaders() {
 }
 
 // items.clearroundtravel.com usually just needs GET, no auth;
-// if you require auth, add header here.
+// if you require auth later, add header here.
 function buildItemsHeaders() {
   const h = { "Content-Type": "application/json" };
   if (ITEMS_API_KEY) h["Authorization"] = `Bearer ${ITEMS_API_KEY}`;
@@ -95,282 +110,126 @@ async function loadJobDefinition(triggerKey = "blog-cp:2") {
 }
 
 // -----------------------------------------------------
-// 2. Load house files from Items
+// 2. Load datasets (payloads) from Rows
 // -----------------------------------------------------
 
-async function loadHouseFile(relPath) {
+async function loadDatasets(jobDef) {
+  const datasetsByRole = {};
+
+  for (const ds of jobDef.datasets) {
+    const { role_key, domains, sheet_id, table_id, range } = ds;
+
+    if (!role_key || !sheet_id || !table_id || !range) {
+      throw new Error(`Invalid dataset descriptor for role_key=${role_key || "UNKNOWN"}`);
+    }
+
+    const url = `${ROWS_BASE}/spreadsheets/${sheet_id}/tables/${table_id}/values/${encodeURIComponent(range)}`;
+    const data = await fetchJson(url, { headers: buildRowsHeaders() });
+    const rows = data.items || data.values || [];
+
+    datasetsByRole[role_key] = {
+      role_key,
+      domains,
+      items: rows,
+    };
+  }
+
+  return datasetsByRole;
+}
+
+// -----------------------------------------------------
+// 3. Load cp:2 house files from Items
+// -----------------------------------------------------
+
+async function loadHouseJson(relPath) {
   const url = `${ITEMS_BASE}/${relPath}`;
   return fetchJson(url, { headers: buildItemsHeaders() });
 }
 
-async function loadTextHouseFile(relPath) {
+async function loadHouseText(relPath) {
   const url = `${ITEMS_BASE}/${relPath}`;
-  const res = await fetch(url, { headers: buildItemsHeaders() });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} for ${url}: ${text}`);
-  }
-  return res.text();
+  return fetchText(url, { headers: buildItemsHeaders() });
 }
 
-async function loadHouse() {
-  const files = {
-    pipelineSpec:      `${HOUSE_ROOT}pipeline-spec.json`,
-    styleSpec:         `${HOUSE_ROOT}style-spec.json`,
-    expContract:       `${HOUSE_ROOT}expeditor-contract.json`,
-    finalSchema:       `${HOUSE_ROOT}final-schema.json`,
-    commitSpec:        `${HOUSE_ROOT}commit-spec.json`,
-    checker:           `${HOUSE_ROOT}checker.json`,
-    memberCr:          `${HOUSE_ROOT}member-template-cr.prompt`,
-    memberCw:          `${HOUSE_ROOT}member-template-cw.prompt`,
-    memberPr:          `${HOUSE_ROOT}member-template-pr.prompt`,
-    memberPw:          `${HOUSE_ROOT}member-template-pw.prompt`,
-    memberRwt:         `${HOUSE_ROOT}member-template-rwt.prompt`,
-    instructionsMini:  `${HOUSE_ROOT}instructions-mini.txt`,
-    instructions:      `${HOUSE_ROOT}instructions.txt`,
-  };
+async function smokeLoadHouseFiles() {
+  // JSON files
+  const jsonFiles = [
+    "pipeline-spec.json",
+    "style-spec.json",
+    "expeditor-contract.json",
+    "final-schema.json",
+    "commit-spec.json",
+    "checker.json",
+  ];
+
+  // Text / prompt files
+  const textFiles = [
+    "member-template-cr.prompt",
+    "member-template-cw.prompt",
+    "member-template-pr.prompt",
+    "member-template-pw.prompt",
+    "member-template-rwt.prompt",
+    "instructions.txt",
+    "instructions-mini.txt",
+  ];
 
   // Load JSON files
-  const [
-    pipelineSpec,
-    styleSpec,
-    expContract,
-    finalSchema,
-    commitSpec,
-    checker,
-  ] = await Promise.all([
-    loadHouseFile("blog/cp-2/pipeline-spec.json"),
-    loadHouseFile("blog/cp-2/style-spec.json"),
-    loadHouseFile("blog/cp-2/expeditor-contract.json"),
-    loadHouseFile("blog/cp-2/final-schema.json"),
-    loadHouseFile("blog/cp-2/commit-spec.json"),
-    loadHouseFile("blog/cp-2/checker.json"),
-  ]);
-
-  // Load prompts / instructions as text
-  const [
-    memberCr,
-    memberCw,
-    memberPr,
-    memberPw,
-    memberRwt,
-    instructionsMini,
-    instructions,
-  ] = await Promise.all([
-    loadTextHouseFile("blog/cp-2/member-template-cr.prompt"),
-    loadTextHouseFile("blog/cp-2/member-template-cw.prompt"),
-    loadTextHouseFile("blog/cp-2/member-template-pr.prompt"),
-    loadTextHouseFile("blog/cp-2/member-template-pw.prompt"),
-    loadTextHouseFile("blog/cp-2/member-template-rwt.prompt"),
-    loadTextHouseFile("blog/cp-2/instructions-mini.txt"),
-    loadTextHouseFile("blog/cp-2/instructions.txt"),
-  ]);
-
-  return {
-    pipelineSpec,
-    styleSpec,
-    expContract,
-    finalSchema,
-    commitSpec,
-    checker,
-    memberCr,
-    memberCw,
-    memberPr,
-    memberPw,
-    memberRwt,
-    instructionsMini,
-    instructions,
-  };
-}
-
-// -----------------------------------------------------
-// 3. Fetch datasets
-// -----------------------------------------------------
-
-async function fetchDataset(ds) {
-  const { sheet_id, table_id, range, role_key, domains } = ds;
-  const url = `${ROWS_BASE}/spreadsheets/${sheet_id}/tables/${table_id}/values/${encodeURIComponent(range)}`;
-  const data = await fetchJson(url, { headers: buildRowsHeaders() });
-  const items = data.items || data.values || [];
-  return {
-    role_key,
-    domains,
-    items,
-  };
-}
-
-async function loadDatasets(jobDef) {
-  const results = await Promise.all(jobDef.datasets.map(fetchDataset));
-  const byRole = {};
-  for (const r of results) {
-    byRole[r.role_key] = r;
-  }
-  return byRole;
-}
-
-// -----------------------------------------------------
-// 4. Run lanes (SMOKE ONLY: no model calls)
-// -----------------------------------------------------
-
-async function runPipeline(jobDef, house, datasetsByRole) {
-  const state = {
-    exp_output: null,
-    crr_output: null,
-    cwr_output: null,
-    prr_output: null,
-    pwr_output: null,
-    rwt_output: null,
-  };
-
-  // For now, just log what we WOULD do.
-  console.log("▶ run_order:", jobDef.run_order.join(" → "));
-
-  for (const lane of jobDef.run_order) {
-    switch (lane) {
-      case "exp":
-        console.log("  [exp] would shape datasets (cr0, pr1) into cr0_input/pr1_input");
-        state.exp_output = {
-          cr0_input: { stub: true, role_key: "cr0" },
-          pr1_input: { stub: true, role_key: "pr1" },
-        };
-        break;
-
-      case "crr":
-        console.log("  [crr] would call member-template-cr.prompt with cr0_input");
-        state.crr_output = { stub: true, lane: "crr" };
-        break;
-
-      case "cwr":
-        console.log("  [cwr] would call member-template-cw.prompt with crr_output");
-        state.cwr_output = {
-          job_id: jobDef.job_id,
-          dataset_id: "cr0",
-          collection_body: {
-            paragraph_1: "Stub paragraph 1 from cwr.",
-            paragraph_2: "Stub paragraph 2 from cwr.",
-          },
-        };
-        break;
-
-      case "prr":
-        console.log("  [prr] would call member-template-pr.prompt with pr1_input");
-        state.prr_output = { stub: true, lane: "prr" };
-        break;
-
-      case "pwr":
-        console.log("  [pwr] would call member-template-pw.prompt with prr_output");
-        state.pwr_output = {
-          job_id: jobDef.job_id,
-          dataset_id: "pr1",
-          places_body: {
-            stay_paragraph: "Stub stay paragraph.",
-            dine_paragraph: "Stub dine paragraph.",
-            essentials_paragraph: "Stub essentials paragraph.",
-            locale_paragraph: "Stub locale paragraph.",
-            outro_paragraph: "Stub outro paragraph.",
-          },
-        };
-        break;
-
-      case "rwt":
-        console.log("  [rwt] would merge cwr_output + pwr_output and run member-template-rwt.prompt");
-        state.rwt_output = {
-          job_id: jobDef.job_id,
-          dataset_id: "cr0+pr1",
-          collection_body: state.cwr_output?.collection_body || {},
-          places_body: state.pwr_output?.places_body || {},
-        };
-        break;
-
-      default:
-        console.warn(`  [${lane}] unknown lane; skipping`);
-    }
+  for (const file of jsonFiles) {
+    const rel = `${HOUSE_ROOT}${file}`;
+    await loadHouseJson(rel);
   }
 
-  return state;
+  // Load text files
+  for (const file of textFiles) {
+    const rel = `${HOUSE_ROOT}${file}`;
+    await loadHouseText(rel);
+  }
 }
 
 // -----------------------------------------------------
-// 5. Compute final paths and show commit plan
+// 4. MAIN — smoke-test entrypoint
 // -----------------------------------------------------
 
-function computeCommitTargets(jobDef, state) {
-  const finalsRoot = jobDef.paths.docs_finals_root; // e.g. "docs/blog/cp-2/finals/"
-  const logsRoot   = jobDef.paths.docs_logs_root;   // e.g. "docs/blog/cp-2/logs/"
-  const jobId      = jobDef.job_id;
+async function main() {
+  const [, , cmd, trigger] = process.argv;
 
-  const jsonPath = `${finalsRoot}${jobId}.json`;
-  const htmlPath = `${finalsRoot}${jobId}.html`;
-  const logPath  = `${logsRoot}${jobId}-rwt.json`;
-
-  const logPayload = {
-    job_id: jobId,
-    run_order: jobDef.run_order,
-    crr_output: state.crr_output,
-    cwr_output: state.cwr_output,
-    prr_output: state.prr_output,
-    pwr_output: state.pwr_output,
-    rwt_output: state.rwt_output,
-  };
-
-  return {
-    jsonPath,
-    htmlPath,
-    logPath,
-    finalJson: state.rwt_output,
-    logJson: logPayload,
-  };
-}
-
-// -----------------------------------------------------
-// 6. Main entry
-// -----------------------------------------------------
-
-async function runCli() {
-  const [, , cmd, arg] = process.argv;
-
-  if (cmd !== "start" || arg !== "blog-cp:2") {
-    console.error('Usage: node runner.js start blog-cp:2');
+  if (cmd !== "start" || trigger !== "blog-cp:2") {
+    console.error(`Usage: node runner.js start blog-cp:2`);
     process.exit(1);
   }
 
   try {
-    console.log("Loading job_definition from Rows...");
-    const jobDef = await loadJobDefinition("blog-cp:2");
+    console.log("▶ Loading job_definition from Rows...");
+    const jobDef = await loadJobDefinition(trigger);
+    console.log("  job_id:", jobDef.job_id);
+    console.log("  mode:", jobDef.mode || "sandbox");
+    console.log("  run_order:", jobDef.run_order.join(" → "));
+    console.log("  datasets:", jobDef.datasets.map(d => d.role_key).join(", "));
 
-    const mode = jobDef.mode || "sandbox";
-    console.log("job_id:", jobDef.job_id, "mode:", mode);
-
-    console.log("Loading house files from Items...");
-    const house = await loadHouse();
-
-    console.log("Loading datasets from Rows...");
+    console.log("\n▶ Fetching dataset payloads from Rows...");
     const datasetsByRole = await loadDatasets(jobDef);
-    console.log("datasets loaded:", Object.keys(datasetsByRole));
 
-    console.log("Running pipeline (SMOKE MODE, no model calls)...");
-    const state = await runPipeline(jobDef, house, datasetsByRole);
+    Object.entries(datasetsByRole).forEach(([role, payload]) => {
+      const count = Array.isArray(payload.items) ? payload.items.length : 0;
+      console.log(`  ${role}: ${count} rows (${(payload.domains || []).join(", ")})`);
+    });
 
-    console.log("Computing commit targets (no commit yet)...");
-    const targets = computeCommitTargets(jobDef, state);
+    console.log("\n▶ Loading cp:2 house files from Items...");
+    await smokeLoadHouseFiles();
+    console.log("  All required house files loaded successfully.");
 
-    console.log("Planned outputs:");
-    console.log("  JSON:", targets.jsonPath);
-    console.log("  HTML:", targets.htmlPath);
-    console.log("  LOG :", targets.logPath);
-
-    // Here is where you would actually call docs_commit_bulk
-    // using git_openapi.yaml contract. For now we only echo.
-    console.log("SMOKE TEST COMPLETE — wiring appears consistent.");
+    console.log("\n✅ blog-cp:2 smoke test OK:");
+    console.log("   - job_definition loaded");
+    console.log("   - datasets fetched (payloads present)");
+    console.log("   - house files reachable via Items proxy");
   } catch (err) {
-    console.error("RUNNER ERROR:", err.message);
+    console.error("\n❌ blog-cp:2 smoke test FAILED:");
+    console.error("   ", err.message);
     process.exit(1);
   }
 }
 
-// Allow both CLI and programmatic use
-if (process.argv[1] && process.argv[1].endsWith("runner.js")) {
-  runCli();
-}
-
-export { runCli as runBlogCp2 };
+main().catch(err => {
+  console.error("Unexpected error:", err);
+  process.exit(1);
+});
