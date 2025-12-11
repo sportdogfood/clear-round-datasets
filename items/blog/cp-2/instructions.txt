@@ -2,23 +2,23 @@
   "steps": [
     {
       "step": 1,
-      "description": "Trigger the pipeline via `start blog-cp:2`"
+      "description": "Trigger the pipeline via `start blog-cp:2`."
     },
     {
       "step": 2,
-      "description": "Fetch `job-definition.json` from the Rows API using the defined `sheet_id`, `table_id`, and `range`."
+      "description": "Fetch `job-definition.json` from the Rows API using the configured `sheet_id`, `table_id`, and `range` for the job-definition table."
     },
     {
       "step": 3,
-      "description": "Load house files based on `job-definition.json`. Ensure the correct house path (`cp:2`) is resolved. If the expeditor-map.json is available, read it."
+      "description": "Resolve the house path (`house_root`, e.g. `items/blog/cp-2/`) from `runner.txt` and load required house files (pipeline-spec, style-spec, expeditor-contract, final-schema, commit-spec, checker, member-templates, instructions). Do NOT expect or load `expeditor-map.json`; role/domain mapping comes from `job_definition.datasets`."
     },
     {
       "step": 4,
-      "description": "Fetch datasets based on the `job-definition.json`. Use the specified `sheet_id`, `table_id`, and `range` for each dataset."
+      "description": "Fetch all datasets listed in `job_definition.datasets` from the Rows API using each dataset's `sheet_id`, `table_id`, and `range`, and cache them in memory keyed by `role_key`."
     },
     {
       "step": 5,
-      "description": "Touch the expeditor phase to verify data loading. Ensure that the datasets are available and cached."
+      "description": "Run the expeditor phase using `job_definition`, `global_rules`, and the cached datasets to verify data loading and build lane-specific inputs (e.g. `cr0_input`, `pr1_input`) for downstream members."
     }
   ]
 }
