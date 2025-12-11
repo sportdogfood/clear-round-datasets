@@ -1,6 +1,6 @@
 # File: items/blog/cp-2/instructions.txt
 # Runner: blog-cp:2 — HOUSE INSTRUCTIONS
-# Version: v2025-12-11
+# Version: v2025-12-11T22:45Z
 
 ============================================================
 0. PURPOSE AND SCOPE
@@ -24,6 +24,7 @@ with:
 
 - items/blog/cp-2/instructions-mini.txt
 - items/blog/cp-2/pipeline-spec.json
+- items/blog/cp-2/commit-spec.json
 - job_definition stored in Rows.
 
 
@@ -53,7 +54,7 @@ Rules:
 
 - Only when job_definition.mode == "live" may the runner:
   - execute all lanes,
-  - call docs commit per commit-spec.json,
+  - call Docs commit per commit-spec.json,
   - report final JSON/HTML/log paths as committed.
 
 
@@ -356,4 +357,95 @@ Requirements:
   - no bullets, headings, or markdown,
   - no "galactic" or nonsense wording,
   - no meta language (“in this article…”, etc.).
-- Rely on member-template-rwt.prompt for exact
+- Rely on member-template-rwt.prompt for the exact micro-rules on how
+  to edit string fields safely.
+
+
+============================================================
+6. CHECKER, FINAL-SCHEMA, AND VALIDATION
+============================================================
+
+final-schema.json:
+
+- Defines the expected shape for the assembled cp:2 final object before
+  it is handed to rwt (keys, required sections, field types).
+- The runner MUST validate the assembled pre-rwt JSON against
+  final-schema.json.
+- On schema failure:
+  - Do NOT call rwt.
+  - Log a structured error into the cp:2 logs area.
+  - Return ONE concise error message to the user naming the failing
+    phase ("schema validation before rwt").
+
+checker.json:
+
+- Provides configuration for additional validations:
+  - severity levels (e.g. error, warn),
+  - categories (structure, tone, safety, cnv).
+- The runner MAY apply these checks to state.rwt_output before commit.
+- On checker "error":
+  - Treat as a hard failure:
+    - no commit,
+    - write an error log,
+    - return ONE concise error naming "checker" as failing phase.
+- On checker "warn":
+  - Runner may still commit but should include a note in logs.  
+
+
+============================================================
+7. COMMITS, LOGS, AND USER RESPONSE
+============================================================
+
+Commits are driven by:
+
+- job_definition.paths:
+    - docs_finals_root
+    - docs_logs_root
+- items/blog/cp-2/commit-spec.json
+
+At commit time, the runner MUST:
+
+- Expand commit-spec.json placeholders using:
+    - {job_id}           → job_definition.job_id
+    - {docs_finals_root} → job_definition.paths.docs_finals_root
+    - {docs_logs_root}   → job_definition.paths.docs_logs_root
+- Build file payloads:
+    - final JSON  from state.rwt_output,
+    - final HTML  rendered from the cp:2 final JSON (paragraph layout),
+    - rwt log JSON containing at minimum:
+        - job_id
+        - run_order
+        - crr_output
+        - cwr_output
+        - prr_output
+        - pwr_output
+        - rwt_output
+- Base64-encode each file content.
+
+The runner MUST then call the Docs bulk commit endpoint (as defined in
+git_openapi.yaml) with:
+
+- commit_message from commit-spec.json (after placeholder substitution),
+- overwrite flag from commit-spec.json,
+- files[] from commit-spec.json.
+
+On commit success:
+
+- Record the commit SHA (if returned) into the cp:2 log JSON.
+- Respond to the user with ONE compact success message containing:
+  - job_id
+  - executed run_order
+  - final JSON path
+  - final HTML path
+  - log path
+  - commit SHA (if available)
+
+On commit failure:
+
+- Write an error log under docs_logs_root for this job_id.
+- Respond with ONE concise failure message naming:
+  - failing phase: "commit"
+  - minimal reason (HTTP status or parsed error text).
+
+Lanes themselves MUST NEVER send user-facing text. Only the runner’s
+top-level response is visible to the user.
