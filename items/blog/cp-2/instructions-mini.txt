@@ -125,17 +125,24 @@ Still no progress updates to user.
 The MINI does NOT execute exp / crr / cwr / prr / pwr / rwt itself.
 It delegates the full pipeline to git.brains.
 
+Force mode to "live" for all executions:
+
+- mode = "live"
+
+Define the brains endpoint:
+
+- brains_endpoint = "/brains/blog-cp-2"
+
 Build one request payload:
 
 brains_request = {
   "runner_id": "blog-cp:2",
-  "mode": mode,                       # "live" or "sandbox"
-  "job_definition": job_definition,   # as loaded in step 2
+  "mode": "live",                   # always live
+  "job_definition": job_definition, # as loaded in step 2
   "datasets_by_role": datasets_by_role
 }
 
-Send brains_request to the configured cp:2 brains endpoint
-(implementation-specific; outside this MINI file).
+POST brains_request to brains_endpoint.
 
 Expect a JSON response of the form:
 
