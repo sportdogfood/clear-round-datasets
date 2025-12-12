@@ -1,143 +1,84 @@
 /**
- * File: items/blog/cp-2/brains.js
- * Runner: blog-cp:2 — brains
- * Version: v2025-12-12T03:25Z
- *
- * PURPOSE:
- * - Accept pipeline request from runner.js
- * - Execute 3 grouped steps:
- *      A1 = CRR + CWR
- *      A2 = PRR + PWR
- *      A3 = RWT final pass
- * - Return final_json + lane_logs back to runner.js
- *
- * NOTES:
- * - No external APIs (OpenAI, etc.)
- * - All prompting is done via "chatWithGPT()" which calls ChatGPT itself
- *   through the runner-side handshake.
- * - Each lane returns structured JSON; errors propagate upward.
+ * runner.js — cp:2 Glue Integration
+ * Resolves trigger, loads job, uses glue-contract to bind lanes,
+ * launches brain.js to execute them in correct order,
+ * then commits results via docs/commit-bulk.
  */
 
 import fs from "fs";
-import path from "path";
+import { executeLanes } from "./brain.js";
+import { rowsGet } from "./rows.js";
+import { gitCommitBulk } from "./git.js";
 
-// ---------------------------------------------------------
-// GPT handshake (local ChatGPT call through your wrapper)
-// ---------------------------------------------------------
-async function chatWithGPT(prompt) {
-  // You replace this with your actual ChatGPT call.
-  // For now, it acts as a placeholder that simply returns
-  // the prompt so the pipeline wiring can be tested.
-  return {
-    ok: true,
-    data: { echo: prompt }
-  };
-}
+const glue = JSON.parse(
+  fs.readFileSync("blog-cp2-glue-contract.json", "utf-8")
+);
 
-// ---------------------------------------------------------
-// Load a prompt template from Items (local file system)
-// ---------------------------------------------------------
-function loadPrompt(relPath) {
-  const p = path.join(process.cwd(), relPath);
-  return fs.readFileSync(p, "utf8");
-}
+export async function run(trigger) {
 
-// ---------------------------------------------------------
-// Helper: run one lane using a prompt template + JSON
-// ---------------------------------------------------------
-async function runLane(laneName, template, json) {
-  const payload = {
-    lane: laneName,
-    template,
-    json
-  };
-
-  const resp = await chatWithGPT(payload);
-
-  if (!resp.ok) {
-    throw new Error(`Lane ${laneName} failed: ${resp.error || "unknown error"}`);
+  // -------------------------------------------------------
+  // 1. Validate trigger
+  // -------------------------------------------------------
+  if (trigger !== glue.trigger) {
+    throw new Error(`Invalid trigger '${trigger}'. Expected '${glue.trigger}'.`);
   }
 
-  return resp.data;
-}
+  // -------------------------------------------------------
+  // 2. Load job-definition from Rows
+  // -------------------------------------------------------
+  const job = await rowsGet("job-definition", "job-4434456");
 
-// ---------------------------------------------------------
-// MAIN brains() — 3 grouped calls
-// ---------------------------------------------------------
-export async function brains(requestBody) {
-  const {
-    runner_id,
-    mode,
-    job_definition,
-    datasets_by_role
-  } = requestBody;
-
-  const logs = {
-    crr: null,
-    cwr: null,
-    prr: null,
-    pwr: null,
-    rwt: null
-  };
-
-  // -----------------------------------------
-  // LOAD TEMPLATES
-  // -----------------------------------------
-  const t_cr  = loadPrompt("items/blog/cp-2/member-template-cr-prompt.txt");
-  const t_cw  = loadPrompt("items/blog/cp-2/member-template-cw-prompt.txt");
-  const t_pr  = loadPrompt("items/blog/cp-2/member-template-pr-prompt.txt");
-  const t_pw  = loadPrompt("items/blog/cp-2/member-template-pw-prompt.txt");
-  const t_rwt = loadPrompt("items/blog/cp-2/member-template-rwt-prompt.txt");
-
-  // -----------------------------------------
-  // A1 = CRR + CWR
-  // -----------------------------------------
-  const exp_cr0 = datasets_by_role["cr0"];
-  if (!exp_cr0) {
-    throw new Error("Missing cr0 payload for A1 pipeline");
+  // -------------------------------------------------------
+  // 3. Load datasets
+  // -------------------------------------------------------
+  const datasets = {};
+  for (const d of job.datasets) {
+    const key = d.role_key;
+    datasets[key] = await rowsGet(d.table_id, d.range);
   }
 
-  const crr_in = { data: exp_cr0.items };
-  const crr_out = await runLane("crr", t_cr, crr_in);
-  logs.crr = crr_out;
+  // -------------------------------------------------------
+  // 4. Execute all lanes in brain.js
+  // -------------------------------------------------------
+  const finalOutput = await executeLanes(job, datasets);
 
-  const cwr_in = { research: crr_out };
-  const cwr_out = await runLane("cwr", t_cw, cwr_in);
-  logs.cwr = cwr_out;
+  // -------------------------------------------------------
+  // 5. Commit final JSON via docs/commit-bulk
+  // -------------------------------------------------------
+  const target = job.paths.docs_finals_root + job.job_id + ".json";
 
-  // -----------------------------------------
-  // A2 = PRR + PWR
-  // -----------------------------------------
-  const exp_pr1 = datasets_by_role["pr1"];
-  if (!exp_pr1) {
-    throw new Error("Missing pr1 payload for A2 pipeline");
-  }
+  const base64 = Buffer.from(JSON.stringify(finalOutput, null, 2)).toString(
+    "base64"
+  );
 
-  const prr_in = { data: exp_pr1.items };
-  const prr_out = await runLane("prr", t_pr, prr_in);
-  logs.prr = prr_out;
-
-  const pwr_in = { research: prr_out };
-  const pwr_out = await runLane("pwr", t_pw, pwr_in);
-  logs.pwr = pwr_out;
-
-  // -----------------------------------------
-  // A3 = RWT (final merge + polish)
-  // -----------------------------------------
-  const rwt_in = {
-    collection: cwr_out,
-    places: pwr_out
+  const commitPayload = {
+    message: `Final commit for ${job.job_id}`,
+    overwrite: true,
+    files: [
+      {
+        path: target,
+        content_type: "application/json",
+        content_base64: base64
+      }
+    ]
   };
 
-  const rwt_out = await runLane("rwt", t_rwt, rwt_in);
-  logs.rwt = rwt_out;
+  const commitResp = await gitCommitBulk(commitPayload);
 
-  // -----------------------------------------
-  // RETURN
-  // -----------------------------------------
-  return {
-    job_id: job_definition.job_id,
-    final_json: rwt_out,
-    lane_logs: logs
+  // -------------------------------------------------------
+  // 6. Debug log
+  // -------------------------------------------------------
+  const logPath = job.paths.docs_logs_root + job.job_id + "-log.json";
+  const log = {
+    timestamp: new Date().toISOString(),
+    trigger,
+    job_id: job.job_id,
+    datasets_loaded: Object.keys(datasets),
+    commit_path: target,
+    commit_sha: commitResp.sha
   };
+
+  fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
+
+  return finalOutput;
 }
