@@ -1,143 +1,116 @@
-// File: items/blog/cp-2/brains.js
-// Purpose: Run full cp:2 pipeline (exp → crr → cwr → prr → pwr → rwt)
-// Returns:
-//   { job_id, final_json, lane_logs }
+/**
+ * brain.js — cp:2 Glue Layer Integration
+ * Loads glue-contract, applies lane bindings, executes members,
+ * and hands final output back to runner.js.
+ */
 
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
-import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "<PUT_YOUR_KEY_HERE>"
-});
+// Load glue contract
+const glue = JSON.parse(
+  fs.readFileSync("blog-cp2-glue-contract.json", "utf-8")
+);
 
-// Helper: load text file
-async function loadText(filePath) {
-  const abs = path.resolve(filePath);
-  return fs.readFile(abs, "utf8");
+// Utility: load prompt template
+export function loadTemplate(file) {
+  return fs.readFileSync(path.join("blog-cp-2", file), "utf-8");
 }
 
-// Helper: call model with a prompt and JSON response
-async function runLane(prompt, inputJson) {
-  const userContent = JSON.stringify(inputJson, null, 2);
+// Execute one lane with a template and input
+async function runLane(laneName, templateName, inputPayload, globalRules) {
+  const prompt = loadTemplate(templateName);
 
-  const completion = await openai.responses.create({
-    model: "gpt-4.1",
-    input: [
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.1",
+    temperature: 0,
+    messages: [
       { role: "system", content: prompt },
-      { role: "user", content: userContent }
-    ],
-    response_format: { type: "json_object" }
+      {
+        role: "user",
+        content: JSON.stringify({
+          lane: laneName,
+          input: inputPayload,
+          rules: globalRules
+        })
+      }
+    ]
   });
 
-  return completion.output[0].content[0].text;
+  return JSON.parse(response.choices[0].message.content);
 }
 
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST") {
-      res.status(405).json({ error: "POST only" });
-      return;
-    }
+// Main execution entry called by runner.js
+export async function executeLanes(job, datasets) {
+  const out = {};
+  const g = job.global_rules;
 
-    const { runner_id, job_definition, datasets_by_role } = req.body;
-    const job_id = job_definition?.job_id;
+  // ======================================================
+  // EXPEDITOR
+  // ======================================================
+  out.crr_input = datasets.cr0;
+  out.cwr_input = datasets.cr0;
+  out.prr_input = datasets.pr1;
+  out.pwr_input = datasets.pr1;
 
-    // ---------------------------
-    // Load all member templates
-    // ---------------------------
-    const base = "items/blog/cp-2";
+  // ======================================================
+  // CRR
+  // ======================================================
+  out.crr_output = await runLane(
+    "crr",
+    glue.house_binding.files.cr_template,
+    out.crr_input,
+    g
+  );
 
-    const expPrompt  = await loadText(`${base}/member-template-exp.prompt`);
-    const crrPrompt  = await loadText(`${base}/member-template-cr.prompt`);
-    const cwrPrompt  = await loadText(`${base}/member-template-cw.prompt`);
-    const prrPrompt  = await loadText(`${base}/member-template-pr.prompt`);
-    const pwrPrompt  = await loadText(`${base}/member-template-pw.prompt`);
-    const rwtPrompt  = await loadText(`${base}/member-template-rwt.prompt`);
+  // ======================================================
+  // CWR
+  // ======================================================
+  out.cwr_output = await runLane(
+    "cwr",
+    glue.house_binding.files.cw_template,
+    {
+      cwr_input: out.cwr_input,
+      crr_output: out.crr_output
+    },
+    g
+  );
 
-    // ---------------------------
-    // Build lane_inputs
-    // datasets_by_role = cr0, pr1
-    // ---------------------------
+  // ======================================================
+  // PRR
+  // ======================================================
+  out.prr_output = await runLane(
+    "prr",
+    glue.house_binding.files.pr_template,
+    out.prr_input,
+    g
+  );
 
-    const cr0 = datasets_by_role["cr0"]?.items ?? [];
-    const pr1 = datasets_by_role["pr1"]?.items ?? [];
+  // ======================================================
+  // PWR
+  // ======================================================
+  out.pwr_output = await runLane(
+    "pwr",
+    glue.house_binding.files.pw_template,
+    {
+      pwr_input: out.pwr_input,
+      prr_output: out.prr_output
+    },
+    g
+  );
 
-    // Expeditor input uses entire job + datasets
-    const expInput = {
-      job_definition,
-      datasets_by_role
-    };
+  // ======================================================
+  // RWT — Merge + Polish
+  // ======================================================
+  out.final_output = await runLane(
+    "rwt",
+    glue.house_binding.files.rwt_template,
+    {
+      cwr_output: out.cwr_output,
+      pwr_output: out.pwr_output
+    },
+    g
+  );
 
-    // ---------------------------
-    // RUN LANES IN SEQUENCE
-    // ---------------------------
-
-    const lane_logs = {};
-
-    // 1) EXP
-    const expOutput = JSON.parse(await runLane(expPrompt, expInput));
-    lane_logs.exp_output = expOutput;
-
-    // 2) CRR (collection researcher)
-    const crrInput = {
-      job_definition,
-      event_block: expOutput.event_block,
-      venue_block: expOutput.venue_block,
-      city_season_block: expOutput.city_season_block,
-      dataset_rows: cr0
-    };
-    const crrOutput = JSON.parse(await runLane(crrPrompt, crrInput));
-    lane_logs.crr_output = crrOutput;
-
-    // 3) CWR (collection writer)
-    const cwrInput = {
-      job_definition,
-      research: crrOutput
-    };
-    const cwrOutput = JSON.parse(await runLane(cwrPrompt, cwrInput));
-    lane_logs.cwr_output = cwrOutput;
-
-    // 4) PRR (places researcher)
-    const prrInput = {
-      job_definition,
-      dataset_rows: pr1
-    };
-    const prrOutput = JSON.parse(await runLane(prrPrompt, prrInput));
-    lane_logs.prr_output = prrOutput;
-
-    // 5) PWR (places writer)
-    const pwrInput = {
-      job_definition,
-      research: prrOutput
-    };
-    const pwrOutput = JSON.parse(await runLane(pwrPrompt, pwrInput));
-    lane_logs.pwr_output = pwrOutput;
-
-    // 6) RWT (final merge writer)
-    const rwtInput = {
-      job_definition,
-      collection_body: cwrOutput,
-      places_body: pwrOutput
-    };
-    const final_json = JSON.parse(await runLane(rwtPrompt, rwtInput));
-    lane_logs.rwt_output = final_json;
-
-    // ---------------------------
-    // RETURN PIPELINE RESULT
-    // ---------------------------
-
-    res.status(200).json({
-      job_id,
-      final_json,
-      lane_logs
-    });
-
-  } catch (err) {
-    console.error("BRAINS ERROR:", err);
-    res.status(500).json({
-      error: "Brains pipeline failed",
-      detail: err.message
-    });
-  }
+  return out.final_output;
 }
