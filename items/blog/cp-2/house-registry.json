@@ -1,0 +1,28 @@
+{
+  "blog": {
+    "cp:2": {
+      "house_id": "blog-cp-2",
+      "root": "./", 
+      "files": {
+        "runner_js": "runner.js",
+        "runner_txt": "runner.txt",
+        "pipeline_spec": "pipeline-spec.json",
+        "style_spec": "style-spec.json",
+        "expeditor_contract": "expeditor-contract.json",
+        "expeditor_map": "expeditor-map.json",
+        "final_schema": "final-schema.json",
+        "commit_spec": "commit-spec.json",
+        "checker": "checker.json",
+        "instructions_mini": "instructions-mini.txt",
+        "instructions": "instructions.txt",
+        "member_cr": "member-template-cr-prompt.txt",
+        "member_cw": "member-template-cw-prompt.txt",
+        "member_pr": "member-template-pr-prompt.txt",
+        "member_pw": "member-template-pw-prompt.txt",
+        "member_rwt": "member-template-rwt-prompt.txt",
+        "project_contract": "project-contract.txt",
+        "proof_of_life": "blog-cp-2-proof-of-life.md"
+      }
+    }
+  }
+}
