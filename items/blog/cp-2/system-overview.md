@@ -15,14 +15,15 @@ This system produces **grounded, non-fabricated travel blog outputs** for equest
 * strict, rule-bound LLM transformations,
 * and Git-based publishing.
 
-It is designed to **support a real travel business**, not to scale content production.
+It exists to support **a real travel business**, not to scale content production.
+
 **Convenience, control, and auditability** are valued over automation or throughput.
 
 The system assumes:
 
-* one job represents **one specific competition context** (“this competition”, not a generic blog type),
-* all facts must come from provided inputs,
-* and all creative work must remain inside explicitly allowed boundaries.
+* one job represents **one specific competition context** (never a generic blog type),
+* all facts come from provided inputs only,
+* creative work stays inside explicitly defined boundaries.
 
 ---
 
@@ -33,60 +34,58 @@ These principles govern every part of the system:
 * **GPT memory is not trusted**
 * **No runners or state live inside GPT**
 * **All authority comes from job-definition + inputs**
-* **LLMs transform; they do not decide architecture**
+* **LLMs transform; they do not design or decompose architecture**
 * **“could-not-verify” is a hard sentinel**
 * **No external research, browsing, or world knowledge**
 * **One job = one event context**
 * **Convenience > scalability**
 * **Determinism > cleverness**
 
-Any suggestion or change that violates these principles is out of scope.
+Any suggestion that violates these principles is **out of scope**.
 
 ---
 
-## 3. High-level lifecycle
-
-This is the system flow at a conceptual level:
+## 3. High-level lifecycle (conceptual only)
 
 ```
 User Trigger
    ↓
-Job Definition (Rows)
+Job-Definition (Rows)
    ↓
 Dataset Fetch (Rows)
    ↓
 Expeditor (normalize + gate)
    ↓
-Researchers (facts only)
+Research (single pass)
    ↓
-Writers (text only)
+Writing (multi-pass)
    ↓
-Rewriter / Stitcher
+Rewrite / Stitch
    ↓
 Final JSON + HTML
    ↓
 Git Commit
 ```
 
-Key point:
-**GPT never “runs” this pipeline internally**.
+**Important constraint:**
+GPT never “runs” this pipeline internally.
 GPT is invoked repeatedly as a **stateless transformer**.
 
 ---
 
 ## 4. The job-definition as the blueprint
 
-The **job-definition** is the primary control surface for the system.
+The **job-definition** is the system’s primary control surface.
 
 It defines:
 
 * what this job is,
-* what order things run in,
+* what runs and in what order,
 * what rules apply,
 * what data is available,
-* and where outputs go.
+* where outputs are committed.
 
-Examples of control knobs inside a job-definition:
+Examples of control knobs:
 
 * `run_order`
 * `global_rules`
@@ -94,46 +93,50 @@ Examples of control knobs inside a job-definition:
 * `paths`
 * `mode`
 
-The job-definition is **the blueprint**, not the prompts.
+The job-definition is **the blueprint**.
+Prompts only implement what the blueprint already declares.
 
 ---
 
-## 5. Role boundaries (conceptual, not code)
+## 5. Role boundaries (strict, conceptual)
 
 ### Expeditor
 
 * Holds **all raw datasets**
 * Normalizes values (including `could-not-verify`)
-* Releases **only what downstream lanes explicitly request**
-* Never writes narrative
-* Never invents structure
+* Releases **only explicitly requested slices**
+* Does **not** produce narrative
+* Does **not** emit a durable output bin
 
-> The expeditor is not a researcher or writer.
-> It is a controlled loader + gatekeeper.
-
----
-
-### Researchers (CR / PR)
-
-* Consume **approved, normalized inputs only**
-* Produce **structured fact bundles**
-* No prose
-* No schema changes
-* No inference beyond provided inputs
-
-Outputs are **research bins**, not content.
+> The expeditor is a **controlled loader + gatekeeper**, not a runner.
 
 ---
 
-### Writers (CW / PW)
+### Research (CR — single lane)
 
-* Consume **research outputs only**
+* There is **exactly one research lane** in cp:2
+* Canonical lane key: `cr` (aliases like `crr` allowed)
+* Covers **event, venue, and city_season together**
+* Produces **one structured fact bundle**
+* No prose, no schema changes, no inference
+
+**Explicitly forbidden:**
+
+* splitting research into multiple lanes
+* VRR, CSR, ERR, or similar constructs
+* parallel or staged research passes
+
+---
+
+### Writing (CW / PW)
+
+* Consume **research output only**
 * Produce **narrative text only**
-* No facts added
-* No schema changes
-* No UI language
+* Add no facts
+* Change no schemas
+* Emit content outputs, not finals
 
-Outputs are **content bins**, not final products.
+Writing may be multi-pass; research is not.
 
 ---
 
@@ -141,80 +144,88 @@ Outputs are **content bins**, not final products.
 
 * Consumes **writer outputs only**
 * Smooths, aligns, and assembles
-* Applies final structural validation
+* Performs final structural validation
 * Produces **one final output**
 
-This is the only lane that sees the whole picture.
+This is the **only lane** that sees the whole tree.
 
 ---
 
-## 6. Output bins (conceptual)
+## 6. Output bins (canonical model)
 
-The system operates through **explicit handoff bins**, not shared state:
+The system operates via **explicit output bins**, never shared memory:
 
-* **Research Outputs**
+1. **Research Output Bin**
 
-  * Produced by researchers
-  * Consumed by writers
+   * Produced once
+   * Produced by CR only
+   * Contains event + venue + city_season facts
+   * Cannot be subdivided
 
-* **Content Outputs**
+2. **Content Output Bin**
 
-  * Produced by writers
-  * Consumed by rewriter / stitcher
+   * Produced by writers
+   * Contains narrative text only
 
-* **Final Output**
+3. **Final Output**
 
-  * Produced once
-  * Committed to Git
+   * Produced once
+   * Committed to Git
 
-Each lane reads from **exactly one bin** and writes to **exactly one bin**.
+Each lane:
+
+* reads from exactly one bin,
+* writes to exactly one bin.
 
 ---
 
 ## 7. Execution model (intentionally flexible)
 
-This system allows **multiple execution strategies**, including:
+The execution mechanism is **not fixed**.
 
-* Dumb pre-defined runners waiting for inputs
-* A brain/controller that orchestrates handoffs externally
+Valid approaches include:
 
-What matters:
+* dumb, pre-defined runners waiting for inputs
+* an external brain/controller orchestrating handoffs
 
-* **Inputs and outputs are explicit**
-* **Rules are always supplied**
-* **No state is assumed or remembered**
+What does **not** change:
 
-The execution mechanism may change.
-The **role boundaries and data contracts do not**.
+* lane count,
+* lane responsibilities,
+* output bins,
+* data contracts.
 
----
-
-## 8. What this system is NOT
-
-This system explicitly does **not** aim to be:
-
-* A SaaS platform
-* A multi-tenant agent framework
-* A self-healing pipeline
-* An OpenAPI orchestration engine
-* A scalable content factory
-* An autonomous decision-maker
-
-Any design that drifts in these directions is incorrect.
+Execution strategy may evolve.
+**Architecture must not.**
 
 ---
 
-## 9. Why this document exists
+## 8. What this system is explicitly NOT
 
-This document exists to:
+This system is **not**:
 
-* prevent re-explaining the system every session,
-* prevent architectural drift,
-* allow safe stopping and restarting of work,
-* and give future assistants a stable mental model.
+* a SaaS platform,
+* an agent framework,
+* a self-improving system,
+* a scalable content factory,
+* an autonomous decision-maker,
+* an OpenAPI orchestration engine.
 
-It is **descriptive**, not prescriptive.
-It should change **rarely**.
+Any drift in these directions is incorrect.
+
+---
+
+## 9. Where work last stopped (orientation)
+
+As of the last stable session:
+
+* Research lane definition: **complete**
+* Collection Writer definition: **complete**
+* Writer Output Bin: **not defined**
+* Rewriter / Stitcher bin: **not defined**
+* Commit artifact shape: **outlined, not locked**
+
+This document exists so a new assistant can resume **without inventing structure**.
 
 ---
 
@@ -223,8 +234,8 @@ It should change **rarely**.
 * **SYSTEM-OVERVIEW.md**
   Explains *what the system is*.
 
-* **SYSTEM-SPINE.md / working notes**
-  Explain *what we are doing right now*.
+* **SYSTEM-SPINE.md**
+  Locks *what is frozen, prohibited, and next*.
 
 * **Job-definitions**
   Control individual executions.
