@@ -1,5 +1,3 @@
----
-
 # SYSTEM-SPINE.md
 
 **Clear Round Travel — Active Working Spine (cp:2)**
