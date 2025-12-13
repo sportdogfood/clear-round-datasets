@@ -2,204 +2,222 @@
 
 **Clear Round Travel — Active Working Spine (cp:2)**
 **Status:** Living / Session-Bound
-**Purpose:** Resume work without re-architecting or re-explaining
-**Scope:** What is being built *now*, what is frozen, and what is next
+**Version:** v2025-12-13-spine-fix-01
+**Timestamp:** 2025-12-13T22:45 ET
+**Purpose:** Prevent drift; allow safe resume without re-architecture
+**Scope:** What is frozen, what is prohibited, where work stopped, what remains
 
 ---
 
 ## 1. What this document is
 
-This document captures the **current working spine** of the system:
+This document is the **authoritative working spine** for the CRT blog cp:2 system.
 
-* what is already agreed and frozen,
-* what layer we are currently operating in,
-* what decisions are explicitly *not* being revisited,
-* and what the next safe moves are.
+It exists to:
 
-This is **not** a contract, blueprint, or prompt file.
-It is a **checkpoint** to prevent drift.
+* prevent architectural drift,
+* prohibit unapproved decomposition,
+* mark the exact stopping point,
+* and constrain future assistants.
+
+This is **not** a blueprint, contract, or prompt.
+It is a **guardrail document**.
 
 ---
 
-## 2. Frozen assumptions (do not revisit)
+## 2. Frozen assumptions (non-negotiable)
 
-The following are **locked for this phase**:
+The following are **locked and must not be revisited**:
 
-* GPT **does not hold state or runners**
-* No architecture lives “inside” GPT memory
-* All executions are driven by:
-
-  * `job-definition`
-  * datasets from Rows
-  * external orchestration
+* GPT **does not** hold state, runners, or instances
+* No pipeline logic lives in GPT memory
 * Prompts are **stateless transformers**
+* All orchestration is external or declarative
 * `could-not-verify` is a **hard sentinel**
-* No external research, browsing, or enrichment
+* No browsing, research, enrichment, or inference
 * One job = one concrete competition context
 * Convenience and control > scalability
 
-If any future suggestion violates these, it is out of scope.
+Any suggestion violating these is **out of scope**.
 
 ---
 
-## 3. Where we are in the system
+## 3. Canonical lane boundaries (non-negotiable)
 
-We have already established the **outer shell**:
+### There is exactly ONE research lane in cp:2
 
-### Confirmed outer shell
+* **Canonical lane key:** `cr`
+* **Allowed aliases:** `crr`, `cr*`
+* **Role:** collection research (event, venue, city_season)
+
+### Explicit prohibitions
+
+The following are **forbidden**:
+
+* Creating additional research lanes
+* Splitting research into:
+
+  * VRR (venue researcher)
+  * CSR (city/season researcher)
+  * ERR, PRR variants, or equivalents
+* Treating event / venue / city_season as separate lanes
+
+**Event, venue, and city_season are sections, not lanes.**
+
+Any assistant that invents new research lanes is **in violation of the spine**.
+
+---
+
+## 4. Confirmed outer shell (do not redesign)
+
+The outer execution shell is **established and sufficient**:
 
 * Trigger: `start blog-cp:2`
 * Job-definition loaded from Rows
 * Datasets fetched from Rows
-* Final outputs committed to Git
+* Final artifacts committed to Git
 
-This outer shell **works conceptually** and does not need redesign.
-
----
-
-## 4. What is still unresolved (the real problem)
-
-The unresolved problem is **not**:
-
-* prompts,
-* schemas,
-* or missing rules.
-
-The unresolved problem is:
-
-> **How data and rules are handed lane-to-lane without relying on GPT memory.**
-
-Specifically:
-
-* Where “what CRR needs” is declared
-* How the expeditor gates data without becoming a pseudo-runner
-* How outputs are staged and handed off deterministically
+This layer is **not under discussion**.
 
 ---
 
-## 5. Current lane model (agreed)
+## 5. First concrete output bin (LOCKED)
 
-Conceptual run order (names may vary, roles do not):
+### Research Output Bin — Canonical
 
-```
-exp → cr → cw → pr → pw → rwt
-```
+* **Name:** `collection-research-bin`
+* **Produced by:** CR lane only
+* **Produced:** exactly once per job
+* **Contents:** structured, fact-only research
+* **Scope:** event + venue + city_season
+* **Subdivision:** explicitly forbidden
 
-### Role clarity
+This bin **must exist** before any writer runs.
 
-* **Expeditor**
+There are **no parallel research bins**.
 
-  * Holds all datasets
-  * Normalizes
-  * Releases *only requested slices*
-* **CR / PR**
+---
 
-  * Declare what they need
-  * Produce research outputs only
-* **CW / PW**
+## 6. Lane roles (clarified, constrained)
 
-  * Consume research outputs
-  * Produce narrative outputs only
-* **RWT (or stitcher)**
+### Expeditor
 
-  * Consumes writer outputs only
-  * Assembles final output
+* Holds all datasets
+* Normalizes inputs
+* Releases **only requested slices**
+* Does **not** produce a narrative or durable output bin
+
+### CR (collection researcher)
+
+* Declares what it needs
+* Consumes expeditor slices
+* Produces **collection-research-bin only**
+
+### CW / PW (writers)
+
+* Consume research bins only
+* Produce narrative outputs only
+* Do not see raw datasets
+
+### RWT (rewriter / stitcher)
+
+* Consumes writer outputs only
+* Produces final output only
 
 No lane:
 
 * invents facts,
-* sees more than it should,
-* or changes schemas.
+* sees more than declared,
+* or mutates schemas.
 
 ---
 
-## 6. Output bins (active working model)
+## 7. Output bins (authoritative list)
 
-We are now explicitly thinking in **output bins**:
+There are exactly three durable bins:
 
-1. **Research Output Bin**
+1. **collection-research-bin**
 
-   * Produced by CR / PR
-   * Consumed by CW / PW
+   * Producer: CR
+   * Consumer: CW / PW
 
-2. **Content Output Bin**
+2. **content-output-bin** *(not yet defined)*
 
-   * Produced by CW / PW
-   * Consumed by RWT
+   * Producer: CW / PW
+   * Consumer: RWT
 
-3. **Final Output**
+3. **final-output**
 
-   * Produced once
+   * Producer: RWT
    * Committed to Git
 
-No lane reads from more than one bin.
 No lane writes to more than one bin.
+No bin is produced more than once per job.
 
 ---
 
-## 7. Execution strategy (current stance)
+## 8. Where work STOPPED (critical)
 
-We are **not choosing final execution strategy yet**.
+Work stopped **after**:
 
-Both remain valid:
+* CR prompt definition ✅
+* CW prompt definition ✅
 
-* external “brain” orchestrating handoffs, or
-* dumb pre-defined runners waiting for inputs.
+Work stopped **before**:
 
-What *is* decided:
+* Writer Output Bin definition ❌
+* Any places bins ❌
+* Rewriter / stitcher bin ❌
+* Final commit artifact lock ❌
 
-* Handoffs must be explicit
-* Inputs and outputs must be named and scoped
-* No implicit memory, ever
+**The Writer Output Bin is NOT defined.**
 
-Decision will be made **after bins and handoffs are defined**, not before.
-
----
-
-## 8. What we are working on next (narrow scope)
-
-The next work is **one layer only**:
-
-> **Define the first real output bin and its exact producer/consumer.**
-
-Concretely:
-
-* Are we at `exp → cr`?
-* What exact JSON does CR request?
-* What exact JSON does CR emit?
-* Where does that output live (conceptually)?
-
-No new prompts.
-No new files.
-No rewrites.
-
-Just this handoff.
+This is the exact resume point.
 
 ---
 
-## 9. What we are explicitly not doing next
+## 9. Explicit prohibition on “helpful decomposition”
 
-We are **not**:
+Assistants **must not**:
 
-* finalizing PW or RWT,
-* locking more templates,
-* optimizing prose quality,
-* adding automation,
-* or scaling execution.
+* decompose lanes,
+* subdivide bins,
+* introduce parallel runners,
+* or “improve” the architecture,
 
-Those steps only happen **after the spine is stable**.
+even if such changes appear cleaner, more modular, or more scalable.
+
+Only explicitly named lanes and bins may exist.
 
 ---
 
-## 10. How to use this document
+## 10. What is allowed next (narrow scope)
 
-* Read this first in any new session
-* Use it to anchor discussion
-* If a proposal contradicts it, stop and realign
-* Update it only when the working focus truly shifts
+The next allowed step is **one thing only**:
+
+> **Define the Writer Output Bin.**
+
+That means:
+
+* canonical name
+* producing lane(s)
+* exact JSON shape
+* conceptual storage / handoff
+
+Nothing else may proceed before this is complete.
+
+---
+
+## 11. How to use this spine in a new session
+
+In a new chat:
+
+1. Paste this file first
+2. State: “Resume at Writer Output Bin definition”
+3. Reject any suggestion that introduces new lanes or bins
+
+This makes drift **detectable**, not silent.
 
 ---
 
 **End of SYSTEM-SPINE.md**
-
----
