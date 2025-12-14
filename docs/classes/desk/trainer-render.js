@@ -16,7 +16,7 @@
   }
 
   function showTrainer() {
-    const rows = read("schedule_derived") || [];
+    const rows = read("trainer_rows") || [];
 
     titleEl.textContent = "Trainer Report";
     btnBack.hidden = false;
@@ -27,33 +27,29 @@
     screenRender.innerHTML = "";
 
     if (!rows.length) {
-      screenRender.innerHTML = "<p>No schedule data.</p>";
+      screenRender.innerHTML = "<p>No trainer data.</p>";
       return;
     }
 
-    const byRing = {};
+    let currentRing = null;
 
     rows.forEach(r => {
-      const ring = r.ring || "Unassigned";
-      byRing[ring] = byRing[ring] || [];
-      byRing[ring].push(r);
-    });
+      if (r.ring_name !== currentRing) {
+        currentRing = r.ring_name;
+        const h = document.createElement("h3");
+        h.textContent = currentRing;
+        h.style.marginTop = "16px";
+        screenRender.appendChild(h);
+      }
 
-    Object.keys(byRing).forEach(ring => {
-      const h = document.createElement("h3");
-      h.textContent = ring;
-      screenRender.appendChild(h);
-
-      byRing[ring].forEach(cls => {
-        const div = document.createElement("div");
-        div.style.padding = "6px 0";
-        div.style.borderBottom = "1px solid rgba(255,255,255,.1)";
-        div.innerHTML = `
-          <strong>${cls.class_group_name || cls.class_name || "Class"}</strong><br/>
-          ${cls.start_time_default || ""} · ${cls.status}
-        `;
-        screenRender.appendChild(div);
-      });
+      const div = document.createElement("div");
+      div.style.padding = "6px 0";
+      div.style.borderBottom = "1px solid rgba(255,255,255,.1)";
+      div.innerHTML = `
+        <strong>${r.class_group_name}</strong><br/>
+        ${r.time} · ${r.status}
+      `;
+      screenRender.appendChild(div);
     });
   }
 
