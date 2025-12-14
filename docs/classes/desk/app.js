@@ -1,4 +1,3 @@
-// app.js — CORRECTED (handles Rows TRUE / "TRUE", preserves session logic)
 
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
@@ -44,7 +43,7 @@
   }
 
   function isTrue(v) {
-    return v === true || v === "true" || v === "TRUE" || v === 1 || v === "1";
+    return v === true || v === "TRUE" || v === "true" || v === 1 || v === "1";
   }
 
   async function hydrateSession() {
@@ -55,10 +54,7 @@
       }
     });
 
-    if (!res.ok) {
-      console.error("[ROWS] fetch failed", res.status);
-      return;
-    }
+    if (!res.ok) return;
 
     const data = await res.json();
     const rows =
@@ -77,18 +73,27 @@
       found[key] = safeParse(row[1]);
     }
 
-    // always overwrite known keys
-    for (const key of ALLOWED_KEYS) {
-      if (key in found) {
-        sessionStorage.setItem(key, JSON.stringify(found[key]));
-      } else {
-        sessionStorage.removeItem(key);
+    // ALWAYS overwrite base datasets
+    ["schedule", "entries", "horses", "rings"].forEach(k => {
+      if (k in found) {
+        sessionStorage.setItem(k, JSON.stringify(found[k]));
       }
+    });
+
+    // store live_status
+    if ("live_status" in found) {
+      sessionStorage.setItem(
+        "live_status",
+        JSON.stringify(found.live_status)
+      );
     }
 
-    // live_data gate (Rows TRUE handling)
-    if (!isTrue(found.live_status)) {
-      sessionStorage.removeItem("live_data");
+    // gate ONLY the write of live_data
+    if (isTrue(found.live_status) && "live_data" in found) {
+      sessionStorage.setItem(
+        "live_data",
+        JSON.stringify(found.live_data)
+      );
     }
 
     sessionStorage.setItem(
@@ -99,11 +104,10 @@
       })
     );
 
-    console.log("[CRT] session ready", found);
+    console.log("[CRT] hydrated", Object.keys(found));
   }
 
   hydrateSession();
   setInterval(hydrateSession, REFRESH_MS);
   window.CRT_refreshSession = hydrateSession;
 })();
-
