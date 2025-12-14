@@ -1,136 +1,92 @@
-// app.js
-// CRT Desktop App – Trainer / Entries launcher
-// Version: v2025-12-14
-// Scope: Desktop-only wiring (Trainer end-to-end)
+(() => {
+  const ROWS_API_BASE = "https://api.rows.com/v1";
+  const ROWS_API_KEY =
+    window.CRT_ROWS_API_KEY || "rows-1lpXw***";
 
-import { deriveTrainerData } from './trainer-derive.js';
-import { renderTrainerReport } from './trainer-render.js';
+  const SPREADSHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
+  const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
 
-// --------------------------------------------------
-// State
-// --------------------------------------------------
+  const RANGES = {
+    live_status: "N4:N4",
+    live_data: "N5:N5",
+    schedule: "N7:N7",
+    entries: "N14:N14",
+    horses: "N27:N27",
+    rings: "N28:N28"
+  };
 
-const state = {
-  sessionId: null,
-  activeView: 'index', // index | trainer | entries
-  lastRefresh: null
-};
-
-// --------------------------------------------------
-// DOM refs (desktop)
-// --------------------------------------------------
-
-const root = document.getElementById('app-root');
-const btnTrainer = document.getElementById('btn-trainer');
-const btnEntries = document.getElementById('btn-entries');
-const btnBack = document.getElementById('btn-back');
-const btnPrint = document.getElementById('btn-print');
-const btnRefresh = document.getElementById('btn-refresh');
-const statusEl = document.getElementById('session-status');
-
-// --------------------------------------------------
-// Session helpers
-// --------------------------------------------------
-
-function ensureSession() {
-  if (!state.sessionId) {
-    state.sessionId = 'sess-' + Date.now();
-    state.lastRefresh = new Date();
-    updateStatus('Session started');
+  function buildUrl(range) {
+    return [
+      ROWS_API_BASE,
+      "spreadsheets",
+      encodeURIComponent(SPREADSHEET_ID),
+      "tables",
+      encodeURIComponent(TABLE_ID),
+      "values",
+      encodeURIComponent(range)
+    ].join("/");
   }
-}
 
-function updateStatus(msg) {
-  if (!statusEl) return;
-  const ts = new Date().toLocaleTimeString();
-  statusEl.textContent = `${msg} · ${ts}`;
-}
-
-// --------------------------------------------------
-// View helpers
-// --------------------------------------------------
-
-function setView(view) {
-  state.activeView = view;
-
-  document.body.dataset.view = view;
-
-  if (view === 'index') {
-    btnBack.hidden = true;
-    btnPrint.hidden = true;
-    btnRefresh.hidden = true;
-  } else {
-    btnBack.hidden = false;
-    btnPrint.hidden = false;
-    btnRefresh.hidden = false;
+  function safeParse(v) {
+    if (v == null) return null;
+    if (typeof v !== "string") return v;
+    try {
+      return JSON.parse(v);
+    } catch {
+      return { __parse_error: true, raw: v };
+    }
   }
-}
 
-// --------------------------------------------------
-// Trainer flow
-// --------------------------------------------------
+  async function fetchRange(label, range) {
+    const url = buildUrl(range);
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${ROWS_API_KEY}`,
+        Accept: "application/json"
+      }
+    });
 
-async function runTrainer() {
-  ensureSession();
-  setView('trainer');
-  updateStatus('Loading trainer data');
+    if (!res.ok) {
+      console.error(`[ROWS] ${label} failed`, res.status);
+      return;
+    }
 
-  try {
-    const data = await deriveTrainerData();
-    state.lastRefresh = new Date();
-    renderTrainerReport(data, root);
-    updateStatus('Trainer report ready');
-  } catch (err) {
-    console.error('[Trainer] error', err);
-    updateStatus('Trainer error');
+    const data = await res.json();
+
+    let cell;
+    if (Array.isArray(data.values)) {
+      cell = data.values[0]?.[0];
+    } else if (Array.isArray(data.items)) {
+      cell = data.items[0]?.[0];
+    } else if (data.data?.rows) {
+      cell = data.data.rows[0]?.cells?.[0]?.value;
+    }
+
+    const parsed = safeParse(cell);
+
+    console.group(`ROWS PAYLOAD: ${label}`);
+    console.log("range:", range);
+    console.log("raw:", cell);
+    console.log("parsed:", parsed);
+    console.groupEnd();
+
+    return parsed;
   }
-}
 
-// --------------------------------------------------
-// Entries flow (stub for now)
-// --------------------------------------------------
+  async function run() {
+    const results = {};
+    for (const [label, range] of Object.entries(RANGES)) {
+      results[label] = await fetchRange(label, range);
+    }
 
-async function runEntries() {
-  ensureSession();
-  setView('entries');
-  root.innerHTML = '<div class="placeholder">Entries view (pending)</div>';
-  updateStatus('Entries placeholder');
-}
+    // expose for inspection
+    window.__TRAINER_ROWS__ = results;
 
-// --------------------------------------------------
-// Controls
-// --------------------------------------------------
-
-btnTrainer?.addEventListener('click', runTrainer);
-btnEntries?.addEventListener('click', runEntries);
-
-btnBack?.addEventListener('click', () => {
-  setView('index');
-  root.innerHTML = '';
-  updateStatus('Back to index');
-});
-
-btnPrint?.addEventListener('click', () => {
-  window.print();
-});
-
-btnRefresh?.addEventListener('click', () => {
-  if (state.activeView === 'trainer') {
-    runTrainer();
+    const pre = document.getElementById("debug");
+    if (pre) {
+      pre.textContent = JSON.stringify(results, null, 2);
+    }
   }
-});
 
-// --------------------------------------------------
-// Init
-// --------------------------------------------------
-
-function init() {
-  setView('index');
-  updateStatus('Ready');
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+  run();
+})();
