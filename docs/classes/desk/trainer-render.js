@@ -1,8 +1,13 @@
-// trainer-render.js
-// Reads sessionStorage.trainer_rows and renders into provided root.
-// NO FETCH. NO EXPORTS.
+
+// trainer-derive.js
+// Derive trainer-ready rows from sessionStorage datasets.
+// Reads: schedule, entries, horses, rings
+// Writes: sessionStorage.trainer_rows
+// NO DOM. NO FETCH. NO EXPORTS.
 
 (() => {
+  const OUT_KEY = "trainer_rows";
+
   function read(key) {
     try {
       const v = sessionStorage.getItem(key);
@@ -12,102 +17,146 @@
     }
   }
 
-  function el(tag, cls, txt) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (txt != null) n.textContent = txt;
-    return n;
-  }
-
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll("\"", "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  window.CRT_trainerRender = function CRT_trainerRender({ root }) {
-    const rows = read("trainer_rows") || [];
-    if (!root) return;
-
-    root.innerHTML = "";
-
-    if (!rows.length) {
-      root.innerHTML = "<p style=\"opacity:.85;margin:0;padding:6px 0;\">No trainer data.</p>";
-      return;
+  function write(key, val) {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {
+      console.error("[CRT] failed to write", key, e);
     }
+  }
 
-    // Group by ring -> group_name
-    const byRing = {};
-    rows.forEach(r => {
-      const ring = r.ring_name || "Unassigned";
-      if (!byRing[ring]) byRing[ring] = [];
-      byRing[ring].push(r);
-    });
+  const schedule = read("schedule") || [];
+  const entries = read("entries") || [];
+  const horses = read("horses") || [];
+  const rings = read("rings") || [];
 
-    const ringNames = Object.keys(byRing).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  // ---- lookups ----
+  const ringNameById = {};
+  for (const r of rings) {
+    const id = r?.ring_id ?? r?.ring ?? r?.id;
+    if (id == null) continue;
+    const name = r?.ring_name ?? r?.name ?? r?.label;
+    ringNameById[String(id)] = name ? String(name) : String(id);
+  }
 
-    ringNames.forEach(ringName => {
-      const ringBlock = el("section", "ring-block");
-      ringBlock.appendChild(el("h2", "ring-title", ringName));
+  const horseLabelById = {};
+  for (const h of horses) {
+    const id = h?.horse ?? h?.horse_id ?? h?.id;
+    if (id == null) continue;
+    const label =
+      h?.horse_name ??
+      h?.name ??
+      h?.display_name ??
+      h?.horse_label ??
+      h?.label ??
+      null;
+    horseLabelById[String(id)] = label ? String(label) : String(id);
+  }
 
-      const items = byRing[ringName];
+  const entriesByClass = {};
+  for (const e of entries) {
+    const cid = e?.class_id ?? e?.class ?? e?.classid;
+    if (cid == null) continue;
+    const key = String(cid);
+    if (!entriesByClass[key]) entriesByClass[key] = [];
+    entriesByClass[key].push(e);
+  }
 
-      // secondary group by group_name
-      const byGroup = {};
-      items.forEach(r => {
-        const g = r.group_name || "Class Group";
-        if (!byGroup[g]) byGroup[g] = [];
-        byGroup[g].push(r);
+  // ---- build rows ----
+  const rows = [];
+
+  for (const cls of schedule) {
+    const classId = cls?.class_id ?? cls?.classid ?? cls?.id;
+    if (classId == null) continue;
+
+    const classKey = String(classId);
+    const classEntries = entriesByClass[classKey] || [];
+    if (!classEntries.length) continue;
+
+    const ringIdRaw = cls?.ring ?? cls?.ring_id ?? cls?.ringid ?? cls?.ringId;
+    const ringId = ringIdRaw == null ? "" : String(ringIdRaw);
+    const ringName = ringId ? (ringNameById[ringId] || ringId) : "Unassigned";
+
+    const groupKeyRaw =
+      cls?.class_group_id ??
+      cls?.class_groupxclasses_id ??
+      cls?.class_group ??
+      cls?.group_id ??
+      classId;
+
+    const groupKey = groupKeyRaw == null ? classKey : String(groupKeyRaw);
+
+    const groupName =
+      cls?.class_group_name ??
+      cls?.group_name ??
+      cls?.class_name ??
+      cls?.name ??
+      "Class";
+
+    const className = cls?.class_name ?? cls?.name ?? "";
+
+    const time =
+      cls?.estimated_start_time ??
+      cls?.start_time_default ??
+      cls?.estimated_go_time ??
+      cls?.time ??
+      "";
+
+    const status = cls?.status ?? cls?.class_status ?? "";
+
+    for (const ent of classEntries) {
+      const horseIdRaw = ent?.horse ?? ent?.horse_id ?? ent?.horseid ?? ent?.horseId ?? "";
+      const horseId = horseIdRaw == null ? "" : String(horseIdRaw);
+      const horseLabel = horseId ? (horseLabelById[horseId] || horseId) : "";
+
+      const order =
+        ent?.order_of_go ??
+        ent?.order ??
+        ent?.oog ??
+        ent?.go_order ??
+        "";
+
+      rows.push({
+        ring_id: ringId,
+        ring_name: ringName,
+        class_id: classKey,
+        class_group_key: groupKey,
+        class_group_name: String(groupName),
+        class_name: String(className),
+        time: time == null ? "" : String(time),
+        order: order == null ? "" : String(order),
+        horse_id: horseId,
+        horse_label: horseLabel,
+        status: status == null ? "" : String(status)
       });
+    }
+  }
 
-      const groupNames = Object.keys(byGroup).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  // ---- sort: ring -> group -> time -> order -> horse ----
+  function norm(s) {
+    return (s == null ? "" : String(s)).toLowerCase();
+  }
+  function numOrInf(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+  }
+  rows.sort((a, b) => {
+    const r = norm(a.ring_name).localeCompare(norm(b.ring_name));
+    if (r) return r;
 
-      groupNames.forEach(gname => {
-        const groupBlock = el("div", "class-group");
-        groupBlock.appendChild(el("h3", "group-title", gname));
+    const g = norm(a.class_group_name).localeCompare(norm(b.class_group_name));
+    if (g) return g;
 
-        // Table
-        const table = el("table", "trainer-table");
-        const thead = document.createElement("thead");
-        const trh = document.createElement("tr");
+    const t = norm(a.time).localeCompare(norm(b.time));
+    if (t) return t;
 
-        ["Time", "Order", "Horse", "Class"].forEach(h => {
-          const th = document.createElement("th");
-          th.textContent = h;
-          trh.appendChild(th);
-        });
+    const o = numOrInf(a.order) - numOrInf(b.order);
+    if (o) return o;
 
-        thead.appendChild(trh);
-        table.appendChild(thead);
+    return norm(a.horse_label).localeCompare(norm(b.horse_label));
+  });
 
-        const tbody = document.createElement("tbody");
-
-        byGroup[gname].forEach(r => {
-          const tr = document.createElement("tr");
-
-          const time = esc(r.time || "");
-          const order = esc(r.order || "");
-          const horse = esc(r.horse_name ? `${r.horse_name} (${r.horse})` : (r.horse || ""));
-          const cls = esc(r.class_name || "");
-
-          tr.innerHTML = `
-            <td class="t-time">${time}</td>
-            <td class="t-order">${order}</td>
-            <td class="t-horse">${horse}</td>
-            <td class="t-class">${cls}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        table.appendChild(tbody);
-        groupBlock.appendChild(table);
-        ringBlock.appendChild(groupBlock);
-      });
-
-      root.appendChild(ringBlock);
-    });
-  };
+  write(OUT_KEY, rows);
+  console.log("[CRT] trainer_rows derived", rows.length);
 })();
+
