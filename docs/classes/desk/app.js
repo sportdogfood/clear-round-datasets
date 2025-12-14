@@ -2,7 +2,7 @@
 // Session Start -> fetch Rows once -> write sessionStorage -> show Session Active
 // Session Restart -> fetch again -> overwrite sessionStorage -> remain Active
 // Trainer -> derive + render
-// Entries -> placeholder (for now)
+// Entries -> placeholder (for now) new
 
 (() => {
   // ------------------------------------------------------------
