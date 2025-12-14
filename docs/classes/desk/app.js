@@ -1,19 +1,21 @@
+// docs/classes/desk/app.js
+// FULL REPLACEMENT — NO MODULES, NO EXPORTS
+// Fetch ONE payload row from Rows and expose it on window.CRT_PAYLOAD
+
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
-    window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
+    window.CRT_ROWS_API_KEY ||
+    "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
 
   const SPREADSHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
   const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
 
-  const RANGES = {
-    live_status: "N4:N4",
-    live_data: "N5:N5",
-    schedule: "N7:N7",
-    entries: "N14:N14",
-    horses: "N27:N27",
-    rings: "N28:N28"
-  };
+  // ONE ROW that contains JSON cells in fixed order
+  // [ live_status, live_data, schedule, entries, horses, rings ]
+  const RANGE = "A2:F2";
+
+  const STORAGE_KEY = "crt_desk_payload";
 
   function buildUrl(range) {
     return [
@@ -33,13 +35,15 @@
     try {
       return JSON.parse(v);
     } catch {
-      return { __parse_error: true, raw: v };
+      return null;
     }
   }
 
-  async function fetchRange(label, range) {
-    const url = buildUrl(range);
+  async function fetchPayload() {
+    const url = buildUrl(RANGE);
+
     const res = await fetch(url, {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${ROWS_API_KEY}`,
         Accept: "application/json"
@@ -47,46 +51,49 @@
     });
 
     if (!res.ok) {
-      console.error(`[ROWS] ${label} failed`, res.status);
-      return;
+      console.error("[ROWS] failed", res.status);
+      return null;
     }
 
     const data = await res.json();
 
-    let cell;
-    if (Array.isArray(data.values)) {
-      cell = data.values[0]?.[0];
-    } else if (Array.isArray(data.items)) {
-      cell = data.items[0]?.[0];
-    } else if (data.data?.rows) {
-      cell = data.data.rows[0]?.cells?.[0]?.value;
+    let rows = [];
+    if (Array.isArray(data.items)) rows = data.items;
+    else if (Array.isArray(data.values)) rows = data.values;
+    else if (data.data && Array.isArray(data.data.rows)) {
+      rows = data.data.rows.map(r =>
+        Array.isArray(r.cells) ? r.cells.map(c => c.value) : []
+      );
     }
 
-    const parsed = safeParse(cell);
+    if (!rows.length || !rows[0]) return null;
 
-    console.group(`ROWS PAYLOAD: ${label}`);
-    console.log("range:", range);
-    console.log("raw:", cell);
-    console.log("parsed:", parsed);
-    console.groupEnd();
+    const row = rows[0];
 
-    return parsed;
+    const payload = {
+      fetched_at: new Date().toISOString(),
+      live_status: safeParse(row[0]),
+      live_data: safeParse(row[1]),
+      schedule: safeParse(row[2]),
+      entries: safeParse(row[3]),
+      horses: safeParse(row[4]),
+      rings: safeParse(row[5])
+    };
+
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    window.CRT_PAYLOAD = payload;
+
+    console.log("[CRT] payload ready", payload);
+    return payload;
   }
 
-  async function run() {
-    const results = {};
-    for (const [label, range] of Object.entries(RANGES)) {
-      results[label] = await fetchRange(label, range);
-    }
-
-    // expose for inspection
-    window.__TRAINER_ROWS__ = results;
-
-    const pre = document.getElementById("debug");
-    if (pre) {
-      pre.textContent = JSON.stringify(results, null, 2);
-    }
+  async function init() {
+    await fetchPayload();
   }
 
-  run();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
