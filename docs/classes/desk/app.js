@@ -1,6 +1,7 @@
 
 // app.js — FULL REPLACEMENT (match on column N, payload from column 
-// app.js — FULL REPLACEMENT (N:O contract, sessionStorage-first, no ES modules)
+// app.js — FULL REPLACEMENT (N:O contract, sessionStorage-first, no ES modules) "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
+
 
 
 (() => {
@@ -109,9 +110,5 @@
 
   // expose manual refresh
   window.CRT_refreshSession = hydrateSession;
-})();
-
-
-  fetchAll();
 })();
 
