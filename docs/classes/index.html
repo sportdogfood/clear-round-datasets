@@ -1,1 +1,167 @@
-hello
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRT Desktop Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-alt: #0b1120;
+      --border: #374151;
+      --border-soft: #4b5563;
+      --accent: #2563eb;
+      --pill-radius: 999px;
+      --header-h: 52px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 90%);
+      color: #f9fafb;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    /* App shell ------------------------------------------------ */
+
+    .app {
+      width: 100%;
+      max-width: 1024px;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      border-left: 1px solid rgba(15, 23, 42, 0.95);
+      border-right: 1px solid rgba(15, 23, 42, 0.95);
+    }
+
+    /* Header --------------------------------------------------- */
+
+    .app-header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.95);
+      background: #020617;
+    }
+
+    .header-btn {
+      min-width: 72px;
+      height: 34px;
+      padding: 0 16px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
+      background: #020617;
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .header-btn--primary {
+      border-color: var(--accent);
+      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
+      color: #f9fafb;
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Main render container ----------------------------------- */
+
+    .app-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      background: radial-gradient(circle at top, #111827 0, #020617 52%);
+    }
+
+    #render-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Utility -------------------------------------------------- */
+
+    [hidden] {
+      display: none !important;
+    }
+
+    /* Desktop-only rules -------------------------------------- */
+
+    @media (max-width: 900px) {
+      /* Desktop tool only – still styled like mobile */
+    }
+
+    /* Print --------------------------------------------------- */
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .app-header {
+        display: none;
+      }
+
+      .app {
+        border: none;
+        max-width: none;
+      }
+
+      .app-main {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="app-header">
+      <button class="header-btn" id="btn-back" hidden>Back</button>
+      <div class="header-title" id="header-title">Index</div>
+      <button class="header-btn header-btn--primary" id="btn-print" hidden>Print</button>
+    </header>
+
+    <!-- Main render area -->
+    <main class="app-main">
+      <div id="render-container"></div>
+    </main>
+
+  </div>
+
+  <!-- App logic (wired later) -->
+  <script src="app.js"></script>
+</body>
+</html>
