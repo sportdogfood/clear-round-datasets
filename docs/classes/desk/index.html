@@ -12,7 +12,7 @@
       margin: 0;
       background: #020617;
       color: #f9fafb;
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .desk-app {
@@ -71,39 +71,38 @@
 </head>
 
 <body>
-<div class="desk-app">
+  <div class="desk-app">
 
-  <header class="desk-header">
-    <button id="btn-back" class="desk-btn" hidden>&larr;</button>
-    <div id="desk-title" class="desk-title">Class Desk</div>
-    <button id="btn-print" class="desk-btn" hidden>Print</button>
-  </header>
+    <header class="desk-header">
+      <button id="btn-back" class="desk-btn" hidden>&larr;</button>
+      <div id="desk-title" class="desk-title">Class Desk</div>
+      <button id="btn-print" class="desk-btn" hidden>Print</button>
+    </header>
 
-  <main class="desk-main">
+    <main class="desk-main">
 
-    <!-- SESSION IDLE -->
-    <section id="screen-idle" class="desk-index">
-      <button id="btn-session-start" class="desk-btn primary">
-        Session Start
-      </button>
-    </section>
+      <!-- SESSION START -->
+      <section id="screen-start" class="desk-index">
+        <button id="btn-session-start" class="desk-btn primary">
+          Start Session
+        </button>
+      </section>
 
-    <!-- SESSION ACTIVE -->
-    <section id="screen-active" class="desk-index" hidden>
-      <button id="btn-trainer" class="desk-btn primary">Trainer</button>
-      <button id="btn-entries" class="desk-btn">Entries</button>
-      <button id="btn-session-restart" class="desk-btn">Session Restart</button>
-    </section>
+      <!-- ACTIVE INDEX -->
+      <section id="screen-index" class="desk-index" hidden>
+        <button id="btn-trainer" class="desk-btn primary">Trainer</button>
+        <button id="btn-entries" class="desk-btn">Entries</button>
+        <button id="btn-session-restart" class="desk-btn">Restart Session</button>
+      </section>
 
-    <!-- RENDER -->
-    <section id="screen-render" hidden></section>
+      <!-- RENDER -->
+      <section id="screen-render" hidden></section>
 
-  </main>
-</div>
+    </main>
+  </div>
 
-<script src="./app.js"></script>
-<script src="./trainer-derive.js"></script>
-<script src="./trainer-render.js"></script>
-
+  <script src="./app.js"></script>
+  <script src="./trainer-derive.js"></script>
+  <script src="./trainer-render.js"></script>
 </body>
 </html>
