@@ -1,22 +1,29 @@
-// docs/classes/desk/app.js
+
+// app.js — FULL REPLACEMENT (match on column N, payload from column 
+// app.js — FULL REPLACEMENT (N:O contract, sessionStorage-first, no ES modules)
 
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
-
   const ROWS_API_KEY =
     window.CRT_ROWS_API_KEY ||
     "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
-// app.js — FULL REPLACEMENT (match on column N, payload from column 
 
   const SHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
   const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
 
-  // fetch full context so N/O exist
-  const RANGE = "A2:O999";
+  // N = label, O = payload
+  const RANGE = "N2:O999";
 
-  const STORAGE_KEY = "crt_live_data";
+  const REQUIRED_KEYS = [
+    "live_status",
+    "live_data",
+    "schedule",
+    "entries",
+    "horses",
+    "rings"
+  ];
 
-  function url() {
+  function buildUrl() {
     return [
       ROWS_API_BASE,
       "spreadsheets",
@@ -28,20 +35,29 @@
     ].join("/");
   }
 
-  function parse(v) {
-    if (!v) return null;
+  function safeParse(v) {
+    if (v == null) return null;
     if (typeof v !== "string") return v;
-    try { return JSON.parse(v); } catch { return null; }
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v;
+    }
   }
 
-  async function run() {
-    const res = await fetch(url(), {
+  async function fetchAll() {
+    const res = await fetch(buildUrl(), {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${ROWS_API_KEY}`,
         Accept: "application/json"
       }
     });
-    if (!res.ok) throw new Error("Rows fetch failed");
+
+    if (!res.ok) {
+      console.error("[ROWS] fetch failed", res.status);
+      return;
+    }
 
     const data = await res.json();
 
@@ -52,30 +68,48 @@
         Array.isArray(r.cells) ? r.cells.map(c => c.value) : []
       );
 
-    const MATCH = "live_data"; // column N value
-
-    let payload = null;
+    const found = {};
 
     for (const row of rows) {
-      if (!row) continue;
-      // N = index 13, O = index 14
-      if (String(row[13] || "").trim() === MATCH) {
-        payload = parse(row[14]);
-        break;
+      if (!row || row.length < 2) continue;
+      const key = String(row[0] || "").trim();
+      if (!key) continue;
+
+      found[key] = safeParse(row[1]);
+    }
+
+    // write schedule, entries, horses, rings always
+    ["schedule", "entries", "horses", "rings"].forEach(k => {
+      if (k in found) {
+        sessionStorage.setItem(k, JSON.stringify(found[k]));
+      }
+    });
+
+    // live_status gate
+    if ("live_status" in found) {
+      sessionStorage.setItem("live_status", JSON.stringify(found.live_status));
+
+      if (found.live_status === true && "live_data" in found) {
+        sessionStorage.setItem(
+          "live_data",
+          JSON.stringify(found.live_data)
+        );
+      } else {
+        sessionStorage.removeItem("live_data");
       }
     }
 
     sessionStorage.setItem(
-      STORAGE_KEY,
+      "_crt_meta",
       JSON.stringify({
         fetched_at: new Date().toISOString(),
-        payload
+        keys: Object.keys(found)
       })
     );
 
-    console.log("[CRT] live_data ready", payload);
+    console.log("[CRT] session hydrated", found);
   }
 
-  run();
+  fetchAll();
 })();
 
