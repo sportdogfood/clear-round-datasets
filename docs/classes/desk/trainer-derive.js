@@ -1,7 +1,7 @@
 // trainer-derive.js
 // Reads raw datasets from sessionStorage: schedule, entries, horses, rings
 // Writes derived rows to sessionStorage: trainer_rows
-// NO DOM. NO FETCH. NO EXPORTS.
+// NO DOM. NO FETCH. NO EXPORTS.  NEW
 
 (() => {
   function read(key) {
