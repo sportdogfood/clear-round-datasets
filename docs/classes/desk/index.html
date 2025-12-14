@@ -3,75 +3,319 @@
 <head>
   <meta charset="UTF-8" />
   <title>Class Desk</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <link rel="stylesheet" href="./trainer-print.css" media="print" />
 
   <style>
-    body{
-      margin:0;padding:0;background:#020617;color:#f9fafb;
-      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    :root {
+      --bg: #020617;
+      --bg-alt: #0b1120;
+      --border: #374151;
+      --border-soft: #4b5563;
+      --accent: #2563eb;
+      --accent-soft: #1d4ed8;
+      --pill-radius: 999px;
+      --header-h: 52px;
+      --nav-h: 72px;
     }
-    .app{
-      max-width:420px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;
-      background:#020617;
-    }
-    .header{
-      height:52px;display:flex;align-items:center;justify-content:space-between;
-      padding:0 12px;border-bottom:1px solid rgba(31,41,55,.95);background:#020617;
-      position:sticky;top:0;z-index:10;
-    }
-    .header-btn{
-      height:34px;padding:0 14px;border-radius:999px;border:1px solid #4b5563;
-      background:#111827;color:#f9fafb;font-size:13px;cursor:pointer;
-    }
-    .header-title{font-size:16px;font-weight:600;line-height:1;}
-    .main{flex:1;padding:12px;overflow-y:auto;}
-    [hidden]{display:none!important;}
 
-    /* TackLists-like rows */
-    .row{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:12px 12px;border:1px solid rgba(75,85,99,.55);
-      border-radius:14px;background:#0b1220;
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
-    .row--tap{cursor:pointer;}
-    .row--tap:active{transform:translateY(1px);}
-    .row-title{font-size:14px;font-weight:600;}
-    .row-tag{
-      font-size:12px;border:1px solid rgba(75,85,99,.55);
-      padding:3px 10px;border-radius:999px;background:#111827;opacity:.95;
-      white-space:nowrap;
-    }
-    .row-tag--positive{border-color:rgba(34,197,94,.65);}
-    .stack{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
 
-    /* Report container */
-    .report-wrap{padding:6px 0;}
-    .report-h2{margin:14px 0 8px;font-size:16px;font-weight:700;}
-    .report-h3{margin:12px 0 6px;font-size:14px;font-weight:700;opacity:.95;}
-    .report-table{width:100%;border-collapse:collapse;}
-    .report-table th,.report-table td{
-      border-bottom:1px solid rgba(255,255,255,.10);
-      padding:6px 6px;text-align:left;vertical-align:top;font-size:12px;
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 90%);
+      color: #f9fafb;
     }
-    .muted{opacity:.75;font-size:12px;}
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      max-height: 720px;
+      margin: 8px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      border-radius: 24px;
+      border: 1px solid rgba(15, 23, 42, 0.95);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      overflow: hidden;
+    }
+
+    /* Header ----------------------------------------------------- */
+
+    .app-header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.95);
+      background: #020617;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-back,
+    .header-action {
+      min-width: 60px;
+      height: 34px;
+      padding: 0 16px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
+      background: #020617;
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 1),
+        0 3px 10px rgba(0, 0, 0, 0.8);
+      transition:
+        background 0.12s ease-out,
+        border-color 0.12s ease-out,
+        transform 0.08s ease-out,
+        box-shadow 0.12s ease-out,
+        color 0.12s ease-out;
+    }
+
+    .header-back span {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .header-action {
+      border-color: rgba(59, 130, 246, 1);
+      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
+      color: #f9fafb;
+    }
+
+    .header-back:active,
+    .header-action:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 1),
+        0 2px 6px rgba(0, 0, 0, 0.9);
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Main content ---------------------------------------------- */
+
+    .app-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px 8px;
+      background: radial-gradient(circle at top, #111827 0, #020617 52%);
+    }
+
+    .list-column {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 12px;
+    }
+
+    /* Start logo ------------------------------------------------- */
+
+    .start-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 18px;
+    }
+
+    .start-logo-mark {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .start-logo-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .start-logo-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .start-logo-subtitle {
+      font-size: 12px;
+      color: #d1d5db;
+      opacity: 0.9;
+      text-align: center;
+      padding: 0 10px;
+    }
+
+    /* Long pills (rows) ----------------------------------------- */
+
+    .row {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 16px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
+      background: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #e5e7eb;
+      box-shadow: 0 1px 0 #020617;
+    }
+
+    .row-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 8px;
+    }
+
+    .row-tag {
+      min-width: 28px;
+      padding: 3px 10px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
+      background: #18181b;
+      color: #e5e7eb;
+      font-size: 11px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 0 0 1px #020617;
+    }
+
+    .row-tag--boolean {
+      min-width: 18px;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border-radius: 999px;
+      font-size: 0;
+    }
+
+    .row-tag--count {
+      min-width: 30px;
+    }
+
+    .row-tag--positive {
+      border-color: #22c55e;
+      background: #14532d;
+      color: #f9fafb;
+    }
+
+    .row--active {
+      border-color: var(--accent);
+      background: radial-gradient(circle at top, #1f2937, #020617 75%);
+      box-shadow:
+        0 0 0 1px #020617,
+        0 4px 10px rgba(15, 23, 42, 0.75);
+      color: #f9fafb;
+    }
+
+    .row--active .row-title {
+      color: #f9fafb;
+    }
+
+    .row--tap {
+      cursor: pointer;
+      user-select: none;
+      transition:
+        transform 0.08s ease-out,
+        box-shadow 0.12s ease-out,
+        border-color 0.12s ease-out,
+        background 0.12s ease-out;
+    }
+
+    .row--tap:active {
+      transform: translateY(1px) scale(0.995);
+      box-shadow:
+        0 0 0 1px #020617,
+        0 2px 8px rgba(15, 23, 42, 0.95);
+    }
+
+    /* Simple report typography */
+    .report-title {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.95);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin: 6px 6px 4px;
+    }
+
+    .report-note {
+      font-size: 12px;
+      color: rgba(209, 213, 219, 0.9);
+      margin: 8px 6px 0;
+    }
+
+    button {
+      font-family: inherit;
+    }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <header class="header">
-      <button id="header-back" class="header-btn" hidden>&larr;</button>
-      <div id="header-title" class="header-title">Class Desk</div>
-      <button id="header-action" class="header-btn" hidden>Print</button>
+    <!-- Header -->
+    <header class="app-header">
+      <button class="header-back" id="header-back" type="button">
+        <span>&larr;</span>
+      </button>
+      <h1 class="header-title" id="header-title">Start</h1>
+      <button class="header-action" id="header-action" type="button" hidden></button>
     </header>
 
-    <main class="main">
-      <div id="screen-root"></div>
+    <!-- Main content -->
+    <main class="app-main">
+      <div id="screen-root" class="list-column"></div>
     </main>
   </div>
 
+  <!-- keep your existing pipeline files as-is -->
   <script src="./trainer-derive.js"></script>
   <script src="./trainer-render.js"></script>
   <script src="./app.js"></script>

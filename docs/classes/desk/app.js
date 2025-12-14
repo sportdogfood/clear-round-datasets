@@ -1,14 +1,16 @@
-// app.js (desk)
-// - Session-start triggers Rows hydrate ON CLICK (not on load)
-// - Session-restart re-hydrates + re-derives
-// - Trainer uses derived trainer_rows
+// app.js (Class Desk desktop)
+// - Uses TackLists cadence: state + render() + createRow()
+// - Requires: session-start + session-restart
+// - Rows hydrate ONLY on session-start/session-restart (not on load)
+// - Starts a 9-min refresh timer ONLY after session-start/restart
+// - Trainer/Entries are screens; Print from header-action on those screens
 
 (() => {
   "use strict";
 
-  // ------------------------------------------------------------
+  // ----------------------------
   // Config
-  // ------------------------------------------------------------
+  // ----------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
     window.CRT_ROWS_API_KEY ||
@@ -16,7 +18,7 @@
 
   const SHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
   const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
-  const KV_RANGE = "N2:O9999";
+  const RANGE = "N2:O9999";
 
   const ALLOWED_KEYS = new Set([
     "live_status",
@@ -29,8 +31,8 @@
 
   const REFRESH_MS = 9 * 60 * 1000;
 
-  const STORAGE = {
-    session: "_crt_session",
+  const K = {
+    sess: "_desk_session",
     meta: "_crt_meta",
     // datasets:
     live_status: "live_status",
@@ -38,41 +40,34 @@
     schedule: "schedule",
     entries: "entries",
     horses: "horses",
-    rings: "rings",
-    // derived:
-    trainer_rows: "trainer_rows"
+    rings: "rings"
   };
 
-  // ------------------------------------------------------------
-  // DOM
-  // ------------------------------------------------------------
-  const headerBack = document.getElementById("header-back");
+  // ----------------------------
+  // DOM refs
+  // ----------------------------
   const headerTitle = document.getElementById("header-title");
+  const headerBack = document.getElementById("header-back");
   const headerAction = document.getElementById("header-action");
   const screenRoot = document.getElementById("screen-root");
 
-  if (!headerBack || !headerTitle || !headerAction || !screenRoot) return;
+  if (!headerTitle || !headerBack || !headerAction || !screenRoot) return;
 
-  // ------------------------------------------------------------
+  // ----------------------------
   // State
-  // ------------------------------------------------------------
+  // ----------------------------
   const state = {
-    currentScreen: "start", // start | active | trainer
+    currentScreen: "start", // start | active | trainer | entries
     history: [],
-    isLoading: false
+    refreshTimer: null,
+    isHydrating: false
   };
 
-  // ------------------------------------------------------------
-  // Helpers
-  // ------------------------------------------------------------
-  function nowISO() {
-    return new Date().toISOString();
-  }
-
-  function safeJsonParse(v) {
-    if (v == null) return null;
-    if (typeof v !== "string") return v;
-    try { return JSON.parse(v); } catch { return v; }
+  // ----------------------------
+  // Storage helpers
+  // ----------------------------
+  function ssGetRaw(key) {
+    return sessionStorage.getItem(key);
   }
 
   function ssGet(key) {
@@ -85,18 +80,39 @@
   }
 
   function ssSet(key, obj) {
-    try { sessionStorage.setItem(key, JSON.stringify(obj)); } catch {}
+    try {
+      sessionStorage.setItem(key, JSON.stringify(obj));
+    } catch {}
   }
 
   function ssRemove(key) {
-    try { sessionStorage.removeItem(key); } catch {}
+    try {
+      sessionStorage.removeItem(key);
+    } catch {}
+  }
+
+  function nowISO() {
+    return new Date().toISOString();
   }
 
   function isTrue(v) {
     return v === true || v === "TRUE" || v === "true" || v === 1 || v === "1";
   }
 
-  function buildRowsUrl(rangeA1) {
+  function safeParse(v) {
+    if (v == null) return null;
+    if (typeof v !== "string") return v;
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v;
+    }
+  }
+
+  // ----------------------------
+  // Rows fetch
+  // ----------------------------
+  function buildUrl() {
     return [
       ROWS_API_BASE,
       "spreadsheets",
@@ -104,7 +120,7 @@
       "tables",
       encodeURIComponent(TABLE_ID),
       "values",
-      encodeURIComponent(rangeA1)
+      encodeURIComponent(RANGE)
     ].join("/");
   }
 
@@ -114,54 +130,15 @@
 
     const dr = data?.data?.rows;
     if (Array.isArray(dr)) {
-      return dr.map(r => Array.isArray(r.cells) ? r.cells.map(c => c.value) : []);
+      return dr.map(r =>
+        Array.isArray(r.cells) ? r.cells.map(c => c.value) : []
+      );
     }
     return [];
   }
 
-  function ensureSessionObject() {
-    const existing = ssGet(STORAGE.session);
-    if (existing && existing.session_id) return existing;
-
-    const sess = {
-      session_id: "sess-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
-      started_at: nowISO(),
-      last_fetch_at: null
-    };
-    ssSet(STORAGE.session, sess);
-    return sess;
-  }
-
-  function updateSessionLastFetch() {
-    const sess = ssGet(STORAGE.session) || ensureSessionObject();
-    sess.last_fetch_at = nowISO();
-    ssSet(STORAGE.session, sess);
-  }
-
-  function metaTagText() {
-    const meta = ssGet(STORAGE.meta);
-    const sess = ssGet(STORAGE.session);
-    const fetched = meta?.fetched_at ? meta.fetched_at : null;
-    const sid = sess?.session_id ? sess.session_id.slice(0, 12) + "…" : null;
-
-    if (!sid && !fetched) return "no session";
-    if (sid && !fetched) return sid;
-    return `${sid || "session"} · ${new Date(fetched).toLocaleTimeString()}`;
-  }
-
-  function clearDatasets() {
-    [STORAGE.live_status, STORAGE.live_data, STORAGE.schedule, STORAGE.entries, STORAGE.horses, STORAGE.rings, STORAGE.trainer_rows].forEach(ssRemove);
-    ssRemove(STORAGE.meta);
-  }
-
-  // ------------------------------------------------------------
-  // Rows hydrate (ONLY called by Start/Restart click)
-  // ------------------------------------------------------------
   async function fetchRowsKeyValue() {
-    const url = buildRowsUrl(KV_RANGE);
-
-    const res = await fetch(url, {
-      method: "GET",
+    const res = await fetch(buildUrl(), {
       headers: {
         Authorization: `Bearer ${ROWS_API_KEY}`,
         Accept: "application/json"
@@ -169,7 +146,7 @@
     });
 
     if (!res.ok) {
-      console.log("[ROWS] fetch failed", res.status);
+      console.log("[DESK] rows fetch failed", res.status);
       return { ok: false, status: res.status, found: {} };
     }
 
@@ -181,92 +158,146 @@
       if (!row || row.length < 2) continue;
       const key = String(row[0] || "").trim();
       if (!ALLOWED_KEYS.has(key)) continue;
-      found[key] = safeJsonParse(row[1]);
+      found[key] = safeParse(row[1]);
     }
 
     return { ok: true, status: 200, found };
   }
 
-  async function hydrateSession() {
-    if (state.isLoading) return;
-    state.isLoading = true;
+  // ----------------------------
+  // Session cadence (start/restart)
+  // ----------------------------
+  function createNewSession() {
+    const sess = {
+      session_id: "desk-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+      started_at: nowISO(),
+      last_hydrate_at: null
+    };
+    ssSet(K.sess, sess);
+    return sess;
+  }
+
+  function ensureSession() {
+    const s = ssGet(K.sess);
+    if (s && s.session_id) return s;
+    return createNewSession();
+  }
+
+  function clearDeskData() {
+    // keep session object; clear datasets/meta (fresh pull overwrites anyway)
+    [K.meta, K.live_status, K.live_data, K.schedule, K.entries, K.horses, K.rings, "trainer_rows"].forEach(ssRemove);
+  }
+
+  function startRefreshTimer() {
+    if (state.refreshTimer) return;
+    state.refreshTimer = setInterval(async () => {
+      const sess = ssGet(K.sess);
+      if (!sess?.session_id) return; // no session -> do nothing
+      if (state.currentScreen === "start") return; // don't auto-fetch on start screen
+      await hydrateSession(false);
+      // don't change screens; just update current UI tags
+      render();
+    }, REFRESH_MS);
+  }
+
+  async function hydrateSession(deriveTrainer = true) {
+    if (state.isHydrating) return;
+    state.isHydrating = true;
 
     try {
-      ensureSessionObject();
+      const sess = ensureSession();
 
       const { ok, found } = await fetchRowsKeyValue();
-      if (!ok) {
-        state.isLoading = false;
-        return;
-      }
+      if (!ok) return;
 
-      // ALWAYS overwrite base datasets if present
+      // always overwrite base datasets if present
       ["schedule", "entries", "horses", "rings"].forEach(k => {
         if (k in found) ssSet(k, found[k]);
       });
 
-      // live_status
-      if ("live_status" in found) ssSet(STORAGE.live_status, found.live_status);
+      // store live_status as-is (string TRUE supported)
+      if ("live_status" in found) ssSet(K.live_status, found.live_status);
 
-      // live_data gated by live_status (string TRUE supported)
+      // gate live_data write
       if (isTrue(found.live_status) && "live_data" in found) {
-        ssSet(STORAGE.live_data, found.live_data);
+        ssSet(K.live_data, found.live_data);
       } else {
-        ssRemove(STORAGE.live_data);
+        ssRemove(K.live_data);
       }
 
-      // meta
-      ssSet(STORAGE.meta, {
-        fetched_at: nowISO(),
+      sess.last_hydrate_at = nowISO();
+      ssSet(K.sess, sess);
+
+      // meta (for debug + tag)
+      const meta = {
+        fetched_at: sess.last_hydrate_at,
         refresh_ms: REFRESH_MS,
-        keys: Object.keys(found)
-      });
+        keys: Object.keys(found),
+        counts: {
+          schedule: Array.isArray(found.schedule) ? found.schedule.length : null,
+          entries: Array.isArray(found.entries) ? found.entries.length : null,
+          horses: Array.isArray(found.horses) ? found.horses.length : null,
+          rings: Array.isArray(found.rings) ? found.rings.length : null
+        },
+        live_status: found.live_status
+      };
+      ssSet(K.meta, meta);
 
-      updateSessionLastFetch();
+      console.log("[DESK] hydrated", meta);
 
-      // derive trainer rows AFTER datasets exist
-      if (typeof window.CRT_trainerDerive === "function") {
-        window.CRT_trainerDerive(); // writes sessionStorage.trainer_rows
+      // derive trainer rows if the file provides it
+      if (deriveTrainer && typeof window.CRT_trainerDerive === "function") {
+        const rows = window.CRT_trainerDerive();
+        // CRT_trainerDerive already writes trainer_rows
+        console.log("[DESK] trainer derive done", Array.isArray(rows) ? rows.length : null);
       }
     } finally {
-      state.isLoading = false;
+      state.isHydrating = false;
     }
   }
 
-  // ------------------------------------------------------------
-  // UI primitives (TackLists-like rows)
-  // ------------------------------------------------------------
+  // ----------------------------
+  // UI helpers (same cadence)
+  // ----------------------------
   function createRow(label, options = {}) {
-    const { tagText, tagPositive, onClick } = options;
+    const { tagText, tagVariant, tagPositive, active, onClick } = options;
 
     const row = document.createElement("div");
     row.className = "row row--tap";
+    if (active) row.classList.add("row--active");
 
     const titleEl = document.createElement("div");
     titleEl.className = "row-title";
     titleEl.textContent = label;
     row.appendChild(titleEl);
 
-    if (tagText != null) {
-      const tag = document.createElement("div");
-      tag.className = "row-tag";
-      if (tagPositive) tag.classList.add("row-tag--positive");
-      tag.textContent = String(tagText);
-      row.appendChild(tag);
+    if (tagText != null || tagVariant) {
+      const tagEl = document.createElement("div");
+      tagEl.className = "row-tag";
+      if (tagVariant) tagEl.classList.add(`row-tag--${tagVariant}`);
+      if (tagPositive) tagEl.classList.add("row-tag--positive");
+      if (tagText != null) tagEl.textContent = String(tagText);
+      row.appendChild(tagEl);
     }
 
-    if (typeof onClick === "function") {
-      row.addEventListener("click", onClick);
-    }
+    if (typeof onClick === "function") row.addEventListener("click", onClick);
 
     screenRoot.appendChild(row);
   }
 
-  function setScreen(next, push = true) {
-    if (push && state.currentScreen && state.currentScreen !== next) {
+  function titleForScreen(scr) {
+    if (scr === "start") return "Start";
+    if (scr === "active") return "Session";
+    if (scr === "trainer") return "Trainer";
+    if (scr === "entries") return "Entries";
+    return "Start";
+  }
+
+  function setScreen(newScreen, pushHistory = true) {
+    if (pushHistory && state.currentScreen && state.currentScreen !== newScreen) {
       state.history.push(state.currentScreen);
     }
-    state.currentScreen = next;
+    state.currentScreen = newScreen;
     render();
   }
 
@@ -276,136 +307,224 @@
     render();
   }
 
-  // ------------------------------------------------------------
-  // Screens
-  // ------------------------------------------------------------
-  function renderHeader() {
-    const scr = state.currentScreen;
-
-    if (scr === "start") {
-      headerTitle.textContent = "Class Desk";
-      headerBack.hidden = true;
-      headerAction.hidden = true;
-      headerAction.textContent = "Print";
-      return;
-    }
-
-    if (scr === "active") {
-      headerTitle.textContent = "Session";
-      headerBack.hidden = true;
-      headerAction.hidden = true;
-      headerAction.textContent = "Print";
-      return;
-    }
-
-    if (scr === "trainer") {
-      headerTitle.textContent = "Trainer Report";
-      headerBack.hidden = false;
-      headerAction.hidden = false;
-      headerAction.textContent = "Print";
-      return;
+  function metaTag() {
+    const meta = ssGet(K.meta);
+    if (!meta?.fetched_at) return "no fetch";
+    try {
+      const t = new Date(meta.fetched_at).toLocaleTimeString();
+      return t;
+    } catch {
+      return "fetched";
     }
   }
 
-  function renderStart() {
-    screenRoot.innerHTML = "";
-    createRow("Session start", {
-      tagText: metaTagText(),
-      tagPositive: false,
-      onClick: async () => {
-        clearDatasets();
-        await hydrateSession();
-        setScreen("active");
-      }
-    });
+  // ----------------------------
+  // Screens
+  // ----------------------------
+  function renderHeader() {
+    headerTitle.textContent = titleForScreen(state.currentScreen);
 
-    const sess = ssGet(STORAGE.session);
-    if (sess?.session_id) {
-      createRow("Session restart", {
-        tagText: "refresh",
+    // back button cadence like TackLists: hide on start, show otherwise
+    headerBack.style.visibility = (state.currentScreen === "start") ? "hidden" : "visible";
+
+    if (state.currentScreen === "trainer" || state.currentScreen === "entries") {
+      headerAction.hidden = false;
+      headerAction.textContent = "Print";
+      headerAction.dataset.action = "print";
+    } else {
+      headerAction.hidden = true;
+      headerAction.textContent = "";
+      delete headerAction.dataset.action;
+    }
+  }
+
+  function renderStartScreen() {
+    screenRoot.innerHTML = "";
+
+    const logo = document.createElement("div");
+    logo.className = "start-logo";
+    logo.innerHTML = `
+      <div class="start-logo-mark"></div>
+      <div class="start-logo-title">Class Desk</div>
+      <div class="start-logo-subtitle">Session-start → Trainer / Entries → Print</div>
+    `;
+    screenRoot.appendChild(logo);
+
+    const hasSession = !!ssGet(K.sess)?.session_id;
+
+    if (!hasSession) {
+      createRow("Session start", {
+        tagVariant: "boolean",
         tagPositive: false,
         onClick: async () => {
-          clearDatasets();
-          await hydrateSession();
+          console.log("[DESK] session-start click");
+          createNewSession();
+          clearDeskData();
+          await hydrateSession(true);
+          startRefreshTimer();
           setScreen("active");
         }
       });
+      return;
     }
-  }
 
-  function renderActive() {
-    screenRoot.innerHTML = "";
-
-    createRow("Trainer", {
-      tagText: metaTagText(),
+    createRow("In-session", {
+      active: true,
+      tagText: metaTag(),
+      tagVariant: "count",
       tagPositive: true,
-      onClick: () => setScreen("trainer")
-    });
-
-    createRow("Entries", {
-      tagText: "soon",
-      tagPositive: false,
-      onClick: () => alert("Entries screen not wired yet.")
+      onClick: () => setScreen("active")
     });
 
     createRow("Session restart", {
-      tagText: "refresh",
+      tagVariant: "boolean",
       tagPositive: false,
       onClick: async () => {
-        await hydrateSession();
-        render(); // refresh tag text
+        console.log("[DESK] session-restart click");
+        createNewSession();
+        clearDeskData();
+        await hydrateSession(true);
+        startRefreshTimer();
+        setScreen("active");
       }
     });
   }
 
-  function renderTrainer() {
+  function renderActiveScreen() {
     screenRoot.innerHTML = "";
 
-    const wrap = document.createElement("div");
-    wrap.className = "report-wrap";
-    wrap.innerHTML = `
-      <div class="muted" style="margin:0 0 10px 0;">
-        ${metaTagText()}
-      </div>
-      <div id="render-root"></div>
-    `;
-    screenRoot.appendChild(wrap);
+    createRow("Trainer", {
+      tagText: metaTag(),
+      tagVariant: "count",
+      tagPositive: true,
+      onClick: async () => {
+        // ensure trainer_rows exists at time of click
+        if (typeof window.CRT_trainerDerive === "function") {
+          window.CRT_trainerDerive();
+        }
+        setScreen("trainer");
+      }
+    });
 
-    const rows = ssGet(STORAGE.trainer_rows) || [];
+    createRow("Entries", {
+      tagText: ssGetRaw(K.live_data) ? "live" : "—",
+      tagVariant: "count",
+      tagPositive: !!ssGetRaw(K.live_data),
+      onClick: () => setScreen("entries")
+    });
+
+    createRow("Session restart", {
+      tagVariant: "boolean",
+      tagPositive: false,
+      onClick: async () => {
+        console.log("[DESK] session-restart click (active)");
+        createNewSession();
+        clearDeskData();
+        await hydrateSession(true);
+        startRefreshTimer();
+        render(); // stay on active
+      }
+    });
+
+    const note = document.createElement("div");
+    note.className = "report-note";
+    const meta = ssGet(K.meta);
+    note.textContent = meta?.counts
+      ? `schedule:${meta.counts.schedule ?? "?"} entries:${meta.counts.entries ?? "?"} horses:${meta.counts.horses ?? "?"} rings:${meta.counts.rings ?? "?"} · live_status:${meta.live_status}`
+      : "no meta";
+    screenRoot.appendChild(note);
+  }
+
+  function renderTrainerScreen() {
+    screenRoot.innerHTML = "";
+
+    const rows = ssGet("trainer_rows") || [];
+    const meta = ssGet(K.meta);
+
+    const label = document.createElement("div");
+    label.className = "report-title";
+    label.textContent = `Trainer report · ${meta?.fetched_at ? new Date(meta.fetched_at).toLocaleTimeString() : "no fetch"} · rows:${rows.length}`;
+    screenRoot.appendChild(label);
+
+    const root = document.createElement("div");
+    root.id = "render-root";
+    screenRoot.appendChild(root);
+
     if (!rows.length) {
-      const rr = document.getElementById("render-root");
-      if (rr) rr.innerHTML = `<p class="muted">No trainer data.</p>`;
+      const p = document.createElement("div");
+      p.className = "report-note";
+      p.textContent = "No trainer data.";
+      root.appendChild(p);
       return;
     }
 
     if (typeof window.CRT_trainerRender === "function") {
-      window.CRT_trainerRender(document.getElementById("render-root"), rows);
+      window.CRT_trainerRender(root, rows);
+      return;
     }
+
+    const p = document.createElement("div");
+    p.className = "report-note";
+    p.textContent = "trainer-render.js not loaded (CRT_trainerRender missing).";
+    root.appendChild(p);
+  }
+
+  function renderEntriesScreen() {
+    screenRoot.innerHTML = "";
+
+    const live = ssGet(K.live_data);
+    const meta = ssGet(K.meta);
+
+    const label = document.createElement("div");
+    label.className = "report-title";
+    label.textContent = `Entries · ${meta?.fetched_at ? new Date(meta.fetched_at).toLocaleTimeString() : "no fetch"}`;
+    screenRoot.appendChild(label);
+
+    const root = document.createElement("div");
+    root.id = "render-root";
+    screenRoot.appendChild(root);
+
+    if (!live) {
+      const p = document.createElement("div");
+      p.className = "report-note";
+      p.textContent = "No live_data (live_status must be TRUE).";
+      root.appendChild(p);
+      return;
+    }
+
+    // placeholder: your entries renderer will replace this
+    const p = document.createElement("div");
+    p.className = "report-note";
+    p.textContent = "live_data present (renderer pending).";
+    root.appendChild(p);
   }
 
   function render() {
     renderHeader();
 
-    if (state.currentScreen === "start") return renderStart();
-    if (state.currentScreen === "active") return renderActive();
-    if (state.currentScreen === "trainer") return renderTrainer();
+    if (state.currentScreen === "start") return renderStartScreen();
+    if (state.currentScreen === "active") return renderActiveScreen();
+    if (state.currentScreen === "trainer") return renderTrainerScreen();
+    if (state.currentScreen === "entries") return renderEntriesScreen();
 
-    // fallback
     state.currentScreen = "start";
-    renderStart();
+    renderStartScreen();
   }
 
-  // ------------------------------------------------------------
+  // ----------------------------
   // Events
-  // ------------------------------------------------------------
-  headerBack.addEventListener("click", () => goBack());
-
-  headerAction.addEventListener("click", () => {
-    if (state.currentScreen === "trainer") window.print();
+  // ----------------------------
+  headerBack.addEventListener("click", () => {
+    if (headerBack.style.visibility === "hidden") return;
+    goBack();
   });
 
-  // initial screen (do NOT auto-hydrate)
-  const hasSession = !!ssGet(STORAGE.session)?.session_id;
-  state.currentScreen = hasSession ? "start" : "start";
+  headerAction.addEventListener("click", () => {
+    if (headerAction.dataset.action === "print") window.print();
+  });
+
+  // ----------------------------
+  // Initial render (NO auto hydrate)
+  // ----------------------------
   render();
 })();
