@@ -1,19 +1,19 @@
-// trainer-render.js
+// File: docs/classes/desk/trainer-render.js
 // Renders trainer report from sessionStorage.trainer_rows
-// NO EXPORTS. Safe across differing HTML IDs.
+// Expects index.html IDs from the desk UI. Guards all null refs.
 
 (() => {
-  const pick = (...ids) =>
-    ids.map((id) => document.getElementById(id)).find(Boolean) || null;
+  const screenStart = document.getElementById("screen-start");
+  const screenActive = document.getElementById("screen-active");
+  const screenRender = document.getElementById("screen-render");
+  const renderRoot = document.getElementById("render-root");
 
-  const screenIndex = pick("screen-index", "screen-active");
-  const screenRender = pick("screen-render", "render-root", "render-container");
-  const btnTrainer = pick("btn-trainer", "trainer-btn");
-  const btnBack = pick("btn-back", "btn-back-render");
-  const btnPrint = pick("btn-print", "btn-print-render");
-  const titleEl = pick("desk-title", "header-title", "title");
+  const btnTrainer = document.getElementById("btn-trainer");
+  const btnBack = document.getElementById("btn-back");
+  const btnPrint = document.getElementById("btn-print");
+  const titleEl = document.getElementById("desk-title");
 
-  function readJson(key) {
+  function read(key) {
     try {
       const v = sessionStorage.getItem(key);
       return v ? JSON.parse(v) : null;
@@ -22,113 +22,109 @@
     }
   }
 
-  function setHidden(el, hidden) {
-    if (el) el.hidden = !!hidden;
+  function showActiveScreen() {
+    if (screenStart) screenStart.hidden = true;
+    if (screenActive) screenActive.hidden = false;
+    if (screenRender) screenRender.hidden = true;
+    if (btnBack) btnBack.hidden = true;
+    if (btnPrint) btnPrint.hidden = true;
+    if (titleEl) titleEl.textContent = "Class Desk";
   }
 
-  function setTitle(t) {
-    if (titleEl) titleEl.textContent = t;
-    if (!titleEl) document.title = t;
+  function showRenderScreen(title) {
+    if (screenStart) screenStart.hidden = true;
+    if (screenActive) screenActive.hidden = true;
+    if (screenRender) screenRender.hidden = false;
+    if (btnBack) btnBack.hidden = false;
+    if (btnPrint) btnPrint.hidden = false;
+    if (titleEl) titleEl.textContent = title || "Report";
   }
 
-  function clearRender() {
-    if (!screenRender) return;
-    screenRender.innerHTML = "";
+  function el(tag, text) {
+    const n = document.createElement(tag);
+    if (text != null) n.textContent = text;
+    return n;
   }
 
-  function ensureRenderHost() {
-    if (!screenRender) return null;
-
-    // If screenRender *is* the root container (e.g., render-root), use it.
-    // Otherwise create a dedicated root for consistent injection.
-    let host = screenRender.querySelector("#render-root");
-    if (!host) {
-      host = document.createElement("div");
-      host.id = "render-root";
-      screenRender.appendChild(host);
+  function renderTrainer() {
+    // always derive right before read
+    if (typeof window.CRT_deriveTrainer === "function") {
+      try { window.CRT_deriveTrainer(); } catch {}
     }
-    return host;
-  }
 
-  function renderEmpty(msg) {
-    const host = ensureRenderHost();
-    if (!host) return;
-    host.innerHTML = `<p style="margin:12px 0;opacity:.9;">${msg}</p>`;
-  }
+    const rows = read("trainer_rows") || [];
 
-  function showTrainer() {
-    // Toggle chrome safely
-    setTitle("Trainer Report");
-    setHidden(btnBack, false);
-    setHidden(btnPrint, false);
+    showRenderScreen("Trainer Report");
 
-    setHidden(screenIndex, true);
-    setHidden(screenRender, false);
-    clearRender();
+    if (!renderRoot) return;
 
-    const rows =
-      readJson("trainer_rows") ||
-      readJson("schedule_derived") ||
-      readJson("trainerRows") ||
-      [];
+    renderRoot.innerHTML = "";
 
-    if (!Array.isArray(rows) || rows.length === 0) {
-      renderEmpty("No trainer data.");
+    if (!rows.length) {
+      renderRoot.appendChild(el("p", "No trainer data."));
       return;
     }
 
-    // Normalize + sort for stable output
-    const norm = rows
-      .map((r) => ({
-        ring_name: r.ring_name || r.ring || "Unassigned",
-        class_group_name: r.class_group_name || r.class_name || "Class",
-        time: r.time || r.start_time_default || r.estimated_start_time || "",
-        status: r.status || ""
-      }))
-      .sort((a, b) => {
-        const ar = String(a.ring_name).localeCompare(String(b.ring_name));
-        if (ar !== 0) return ar;
-        return String(a.time).localeCompare(String(b.time));
-      });
+    let currentRing = "";
+    let currentGroup = "";
 
-    const byRing = {};
-    for (const r of norm) {
-      (byRing[r.ring_name] = byRing[r.ring_name] || []).push(r);
+    for (const r of rows) {
+      const ring = r.ring_name || "Unassigned";
+      const group = r.group_name || "Class Group";
+
+      if (ring !== currentRing) {
+        currentRing = ring;
+        currentGroup = "";
+        const h2 = el("h2", currentRing);
+        h2.style.margin = "16px 0 8px";
+        renderRoot.appendChild(h2);
+      }
+
+      if (group !== currentGroup) {
+        currentGroup = group;
+        const h3 = el("h3", currentGroup);
+        h3.style.margin = "10px 0 6px";
+        h3.style.opacity = "0.95";
+        renderRoot.appendChild(h3);
+
+        const headerRow = document.createElement("div");
+        headerRow.style.display = "grid";
+        headerRow.style.gridTemplateColumns = "90px 1fr 1fr";
+        headerRow.style.gap = "10px";
+        headerRow.style.fontSize = "12px";
+        headerRow.style.opacity = "0.8";
+        headerRow.style.padding = "6px 0";
+        headerRow.style.borderBottom = "1px solid rgba(255,255,255,.12)";
+        headerRow.appendChild(el("div", "Time"));
+        headerRow.appendChild(el("div", "Horse"));
+        headerRow.appendChild(el("div", "Class"));
+        renderRoot.appendChild(headerRow);
+      }
+
+      const row = document.createElement("div");
+      row.style.display = "grid";
+      row.style.gridTemplateColumns = "90px 1fr 1fr";
+      row.style.gap = "10px";
+      row.style.padding = "6px 0";
+      row.style.borderBottom = "1px solid rgba(255,255,255,.08)";
+      row.style.fontSize = "13px";
+
+      row.appendChild(el("div", r.time || ""));
+      row.appendChild(el("div", r.horse || ""));
+      row.appendChild(el("div", r.class_name || ""));
+
+      renderRoot.appendChild(row);
     }
-
-    const host = ensureRenderHost();
-    if (!host) return;
-
-    Object.keys(byRing).forEach((ringName) => {
-      const h = document.createElement("h3");
-      h.textContent = ringName;
-      h.style.margin = "16px 0 8px";
-      host.appendChild(h);
-
-      byRing[ringName].forEach((r) => {
-        const div = document.createElement("div");
-        div.style.padding = "6px 0";
-        div.style.borderBottom = "1px solid rgba(255,255,255,.10)";
-        div.innerHTML = `
-          <strong>${r.class_group_name}</strong><br/>
-          ${r.time}${r.status ? ` · ${r.status}` : ""}
-        `;
-        host.appendChild(div);
-      });
-    });
   }
 
-  function goBack() {
-    setHidden(screenRender, true);
-    setHidden(screenIndex, false);
-    setHidden(btnBack, true);
-    setHidden(btnPrint, true);
-    setTitle("Class Desk");
-    clearRender();
-  }
-
-  // Wire events (safe)
-  if (btnTrainer) btnTrainer.addEventListener("click", showTrainer);
-  if (btnBack) btnBack.addEventListener("click", goBack);
+  // Buttons
+  if (btnTrainer) btnTrainer.addEventListener("click", renderTrainer);
+  if (btnBack) btnBack.addEventListener("click", showActiveScreen);
   if (btnPrint) btnPrint.addEventListener("click", () => window.print());
+
+  // If session is active on load, ensure UI is correct
+  try {
+    const meta = read("_crt_meta");
+    if (meta && meta.active) showActiveScreen();
+  } catch {}
 })();
