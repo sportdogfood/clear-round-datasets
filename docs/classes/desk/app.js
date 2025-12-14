@@ -1,8 +1,4 @@
-
-// app.js — FULL REPLACEMENT (match on column N, payload from column 
-// app.js — FULL REPLACEMENT (N:O contract, sessionStorage-first, no ES modules) "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
-
-
+// app.js — CORRECTED (handles Rows TRUE / "TRUE", preserves session logic)
 
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
@@ -23,7 +19,7 @@
     "rings"
   ]);
 
-  const REFRESH_MS = 9 * 60 * 1000; // 9 minutes
+  const REFRESH_MS = 9 * 60 * 1000;
 
   function buildUrl() {
     return [
@@ -45,6 +41,10 @@
     } catch {
       return v;
     }
+  }
+
+  function isTrue(v) {
+    return v === true || v === "true" || v === "TRUE" || v === 1 || v === "1";
   }
 
   async function hydrateSession() {
@@ -77,7 +77,7 @@
       found[key] = safeParse(row[1]);
     }
 
-    // overwrite session state
+    // always overwrite known keys
     for (const key of ALLOWED_KEYS) {
       if (key in found) {
         sessionStorage.setItem(key, JSON.stringify(found[key]));
@@ -86,8 +86,8 @@
       }
     }
 
-    // live_data gate
-    if (found.live_status !== true) {
+    // live_data gate (Rows TRUE handling)
+    if (!isTrue(found.live_status)) {
       sessionStorage.removeItem("live_data");
     }
 
@@ -102,13 +102,8 @@
     console.log("[CRT] session ready", found);
   }
 
-  // initial load
   hydrateSession();
-
-  // timed refresh
   setInterval(hydrateSession, REFRESH_MS);
-
-  // expose manual refresh
   window.CRT_refreshSession = hydrateSession;
 })();
 
