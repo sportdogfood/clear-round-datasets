@@ -1,6 +1,10 @@
 (() => {
-  const root = document.getElementById("render-root");
-  if (!root) return;
+  const screenIndex = document.getElementById("screen-index");
+  const screenRender = document.getElementById("screen-render");
+  const btnTrainer = document.getElementById("btn-trainer");
+  const btnBack = document.getElementById("btn-back");
+  const btnPrint = document.getElementById("btn-print");
+  const titleEl = document.getElementById("desk-title");
 
   function read(key) {
     try {
@@ -11,116 +15,57 @@
     }
   }
 
-  const schedule = read("schedule") || [];
-  const entries = read("entries") || [];
-  const horses = read("horses") || [];
-  const rings = read("rings") || [];
+  function showTrainer() {
+    const rows = read("schedule_derived") || [];
 
-  const horseById = {};
-  horses.forEach(h => {
-    if (h.horse) horseById[h.horse] = h;
-  });
+    titleEl.textContent = "Trainer Report";
+    btnBack.hidden = false;
+    btnPrint.hidden = false;
 
-  const ringById = {};
-  rings.forEach(r => {
-    ringById[r.ring_id] = r;
-  });
+    screenIndex.hidden = true;
+    screenRender.hidden = false;
+    screenRender.innerHTML = "";
 
-  const entriesByClass = {};
-  entries.forEach(e => {
-    const cid = e.class_id;
-    if (!cid) return;
-    if (!entriesByClass[cid]) entriesByClass[cid] = [];
-    entriesByClass[cid].push(e);
-  });
-
-  const groups = {};
-
-  schedule.forEach(cls => {
-    const ringId = cls.ring;
-    const groupId = cls.class_group_id || cls.class_groupxclasses_id;
-    if (!ringId || !groupId) return;
-
-    if (!groups[ringId]) groups[ringId] = {};
-    if (!groups[ringId][groupId]) {
-      groups[ringId][groupId] = {
-        group_name: cls.class_name || "Class Group",
-        rows: []
-      };
+    if (!rows.length) {
+      screenRender.innerHTML = "<p>No schedule data.</p>";
+      return;
     }
 
-    const classEntries = entriesByClass[cls.class_id] || [];
+    const byRing = {};
 
-    classEntries.forEach(ent => {
-      groups[ringId][groupId].rows.push({
-        time:
-          cls.estimated_start_time ||
-          cls.start_time_default ||
-          cls.estimated_go_time ||
-          "",
-        class_name: cls.class_name || "",
-        horse: ent.horse || "",
-        order: ent.order_of_go ?? ""
+    rows.forEach(r => {
+      const ring = r.ring || "Unassigned";
+      byRing[ring] = byRing[ring] || [];
+      byRing[ring].push(r);
+    });
+
+    Object.keys(byRing).forEach(ring => {
+      const h = document.createElement("h3");
+      h.textContent = ring;
+      screenRender.appendChild(h);
+
+      byRing[ring].forEach(cls => {
+        const div = document.createElement("div");
+        div.style.padding = "6px 0";
+        div.style.borderBottom = "1px solid rgba(255,255,255,.1)";
+        div.innerHTML = `
+          <strong>${cls.class_group_name || cls.class_name || "Class"}</strong><br/>
+          ${cls.start_time_default || ""} · ${cls.status}
+        `;
+        screenRender.appendChild(div);
       });
     });
-  });
-
-  function el(tag, cls, txt) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (txt != null) n.textContent = txt;
-    return n;
   }
 
-  root.innerHTML = "";
+  function goBack() {
+    screenRender.hidden = true;
+    screenIndex.hidden = false;
+    btnBack.hidden = true;
+    btnPrint.hidden = true;
+    titleEl.textContent = "Class Desk";
+  }
 
-  Object.keys(groups).forEach(ringId => {
-    const ringBlock = el("section", "ring-block");
-    const ringName =
-      ringById[ringId]?.ring_name || `Ring ${ringId}`;
-    ringBlock.appendChild(el("h2", "ring-title", ringName));
-
-    const groupMap = groups[ringId];
-
-    Object.keys(groupMap).forEach(gid => {
-      const g = groupMap[gid];
-      const groupBlock = el("div", "class-group");
-
-      groupBlock.appendChild(
-        el("h3", "group-title", g.group_name)
-      );
-
-      const table = el("table", "trainer-table");
-      const thead = el("thead");
-      const trh = el("tr");
-      ["Time", "Horse", "Class"].forEach(h =>
-        trh.appendChild(el("th", null, h))
-      );
-      thead.appendChild(trh);
-      table.appendChild(thead);
-
-      const tbody = el("tbody");
-
-      g.rows.forEach(r => {
-        const tr = el("tr");
-        tr.appendChild(el("td", "t-time", r.time));
-        tr.appendChild(el("td", "t-horse", r.horse));
-        tr.appendChild(el("td", "t-class", r.class_name));
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      groupBlock.appendChild(table);
-      ringBlock.appendChild(groupBlock);
-    });
-
-    root.appendChild(ringBlock);
-  });
-
-  // Back + Print
-  const backBtn = document.getElementById("btn-back");
-  if (backBtn) backBtn.onclick = () => history.back();
-
-  const printBtn = document.getElementById("btn-print");
-  if (printBtn) printBtn.onclick = () => window.print();
+  btnTrainer.addEventListener("click", showTrainer);
+  btnBack.addEventListener("click", goBack);
+  btnPrint.addEventListener("click", () => window.print());
 })();
