@@ -1,7 +1,7 @@
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
-    window.CRT_ROWS_API_KEY || "rows-1lpXw***";
+    window.CRT_ROWS_API_KEY || "rows-1lpXwfcrOYTfAhiZYT7EMQiypUCHlPMklQWsgiqcTAbc";
 
   const SPREADSHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
   const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
