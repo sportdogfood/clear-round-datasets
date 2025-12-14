@@ -12,7 +12,7 @@
       margin: 0;
       background: #020617;
       color: #f9fafb;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
     }
 
     .desk-app {
@@ -59,7 +59,7 @@
       overflow-y: auto;
     }
 
-    .stack {
+    .desk-index {
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -73,28 +73,26 @@
 <body>
 <div class="desk-app">
 
-  <!-- HEADER -->
   <header class="desk-header">
     <button id="btn-back" class="desk-btn" hidden>&larr;</button>
     <div id="desk-title" class="desk-title">Class Desk</div>
     <button id="btn-print" class="desk-btn" hidden>Print</button>
   </header>
 
-  <!-- MAIN -->
   <main class="desk-main">
 
-    <!-- SESSION START -->
-    <section id="screen-session-start" class="stack">
+    <!-- SESSION IDLE -->
+    <section id="screen-idle" class="desk-index">
       <button id="btn-session-start" class="desk-btn primary">
-        Start Session
+        Session Start
       </button>
     </section>
 
     <!-- SESSION ACTIVE -->
-    <section id="screen-session-active" class="stack" hidden>
+    <section id="screen-active" class="desk-index" hidden>
       <button id="btn-trainer" class="desk-btn primary">Trainer</button>
       <button id="btn-entries" class="desk-btn">Entries</button>
-      <button id="btn-session-restart" class="desk-btn">Restart Session</button>
+      <button id="btn-session-restart" class="desk-btn">Session Restart</button>
     </section>
 
     <!-- RENDER -->
@@ -106,5 +104,6 @@
 <script src="./app.js"></script>
 <script src="./trainer-derive.js"></script>
 <script src="./trainer-render.js"></script>
+
 </body>
 </html>
