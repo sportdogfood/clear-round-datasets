@@ -1,3 +1,4 @@
+<!-- File: docs/classes/desk/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,8 +59,8 @@
     }
 
     .desk-btn.danger {
-      border-color: rgba(239, 68, 68, 0.9);
-      background: rgba(239, 68, 68, 0.15);
+      border-color: #dc2626;
+      background: radial-gradient(circle at top, #b91c1c, #7f1d1d 75%);
     }
 
     .desk-main {
@@ -72,38 +73,27 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-top: 18px;
+      margin-top: 24px;
     }
 
-    .desk-card {
-      border: 1px solid rgba(31, 41, 55, 0.95);
-      background: rgba(17, 24, 39, 0.6);
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .meta-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
+    .desk-meta {
+      margin-top: 14px;
       font-size: 12px;
       color: rgba(249, 250, 251, 0.75);
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      line-height: 1.35;
+      border-top: 1px solid rgba(31, 41, 55, 0.95);
+      padding-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
-    .meta-row:last-child { border-bottom: 0; }
-
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 
     [hidden] { display: none !important; }
-
-    /* Render root spacing */
-    #render-root { padding: 6px 0; }
   </style>
 </head>
 
 <body>
   <div class="desk-app">
+
     <header class="desk-header">
       <button id="btn-back" class="desk-btn" hidden>&larr;</button>
       <div id="desk-title" class="desk-title">Class Desk</div>
@@ -111,62 +101,31 @@
     </header>
 
     <main class="desk-main">
+
       <!-- SESSION START -->
       <section id="screen-start" class="desk-stack">
-        <div class="desk-card">
-          <div class="meta-row">
-            <div>Mode</div>
-            <div class="mono">desk</div>
-          </div>
-          <div class="meta-row">
-            <div>Session</div>
-            <div class="mono" id="ui-session-state">not-started</div>
-          </div>
-          <div class="meta-row">
-            <div>Last Fetch</div>
-            <div class="mono" id="ui-fetched-at">—</div>
-          </div>
-        </div>
-
         <button id="btn-session-start" class="desk-btn primary">Session Start</button>
+        <div id="session-status" class="desk-meta"></div>
       </section>
 
       <!-- SESSION ACTIVE -->
       <section id="screen-active" class="desk-stack" hidden>
-        <div class="desk-card" id="ui-meta-card">
-          <div class="meta-row">
-            <div>Session</div>
-            <div class="mono" id="ui-session-id">—</div>
-          </div>
-          <div class="meta-row">
-            <div>Last Fetch</div>
-            <div class="mono" id="ui-fetched-at-2">—</div>
-          </div>
-          <div class="meta-row">
-            <div>live_status</div>
-            <div class="mono" id="ui-live-status">—</div>
-          </div>
-          <div class="meta-row">
-            <div>Loaded</div>
-            <div class="mono" id="ui-loaded-counts">—</div>
-          </div>
-        </div>
-
         <button id="btn-trainer" class="desk-btn primary">Trainer</button>
         <button id="btn-entries" class="desk-btn">Entries</button>
         <button id="btn-session-restart" class="desk-btn danger">Session Restart</button>
+        <div id="session-meta" class="desk-meta"></div>
       </section>
 
       <!-- RENDER -->
       <section id="screen-render" hidden>
         <div id="render-root"></div>
       </section>
+
     </main>
   </div>
 
-  <!-- No exports. No modules. Load derive + render first, controller last -->
+  <script src="./app.js"></script>
   <script src="./trainer-derive.js"></script>
   <script src="./trainer-render.js"></script>
-  <script src="./app.js"></script>
 </body>
 </html>
