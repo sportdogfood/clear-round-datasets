@@ -1,4 +1,7 @@
 (() => {
+  const root = document.getElementById("render-root");
+  if (!root) return;
+
   function read(key) {
     try {
       const v = sessionStorage.getItem(key);
@@ -8,92 +11,116 @@
     }
   }
 
-  function write(key, value) {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  }
-
   const schedule = read("schedule") || [];
-  if (!schedule.length) return;
+  const entries = read("entries") || [];
+  const horses = read("horses") || [];
+  const rings = read("rings") || [];
 
-  const now = new Date();
-
-  function parseTime(t) {
-    if (!t) return null;
-    const d = new Date();
-    const [hh, mm, ss] = String(t).split(":");
-    if (!hh || !mm) return null;
-    d.setHours(+hh, +mm, +(ss || 0), 0);
-    return d;
-  }
-
-  function minsDiff(a, b) {
-    return Math.round((a - b) / 60000);
-  }
-
-  const derived = schedule.map(cls => {
-    const status = cls.status || "upcoming";
-
-    const startTime =
-      parseTime(cls.estimated_start_time) ||
-      parseTime(cls.start_time_default);
-
-    const goTime = parseTime(cls.estimated_go_time);
-    const endTime = parseTime(cls.estimated_end_time);
-
-    const out = { ...cls };
-
-    // -------------------------
-    // UPCOMING — CLASS START
-    // -------------------------
-    if (status === "upcoming" && startTime) {
-      const diff = minsDiff(startTime, now);
-      out.class_notif60 = diff <= 60 && diff > 30;
-      out.class_notif30 = diff <= 30 && diff > 0;
-    } else {
-      out.class_notif60 = false;
-      out.class_notif30 = false;
-    }
-
-    // -------------------------
-    // UPCOMING — GO TIME
-    // -------------------------
-    if (status === "upcoming" && goTime) {
-      const diff = minsDiff(goTime, now);
-      out.go_notif60 = diff <= 60 && diff > 30;
-      out.go_notif30 = diff <= 30 && diff > 0;
-    } else {
-      out.go_notif60 = false;
-      out.go_notif30 = false;
-    }
-
-    // -------------------------
-    // LIVE CHECK
-    // -------------------------
-    if (status === "upcoming" && endTime) {
-      out.check_live = now >= endTime;
-    } else {
-      out.check_live = false;
-    }
-
-    // -------------------------
-    // LIVE
-    // -------------------------
-    out.live_notifNow = status === "live";
-
-    // -------------------------
-    // COMPLETED
-    // -------------------------
-    out.completed_notifDone = status === "completed";
-
-    return out;
+  const horseById = {};
+  horses.forEach(h => {
+    if (h.horse) horseById[h.horse] = h;
   });
 
-  write("schedule_derived", derived);
-
-  write("_trainer_meta", {
-    derived_at: new Date().toISOString(),
-    count: derived.length
+  const ringById = {};
+  rings.forEach(r => {
+    ringById[r.ring_id] = r;
   });
 
-  console.log("[TRAINER] derived schedule ready", derived.length);
+  const entriesByClass = {};
+  entries.forEach(e => {
+    const cid = e.class_id;
+    if (!cid) return;
+    if (!entriesByClass[cid]) entriesByClass[cid] = [];
+    entriesByClass[cid].push(e);
+  });
+
+  const groups = {};
+
+  schedule.forEach(cls => {
+    const ringId = cls.ring;
+    const groupId = cls.class_group_id || cls.class_groupxclasses_id;
+    if (!ringId || !groupId) return;
+
+    if (!groups[ringId]) groups[ringId] = {};
+    if (!groups[ringId][groupId]) {
+      groups[ringId][groupId] = {
+        group_name: cls.class_name || "Class Group",
+        rows: []
+      };
+    }
+
+    const classEntries = entriesByClass[cls.class_id] || [];
+
+    classEntries.forEach(ent => {
+      groups[ringId][groupId].rows.push({
+        time:
+          cls.estimated_start_time ||
+          cls.start_time_default ||
+          cls.estimated_go_time ||
+          "",
+        class_name: cls.class_name || "",
+        horse: ent.horse || "",
+        order: ent.order_of_go ?? ""
+      });
+    });
+  });
+
+  function el(tag, cls, txt) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
+
+  root.innerHTML = "";
+
+  Object.keys(groups).forEach(ringId => {
+    const ringBlock = el("section", "ring-block");
+    const ringName =
+      ringById[ringId]?.ring_name || `Ring ${ringId}`;
+    ringBlock.appendChild(el("h2", "ring-title", ringName));
+
+    const groupMap = groups[ringId];
+
+    Object.keys(groupMap).forEach(gid => {
+      const g = groupMap[gid];
+      const groupBlock = el("div", "class-group");
+
+      groupBlock.appendChild(
+        el("h3", "group-title", g.group_name)
+      );
+
+      const table = el("table", "trainer-table");
+      const thead = el("thead");
+      const trh = el("tr");
+      ["Time", "Horse", "Class"].forEach(h =>
+        trh.appendChild(el("th", null, h))
+      );
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = el("tbody");
+
+      g.rows.forEach(r => {
+        const tr = el("tr");
+        tr.appendChild(el("td", "t-time", r.time));
+        tr.appendChild(el("td", "t-horse", r.horse));
+        tr.appendChild(el("td", "t-class", r.class_name));
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      groupBlock.appendChild(table);
+      ringBlock.appendChild(groupBlock);
+    });
+
+    root.appendChild(ringBlock);
+  });
+
+  // Back + Print
+  const backBtn = document.getElementById("btn-back");
+  if (backBtn) backBtn.onclick = () => history.back();
+
+  const printBtn = document.getElementById("btn-print");
+  if (printBtn) printBtn.onclick = () => window.print();
 })();
