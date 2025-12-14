@@ -1,12 +1,14 @@
-
-// trainer-derive.js
-// Derive trainer-ready rows from sessionStorage datasets.
-// Reads: schedule, entries, horses, rings
-// Writes: sessionStorage.trainer_rows
-// NO DOM. NO FETCH. NO EXPORTS.
+// trainer-render.js
+// Renders trainer report from sessionStorage.trainer_rows
+// Calls derive on-demand so session-start can hydrate first.
 
 (() => {
-  const OUT_KEY = "trainer_rows";
+  const screenIndex = document.getElementById("screen-index");
+  const screenRender = document.getElementById("screen-render");
+  const btnTrainer = document.getElementById("btn-trainer");
+  const btnBack = document.getElementById("btn-back");
+  const btnPrint = document.getElementById("btn-print");
+  const titleEl = document.getElementById("desk-title");
 
   function read(key) {
     try {
@@ -17,146 +19,112 @@
     }
   }
 
-  function write(key, val) {
-    try {
-      sessionStorage.setItem(key, JSON.stringify(val));
-    } catch (e) {
-      console.error("[CRT] failed to write", key, e);
+  function el(tag, cls, txt) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
+
+  function showTrainer() {
+    // IMPORTANT: derive AFTER session-start hydrated storage
+    if (typeof window.CRT_trainerDerive === "function") {
+      window.CRT_trainerDerive();
     }
-  }
 
-  const schedule = read("schedule") || [];
-  const entries = read("entries") || [];
-  const horses = read("horses") || [];
-  const rings = read("rings") || [];
+    const rows = read("trainer_rows") || [];
 
-  // ---- lookups ----
-  const ringNameById = {};
-  for (const r of rings) {
-    const id = r?.ring_id ?? r?.ring ?? r?.id;
-    if (id == null) continue;
-    const name = r?.ring_name ?? r?.name ?? r?.label;
-    ringNameById[String(id)] = name ? String(name) : String(id);
-  }
+    titleEl.textContent = "Trainer Report";
+    btnBack.hidden = false;
+    btnPrint.hidden = false;
 
-  const horseLabelById = {};
-  for (const h of horses) {
-    const id = h?.horse ?? h?.horse_id ?? h?.id;
-    if (id == null) continue;
-    const label =
-      h?.horse_name ??
-      h?.name ??
-      h?.display_name ??
-      h?.horse_label ??
-      h?.label ??
-      null;
-    horseLabelById[String(id)] = label ? String(label) : String(id);
-  }
+    screenIndex.hidden = true;
+    screenRender.hidden = false;
+    screenRender.innerHTML = "";
 
-  const entriesByClass = {};
-  for (const e of entries) {
-    const cid = e?.class_id ?? e?.class ?? e?.classid;
-    if (cid == null) continue;
-    const key = String(cid);
-    if (!entriesByClass[key]) entriesByClass[key] = [];
-    entriesByClass[key].push(e);
-  }
+    if (!rows.length) {
+      screenRender.innerHTML = "<p>No trainer data.</p>";
+      return;
+    }
 
-  // ---- build rows ----
-  const rows = [];
+    // group: ring -> class_group
+    let curRing = null;
+    let curGroup = null;
 
-  for (const cls of schedule) {
-    const classId = cls?.class_id ?? cls?.classid ?? cls?.id;
-    if (classId == null) continue;
+    for (const r of rows) {
+      if (r.ring_name !== curRing) {
+        curRing = r.ring_name;
+        curGroup = null;
 
-    const classKey = String(classId);
-    const classEntries = entriesByClass[classKey] || [];
-    if (!classEntries.length) continue;
+        const ringH = el("h2", "ring-title", curRing);
+        ringH.style.margin = "16px 0 8px";
+        screenRender.appendChild(ringH);
+      }
 
-    const ringIdRaw = cls?.ring ?? cls?.ring_id ?? cls?.ringid ?? cls?.ringId;
-    const ringId = ringIdRaw == null ? "" : String(ringIdRaw);
-    const ringName = ringId ? (ringNameById[ringId] || ringId) : "Unassigned";
+      if (r.class_group_name !== curGroup) {
+        curGroup = r.class_group_name;
 
-    const groupKeyRaw =
-      cls?.class_group_id ??
-      cls?.class_groupxclasses_id ??
-      cls?.class_group ??
-      cls?.group_id ??
-      classId;
+        const groupH = el("h3", "group-title", curGroup);
+        groupH.style.margin = "10px 0 6px";
+        screenRender.appendChild(groupH);
 
-    const groupKey = groupKeyRaw == null ? classKey : String(groupKeyRaw);
+        const table = el("table", "trainer-table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
 
-    const groupName =
-      cls?.class_group_name ??
-      cls?.group_name ??
-      cls?.class_name ??
-      cls?.name ??
-      "Class";
+        const thead = document.createElement("thead");
+        const trh = document.createElement("tr");
+        ["Time", "Horse", "Class"].forEach((h) => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          th.style.textAlign = "left";
+          th.style.padding = "6px 4px";
+          th.style.borderBottom = "1px solid rgba(255,255,255,.15)";
+          trh.appendChild(th);
+        });
+        thead.appendChild(trh);
+        table.appendChild(thead);
 
-    const className = cls?.class_name ?? cls?.name ?? "";
+        const tbody = document.createElement("tbody");
+        table.appendChild(tbody);
 
-    const time =
-      cls?.estimated_start_time ??
-      cls?.start_time_default ??
-      cls?.estimated_go_time ??
-      cls?.time ??
-      "";
+        // attach tbody to group for subsequent rows
+        table.dataset.crtGroupKey = curGroup;
+        screenRender.appendChild(table);
+      }
 
-    const status = cls?.status ?? cls?.class_status ?? "";
+      // append to last table
+      const tables = screenRender.querySelectorAll("table.trainer-table");
+      const table = tables[tables.length - 1];
+      const tbody = table ? table.querySelector("tbody") : null;
+      if (!tbody) continue;
 
-    for (const ent of classEntries) {
-      const horseIdRaw = ent?.horse ?? ent?.horse_id ?? ent?.horseid ?? ent?.horseId ?? "";
-      const horseId = horseIdRaw == null ? "" : String(horseIdRaw);
-      const horseLabel = horseId ? (horseLabelById[horseId] || horseId) : "";
+      const tr = document.createElement("tr");
 
-      const order =
-        ent?.order_of_go ??
-        ent?.order ??
-        ent?.oog ??
-        ent?.go_order ??
-        "";
+      const tdTime = el("td", "t-time", r.time || "");
+      const tdHorse = el("td", "t-horse", r.horse_label || "");
+      const tdClass = el("td", "t-class", r.class_name || "");
 
-      rows.push({
-        ring_id: ringId,
-        ring_name: ringName,
-        class_id: classKey,
-        class_group_key: groupKey,
-        class_group_name: String(groupName),
-        class_name: String(className),
-        time: time == null ? "" : String(time),
-        order: order == null ? "" : String(order),
-        horse_id: horseId,
-        horse_label: horseLabel,
-        status: status == null ? "" : String(status)
+      [tdTime, tdHorse, tdClass].forEach((td) => {
+        td.style.padding = "6px 4px";
+        td.style.borderBottom = "1px solid rgba(255,255,255,.08)";
+        tr.appendChild(td);
       });
+
+      tbody.appendChild(tr);
     }
   }
 
-  // ---- sort: ring -> group -> time -> order -> horse ----
-  function norm(s) {
-    return (s == null ? "" : String(s)).toLowerCase();
+  function goBack() {
+    screenRender.hidden = true;
+    screenIndex.hidden = false;
+    btnBack.hidden = true;
+    btnPrint.hidden = true;
+    titleEl.textContent = "Class Desk";
   }
-  function numOrInf(v) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
-  }
-  rows.sort((a, b) => {
-    const r = norm(a.ring_name).localeCompare(norm(b.ring_name));
-    if (r) return r;
 
-    const g = norm(a.class_group_name).localeCompare(norm(b.class_group_name));
-    if (g) return g;
-
-    const t = norm(a.time).localeCompare(norm(b.time));
-    if (t) return t;
-
-    const o = numOrInf(a.order) - numOrInf(b.order);
-    if (o) return o;
-
-    return norm(a.horse_label).localeCompare(norm(b.horse_label));
-  });
-
-  write(OUT_KEY, rows);
-  console.log("[CRT] trainer_rows derived", rows.length);
+  if (btnTrainer) btnTrainer.addEventListener("click", showTrainer);
+  if (btnBack) btnBack.addEventListener("click", goBack);
+  if (btnPrint) btnPrint.addEventListener("click", () => window.print());
 })();
 
