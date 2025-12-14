@@ -2,6 +2,7 @@
 // app.js — FULL REPLACEMENT (match on column N, payload from column 
 // app.js — FULL REPLACEMENT (N:O contract, sessionStorage-first, no ES modules)
 
+
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
@@ -10,18 +11,18 @@
 
   const SHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
   const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
+  const RANGE = "N2:O9999";
 
-  // N = label, O = payload
-  const RANGE = "N2:O999";
-
-  const REQUIRED_KEYS = [
+  const ALLOWED_KEYS = new Set([
     "live_status",
     "live_data",
     "schedule",
     "entries",
     "horses",
     "rings"
-  ];
+  ]);
+
+  const REFRESH_MS = 9 * 60 * 1000; // 9 minutes
 
   function buildUrl() {
     return [
@@ -45,9 +46,8 @@
     }
   }
 
-  async function fetchAll() {
+  async function hydrateSession() {
     const res = await fetch(buildUrl(), {
-      method: "GET",
       headers: {
         Authorization: `Bearer ${ROWS_API_KEY}`,
         Accept: "application/json"
@@ -60,7 +60,6 @@
     }
 
     const data = await res.json();
-
     const rows =
       data.items ||
       data.values ||
@@ -73,42 +72,45 @@
     for (const row of rows) {
       if (!row || row.length < 2) continue;
       const key = String(row[0] || "").trim();
-      if (!key) continue;
-
+      if (!ALLOWED_KEYS.has(key)) continue;
       found[key] = safeParse(row[1]);
     }
 
-    // write schedule, entries, horses, rings always
-    ["schedule", "entries", "horses", "rings"].forEach(k => {
-      if (k in found) {
-        sessionStorage.setItem(k, JSON.stringify(found[k]));
-      }
-    });
-
-    // live_status gate
-    if ("live_status" in found) {
-      sessionStorage.setItem("live_status", JSON.stringify(found.live_status));
-
-      if (found.live_status === true && "live_data" in found) {
-        sessionStorage.setItem(
-          "live_data",
-          JSON.stringify(found.live_data)
-        );
+    // overwrite session state
+    for (const key of ALLOWED_KEYS) {
+      if (key in found) {
+        sessionStorage.setItem(key, JSON.stringify(found[key]));
       } else {
-        sessionStorage.removeItem("live_data");
+        sessionStorage.removeItem(key);
       }
+    }
+
+    // live_data gate
+    if (found.live_status !== true) {
+      sessionStorage.removeItem("live_data");
     }
 
     sessionStorage.setItem(
       "_crt_meta",
       JSON.stringify({
         fetched_at: new Date().toISOString(),
-        keys: Object.keys(found)
+        refresh_ms: REFRESH_MS
       })
     );
 
-    console.log("[CRT] session hydrated", found);
+    console.log("[CRT] session ready", found);
   }
+
+  // initial load
+  hydrateSession();
+
+  // timed refresh
+  setInterval(hydrateSession, REFRESH_MS);
+
+  // expose manual refresh
+  window.CRT_refreshSession = hydrateSession;
+})();
+
 
   fetchAll();
 })();
