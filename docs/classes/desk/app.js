@@ -1,7 +1,7 @@
 // File: docs/classes/desk/app.js
 // Session Start / Restart + Rows hydration (N=key, O=payload) -> sessionStorage
 // UI: start -> active -> (trainer render) -> back
-
+ 
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
