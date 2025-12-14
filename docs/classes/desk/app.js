@@ -1,7 +1,4 @@
 (() => {
-  // --------------------------------------------------
-  // CONFIG
-  // --------------------------------------------------
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
     window.CRT_ROWS_API_KEY ||
@@ -20,22 +17,19 @@
     "rings"
   ]);
 
-  const REFRESH_MS = 9 * 60 * 1000;
+  // ---------------- DOM ----------------
+  const idle = document.getElementById("screen-idle");
+  const active = document.getElementById("screen-active");
+  const render = document.getElementById("screen-render");
 
-  // --------------------------------------------------
-  // DOM
-  // --------------------------------------------------
   const btnStart = document.getElementById("btn-session-start");
   const btnRestart = document.getElementById("btn-session-restart");
   const btnTrainer = document.getElementById("btn-trainer");
-  const btnEntries = document.getElementById("btn-entries");
+  const btnBack = document.getElementById("btn-back");
+  const btnPrint = document.getElementById("btn-print");
+  const title = document.getElementById("desk-title");
 
-  const screenIndex = document.getElementById("screen-index");
-  const screenRender = document.getElementById("screen-render");
-
-  // --------------------------------------------------
-  // HELPERS
-  // --------------------------------------------------
+  // ---------------- HELPERS ----------------
   function buildUrl() {
     return [
       ROWS_API_BASE,
@@ -51,20 +45,34 @@
   function safeParse(v) {
     if (v == null) return null;
     if (typeof v !== "string") return v;
-    try {
-      return JSON.parse(v);
-    } catch {
-      return v;
-    }
+    try { return JSON.parse(v); } catch { return v; }
   }
 
   function isTrue(v) {
     return v === true || v === "TRUE" || v === "true" || v === 1 || v === "1";
   }
 
-  // --------------------------------------------------
-  // SESSION HYDRATION (ROWS INVOKE)
-  // --------------------------------------------------
+  function setActiveUI() {
+    idle.hidden = true;
+    active.hidden = false;
+    render.hidden = true;
+    btnBack.hidden = true;
+    btnPrint.hidden = true;
+    title.textContent = "Class Desk";
+    sessionStorage.setItem("session_active", "1");
+  }
+
+  function setIdleUI() {
+    idle.hidden = false;
+    active.hidden = true;
+    render.hidden = true;
+    btnBack.hidden = true;
+    btnPrint.hidden = true;
+    title.textContent = "Class Desk";
+    sessionStorage.removeItem("session_active");
+  }
+
+  // ---------------- SESSION FETCH ----------------
   async function hydrateSession() {
     const res = await fetch(buildUrl(), {
       headers: {
@@ -72,14 +80,9 @@
         Accept: "application/json"
       }
     });
-
-    if (!res.ok) {
-      console.error("[ROWS] fetch failed", res.status);
-      return;
-    }
+    if (!res.ok) return;
 
     const data = await res.json();
-
     const rows =
       data.items ||
       data.values ||
@@ -88,7 +91,6 @@
       );
 
     const found = {};
-
     for (const row of rows) {
       if (!row || row.length < 2) continue;
       const key = String(row[0] || "").trim();
@@ -96,87 +98,57 @@
       found[key] = safeParse(row[1]);
     }
 
-    // overwrite datasets
-    ["schedule", "entries", "horses", "rings"].forEach(k => {
-      if (k in found) {
-        sessionStorage.setItem(k, JSON.stringify(found[k]));
-      }
+    ["schedule","entries","horses","rings"].forEach(k => {
+      sessionStorage.setItem(k, JSON.stringify(found[k] || []));
     });
 
-    // live_status
-    if ("live_status" in found) {
-      sessionStorage.setItem(
-        "live_status",
-        JSON.stringify(found.live_status)
-      );
-    }
-
-    // gate live_data
-    if (isTrue(found.live_status) && "live_data" in found) {
-      sessionStorage.setItem(
-        "live_data",
-        JSON.stringify(found.live_data)
-      );
+    sessionStorage.setItem("live_status", JSON.stringify(found.live_status));
+    if (isTrue(found.live_status)) {
+      sessionStorage.setItem("live_data", JSON.stringify(found.live_data || null));
     } else {
       sessionStorage.removeItem("live_data");
     }
 
-    sessionStorage.setItem(
-      "_crt_meta",
-      JSON.stringify({
-        fetched_at: new Date().toISOString(),
-        refresh_ms: REFRESH_MS
-      })
-    );
+    sessionStorage.setItem("_crt_meta", JSON.stringify({
+      fetched_at: new Date().toISOString()
+    }));
 
-    console.log("[CRT] session hydrated", Object.keys(found));
+    // derive trainer rows immediately
+    if (window.CRT_deriveTrainer) {
+      window.CRT_deriveTrainer();
+    }
   }
 
-  // --------------------------------------------------
-  // UI STATE
-  // --------------------------------------------------
-  function setSessionActive(active) {
-    btnStart.hidden = active;
-    btnRestart.hidden = !active;
-    btnTrainer.hidden = !active;
-    btnEntries.hidden = !active;
+  // ---------------- EVENTS ----------------
+  btnStart.onclick = async () => {
+    await hydrateSession();
+    setActiveUI();
+  };
+
+  btnRestart.onclick = async () => {
+    await hydrateSession();
+    setActiveUI();
+  };
+
+  btnTrainer.onclick = () => {
+    title.textContent = "Trainer Report";
+    btnBack.hidden = false;
+    btnPrint.hidden = false;
+    active.hidden = true;
+    render.hidden = false;
+    window.CRT_renderTrainer && window.CRT_renderTrainer();
+  };
+
+  btnBack.onclick = () => {
+    setActiveUI();
+  };
+
+  btnPrint.onclick = () => window.print();
+
+  // ---------------- INIT ----------------
+  if (sessionStorage.getItem("session_active") === "1") {
+    setActiveUI();
+  } else {
+    setIdleUI();
   }
-
-  // --------------------------------------------------
-  // EVENTS
-  // --------------------------------------------------
-  btnStart.addEventListener("click", async () => {
-    await hydrateSession();
-    setSessionActive(true);
-  });
-
-  btnRestart.addEventListener("click", async () => {
-    await hydrateSession();
-  });
-
-  btnTrainer.addEventListener("click", () => {
-    screenIndex.hidden = true;
-    screenRender.hidden = false;
-
-    if (window.CRT_renderTrainer) {
-      window.CRT_renderTrainer();
-    }
-  });
-
-  btnEntries.addEventListener("click", () => {
-    screenIndex.hidden = true;
-    screenRender.hidden = false;
-
-    if (window.CRT_renderEntries) {
-      window.CRT_renderEntries();
-    }
-  });
-
-  // --------------------------------------------------
-  // INIT
-  // --------------------------------------------------
-  setSessionActive(false);
-
-  // expose manual refresh (admin/debug)
-  window.CRT_refreshSession = hydrateSession;
 })();
