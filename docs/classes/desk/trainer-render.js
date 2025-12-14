@@ -1,11 +1,8 @@
-(() => {
-  const screenIndex = document.getElementById("screen-index");
-  const screenRender = document.getElementById("screen-render");
-  const btnTrainer = document.getElementById("btn-trainer");
-  const btnBack = document.getElementById("btn-back");
-  const btnPrint = document.getElementById("btn-print");
-  const titleEl = document.getElementById("desk-title");
+// trainer-render.js
+// Reads sessionStorage.trainer_rows and renders into provided root.
+// NO FETCH. NO EXPORTS.
 
+(() => {
   function read(key) {
     try {
       const v = sessionStorage.getItem(key);
@@ -15,53 +12,102 @@
     }
   }
 
-  function showTrainer() {
+  function el(tag, cls, txt) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll("\"", "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  window.CRT_trainerRender = function CRT_trainerRender({ root }) {
     const rows = read("trainer_rows") || [];
+    if (!root) return;
 
-    titleEl.textContent = "Trainer Report";
-    btnBack.hidden = false;
-    btnPrint.hidden = false;
-
-    screenIndex.hidden = true;
-    screenRender.hidden = false;
-    screenRender.innerHTML = "";
+    root.innerHTML = "";
 
     if (!rows.length) {
-      screenRender.innerHTML = "<p>No trainer data.</p>";
+      root.innerHTML = "<p style=\"opacity:.85;margin:0;padding:6px 0;\">No trainer data.</p>";
       return;
     }
 
-    let currentRing = null;
-
+    // Group by ring -> group_name
+    const byRing = {};
     rows.forEach(r => {
-      if (r.ring_name !== currentRing) {
-        currentRing = r.ring_name;
-        const h = document.createElement("h3");
-        h.textContent = currentRing;
-        h.style.marginTop = "16px";
-        screenRender.appendChild(h);
-      }
-
-      const div = document.createElement("div");
-      div.style.padding = "6px 0";
-      div.style.borderBottom = "1px solid rgba(255,255,255,.1)";
-      div.innerHTML = `
-        <strong>${r.class_group_name}</strong><br/>
-        ${r.time} · ${r.status}
-      `;
-      screenRender.appendChild(div);
+      const ring = r.ring_name || "Unassigned";
+      if (!byRing[ring]) byRing[ring] = [];
+      byRing[ring].push(r);
     });
-  }
 
-  function goBack() {
-    screenRender.hidden = true;
-    screenIndex.hidden = false;
-    btnBack.hidden = true;
-    btnPrint.hidden = true;
-    titleEl.textContent = "Class Desk";
-  }
+    const ringNames = Object.keys(byRing).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-  btnTrainer.addEventListener("click", showTrainer);
-  btnBack.addEventListener("click", goBack);
-  btnPrint.addEventListener("click", () => window.print());
+    ringNames.forEach(ringName => {
+      const ringBlock = el("section", "ring-block");
+      ringBlock.appendChild(el("h2", "ring-title", ringName));
+
+      const items = byRing[ringName];
+
+      // secondary group by group_name
+      const byGroup = {};
+      items.forEach(r => {
+        const g = r.group_name || "Class Group";
+        if (!byGroup[g]) byGroup[g] = [];
+        byGroup[g].push(r);
+      });
+
+      const groupNames = Object.keys(byGroup).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      groupNames.forEach(gname => {
+        const groupBlock = el("div", "class-group");
+        groupBlock.appendChild(el("h3", "group-title", gname));
+
+        // Table
+        const table = el("table", "trainer-table");
+        const thead = document.createElement("thead");
+        const trh = document.createElement("tr");
+
+        ["Time", "Order", "Horse", "Class"].forEach(h => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          trh.appendChild(th);
+        });
+
+        thead.appendChild(trh);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+
+        byGroup[gname].forEach(r => {
+          const tr = document.createElement("tr");
+
+          const time = esc(r.time || "");
+          const order = esc(r.order || "");
+          const horse = esc(r.horse_name ? `${r.horse_name} (${r.horse})` : (r.horse || ""));
+          const cls = esc(r.class_name || "");
+
+          tr.innerHTML = `
+            <td class="t-time">${time}</td>
+            <td class="t-order">${order}</td>
+            <td class="t-horse">${horse}</td>
+            <td class="t-class">${cls}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        groupBlock.appendChild(table);
+        ringBlock.appendChild(groupBlock);
+      });
+
+      root.appendChild(ringBlock);
+    });
+  };
 })();
