@@ -1,93 +1,24 @@
-
+<!-- File: docs/classes/desk/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Class Desk – Trainer / Entries</title>
+  <title>Class Desk</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="stylesheet" href="./trainer-print.css" media="print" />
 
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #020617;
-      color: #f9fafb;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .desk-app {
-      max-width: 420px;
-      margin: 0 auto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #020617;
-    }
-
-    .desk-header {
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 12px;
-      border-bottom: 1px solid rgba(31, 41, 55, 0.95);
-      background: #020617;
-    }
-
-    .desk-title {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .desk-btn {
-      height: 34px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
-      background: #111827;
-      color: #f9fafb;
-      font-size: 13px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .desk-btn.primary {
-      border-color: #2563eb;
-      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
-    }
-
-    .desk-btn.danger {
-      border-color: #dc2626;
-      background: radial-gradient(circle at top, #b91c1c, #7f1d1d 75%);
-    }
-
-    .desk-main {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-    }
-
-    .desk-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .desk-meta {
-      margin-top: 14px;
-      font-size: 12px;
-      color: rgba(249, 250, 251, 0.75);
-      line-height: 1.35;
-      border-top: 1px solid rgba(31, 41, 55, 0.95);
-      padding-top: 12px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    [hidden] { display: none !important; }
+    body{margin:0;padding:0;background:#020617;color:#f9fafb;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .desk-app{max-width:420px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:#020617}
+    .desk-header{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid rgba(31,41,55,.95);background:#020617}
+    .desk-title{font-size:16px;font-weight:600}
+    .desk-btn{height:34px;padding:0 14px;border-radius:999px;border:1px solid #4b5563;background:#111827;color:#f9fafb;font-size:13px;cursor:pointer}
+    .desk-btn.primary{border-color:#2563eb;background:radial-gradient(circle at top,#1d4ed8,#1e3a8a 75%)}
+    .desk-main{flex:1;padding:12px;overflow-y:auto}
+    .desk-index{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+    .meta{margin-top:10px;font-size:12px;color:rgba(249,250,251,.75)}
+    [hidden]{display:none!important}
   </style>
 </head>
 
@@ -103,17 +34,17 @@
     <main class="desk-main">
 
       <!-- SESSION START -->
-      <section id="screen-start" class="desk-stack">
+      <section id="screen-start" class="desk-index">
         <button id="btn-session-start" class="desk-btn primary">Session Start</button>
-        <div id="session-status" class="desk-meta"></div>
+        <div id="start-meta" class="meta" hidden></div>
       </section>
 
       <!-- SESSION ACTIVE -->
-      <section id="screen-active" class="desk-stack" hidden>
+      <section id="screen-active" class="desk-index" hidden>
         <button id="btn-trainer" class="desk-btn primary">Trainer</button>
         <button id="btn-entries" class="desk-btn">Entries</button>
-        <button id="btn-session-restart" class="desk-btn danger">Session Restart</button>
-        <div id="session-meta" class="desk-meta"></div>
+        <button id="btn-session-restart" class="desk-btn">Session Restart</button>
+        <div id="active-meta" class="meta"></div>
       </section>
 
       <!-- RENDER -->
