@@ -7,6 +7,7 @@
   const SHEET_ID = "5ahMWHjNZcMFf3lYqYPfJ9";
   const TABLE_ID = "4f87331e-ee18-4f0c-9325-e3b5e247a907";
   const RANGE = "N2:O9999";
+  const REFRESH_MS = 9 * 60 * 1000;
 
   const ALLOWED_KEYS = new Set([
     "live_status",
@@ -17,26 +18,25 @@
     "rings"
   ]);
 
-  // ---------------- DOM ----------------
-  const idle = document.getElementById("screen-idle");
-  const active = document.getElementById("screen-active");
-  const render = document.getElementById("screen-render");
+  const els = {
+    start: document.getElementById("screen-start"),
+    index: document.getElementById("screen-index"),
+    render: document.getElementById("screen-render"),
+    title: document.getElementById("desk-title"),
+    back: document.getElementById("btn-back"),
+    print: document.getElementById("btn-print"),
+    btnStart: document.getElementById("btn-session-start"),
+    btnRestart: document.getElementById("btn-session-restart"),
+    btnTrainer: document.getElementById("btn-trainer")
+  };
 
-  const btnStart = document.getElementById("btn-session-start");
-  const btnRestart = document.getElementById("btn-session-restart");
-  const btnTrainer = document.getElementById("btn-trainer");
-  const btnBack = document.getElementById("btn-back");
-  const btnPrint = document.getElementById("btn-print");
-  const title = document.getElementById("desk-title");
-
-  // ---------------- HELPERS ----------------
   function buildUrl() {
     return [
       ROWS_API_BASE,
       "spreadsheets",
-      encodeURIComponent(SHEET_ID),
+      SHEET_ID,
       "tables",
-      encodeURIComponent(TABLE_ID),
+      TABLE_ID,
       "values",
       encodeURIComponent(RANGE)
     ].join("/");
@@ -44,7 +44,6 @@
 
   function safeParse(v) {
     if (v == null) return null;
-    if (typeof v !== "string") return v;
     try { return JSON.parse(v); } catch { return v; }
   }
 
@@ -52,103 +51,88 @@
     return v === true || v === "TRUE" || v === "true" || v === 1 || v === "1";
   }
 
-  function setActiveUI() {
-    idle.hidden = true;
-    active.hidden = false;
-    render.hidden = true;
-    btnBack.hidden = true;
-    btnPrint.hidden = true;
-    title.textContent = "Class Desk";
-    sessionStorage.setItem("session_active", "1");
-  }
-
-  function setIdleUI() {
-    idle.hidden = false;
-    active.hidden = true;
-    render.hidden = true;
-    btnBack.hidden = true;
-    btnPrint.hidden = true;
-    title.textContent = "Class Desk";
-    sessionStorage.removeItem("session_active");
-  }
-
-  // ---------------- SESSION FETCH ----------------
   async function hydrateSession() {
     const res = await fetch(buildUrl(), {
-      headers: {
-        Authorization: `Bearer ${ROWS_API_KEY}`,
-        Accept: "application/json"
-      }
+      headers: { Authorization: `Bearer ${ROWS_API_KEY}` }
     });
-    if (!res.ok) return;
+    if (!res.ok) throw new Error("ROWS fetch failed");
 
     const data = await res.json();
-    const rows =
-      data.items ||
-      data.values ||
-      (data.data?.rows || []).map(r =>
-        Array.isArray(r.cells) ? r.cells.map(c => c.value) : []
-      );
+    const rows = data.items || data.values || [];
 
     const found = {};
-    for (const row of rows) {
-      if (!row || row.length < 2) continue;
-      const key = String(row[0] || "").trim();
-      if (!ALLOWED_KEYS.has(key)) continue;
-      found[key] = safeParse(row[1]);
-    }
-
-    ["schedule","entries","horses","rings"].forEach(k => {
-      sessionStorage.setItem(k, JSON.stringify(found[k] || []));
+    rows.forEach(r => {
+      if (!r || r.length < 2) return;
+      const k = String(r[0]).trim();
+      if (ALLOWED_KEYS.has(k)) found[k] = safeParse(r[1]);
     });
 
-    sessionStorage.setItem("live_status", JSON.stringify(found.live_status));
-    if (isTrue(found.live_status)) {
-      sessionStorage.setItem("live_data", JSON.stringify(found.live_data || null));
-    } else {
-      sessionStorage.removeItem("live_data");
-    }
+    ["schedule","entries","horses","rings"].forEach(k => {
+      if (k in found) sessionStorage.setItem(k, JSON.stringify(found[k]));
+    });
+
+    if ("live_status" in found)
+      sessionStorage.setItem("live_status", JSON.stringify(found.live_status));
+
+    if (isTrue(found.live_status) && "live_data" in found)
+      sessionStorage.setItem("live_data", JSON.stringify(found.live_data));
 
     sessionStorage.setItem("_crt_meta", JSON.stringify({
-      fetched_at: new Date().toISOString()
+      fetched_at: new Date().toISOString(),
+      refresh_ms: REFRESH_MS
     }));
-
-    // derive trainer rows immediately
-    if (window.CRT_deriveTrainer) {
-      window.CRT_deriveTrainer();
-    }
   }
 
-  // ---------------- EVENTS ----------------
-  btnStart.onclick = async () => {
+  function activateSession() {
+    sessionStorage.setItem("session_active", "true");
+
+    els.start.hidden = true;
+    els.index.hidden = false;
+    els.render.hidden = true;
+
+    els.title.textContent = "Class Desk";
+    els.back.hidden = true;
+    els.print.hidden = true;
+  }
+
+  async function startSession() {
     await hydrateSession();
-    setActiveUI();
-  };
+    activateSession();
 
-  btnRestart.onclick = async () => {
-    await hydrateSession();
-    setActiveUI();
-  };
+    // derive AFTER hydrate
+    if (window.dispatchEvent)
+      window.dispatchEvent(new Event("storage"));
+  }
 
-  btnTrainer.onclick = () => {
-    title.textContent = "Trainer Report";
-    btnBack.hidden = false;
-    btnPrint.hidden = false;
-    active.hidden = true;
-    render.hidden = false;
-    window.CRT_renderTrainer && window.CRT_renderTrainer();
-  };
+  function restartSession() {
+    [
+      "schedule","entries","horses","rings",
+      "live_status","live_data","trainer_rows"
+    ].forEach(k => sessionStorage.removeItem(k));
 
-  btnBack.onclick = () => {
-    setActiveUI();
-  };
+    sessionStorage.removeItem("session_active");
+    els.index.hidden = true;
+    els.render.hidden = true;
+    els.start.hidden = false;
+    els.title.textContent = "Class Desk";
+  }
 
-  btnPrint.onclick = () => window.print();
+  function showTrainer() {
+    els.index.hidden = true;
+    els.render.hidden = false;
+    els.back.hidden = false;
+    els.print.hidden = false;
+    els.title.textContent = "Trainer Report";
+  }
 
-  // ---------------- INIT ----------------
-  if (sessionStorage.getItem("session_active") === "1") {
-    setActiveUI();
-  } else {
-    setIdleUI();
+  els.btnStart.onclick = startSession;
+  els.btnRestart.onclick = restartSession;
+  els.btnTrainer.onclick = showTrainer;
+  els.back.onclick = () => activateSession();
+  els.print.onclick = () => window.print();
+
+  // restore existing session
+  if (sessionStorage.getItem("session_active") === "true") {
+    activateSession();
   }
 })();
