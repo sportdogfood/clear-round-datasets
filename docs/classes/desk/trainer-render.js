@@ -1,6 +1,6 @@
 // trainer-render.js
 // Reads sessionStorage.trainer_rows and renders into provided root.
-// NO FETCH. NO EXPORTS.NEW
+// NO FETCH. NO EXPORTS.
 
 (() => {
   function read(key) {
