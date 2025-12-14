@@ -1,10 +1,10 @@
-<!-- File: docs/classes/desk/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Class Desk</title>
+  <title>Class Desk – Trainer / Entries</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <link rel="stylesheet" href="./trainer-print.css" media="print" />
 
   <style>
@@ -57,6 +57,11 @@
       background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
     }
 
+    .desk-btn.danger {
+      border-color: rgba(239, 68, 68, 0.9);
+      background: rgba(239, 68, 68, 0.15);
+    }
+
     .desk-main {
       flex: 1;
       padding: 12px;
@@ -70,21 +75,30 @@
       margin-top: 18px;
     }
 
-    .desk-meta {
-      margin-top: 10px;
+    .desk-card {
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      background: rgba(17, 24, 39, 0.6);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
       font-size: 12px;
       color: rgba(249, 250, 251, 0.75);
-      line-height: 1.35;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
+    .meta-row:last-child { border-bottom: 0; }
 
-    .desk-note {
-      margin-top: 10px;
-      font-size: 13px;
-      color: rgba(249, 250, 251, 0.85);
-      line-height: 1.4;
-    }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 
     [hidden] { display: none !important; }
+
+    /* Render root spacing */
+    #render-root { padding: 6px 0; }
   </style>
 </head>
 
@@ -97,23 +111,50 @@
     </header>
 
     <main class="desk-main">
-      <!-- SESSION-START -->
-      <section id="screen-start">
-        <div class="desk-note">Start session to load Rows data.</div>
-        <div class="desk-stack">
-          <button id="btn-session-start" class="desk-btn primary">Session Start</button>
+      <!-- SESSION START -->
+      <section id="screen-start" class="desk-stack">
+        <div class="desk-card">
+          <div class="meta-row">
+            <div>Mode</div>
+            <div class="mono">desk</div>
+          </div>
+          <div class="meta-row">
+            <div>Session</div>
+            <div class="mono" id="ui-session-state">not-started</div>
+          </div>
+          <div class="meta-row">
+            <div>Last Fetch</div>
+            <div class="mono" id="ui-fetched-at">—</div>
+          </div>
         </div>
-        <div id="start-meta" class="desk-meta"></div>
+
+        <button id="btn-session-start" class="desk-btn primary">Session Start</button>
       </section>
 
-      <!-- SESSION-ACTIVE -->
-      <section id="screen-active" hidden>
-        <div class="desk-stack">
-          <button id="btn-trainer" class="desk-btn primary">Trainer</button>
-          <button id="btn-entries" class="desk-btn">Entries</button>
-          <button id="btn-session-restart" class="desk-btn">Session Restart</button>
+      <!-- SESSION ACTIVE -->
+      <section id="screen-active" class="desk-stack" hidden>
+        <div class="desk-card" id="ui-meta-card">
+          <div class="meta-row">
+            <div>Session</div>
+            <div class="mono" id="ui-session-id">—</div>
+          </div>
+          <div class="meta-row">
+            <div>Last Fetch</div>
+            <div class="mono" id="ui-fetched-at-2">—</div>
+          </div>
+          <div class="meta-row">
+            <div>live_status</div>
+            <div class="mono" id="ui-live-status">—</div>
+          </div>
+          <div class="meta-row">
+            <div>Loaded</div>
+            <div class="mono" id="ui-loaded-counts">—</div>
+          </div>
         </div>
-        <div id="active-meta" class="desk-meta"></div>
+
+        <button id="btn-trainer" class="desk-btn primary">Trainer</button>
+        <button id="btn-entries" class="desk-btn">Entries</button>
+        <button id="btn-session-restart" class="desk-btn danger">Session Restart</button>
       </section>
 
       <!-- RENDER -->
@@ -123,6 +164,7 @@
     </main>
   </div>
 
+  <!-- No exports. No modules. Load derive + render first, controller last -->
   <script src="./trainer-derive.js"></script>
   <script src="./trainer-render.js"></script>
   <script src="./app.js"></script>
