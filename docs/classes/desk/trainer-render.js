@@ -1,6 +1,6 @@
 // trainer-render.js
 // Renders trainer report from sessionStorage.trainer_rows
-// NO FETCH. NO EXPORTS.
+// NO FETCH. NO EXPORTS. NEW
 
 (() => {
   const screenActive =
