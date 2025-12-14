@@ -1,31 +1,19 @@
 // trainer-render.js
 // Renders trainer report from sessionStorage.trainer_rows
-// NO FETCH. NO EXPORTS. NEW
+// NO EXPORTS. Safe across differing HTML IDs.
 
 (() => {
-  const screenActive =
-    document.getElementById("screen-active") ||
-    document.getElementById("screen-index") ||
-    null;
+  const pick = (...ids) =>
+    ids.map((id) => document.getElementById(id)).find(Boolean) || null;
 
-  const screenRender =
-    document.getElementById("screen-render") ||
-    document.getElementById("render-root") ||
-    null;
+  const screenIndex = pick("screen-index", "screen-active");
+  const screenRender = pick("screen-render", "render-root", "render-container");
+  const btnTrainer = pick("btn-trainer", "trainer-btn");
+  const btnBack = pick("btn-back", "btn-back-render");
+  const btnPrint = pick("btn-print", "btn-print-render");
+  const titleEl = pick("desk-title", "header-title", "title");
 
-  const btnTrainer =
-    document.getElementById("btn-trainer") || null;
-
-  const btnBack =
-    document.getElementById("btn-back") || null;
-
-  const btnPrint =
-    document.getElementById("btn-print") || null;
-
-  const titleEl =
-    document.getElementById("desk-title") || null;
-
-  function read(key) {
+  function readJson(key) {
     try {
       const v = sessionStorage.getItem(key);
       return v ? JSON.parse(v) : null;
@@ -34,116 +22,112 @@
     }
   }
 
-  function el(tag, txt) {
-    const n = document.createElement(tag);
-    if (txt != null) n.textContent = txt;
-    return n;
+  function setHidden(el, hidden) {
+    if (el) el.hidden = !!hidden;
+  }
+
+  function setTitle(t) {
+    if (titleEl) titleEl.textContent = t;
+    if (!titleEl) document.title = t;
+  }
+
+  function clearRender() {
+    if (!screenRender) return;
+    screenRender.innerHTML = "";
+  }
+
+  function ensureRenderHost() {
+    if (!screenRender) return null;
+
+    // If screenRender *is* the root container (e.g., render-root), use it.
+    // Otherwise create a dedicated root for consistent injection.
+    let host = screenRender.querySelector("#render-root");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "render-root";
+      screenRender.appendChild(host);
+    }
+    return host;
+  }
+
+  function renderEmpty(msg) {
+    const host = ensureRenderHost();
+    if (!host) return;
+    host.innerHTML = `<p style="margin:12px 0;opacity:.9;">${msg}</p>`;
   }
 
   function showTrainer() {
-    if (typeof window.CRT_trainerDerive === "function") {
-      window.CRT_trainerDerive();
-    }
+    // Toggle chrome safely
+    setTitle("Trainer Report");
+    setHidden(btnBack, false);
+    setHidden(btnPrint, false);
 
-    const rows = read("trainer_rows") || [];
+    setHidden(screenIndex, true);
+    setHidden(screenRender, false);
+    clearRender();
 
-    if (titleEl) titleEl.textContent = "Trainer Report";
-    if (btnBack) btnBack.hidden = false;
-    if (btnPrint) btnPrint.hidden = false;
+    const rows =
+      readJson("trainer_rows") ||
+      readJson("schedule_derived") ||
+      readJson("trainerRows") ||
+      [];
 
-    if (screenActive) screenActive.hidden = true;
-    if (!screenRender) return;
-
-    screenRender.hidden = false;
-    screenRender.innerHTML = "";
-
-    if (!rows.length) {
-      screenRender.appendChild(el("p", "No trainer data."));
+    if (!Array.isArray(rows) || rows.length === 0) {
+      renderEmpty("No trainer data.");
       return;
     }
 
-    let curRing = "";
-    let curGroup = "";
-    let table = null;
-    let tbody = null;
-
-    for (const r of rows) {
-      if ((r.ring_name || "") !== curRing) {
-        curRing = r.ring_name || "Unassigned";
-        curGroup = "";
-        table = null;
-        tbody = null;
-
-        const h2 = el("h2", curRing);
-        h2.style.margin = "16px 0 8px";
-        screenRender.appendChild(h2);
-      }
-
-      if ((r.class_group_name || "") !== curGroup) {
-        curGroup = r.class_group_name || "Class";
-
-        const h3 = el("h3", curGroup);
-        h3.style.margin = "10px 0 6px";
-        screenRender.appendChild(h3);
-
-        table = document.createElement("table");
-        table.className = "trainer-table";
-        table.style.width = "100%";
-        table.style.borderCollapse = "collapse";
-
-        const thead = document.createElement("thead");
-        const trh = document.createElement("tr");
-
-        ["Time", "Horse", "Class"].forEach((t) => {
-          const th = el("th", t);
-          th.style.textAlign = "left";
-          th.style.padding = "6px 4px";
-          th.style.borderBottom = "1px solid rgba(255,255,255,.15)";
-          trh.appendChild(th);
-        });
-
-        thead.appendChild(trh);
-        table.appendChild(thead);
-
-        tbody = document.createElement("tbody");
-        table.appendChild(tbody);
-
-        screenRender.appendChild(table);
-      }
-
-      if (!tbody) continue;
-
-      const tr = document.createElement("tr");
-
-      const tdTime = el("td", r.time || "");
-      const tdHorse = el("td", r.horse_label || "");
-      const tdClass = el("td", r.class_name || "");
-
-      [tdTime, tdHorse, tdClass].forEach((td) => {
-        td.style.padding = "6px 4px";
-        td.style.borderBottom = "1px solid rgba(255,255,255,.08)";
+    // Normalize + sort for stable output
+    const norm = rows
+      .map((r) => ({
+        ring_name: r.ring_name || r.ring || "Unassigned",
+        class_group_name: r.class_group_name || r.class_name || "Class",
+        time: r.time || r.start_time_default || r.estimated_start_time || "",
+        status: r.status || ""
+      }))
+      .sort((a, b) => {
+        const ar = String(a.ring_name).localeCompare(String(b.ring_name));
+        if (ar !== 0) return ar;
+        return String(a.time).localeCompare(String(b.time));
       });
 
-      tr.appendChild(tdTime);
-      tr.appendChild(tdHorse);
-      tr.appendChild(tdClass);
-
-      tbody.appendChild(tr);
+    const byRing = {};
+    for (const r of norm) {
+      (byRing[r.ring_name] = byRing[r.ring_name] || []).push(r);
     }
+
+    const host = ensureRenderHost();
+    if (!host) return;
+
+    Object.keys(byRing).forEach((ringName) => {
+      const h = document.createElement("h3");
+      h.textContent = ringName;
+      h.style.margin = "16px 0 8px";
+      host.appendChild(h);
+
+      byRing[ringName].forEach((r) => {
+        const div = document.createElement("div");
+        div.style.padding = "6px 0";
+        div.style.borderBottom = "1px solid rgba(255,255,255,.10)";
+        div.innerHTML = `
+          <strong>${r.class_group_name}</strong><br/>
+          ${r.time}${r.status ? ` · ${r.status}` : ""}
+        `;
+        host.appendChild(div);
+      });
+    });
   }
 
   function goBack() {
-    if (screenRender) {
-      screenRender.hidden = true;
-      screenRender.innerHTML = "";
-    }
-    if (screenActive) screenActive.hidden = false;
-
-    if (btnBack) btnBack.hidden = true;
-    if (btnPrint) btnPrint.hidden = true;
-    if (titleEl) titleEl.textContent = "Class Desk";
+    setHidden(screenRender, true);
+    setHidden(screenIndex, false);
+    setHidden(btnBack, true);
+    setHidden(btnPrint, true);
+    setTitle("Class Desk");
+    clearRender();
   }
 
+  // Wire events (safe)
   if (btnTrainer) btnTrainer.addEventListener("click", showTrainer);
   if (btnBack) btnBack.addEventListener("click", goBack);
   if (btnPrint) btnPrint.addEventListener("click", () => window.print());
