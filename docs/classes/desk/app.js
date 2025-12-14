@@ -1,4 +1,3 @@
-
 (() => {
   const ROWS_API_BASE = "https://api.rows.com/v1";
   const ROWS_API_KEY =
@@ -43,7 +42,13 @@
   }
 
   function isTrue(v) {
-    return v === true || v === "TRUE" || v === "true" || v === 1 || v === "1";
+    return (
+      v === true ||
+      v === "TRUE" ||
+      v === "true" ||
+      v === 1 ||
+      v === "1"
+    );
   }
 
   async function hydrateSession() {
@@ -73,14 +78,14 @@
       found[key] = safeParse(row[1]);
     }
 
-    // ALWAYS overwrite base datasets
+    // always overwrite base datasets
     ["schedule", "entries", "horses", "rings"].forEach(k => {
       if (k in found) {
         sessionStorage.setItem(k, JSON.stringify(found[k]));
       }
     });
 
-    // store live_status
+    // live_status always written
     if ("live_status" in found) {
       sessionStorage.setItem(
         "live_status",
@@ -88,12 +93,16 @@
       );
     }
 
-    // gate ONLY the write of live_data
-    if (isTrue(found.live_status) && "live_data" in found) {
-      sessionStorage.setItem(
-        "live_data",
-        JSON.stringify(found.live_data)
-      );
+    // live_data only written when live_status === true
+    if (isTrue(found.live_status)) {
+      if ("live_data" in found) {
+        sessionStorage.setItem(
+          "live_data",
+          JSON.stringify(found.live_data)
+        );
+      }
+    } else {
+      sessionStorage.removeItem("live_data");
     }
 
     sessionStorage.setItem(
@@ -111,3 +120,4 @@
   setInterval(hydrateSession, REFRESH_MS);
   window.CRT_refreshSession = hydrateSession;
 })();
+
