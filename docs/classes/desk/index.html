@@ -1,15 +1,16 @@
+<!-- File: docs/classes/desk/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Class Desk</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link rel="stylesheet" href="./trainer-print.css" media="print" />
 
   <style>
     body {
       margin: 0;
+      padding: 0;
       background: #020617;
       color: #f9fafb;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -21,6 +22,7 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      background: #020617;
     }
 
     .desk-header {
@@ -29,7 +31,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 12px;
-      border-bottom: 1px solid rgba(31,41,55,.95);
+      border-bottom: 1px solid rgba(31, 41, 55, 0.95);
+      background: #020617;
     }
 
     .desk-title {
@@ -46,6 +49,7 @@
       color: #f9fafb;
       font-size: 13px;
       cursor: pointer;
+      user-select: none;
     }
 
     .desk-btn.primary {
@@ -59,11 +63,25 @@
       overflow-y: auto;
     }
 
-    .desk-index {
+    .desk-stack {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-top: 24px;
+      margin-top: 18px;
+    }
+
+    .desk-meta {
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(249, 250, 251, 0.75);
+      line-height: 1.35;
+    }
+
+    .desk-note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(249, 250, 251, 0.85);
+      line-height: 1.4;
     }
 
     [hidden] { display: none !important; }
@@ -72,7 +90,6 @@
 
 <body>
   <div class="desk-app">
-
     <header class="desk-header">
       <button id="btn-back" class="desk-btn" hidden>&larr;</button>
       <div id="desk-title" class="desk-title">Class Desk</div>
@@ -80,30 +97,34 @@
     </header>
 
     <main class="desk-main">
-
-      <!-- SESSION START -->
-      <section id="screen-start" class="desk-index">
-        <button id="btn-session-start" class="desk-btn primary">
-          Start Session
-        </button>
+      <!-- SESSION-START -->
+      <section id="screen-start">
+        <div class="desk-note">Start session to load Rows data.</div>
+        <div class="desk-stack">
+          <button id="btn-session-start" class="desk-btn primary">Session Start</button>
+        </div>
+        <div id="start-meta" class="desk-meta"></div>
       </section>
 
-      <!-- ACTIVE INDEX -->
-      <section id="screen-index" class="desk-index" hidden>
-        <button id="btn-trainer" class="desk-btn primary">Trainer</button>
-        <button id="btn-entries" class="desk-btn">Entries</button>
-        <button id="btn-session-restart" class="desk-btn">Restart Session</button>
+      <!-- SESSION-ACTIVE -->
+      <section id="screen-active" hidden>
+        <div class="desk-stack">
+          <button id="btn-trainer" class="desk-btn primary">Trainer</button>
+          <button id="btn-entries" class="desk-btn">Entries</button>
+          <button id="btn-session-restart" class="desk-btn">Session Restart</button>
+        </div>
+        <div id="active-meta" class="desk-meta"></div>
       </section>
 
       <!-- RENDER -->
-      <section id="screen-render" hidden></section>
-
+      <section id="screen-render" hidden>
+        <div id="render-root"></div>
+      </section>
     </main>
   </div>
 
-  <script src="./app.js"></script>
   <script src="./trainer-derive.js"></script>
   <script src="./trainer-render.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
-
