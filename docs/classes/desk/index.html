@@ -1,3 +1,4 @@
+<!-- File: docs/classes/desk/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,6 @@
       --accent-soft: #1d4ed8;
       --pill-radius: 999px;
       --header-h: 52px;
-      --nav-h: 72px;
     }
 
     * {
@@ -25,8 +25,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -41,9 +40,7 @@
       align-items: stretch;
     }
 
-    [hidden] {
-      display: none !important;
-    }
+    [hidden] { display: none !important; }
 
     .app {
       width: 100%;
@@ -137,7 +134,7 @@
     .app-main {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 12px 8px;
+      padding: 8px 12px 12px;
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
 
@@ -170,14 +167,6 @@
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
     }
 
-    .start-logo-img {
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: radial-gradient(circle at top, #1d4ed8, #020617 70%);
-      opacity: 0.55;
-    }
-
     .start-logo-title {
       font-size: 18px;
       font-weight: 600;
@@ -188,6 +177,9 @@
       font-size: 12px;
       color: #d1d5db;
       opacity: 0.9;
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.35;
     }
 
     /* Long pills (rows) ----------------------------------------- */
@@ -276,28 +268,38 @@
         0 2px 8px rgba(15, 23, 42, 0.95);
     }
 
-    /* Report blocks --------------------------------------------- */
+    /* Notes / report blocks ------------------------------------- */
 
     .report-title {
+      margin: 6px 6px 0;
       font-size: 12px;
       color: rgba(148, 163, 184, 0.95);
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      margin: 6px 6px 4px;
     }
 
     .report-note {
       margin: 10px 6px 0;
       font-size: 12px;
-      color: rgba(249, 250, 251, 0.75);
+      color: rgba(249, 250, 251, 0.78);
       line-height: 1.35;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    button {
-      font-family: inherit;
+    .json-pre {
+      margin: 10px 0 0;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(75, 85, 99, 0.9);
+      background: rgba(2, 6, 23, 0.7);
+      color: #e5e7eb;
+      font-size: 12px;
+      overflow: auto;
+      max-height: 60vh;
     }
+
+    button { font-family: inherit; }
   </style>
 </head>
 
