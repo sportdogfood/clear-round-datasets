@@ -1,8 +1,7 @@
 // app.js (Class Desk desktop)
-// - Uses TackLists cadence: state + render() + createRow()
-// - Requires: session-start + session-restart
-// - Rows hydrate ONLY on session-start/session-restart (not on load)
-// - Starts a 9-min refresh timer ONLY after session-start/restart
+// - TackLists UI + CSS cadence: state + render() + createRow()
+// - Rows hydrate ONLY on New session / Restart session (not on load)
+// - Starts 9-min refresh timer ONLY after session start/restart
 // - Trainer/Entries are screens; Print from header-action on those screens
 
 (() => {
@@ -34,17 +33,17 @@
   const K = {
     sess: "_desk_session",
     meta: "_crt_meta",
-    // datasets:
     live_status: "live_status",
     live_data: "live_data",
     schedule: "schedule",
     entries: "entries",
     horses: "horses",
-    rings: "rings"
+    rings: "rings",
+    trainer_rows: "trainer_rows"
   };
 
   // ----------------------------
-  // DOM refs
+  // DOM refs (TackLists IDs)
   // ----------------------------
   const headerTitle = document.getElementById("header-title");
   const headerBack = document.getElementById("header-back");
@@ -130,8 +129,8 @@
 
     const dr = data?.data?.rows;
     if (Array.isArray(dr)) {
-      return dr.map(r =>
-        Array.isArray(r.cells) ? r.cells.map(c => c.value) : []
+      return dr.map((r) =>
+        Array.isArray(r.cells) ? r.cells.map((c) => c.value) : []
       );
     }
     return [];
@@ -169,7 +168,11 @@
   // ----------------------------
   function createNewSession() {
     const sess = {
-      session_id: "desk-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+      session_id:
+        "desk-" +
+        Date.now().toString(36) +
+        "-" +
+        Math.random().toString(36).slice(2, 7),
       started_at: nowISO(),
       last_hydrate_at: null
     };
@@ -185,7 +188,16 @@
 
   function clearDeskData() {
     // keep session object; clear datasets/meta (fresh pull overwrites anyway)
-    [K.meta, K.live_status, K.live_data, K.schedule, K.entries, K.horses, K.rings, "trainer_rows"].forEach(ssRemove);
+    [
+      K.meta,
+      K.live_status,
+      K.live_data,
+      K.schedule,
+      K.entries,
+      K.horses,
+      K.rings,
+      K.trainer_rows
+    ].forEach(ssRemove);
   }
 
   function startRefreshTimer() {
@@ -195,8 +207,7 @@
       if (!sess?.session_id) return; // no session -> do nothing
       if (state.currentScreen === "start") return; // don't auto-fetch on start screen
       await hydrateSession(false);
-      // don't change screens; just update current UI tags
-      render();
+      render(); // update tags
     }, REFRESH_MS);
   }
 
@@ -210,8 +221,8 @@
       const { ok, found } = await fetchRowsKeyValue();
       if (!ok) return;
 
-      // always overwrite base datasets if present
-      ["schedule", "entries", "horses", "rings"].forEach(k => {
+      // overwrite base datasets if present
+      ["schedule", "entries", "horses", "rings"].forEach((k) => {
         if (k in found) ssSet(k, found[k]);
       });
 
@@ -245,19 +256,29 @@
 
       console.log("[DESK] hydrated", meta);
 
-      // derive trainer rows if the file provides it
+      // derive trainer rows if available
       if (deriveTrainer && typeof window.CRT_trainerDerive === "function") {
         const rows = window.CRT_trainerDerive();
-        // CRT_trainerDerive already writes trainer_rows
-        console.log("[DESK] trainer derive done", Array.isArray(rows) ? rows.length : null);
+        console.log(
+          "[DESK] trainer derive done",
+          Array.isArray(rows) ? rows.length : null
+        );
       }
     } finally {
       state.isHydrating = false;
     }
   }
 
+  async function doSessionStartOrRestart() {
+    createNewSession();
+    clearDeskData();
+    await hydrateSession(true);
+    startRefreshTimer();
+    setScreen("active");
+  }
+
   // ----------------------------
-  // UI helpers (same cadence)
+  // UI helpers (TackLists cadence)
   // ----------------------------
   function createRow(label, options = {}) {
     const { tagText, tagVariant, tagPositive, active, onClick } = options;
@@ -307,14 +328,17 @@
     render();
   }
 
-  function metaTag() {
+  function metaTimeString() {
     const meta = ssGet(K.meta);
-    if (!meta?.fetched_at) return "no fetch";
+    if (!meta?.fetched_at) return "";
     try {
-      const t = new Date(meta.fetched_at).toLocaleTimeString();
-      return t;
+      return new Date(meta.fetched_at).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit"
+      });
     } catch {
-      return "fetched";
+      return "";
     }
   }
 
@@ -324,8 +348,9 @@
   function renderHeader() {
     headerTitle.textContent = titleForScreen(state.currentScreen);
 
-    // back button cadence like TackLists: hide on start, show otherwise
-    headerBack.style.visibility = (state.currentScreen === "start") ? "hidden" : "visible";
+    // TackLists cadence: hide on start, show otherwise
+    headerBack.style.visibility =
+      state.currentScreen === "start" ? "hidden" : "visible";
 
     if (state.currentScreen === "trainer" || state.currentScreen === "entries") {
       headerAction.hidden = false;
@@ -344,48 +369,44 @@
     const logo = document.createElement("div");
     logo.className = "start-logo";
     logo.innerHTML = `
-      <div class="start-logo-mark"></div>
-      <div class="start-logo-title">Class Desk</div>
-      <div class="start-logo-subtitle">Session-start → Trainer / Entries → Print</div>
+      <div class="start-logo-mark">
+        <div class="start-logo-img" aria-hidden="true"></div>
+      </div>
+      <div class="start-logo-text">
+        <div class="start-logo-title">Class Desk</div>
+        <div class="start-logo-subtitle">Trainer / Entries · Print</div>
+      </div>
     `;
     screenRoot.appendChild(logo);
 
     const hasSession = !!ssGet(K.sess)?.session_id;
 
     if (!hasSession) {
-      createRow("Session start", {
+      createRow("New session", {
         tagVariant: "boolean",
         tagPositive: false,
         onClick: async () => {
-          console.log("[DESK] session-start click");
-          createNewSession();
-          clearDeskData();
-          await hydrateSession(true);
-          startRefreshTimer();
-          setScreen("active");
+          console.log("[DESK] new session click");
+          await doSessionStartOrRestart();
         }
       });
       return;
     }
 
+    // Match TackLists look: boolean dot (no time pill)
     createRow("In-session", {
       active: true,
-      tagText: metaTag(),
-      tagVariant: "count",
+      tagVariant: "boolean",
       tagPositive: true,
       onClick: () => setScreen("active")
     });
 
-    createRow("Session restart", {
+    createRow("Restart session", {
       tagVariant: "boolean",
       tagPositive: false,
       onClick: async () => {
-        console.log("[DESK] session-restart click");
-        createNewSession();
-        clearDeskData();
-        await hydrateSession(true);
-        startRefreshTimer();
-        setScreen("active");
+        console.log("[DESK] restart session click");
+        await doSessionStartOrRestart();
       }
     });
   }
@@ -394,11 +415,10 @@
     screenRoot.innerHTML = "";
 
     createRow("Trainer", {
-      tagText: metaTag(),
+      tagText: metaTimeString() || "—",
       tagVariant: "count",
-      tagPositive: true,
-      onClick: async () => {
-        // ensure trainer_rows exists at time of click
+      tagPositive: !!metaTimeString(),
+      onClick: () => {
         if (typeof window.CRT_trainerDerive === "function") {
           window.CRT_trainerDerive();
         }
@@ -418,17 +438,13 @@
       tagPositive: false,
       onClick: async () => {
         console.log("[DESK] session-restart click (active)");
-        createNewSession();
-        clearDeskData();
-        await hydrateSession(true);
-        startRefreshTimer();
-        render(); // stay on active
+        await doSessionStartOrRestart();
       }
     });
 
+    const meta = ssGet(K.meta);
     const note = document.createElement("div");
     note.className = "report-note";
-    const meta = ssGet(K.meta);
     note.textContent = meta?.counts
       ? `schedule:${meta.counts.schedule ?? "?"} entries:${meta.counts.entries ?? "?"} horses:${meta.counts.horses ?? "?"} rings:${meta.counts.rings ?? "?"} · live_status:${meta.live_status}`
       : "no meta";
@@ -438,12 +454,20 @@
   function renderTrainerScreen() {
     screenRoot.innerHTML = "";
 
-    const rows = ssGet("trainer_rows") || [];
+    const rows = ssGet(K.trainer_rows) || [];
     const meta = ssGet(K.meta);
 
     const label = document.createElement("div");
     label.className = "report-title";
-    label.textContent = `Trainer report · ${meta?.fetched_at ? new Date(meta.fetched_at).toLocaleTimeString() : "no fetch"} · rows:${rows.length}`;
+    label.textContent = `Trainer report · ${
+      meta?.fetched_at
+        ? new Date(meta.fetched_at).toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit"
+          })
+        : "no fetch"
+    } · rows:${rows.length}`;
     screenRoot.appendChild(label);
 
     const root = document.createElement("div");
@@ -477,7 +501,15 @@
 
     const label = document.createElement("div");
     label.className = "report-title";
-    label.textContent = `Entries · ${meta?.fetched_at ? new Date(meta.fetched_at).toLocaleTimeString() : "no fetch"}`;
+    label.textContent = `Entries · ${
+      meta?.fetched_at
+        ? new Date(meta.fetched_at).toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit"
+          })
+        : "no fetch"
+    }`;
     screenRoot.appendChild(label);
 
     const root = document.createElement("div");
