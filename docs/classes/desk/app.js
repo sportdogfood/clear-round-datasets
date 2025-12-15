@@ -1,8 +1,10 @@
 // app.js (Class Desk desktop)
-// - TackLists UI + CSS cadence: state + render() + createRow()
-// - Rows hydrate ONLY on New session / Restart session (not on load)
-// - Starts 9-min refresh timer ONLY after session start/restart
-// - Trainer/Entries are screens; Print from header-action on those screens
+// Goal: Match TackLists UI cadence + styling
+// - Start screen: New session / In-session / Restart session (boolean dots; NO time pill)
+// - Active screen: Trainer / Entries / Restart session
+// - Hydrate ONLY on New session / Restart session (not on load)
+// - Start a 9-min refresh timer ONLY after New session / Restart session
+// - Print button in header only on Trainer + Entries
 
 (() => {
   "use strict";
@@ -49,6 +51,7 @@
   const headerBack = document.getElementById("header-back");
   const headerAction = document.getElementById("header-action");
   const screenRoot = document.getElementById("screen-root");
+  const navRow = document.getElementById("nav-row"); // optional; not used (no bottom nav)
 
   if (!headerTitle || !headerBack || !headerAction || !screenRoot) return;
 
@@ -187,7 +190,7 @@
   }
 
   function clearDeskData() {
-    // keep session object; clear datasets/meta (fresh pull overwrites anyway)
+    // keep session object; clear datasets/meta
     [
       K.meta,
       K.live_status,
@@ -204,10 +207,10 @@
     if (state.refreshTimer) return;
     state.refreshTimer = setInterval(async () => {
       const sess = ssGet(K.sess);
-      if (!sess?.session_id) return; // no session -> do nothing
-      if (state.currentScreen === "start") return; // don't auto-fetch on start screen
+      if (!sess?.session_id) return;
+      if (state.currentScreen === "start") return; // no auto-fetch on start
       await hydrateSession(false);
-      render(); // update tags
+      render();
     }, REFRESH_MS);
   }
 
@@ -221,15 +224,12 @@
       const { ok, found } = await fetchRowsKeyValue();
       if (!ok) return;
 
-      // overwrite base datasets if present
       ["schedule", "entries", "horses", "rings"].forEach((k) => {
         if (k in found) ssSet(k, found[k]);
       });
 
-      // store live_status as-is (string TRUE supported)
       if ("live_status" in found) ssSet(K.live_status, found.live_status);
 
-      // gate live_data write
       if (isTrue(found.live_status) && "live_data" in found) {
         ssSet(K.live_data, found.live_data);
       } else {
@@ -239,7 +239,6 @@
       sess.last_hydrate_at = nowISO();
       ssSet(K.sess, sess);
 
-      // meta (for debug + tag)
       const meta = {
         fetched_at: sess.last_hydrate_at,
         refresh_ms: REFRESH_MS,
@@ -256,7 +255,6 @@
 
       console.log("[DESK] hydrated", meta);
 
-      // derive trainer rows if available
       if (deriveTrainer && typeof window.CRT_trainerDerive === "function") {
         const rows = window.CRT_trainerDerive();
         console.log(
@@ -269,7 +267,7 @@
     }
   }
 
-  async function doSessionStartOrRestart() {
+  async function doStartOrRestart() {
     createNewSession();
     clearDeskData();
     await hydrateSession(true);
@@ -292,7 +290,13 @@
     titleEl.textContent = label;
     row.appendChild(titleEl);
 
-    if (tagText != null || tagVariant) {
+    // IMPORTANT: boolean dot should never show text
+    if (tagVariant === "boolean") {
+      const tagEl = document.createElement("div");
+      tagEl.className = "row-tag row-tag--boolean";
+      if (tagPositive) tagEl.classList.add("row-tag--positive");
+      row.appendChild(tagEl);
+    } else if (tagText != null || tagVariant) {
       const tagEl = document.createElement("div");
       tagEl.className = "row-tag";
       if (tagVariant) tagEl.classList.add(`row-tag--${tagVariant}`);
@@ -328,9 +332,9 @@
     render();
   }
 
-  function metaTimeString() {
+  function fetchedTimeTag() {
     const meta = ssGet(K.meta);
-    if (!meta?.fetched_at) return "";
+    if (!meta?.fetched_at) return "—";
     try {
       return new Date(meta.fetched_at).toLocaleTimeString([], {
         hour: "numeric",
@@ -338,7 +342,7 @@
         second: "2-digit"
       });
     } catch {
-      return "";
+      return "—";
     }
   }
 
@@ -347,8 +351,6 @@
   // ----------------------------
   function renderHeader() {
     headerTitle.textContent = titleForScreen(state.currentScreen);
-
-    // TackLists cadence: hide on start, show otherwise
     headerBack.style.visibility =
       state.currentScreen === "start" ? "hidden" : "visible";
 
@@ -385,15 +387,12 @@
       createRow("New session", {
         tagVariant: "boolean",
         tagPositive: false,
-        onClick: async () => {
-          console.log("[DESK] new session click");
-          await doSessionStartOrRestart();
-        }
+        onClick: doStartOrRestart
       });
       return;
     }
 
-    // Match TackLists look: boolean dot (no time pill)
+    // EXACT TackLists look: green dot (no time pill)
     createRow("In-session", {
       active: true,
       tagVariant: "boolean",
@@ -401,13 +400,11 @@
       onClick: () => setScreen("active")
     });
 
+    // EXACT TackLists look: gray dot
     createRow("Restart session", {
       tagVariant: "boolean",
       tagPositive: false,
-      onClick: async () => {
-        console.log("[DESK] restart session click");
-        await doSessionStartOrRestart();
-      }
+      onClick: doStartOrRestart
     });
   }
 
@@ -415,9 +412,9 @@
     screenRoot.innerHTML = "";
 
     createRow("Trainer", {
-      tagText: metaTimeString() || "—",
+      tagText: fetchedTimeTag(),
       tagVariant: "count",
-      tagPositive: !!metaTimeString(),
+      tagPositive: fetchedTimeTag() !== "—",
       onClick: () => {
         if (typeof window.CRT_trainerDerive === "function") {
           window.CRT_trainerDerive();
@@ -433,13 +430,11 @@
       onClick: () => setScreen("entries")
     });
 
-    createRow("Session restart", {
+    // match name + behavior expectation
+    createRow("Restart session", {
       tagVariant: "boolean",
       tagPositive: false,
-      onClick: async () => {
-        console.log("[DESK] session-restart click (active)");
-        await doSessionStartOrRestart();
-      }
+      onClick: doStartOrRestart
     });
 
     const meta = ssGet(K.meta);
@@ -524,7 +519,6 @@
       return;
     }
 
-    // placeholder: your entries renderer will replace this
     const p = document.createElement("div");
     p.className = "report-note";
     p.textContent = "live_data present (renderer pending).";
