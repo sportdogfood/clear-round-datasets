@@ -1,326 +1,397 @@
-/* trainer_derive.js
- * Exposes: window.CRT_trainerDerive()
- * Reads from sessionStorage: "schedule", "entries"
- * Writes to sessionStorage: "trainer_rows"
- */
+// trainer_derive.js
+// - Produces trainer_rows from sessionStorage: schedule + entries
+// - Grouping: Ring -> class_group_id -> Classes (sorted by time)
+// - View behavior is renderer-only (default/detail toggle)
+// - Adds logs + stores trainer_debug in sessionStorage
+
 (() => {
   "use strict";
 
-  const SS = {
-    get(key) {
-      try {
-        const v = sessionStorage.getItem(key);
-        return v ? JSON.parse(v) : null;
-      } catch {
-        return null;
-      }
-    },
-    set(key, obj) {
-      try {
-        sessionStorage.setItem(key, JSON.stringify(obj));
-      } catch {}
-    }
-  };
+  // ----------------------------
+  // Storage helpers (standalone)
+  // ----------------------------
+  function ssGetRaw(key) {
+    return sessionStorage.getItem(key);
+  }
+  function ssGet(key) {
+    const v = sessionStorage.getItem(key);
+    if (!v) return null;
+    try { return JSON.parse(v); } catch { return v; }
+  }
+  function ssSet(key, obj) {
+    try { sessionStorage.setItem(key, JSON.stringify(obj)); } catch {}
+  }
+
+  // ----------------------------
+  // Safe field access
+  // ----------------------------
+  function firstDefined(...vals) {
+    for (const v of vals) if (v !== undefined && v !== null && v !== "") return v;
+    return null;
+  }
 
   function toInt(v) {
+    if (v === null || v === undefined || v === "") return null;
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
 
-  function isObj(x) {
-    return x && typeof x === "object" && !Array.isArray(x);
+  function normStr(v) {
+    if (v === null || v === undefined) return "";
+    return String(v).trim();
   }
 
-  function pick(obj, keys) {
-    for (const k of keys) {
-      if (obj && obj[k] != null && obj[k] !== "") return obj[k];
-    }
-    return null;
-  }
-
-  function timeToMin(t) {
-    if (!t || typeof t !== "string") return null;
-    // accepts "HH:MM:SS" or "HH:MM"
-    const m = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-    if (!m) return null;
-    const hh = Number(m[1]), mm = Number(m[2]);
-    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+  // time strings: "HH:MM" or "HH:MM:SS"
+  function timeToMinutes(t) {
+    const s = normStr(t);
+    if (!s) return null;
+    const parts = s.split(":").map(x => Number(x));
+    if (parts.length < 2 || parts.some(n => !Number.isFinite(n))) return null;
+    const hh = parts[0] || 0;
+    const mm = parts[1] || 0;
     return hh * 60 + mm;
   }
 
-  function normalizeTime(t) {
-    if (!t || typeof t !== "string") return null;
-    if (t === "00:00:00") return null;
-    const m = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-    if (!m) return null;
-    const hh = String(m[1]).padStart(2, "0");
-    const mm = m[2];
-    return `${hh}:${mm}`;
+  function minMinutes(a, b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return Math.min(a, b);
   }
 
-  function scheduleItems(raw) {
-    if (!Array.isArray(raw)) return [];
-    // Expect array of objects already; otherwise ignore (keep strict)
-    return raw.filter(isObj);
-  }
+  // ----------------------------
+  // Normalize schedule rows (robust to nesting)
+  // ----------------------------
+  function normalizeScheduleItem(item) {
+    const cd = item?.class_data || null;
 
-  function entryItems(raw) {
-    if (!Array.isArray(raw)) return [];
-    return raw.filter(isObj);
-  }
-
-  function scheduleClassKey(s) {
-    const classId = toInt(pick(s, ["class_id"]));
-    const classNum = toInt(pick(s, ["class_number", "class_num"]));
-    return classId != null ? `id:${classId}` : (classNum != null ? `num:${classNum}` : null);
-  }
-
-  function entryClassKey(e) {
-    const cd = e.class_data || {};
-    const ec = e.entry_class || {};
-    const classId = toInt(pick(cd, ["class_id"])) ?? toInt(pick(ec, ["class_id"])) ?? toInt(pick(e, ["class_id"]));
-    const classNum = toInt(pick(cd, ["class_number"])) ?? toInt(pick(e, ["class_number"]));
-    return classId != null ? `id:${classId}` : (classNum != null ? `num:${classNum}` : null);
-  }
-
-  function getRingFromSchedule(s) {
-    return toInt(pick(s, ["ring", "ring_id"]));
-  }
-
-  function getGroupIdFromSchedule(s) {
-    return toInt(pick(s, ["class_group_id", "group_id"]));
-  }
-
-  function getGroupSeqFromSchedule(s) {
-    // class_group_sequence is best; fallback to group_sequence
-    const a = toInt(pick(s, ["class_group_sequence"]));
-    if (a != null) return a;
-    const b = toInt(pick(s, ["group_sequence"]));
-    return b != null ? b : null;
-  }
-
-  function parseClassList(v) {
-    if (!v) return [];
-    if (Array.isArray(v)) return v.map(toInt).filter(n => n != null);
-    if (typeof v !== "string") return [];
-    return v
-      .split(",")
-      .map(s => toInt(String(s).trim()))
-      .filter(n => n != null);
-  }
-
-  function getSchedTime(s) {
-    const t = pick(s, ["estimated_go_time", "start_time", "time", "go_time"]);
-    return normalizeTime(t);
-  }
-
-  function getEntryTime(e) {
-    const ec = e.entry_class || {};
-    const cd = e.class_data || {};
-    return (
-      normalizeTime(pick(ec, ["estimated_go_time"])) ||
-      normalizeTime(pick(cd, ["estimated_go_time"])) ||
-      null
+    const ring = firstDefined(
+      item?.ring,
+      cd?.ring,
+      item?.ring_number,
+      cd?.ring_number,
+      item?.ring_id,
+      cd?.ring_id
     );
+
+    const class_group_id = firstDefined(
+      item?.class_group_id,
+      cd?.class_group_id
+    );
+
+    const group_sequence = firstDefined(
+      item?.class_group_sequence,
+      item?.group_sequence,
+      cd?.class_group_sequence,
+      cd?.group_sequence
+    );
+
+    const class_id = firstDefined(
+      item?.class_id,
+      cd?.class_id
+    );
+
+    const class_number = firstDefined(
+      item?.class_number,
+      cd?.class_number
+    );
+
+    const class_name = firstDefined(
+      item?.class_name,
+      cd?.class_name
+    );
+
+    // schedule time field is inconsistent across feeds — try common candidates
+    const sched_time = firstDefined(
+      item?.time,
+      item?.start_time,
+      item?.scheduled_time,
+      item?.estimated_start_time,
+      cd?.time,
+      cd?.start_time,
+      cd?.scheduled_time,
+      cd?.estimated_start_time
+    );
+
+    return {
+      _raw: item,
+      ring: toInt(ring) ?? ring, // keep numeric if possible
+      class_group_id: toInt(class_group_id) ?? class_group_id,
+      group_sequence: toInt(group_sequence) ?? group_sequence,
+      class_id: toInt(class_id) ?? class_id,
+      class_number: toInt(class_number) ?? class_number,
+      class_name: normStr(class_name),
+      sched_time: normStr(sched_time),
+      sched_minutes: timeToMinutes(sched_time)
+    };
   }
 
-  function build() {
-    const scheduleRaw = SS.get("schedule");
-    const entriesRaw = SS.get("entries");
+  // ----------------------------
+  // Normalize entry rows (robust to nesting)
+  // ----------------------------
+  function normalizeEntryItem(item) {
+    const ec = item?.entry_class || null;
+    const cd = item?.class_data || null;
 
-    const schedule = scheduleItems(scheduleRaw);
-    const entries = entryItems(entriesRaw);
+    const class_id = firstDefined(
+      item?.class_id,
+      ec?.class_id,
+      cd?.class_id
+    );
 
-    // Index barn entries by ring|group|classKey
-    const entryIndex = new Map();
+    const horse = firstDefined(item?.horse, item?.horse_name);
+    const rider_name = firstDefined(
+      ec?.rider_name,
+      item?.rider_name,
+      item?.rider
+    );
+
+    const estimated_go_time = firstDefined(
+      ec?.estimated_go_time,
+      item?.estimated_go_time
+    );
+
+    const order_of_go = firstDefined(
+      ec?.order_of_go,
+      item?.order_of_go
+    );
+
+    return {
+      _raw: item,
+      class_id: toInt(class_id) ?? class_id,
+      horse: normStr(horse),
+      rider_name: normStr(rider_name),
+      estimated_go_time: normStr(estimated_go_time),
+      est_minutes: timeToMinutes(estimated_go_time),
+      order_of_go: toInt(order_of_go) ?? 0
+    };
+  }
+
+  // ----------------------------
+  // Derive report model
+  // ----------------------------
+  function deriveTrainerRows() {
+    const scheduleRaw = ssGet("schedule");
+    const entriesRaw = ssGet("entries");
+
+    const debug = {
+      at: new Date().toISOString(),
+      ok: true,
+      schedule_type: typeof scheduleRaw,
+      entries_type: typeof entriesRaw,
+      schedule_len: Array.isArray(scheduleRaw) ? scheduleRaw.length : null,
+      entries_len: Array.isArray(entriesRaw) ? entriesRaw.length : null,
+      schedule_sample: null,
+      entries_sample: null,
+      normalized_schedule_sample: null,
+      normalized_entry_sample: null,
+      missing_fields_counts: {
+        ring: 0,
+        class_group_id: 0,
+        class_id: 0,
+        class_number: 0,
+        class_name: 0
+      }
+    };
+
+    if (Array.isArray(scheduleRaw) && scheduleRaw.length) debug.schedule_sample = scheduleRaw[0];
+    if (Array.isArray(entriesRaw) && entriesRaw.length) debug.entries_sample = entriesRaw[0];
+
+    if (!Array.isArray(scheduleRaw) || !Array.isArray(entriesRaw)) {
+      debug.ok = false;
+      debug.error = "schedule or entries missing/not arrays";
+      ssSet("trainer_debug", debug);
+      console.log("[TRAINER] derive abort", debug);
+      ssSet("trainer_rows", []);
+      return [];
+    }
+
+    // Normalize
+    const schedule = scheduleRaw.map(normalizeScheduleItem);
+    const entries = entriesRaw.map(normalizeEntryItem);
+
+    debug.normalized_schedule_sample = schedule[0] || null;
+    debug.normalized_entry_sample = entries[0] || null;
+
+    // Count missing key fields to catch “Group 0” / wrong ring values
+    for (const r of schedule) {
+      if (r.ring == null || r.ring === "") debug.missing_fields_counts.ring++;
+      if (r.class_group_id == null || r.class_group_id === "") debug.missing_fields_counts.class_group_id++;
+      if (r.class_id == null || r.class_id === "") debug.missing_fields_counts.class_id++;
+      if (r.class_number == null || r.class_number === "") debug.missing_fields_counts.class_number++;
+      if (!r.class_name) debug.missing_fields_counts.class_name++;
+    }
+
+    // Index entries by class_id
+    const entriesByClass = new Map();
     for (const e of entries) {
-      const cd = e.class_data || {};
-      const ring = toInt(pick(cd, ["ring"])) ?? toInt(pick(e, ["ring"]));
-      const groupId = toInt(pick(cd, ["class_group_id"])) ?? toInt(pick(e, ["class_group_id"]));
-      const ck = entryClassKey(e);
-      if (ring == null || groupId == null || !ck) continue;
-
-      const k = `${ring}|${groupId}|${ck}`;
-      if (!entryIndex.has(k)) entryIndex.set(k, []);
-      entryIndex.get(k).push({
-        entry_id: toInt(e.entry_id),
-        horse: String(e.horse || "").trim() || "—",
-        rider: String(pick(e.entry_class, ["rider_name"]) || "").trim() || "—",
-        order_of_go: toInt(pick(e.entry_class, ["order_of_go"])) ?? 0,
-        time: getEntryTime(e),
-        order_of_go_set: toInt(pick(cd, ["order_of_go_set"])) ?? 0
+      const cid = e.class_id;
+      if (cid == null || cid === "") continue;
+      if (!entriesByClass.has(cid)) entriesByClass.set(cid, []);
+      entriesByClass.get(cid).push(e);
+    }
+    // sort entries inside a class by order_of_go when present
+    for (const [cid, list] of entriesByClass.entries()) {
+      list.sort((a, b) => {
+        const ao = toInt(a.order_of_go) ?? 0;
+        const bo = toInt(b.order_of_go) ?? 0;
+        // stable-ish: order_of_go then horse name
+        if (ao !== bo) return ao - bo;
+        return normStr(a.horse).localeCompare(normStr(b.horse));
       });
     }
 
-    // Build schedule-first groups/classes; if schedule missing, synthesize from entries
-    const groupMap = new Map(); // ring|groupId => groupRow
-    function ensureGroup(ring, groupId) {
-      const k = `${ring}|${groupId}`;
-      if (groupMap.has(k)) return groupMap.get(k);
-      const g = {
-        ring,
-        class_group_id: groupId,
-        class_group_sequence: null,
-        class_list: [],
-        group_time: null,
-        horses: [],
-        classes: [] // {class_key, class_id, class_number, class_name, time, group_sequence, entries:[]}
-      };
-      groupMap.set(k, g);
-      return g;
-    }
+    // Build: ring -> group -> classes
+    const ringMap = new Map();
 
-    // From schedule (preferred)
     for (const s of schedule) {
-      const ring = getRingFromSchedule(s);
-      const groupId = getGroupIdFromSchedule(s);
-      const ck = scheduleClassKey(s);
-      if (ring == null || groupId == null || !ck) continue;
+      const ringKey = s.ring ?? "—";
+      if (!ringMap.has(ringKey)) ringMap.set(ringKey, new Map());
 
-      const g = ensureGroup(ring, groupId);
-
-      const gseq = getGroupSeqFromSchedule(s);
-      if (gseq != null) g.class_group_sequence = g.class_group_sequence == null ? gseq : Math.min(g.class_group_sequence, gseq);
-
-      const cl = parseClassList(pick(s, ["class_list"]));
-      if (cl.length) g.class_list = cl;
-
-      const st = getSchedTime(s);
-      if (st) {
-        const cur = timeToMin(g.group_time);
-        const nt = timeToMin(st);
-        if (cur == null || (nt != null && nt < cur)) g.group_time = st;
+      const groupKey = s.class_group_id ?? 0; // if this becomes 0, debug will show missing count
+      const groupMap = ringMap.get(ringKey);
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, {
+          class_group_id: groupKey,
+          group_sequence: s.group_sequence ?? null,
+          classes: [],
+          horses: [] // populated after class fold-in
+        });
       }
 
-      const classId = toInt(pick(s, ["class_id"]));
-      const classNum = toInt(pick(s, ["class_number", "class_num"]));
-      const className = String(pick(s, ["class_name", "name"]) || "").trim() || "—";
-      const groupSeq = toInt(pick(s, ["group_sequence", "class_sequence"])) ?? null;
+      const g = groupMap.get(groupKey);
 
-      // Find or create class within group
-      let c = g.classes.find(x => x.class_key === ck);
-      if (!c) {
-        c = {
-          class_key: ck,
-          class_id: classId,
-          class_number: classNum,
-          class_name: className,
-          time: st,
-          group_sequence: groupSeq,
-          entries: []
-        };
-        g.classes.push(c);
-      } else {
-        // fill gaps
-        if (!c.class_name || c.class_name === "—") c.class_name = className;
-        if (c.class_number == null && classNum != null) c.class_number = classNum;
-        if (c.class_id == null && classId != null) c.class_id = classId;
-        if (!c.time && st) c.time = st;
-        if (c.group_sequence == null && groupSeq != null) c.group_sequence = groupSeq;
-      }
+      const myEntries = entriesByClass.get(s.class_id) || [];
 
-      // Attach barn entries (if any)
-      const ek = `${ring}|${groupId}|${ck}`;
-      const els = entryIndex.get(ek) || [];
-      if (els.length) c.entries = els;
-    }
-
-    // If schedule missing or incomplete, synthesize group/classes from entries
-    if (groupMap.size === 0) {
-      for (const e of entries) {
-        const cd = e.class_data || {};
-        const ring = toInt(pick(cd, ["ring"])) ?? toInt(pick(e, ["ring"]));
-        const groupId = toInt(pick(cd, ["class_group_id"])) ?? toInt(pick(e, ["class_group_id"]));
-        const ck = entryClassKey(e);
-        if (ring == null || groupId == null || !ck) continue;
-
-        const g = ensureGroup(ring, groupId);
-        const gseq = toInt(pick(cd, ["group_sequence"])) ?? null;
-        if (gseq != null) g.class_group_sequence = g.class_group_sequence == null ? gseq : Math.min(g.class_group_sequence, gseq);
-
-        let c = g.classes.find(x => x.class_key === ck);
-        if (!c) {
-          c = {
-            class_key: ck,
-            class_id: toInt(pick(cd, ["class_id"])) ?? toInt(pick(e.entry_class, ["class_id"])),
-            class_number: toInt(pick(cd, ["class_number"])) ?? null,
-            class_name: String(pick(cd, ["class_name"]) || "").trim() || "—",
-            time: getEntryTime(e),
-            group_sequence: toInt(pick(cd, ["group_sequence"])) ?? null,
-            entries: []
-          };
-          g.classes.push(c);
+      // prefer schedule time; else earliest entry estimated_go_time
+      let classMinutes = s.sched_minutes;
+      let classTime = s.sched_time || "";
+      if (classMinutes == null && myEntries.length) {
+        let m = null;
+        for (const e of myEntries) m = minMinutes(m, e.est_minutes);
+        if (m != null) {
+          classMinutes = m;
+          const hh = String(Math.floor(m / 60)).padStart(2, "0");
+          const mm = String(m % 60).padStart(2, "0");
+          classTime = `${hh}:${mm}`;
         }
-        const ek = `${ring}|${groupId}|${ck}`;
-        const els = entryIndex.get(ek) || [];
-        if (els.length) c.entries = els;
       }
+
+      g.classes.push({
+        class_id: s.class_id,
+        class_number: s.class_number,
+        class_name: s.class_name,
+        time: classTime || "—",
+        sort_minutes: classMinutes,
+        group_sequence: s.group_sequence ?? null,
+        my_entries: myEntries.map(e => ({
+          horse: e.horse,
+          rider_name: e.rider_name,
+          estimated_go_time: e.estimated_go_time || "",
+          order_of_go: e.order_of_go || 0
+        }))
+      });
     }
 
-    // Post-process: horses list, time rollups, sorting
-    const rows = Array.from(groupMap.values()).map(g => {
-      // sort classes within group
-      g.classes.sort((a, b) => {
-        const as = a.group_sequence ?? 9999;
-        const bs = b.group_sequence ?? 9999;
-        if (as !== bs) return as - bs;
+    // Finalize: compute horses + sort classes/groups/rings
+    const ringsOut = [];
 
-        const at = timeToMin(a.time);
-        const bt = timeToMin(b.time);
-        if (at != null && bt != null && at !== bt) return at - bt;
+    for (const [ringKey, groupMap] of ringMap.entries()) {
+      const groupsOut = [];
 
-        const an = a.class_number ?? 999999;
-        const bn = b.class_number ?? 999999;
-        if (an !== bn) return an - bn;
+      for (const [groupKey, g] of groupMap.entries()) {
+        // sort classes by (time minutes) then (group_sequence) then (class_number)
+        g.classes.sort((a, b) => {
+          const am = a.sort_minutes;
+          const bm = b.sort_minutes;
+          if (am != null && bm != null && am !== bm) return am - bm;
+          if (am == null && bm != null) return 1;
+          if (am != null && bm == null) return -1;
 
-        return String(a.class_name).localeCompare(String(b.class_name));
+          const ag = toInt(a.group_sequence) ?? 999999;
+          const bg = toInt(b.group_sequence) ?? 999999;
+          if (ag !== bg) return ag - bg;
+
+          const an = toInt(a.class_number) ?? 999999;
+          const bn = toInt(b.class_number) ?? 999999;
+          if (an !== bn) return an - bn;
+
+          return normStr(a.class_name).localeCompare(normStr(b.class_name));
+        });
+
+        // horses in this group (unique, from my entries only)
+        const horseSet = new Set();
+        for (const c of g.classes) {
+          for (const e of c.my_entries) {
+            const h = normStr(e.horse);
+            if (h) horseSet.add(h);
+          }
+        }
+        g.horses = Array.from(horseSet);
+
+        // group sort key: earliest class time
+        let gMin = null;
+        for (const c of g.classes) gMin = minMinutes(gMin, c.sort_minutes);
+        g.sort_minutes = gMin;
+
+        groupsOut.push(g);
+      }
+
+      // sort groups by earliest class time, then group_sequence, then id
+      groupsOut.sort((a, b) => {
+        const am = a.sort_minutes;
+        const bm = b.sort_minutes;
+        if (am != null && bm != null && am !== bm) return am - bm;
+        if (am == null && bm != null) return 1;
+        if (am != null && bm == null) return -1;
+
+        const ag = toInt(a.group_sequence) ?? 999999;
+        const bg = toInt(b.group_sequence) ?? 999999;
+        if (ag !== bg) return ag - bg;
+
+        const ai = toInt(a.class_group_id) ?? 999999;
+        const bi = toInt(b.class_group_id) ?? 999999;
+        return ai - bi;
       });
 
-      // group_time = earliest class time if missing
-      if (!g.group_time) {
-        let best = null;
-        for (const c of g.classes) {
-          const t = timeToMin(c.time);
-          if (t == null) continue;
-          if (best == null || t < best) best = t;
-        }
-        if (best != null) {
-          const hh = String(Math.floor(best / 60)).padStart(2, "0");
-          const mm = String(best % 60).padStart(2, "0");
-          g.group_time = `${hh}:${mm}`;
-        }
-      }
+      ringsOut.push({
+        ring: ringKey,
+        groups: groupsOut
+      });
+    }
 
-      // horses = unique horses with at least one entry
-      const horsesSet = new Set();
-      for (const c of g.classes) {
-        for (const en of c.entries || []) {
-          horsesSet.add(en.horse);
-        }
-      }
-      g.horses = Array.from(horsesSet).filter(Boolean);
-
-      return g;
+    // sort rings numerically when possible
+    ringsOut.sort((a, b) => {
+      const ar = toInt(a.ring);
+      const br = toInt(b.ring);
+      if (ar != null && br != null && ar !== br) return ar - br;
+      return normStr(a.ring).localeCompare(normStr(b.ring));
     });
 
-    // sort groups by ring, then group sequence, then time, then id
-    rows.sort((a, b) => {
-      if (a.ring !== b.ring) return (a.ring ?? 999) - (b.ring ?? 999);
+    // persist + log
+    ssSet("trainer_rows", ringsOut);
+    ssSet("trainer_debug", debug);
 
-      const as = a.class_group_sequence ?? 9999;
-      const bs = b.class_group_sequence ?? 9999;
-      if (as !== bs) return as - bs;
-
-      const at = timeToMin(a.group_time);
-      const bt = timeToMin(b.group_time);
-      if (at != null && bt != null && at !== bt) return at - bt;
-
-      return (a.class_group_id ?? 0) - (b.class_group_id ?? 0);
+    console.log("[TRAINER] derive ok", {
+      schedule_len: debug.schedule_len,
+      entries_len: debug.entries_len,
+      rings: ringsOut.length,
+      missing: debug.missing_fields_counts,
+      sample_ring: ringsOut[0]?.ring,
+      sample_group: ringsOut[0]?.groups?.[0]?.class_group_id
     });
 
-    SS.set("trainer_rows", rows);
-    return rows;
+    return ringsOut;
   }
 
-  window.CRT_trainerDerive = build;
+  // ----------------------------
+  // Public API expected by app.js
+  // ----------------------------
+  window.CRT_trainerDerive = function CRT_trainerDerive() {
+    return deriveTrainerRows();
+  };
+
+  // Optional helper for quick inspection (no renderer changes needed)
+  window.CRT_trainerDebug = function CRT_trainerDebug() {
+    return ssGet("trainer_debug");
+  };
 })();
