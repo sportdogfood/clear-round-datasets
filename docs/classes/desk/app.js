@@ -1,10 +1,8 @@
-// File: docs/classes/desk/app.js
-// Class Desk (TackLists UI + cadence)
-// - Start screen: Session start OR In-session + Restart session
-// - Active screen: Trainer, Entries, Restart session (+ meta note)
-// - Rows hydrate ONLY on session-start/session-restart (not on load)
-// - Starts a 9-min refresh timer ONLY after session-start/restart
-// - Trainer/Entries are screens; Print from header-action on those screens
+// app.js (Class Desk)
+// TackLists UI + cadence (start → active → trainer/entries)
+// Hydrate ONLY on session-start/session-restart (never on load)
+// Start 9-min refresh timer ONLY after session-start/session-restart
+// Print button in header on trainer/entries screens
 
 (() => {
   "use strict";
@@ -45,7 +43,7 @@
   };
 
   // ----------------------------
-  // DOM refs (TackLists ids)
+  // DOM refs (TackLists structure)
   // ----------------------------
   const headerTitle = document.getElementById("header-title");
   const headerBack = document.getElementById("header-back");
@@ -65,7 +63,7 @@
   };
 
   // ----------------------------
-  // Storage helpers
+  // sessionStorage helpers
   // ----------------------------
   function ssGetRaw(key) {
     return sessionStorage.getItem(key);
@@ -131,8 +129,8 @@
 
     const dr = data?.data?.rows;
     if (Array.isArray(dr)) {
-      return dr.map((r) =>
-        Array.isArray(r.cells) ? r.cells.map((c) => c.value) : []
+      return dr.map(r =>
+        Array.isArray(r.cells) ? r.cells.map(c => c.value) : []
       );
     }
     return [];
@@ -212,9 +210,9 @@
     state.refreshTimer = setInterval(async () => {
       const sess = ssGet(K.sess);
       if (!sess?.session_id) return;
-      if (state.currentScreen === "start") return; // no auto-fetch on start
+      if (state.currentScreen === "start") return; // never auto-hydrate on start
       await hydrateSession(false);
-      render(); // update tags + screens if needed
+      render();
     }, REFRESH_MS);
   }
 
@@ -229,11 +227,10 @@
       if (!ok) return;
 
       // overwrite base datasets if present
-      ["schedule", "entries", "horses", "rings"].forEach((k) => {
+      ["schedule", "entries", "horses", "rings"].forEach(k => {
         if (k in found) ssSet(k, found[k]);
       });
 
-      // store live_status as-is
       if ("live_status" in found) ssSet(K.live_status, found.live_status);
 
       // gate live_data write
@@ -246,7 +243,6 @@
       sess.last_hydrate_at = nowISO();
       ssSet(K.sess, sess);
 
-      // meta (for debug + tag)
       const meta = {
         fetched_at: sess.last_hydrate_at,
         refresh_ms: REFRESH_MS,
@@ -261,15 +257,9 @@
       };
       ssSet(K.meta, meta);
 
-      console.log("[DESK] hydrated", meta);
-
+      // derive trainer rows if available
       if (deriveTrainer && typeof window.CRT_trainerDerive === "function") {
-        const rows = window.CRT_trainerDerive();
-        // CRT_trainerDerive should write trainer_rows
-        console.log(
-          "[DESK] trainer derive done",
-          Array.isArray(rows) ? rows.length : null
-        );
+        window.CRT_trainerDerive(); // expected to write trainer_rows
       }
     } finally {
       state.isHydrating = false;
@@ -277,7 +267,7 @@
   }
 
   // ----------------------------
-  // UI helpers (TackLists row system)
+  // UI helper (TackLists row)
   // ----------------------------
   function createRow(label, options = {}) {
     const { tagText, tagVariant, tagPositive, active, onClick } = options;
@@ -305,6 +295,9 @@
     screenRoot.appendChild(row);
   }
 
+  // ----------------------------
+  // Navigation / routing
+  // ----------------------------
   function titleForScreen(scr) {
     if (scr === "start") return "Start";
     if (scr === "active") return "Session";
@@ -327,30 +320,17 @@
     render();
   }
 
-  function formatTime(iso) {
-    try {
-      return new Date(iso).toLocaleTimeString();
-    } catch {
-      return "";
-    }
-  }
-
-  function metaSummaryLine() {
-    const meta = ssGet(K.meta);
-    if (!meta?.counts) return "no meta";
-    return `schedule:${meta.counts.schedule ?? "?"} entries:${meta.counts.entries ?? "?"} horses:${meta.counts.horses ?? "?"} rings:${meta.counts.rings ?? "?"} · live_status:${meta.live_status}`;
-  }
-
   // ----------------------------
-  // Screens
+  // Header rendering (TackLists)
   // ----------------------------
   function renderHeader() {
-    headerTitle.textContent = titleForScreen(state.currentScreen);
+    const scr = state.currentScreen;
+    headerTitle.textContent = titleForScreen(scr);
 
-    // TackLists back cadence: hide on start, show otherwise
-    headerBack.style.visibility = state.currentScreen === "start" ? "hidden" : "visible";
+    const hideBack = state.history.length === 0 && scr === "start";
+    headerBack.style.visibility = hideBack ? "hidden" : "visible";
 
-    if (state.currentScreen === "trainer" || state.currentScreen === "entries") {
+    if (scr === "trainer" || scr === "entries") {
       headerAction.hidden = false;
       headerAction.textContent = "Print";
       headerAction.dataset.action = "print";
@@ -361,6 +341,9 @@
     }
   }
 
+  // ----------------------------
+  // Screens
+  // ----------------------------
   function renderStartScreen() {
     screenRoot.innerHTML = "";
 
@@ -370,7 +353,7 @@
       <div class="start-logo-mark"></div>
       <div class="start-logo-title">Class Desk</div>
       <div class="start-logo-subtitle">
-        Session start hydrates Rows once, then Trainer / Entries render from sessionStorage.
+        Session Start hydrates Rows once, then Trainer / Entries are available.
       </div>
     `;
     screenRoot.appendChild(logo);
@@ -390,7 +373,6 @@
       return;
     }
 
-    // EXACT TackLists "In-session" look: boolean dot (no time pill)
     createRow("In-session", {
       active: true,
       tagVariant: "boolean",
@@ -414,25 +396,22 @@
   function renderActiveScreen() {
     screenRoot.innerHTML = "";
 
-    // Trainer: no time-pill. Use derived row count if available.
     const trainerRows = ssGet(K.trainer_rows) || [];
+    const hasTrainer = Array.isArray(trainerRows) && trainerRows.length > 0;
+
+    const hasLive = !!ssGetRaw(K.live_data);
+
     createRow("Trainer", {
-      tagText: Array.isArray(trainerRows) ? trainerRows.length : 0,
-      tagVariant: "count",
-      tagPositive: Array.isArray(trainerRows) && trainerRows.length > 0,
+      tagVariant: "boolean",
+      tagPositive: hasTrainer,
       onClick: () => {
-        if (typeof window.CRT_trainerDerive === "function") {
-          window.CRT_trainerDerive();
-        }
+        if (typeof window.CRT_trainerDerive === "function") window.CRT_trainerDerive();
         setScreen("trainer");
       }
     });
 
-    // Entries: show "live" only if live_data exists; otherwise "—"
-    const hasLive = !!ssGetRaw(K.live_data);
     createRow("Entries", {
-      tagText: hasLive ? "live" : "—",
-      tagVariant: "count",
+      tagVariant: "boolean",
       tagPositive: hasLive,
       onClick: () => setScreen("entries")
     });
@@ -450,10 +429,11 @@
     });
 
     const meta = ssGet(K.meta);
-    const fetched = meta?.fetched_at ? formatTime(meta.fetched_at) : "no fetch";
     const note = document.createElement("div");
     note.className = "report-note";
-    note.textContent = `fetched: ${fetched}\n${metaSummaryLine()}`;
+    note.textContent = meta?.counts
+      ? `schedule:${meta.counts.schedule ?? "?"} entries:${meta.counts.entries ?? "?"} horses:${meta.counts.horses ?? "?"} rings:${meta.counts.rings ?? "?"} · live_status:${meta.live_status ?? "?"}`
+      : "no meta";
     screenRoot.appendChild(note);
   }
 
@@ -465,7 +445,7 @@
 
     const label = document.createElement("div");
     label.className = "report-title";
-    label.textContent = `Trainer report · ${meta?.fetched_at ? formatTime(meta.fetched_at) : "no fetch"} · rows:${Array.isArray(rows) ? rows.length : 0}`;
+    label.textContent = `Trainer report · ${meta?.fetched_at ? new Date(meta.fetched_at).toLocaleTimeString() : "no fetch"} · rows:${Array.isArray(rows) ? rows.length : 0}`;
     screenRoot.appendChild(label);
 
     const root = document.createElement("div");
@@ -499,7 +479,7 @@
 
     const label = document.createElement("div");
     label.className = "report-title";
-    label.textContent = `Entries · ${meta?.fetched_at ? formatTime(meta.fetched_at) : "no fetch"}`;
+    label.textContent = `Entries · ${meta?.fetched_at ? new Date(meta.fetched_at).toLocaleTimeString() : "no fetch"}`;
     screenRoot.appendChild(label);
 
     const root = document.createElement("div");
@@ -514,30 +494,23 @@
       return;
     }
 
-    // If you later add a real renderer, it can hook here.
-    if (typeof window.CRT_entriesRender === "function") {
-      window.CRT_entriesRender(root, live);
-      return;
-    }
-
-    // Default: show live_data JSON so “Entries” is actually wired.
-    const pre = document.createElement("pre");
-    pre.className = "json-pre";
-    try {
-      pre.textContent = JSON.stringify(live, null, 2);
-    } catch {
-      pre.textContent = String(live);
-    }
-    root.appendChild(pre);
+    const p = document.createElement("div");
+    p.className = "report-note";
+    p.textContent = "live_data present (renderer pending).";
+    root.appendChild(p);
   }
 
+  // ----------------------------
+  // Render dispatcher
+  // ----------------------------
   function render() {
     renderHeader();
 
-    if (state.currentScreen === "start") return renderStartScreen();
-    if (state.currentScreen === "active") return renderActiveScreen();
-    if (state.currentScreen === "trainer") return renderTrainerScreen();
-    if (state.currentScreen === "entries") return renderEntriesScreen();
+    const scr = state.currentScreen;
+    if (scr === "start") return renderStartScreen();
+    if (scr === "active") return renderActiveScreen();
+    if (scr === "trainer") return renderTrainerScreen();
+    if (scr === "entries") return renderEntriesScreen();
 
     state.currentScreen = "start";
     renderStartScreen();
