@@ -1,325 +1,454 @@
-// trainer_derive.js
-// - Derives Trainer report model (Ring → Class Group → Class → Your Entries)
-// - Inputs (sessionStorage): schedule, entries
-// - Output (sessionStorage): trainer_rows (array of rings)
-// - Persistent log (sessionStorage): desk_log (last ~250 events)
-//
-// Version: v2025-12-14-derive-01
-// Timestamp: 2025-12-14T00:00:00Z
+/* ============================================================
+   File: trainer_derive.js
+   Version: v32.1 (fix schedule normalization + logs)
+   Purpose: Build Ring → Class Group → Class → Entries model
+            from ONE 10-minute refreshed schedule payload
+            + entries payload in sessionStorage.
+   Storage:
+     - reads:  sessionStorage.schedule, sessionStorage.entries
+     - writes: sessionStorage.trainer_rows, sessionStorage.trainer_log
+   ============================================================ */
 
-(() => {
+(function () {
   "use strict";
 
-  const LOG_KEY = "desk_log";
-  const OUT_KEY = "trainer_rows";
+  var KEYS = {
+    schedule: "schedule",
+    entries: "entries",
+    trainerRows: "trainer_rows",
+    trainerLog: "trainer_log"
+  };
 
-  // ----------------------------
-  // Tiny persistent logger
-  // ----------------------------
-  function readLog() {
-    try {
-      const raw = sessionStorage.getItem(LOG_KEY);
-      const v = raw ? JSON.parse(raw) : [];
-      return Array.isArray(v) ? v : [];
-    } catch {
-      return [];
+  function nowISO() {
+    return new Date().toISOString();
+  }
+
+  function safeJSONParse(x) {
+    if (x == null) return null;
+    if (typeof x === "string") {
+      try { return JSON.parse(x); } catch (e) { return null; }
     }
+    return x; // already object/array
   }
 
-  function writeLog(items) {
-    try {
-      sessionStorage.setItem(LOG_KEY, JSON.stringify(items));
-    } catch {}
-  }
-
-  function log(level, msg, data) {
-    const items = readLog();
-    items.push({
-      t: new Date().toISOString(),
-      level,
-      msg,
-      data: data == null ? null : data
-    });
-    // cap log size
-    while (items.length > 250) items.shift();
-    writeLog(items);
-  }
-
-  // optional helpers (for you in DevTools)
-  window.CRT_logRead = () => readLog();
-  window.CRT_logClear = () => writeLog([]);
-
-  // ----------------------------
-  // Storage helpers
-  // ----------------------------
   function ssGet(key) {
+    return safeJSONParse(sessionStorage.getItem(key));
+  }
+
+  function ssSet(key, value) {
     try {
-      const v = sessionStorage.getItem(key);
-      return v ? JSON.parse(v) : null;
-    } catch {
-      return sessionStorage.getItem(key);
+      sessionStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
-  // ----------------------------
-  // Core derive
-  // ----------------------------
-  function normalizeTime(t) {
-    if (!t || typeof t !== "string") return "";
-    // keep as-is; just normalize "00:00:00" to ""
-    return t === "00:00:00" ? "" : t;
+  function capArray(arr, max) {
+    if (!Array.isArray(arr)) return [];
+    if (arr.length <= max) return arr;
+    return arr.slice(arr.length - max);
   }
 
-  function safeNum(v, fallback = null) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
+  function pushLog(step, state) {
+    var log = ssGet(KEYS.trainerLog);
+    if (!Array.isArray(log)) log = [];
+    log.push(Object.assign({ at: nowISO() }, step));
+    ssSet(KEYS.trainerLog, capArray(log, 250));
+    if (state && state.steps) state.steps.push(Object.assign({ at: nowISO() }, step));
   }
 
-  function makeEntryLine(e) {
-    const horse = e?.horse ? String(e.horse) : "";
-    const rider =
-      e?.entry_class?.rider_name ? String(e.entry_class.rider_name) :
-      e?.class_data?.rider_name ? String(e.class_data.rider_name) :
-      "";
+  function toMinutes(hhmmss) {
+    if (!hhmmss || typeof hhmmss !== "string") return null;
+    // Accept "HH:MM:SS" or "HH:MM"
+    var parts = hhmmss.split(":");
+    if (parts.length < 2) return null;
+    var h = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10);
+    if (!isFinite(h) || !isFinite(m)) return null;
+    return h * 60 + m;
+  }
 
-    const orderOfGo =
-      safeNum(e?.entry_class?.order_of_go, 0) ||
-      safeNum(e?.class_data?.order_of_go, 0) ||
-      safeNum(e?.order_of_go, 0) ||
-      0;
+  function firstNonEmpty(a, b, c) {
+    if (a != null && a !== "") return a;
+    if (b != null && b !== "") return b;
+    if (c != null && c !== "") return c;
+    return "";
+  }
 
-    const goTime = normalizeTime(e?.entry_class?.estimated_go_time);
+  // ---------- NORMALIZATION (FIX) ----------
+
+  // Accept either:
+  // A) schedule = [ { ring_number, ring_name, ring_id, classes:[...] }, ... ]  (your current payload)
+  // B) schedule = [ { class_id, class_group_id, ... }, ... ]                  (flat already)
+  function normalizeSchedule(scheduleRaw) {
+    var out = [];
+
+    if (!Array.isArray(scheduleRaw)) return out;
+
+    // Detect ring-list shape if first item has "classes" array
+    var looksLikeRingList = scheduleRaw.length > 0 && scheduleRaw[0] && Array.isArray(scheduleRaw[0].classes);
+
+    if (looksLikeRingList) {
+      for (var i = 0; i < scheduleRaw.length; i++) {
+        var ringObj = scheduleRaw[i] || {};
+        var ringNum = ringObj.ring_number != null ? ringObj.ring_number : ringObj.ring;
+        var ringName = ringObj.ring_name || "";
+        var ringId = ringObj.ring_id != null ? ringObj.ring_id : null;
+
+        var classes = Array.isArray(ringObj.classes) ? ringObj.classes : [];
+        for (var j = 0; j < classes.length; j++) {
+          var c = classes[j] || {};
+          var schedTime = firstNonEmpty(c.estimated_start_time, c.start_time_default, "");
+          out.push({
+            _raw: c,
+
+            ring: ringNum,
+            ring_name: ringName,
+            ring_id: ringId,
+
+            class_group_id: c.class_group_id != null ? c.class_group_id : null,
+            class_group_sequence: c.class_group_sequence != null ? c.class_group_sequence : null,
+
+            class_id: c.class_id != null ? c.class_id : null,
+            class_number: c.class_number != null ? c.class_number : null,
+            class_name: c.class_name || "",
+
+            group_name: c.group_name || "",
+            class_list: c.class_list || "",
+
+            sched_time: schedTime,
+            sched_minutes: toMinutes(schedTime),
+
+            cancelled: c.cancelled === 1,
+            warmup_class: c.warmup_class === 1
+          });
+        }
+      }
+      return out;
+    }
+
+    // Flat schedule list
+    for (var k = 0; k < scheduleRaw.length; k++) {
+      var s = scheduleRaw[k] || {};
+      var t = firstNonEmpty(s.estimated_start_time, s.start_time_default, s.sched_time);
+      out.push({
+        _raw: s,
+        ring: s.ring_number != null ? s.ring_number : s.ring,
+        ring_name: s.ring_name || "",
+        ring_id: s.ring_id != null ? s.ring_id : null,
+
+        class_group_id: s.class_group_id != null ? s.class_group_id : null,
+        class_group_sequence: s.class_group_sequence != null ? s.class_group_sequence : null,
+
+        class_id: s.class_id != null ? s.class_id : null,
+        class_number: s.class_number != null ? s.class_number : null,
+        class_name: s.class_name || "",
+
+        group_name: s.group_name || "",
+        class_list: s.class_list || "",
+
+        sched_time: t,
+        sched_minutes: toMinutes(t),
+
+        cancelled: s.cancelled === 1,
+        warmup_class: s.warmup_class === 1
+      });
+    }
+    return out;
+  }
+
+  function normalizeEntries(entriesRaw) {
+    var out = [];
+    if (!Array.isArray(entriesRaw)) return out;
+
+    for (var i = 0; i < entriesRaw.length; i++) {
+      var e = entriesRaw[i] || {};
+      var ec = e.entry_class || {};
+      var cd = e.class_data || {};
+
+      var classId = (ec.class_id != null ? ec.class_id : (cd.class_id != null ? cd.class_id : null));
+      var estGo = ec.estimated_go_time || "";
+      var og = (ec.order_of_go != null ? ec.order_of_go : (cd.order_of_go != null ? cd.order_of_go : null));
+
+      out.push({
+        _raw: e,
+
+        entry_id: e.entry_id != null ? e.entry_id : null,
+        horse: e.horse || "",
+        rider_name: ec.rider_name || "",
+        rider_id: ec.rider_id != null ? ec.rider_id : null,
+
+        class_id: classId,
+        class_group_id: cd.class_group_id != null ? cd.class_group_id : null,
+        ring: cd.ring != null ? cd.ring : null,
+        group_sequence: cd.group_sequence != null ? cd.group_sequence : null,
+
+        estimated_go_time: estGo,
+        est_minutes: toMinutes(estGo) || 0,
+        order_of_go: og != null ? og : 0,
+
+        is_morning: !!e.is_morning,
+        has_conflict: !!e.has_conflict
+      });
+    }
+
+    return out;
+  }
+
+  function countMissing(scheduleNorm) {
+    var miss = { ring: 0, class_group_id: 0, class_id: 0, class_number: 0, class_name: 0, sched_time: 0 };
+    for (var i = 0; i < scheduleNorm.length; i++) {
+      var r = scheduleNorm[i];
+      if (r.ring == null) miss.ring++;
+      if (r.class_group_id == null) miss.class_group_id++;
+      if (r.class_id == null) miss.class_id++;
+      if (r.class_number == null) miss.class_number++;
+      if (!r.class_name) miss.class_name++;
+      if (!r.sched_time) miss.sched_time++;
+    }
+    return miss;
+  }
+
+  function uniqPush(map, key, val) {
+    if (!val) return;
+    if (!map[key]) map[key] = true;
+  }
+
+  function buildModel(scheduleNorm, entriesNorm) {
+    var byClassId = Object.create(null);
+    var allScheduleClassIds = Object.create(null);
+
+    for (var i = 0; i < entriesNorm.length; i++) {
+      var en = entriesNorm[i];
+      if (en.class_id == null) continue;
+      if (!byClassId[en.class_id]) byClassId[en.class_id] = [];
+      byClassId[en.class_id].push(en);
+    }
+
+    // rings -> groups -> classes
+    var ringsMap = Object.create(null);
+
+    for (var j = 0; j < scheduleNorm.length; j++) {
+      var sc = scheduleNorm[j];
+      if (sc.class_id != null) allScheduleClassIds[sc.class_id] = true;
+
+      var ringKey = String(sc.ring != null ? sc.ring : "null");
+      if (!ringsMap[ringKey]) {
+        ringsMap[ringKey] = {
+          ring: sc.ring,
+          ring_name: sc.ring_name || "",
+          ring_id: sc.ring_id != null ? sc.ring_id : null,
+          class_groups: Object.create(null),
+          _group_order: []
+        };
+      }
+
+      var ringObj = ringsMap[ringKey];
+
+      var cgId = sc.class_group_id != null ? sc.class_group_id : "null";
+      var cgKey = String(cgId);
+
+      if (!ringObj.class_groups[cgKey]) {
+        ringObj.class_groups[cgKey] = {
+          class_group_id: sc.class_group_id,
+          class_group_sequence: sc.class_group_sequence != null ? sc.class_group_sequence : null,
+          group_name: sc.group_name || "",
+          class_list: sc.class_list || "",
+          horses_set: Object.create(null),
+          classes: []
+        };
+        ringObj._group_order.push(cgKey);
+      }
+
+      var groupObj = ringObj.class_groups[cgKey];
+
+      var clsEntries = sc.class_id != null && byClassId[sc.class_id] ? byClassId[sc.class_id] : [];
+      for (var x = 0; x < clsEntries.length; x++) {
+        uniqPush(groupObj.horses_set, clsEntries[x].horse, true);
+      }
+
+      groupObj.classes.push({
+        class_id: sc.class_id,
+        class_number: sc.class_number,
+        class_name: sc.class_name,
+        sched_time: sc.sched_time,
+        sched_minutes: sc.sched_minutes,
+        cancelled: sc.cancelled,
+        warmup_class: sc.warmup_class,
+        entries: clsEntries
+      });
+    }
+
+    // Orphan entries (entries whose class_id not in schedule)
+    var orphan = 0;
+    for (var y = 0; y < entriesNorm.length; y++) {
+      var e2 = entriesNorm[y];
+      if (e2.class_id == null) continue;
+      if (!allScheduleClassIds[e2.class_id]) orphan++;
+    }
+
+    // Convert maps to arrays with stable ordering
+    var ringKeys = Object.keys(ringsMap).sort(function (a, b) {
+      var na = parseInt(a, 10); var nb = parseInt(b, 10);
+      if (isFinite(na) && isFinite(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+
+    var ringsOut = [];
+    for (var rk = 0; rk < ringKeys.length; rk++) {
+      var rObj = ringsMap[ringKeys[rk]];
+
+      // group order: by class_group_sequence, fallback insertion
+      var groupsArr = [];
+      for (var gi = 0; gi < rObj._group_order.length; gi++) {
+        var gKey = rObj._group_order[gi];
+        var g = rObj.class_groups[gKey];
+
+        // horses list
+        var horses = Object.keys(g.horses_set);
+        horses.sort();
+
+        // class order inside group: by sched_minutes then class_number
+        g.classes.sort(function (a, b) {
+          var am = a.sched_minutes, bm = b.sched_minutes;
+          if (am != null && bm != null && am !== bm) return am - bm;
+          var an = a.class_number, bn = b.class_number;
+          if (an != null && bn != null && an !== bn) return an - bn;
+          return 0;
+        });
+
+        groupsArr.push({
+          class_group_id: g.class_group_id,
+          class_group_sequence: g.class_group_sequence,
+          group_name: g.group_name,
+          class_list: g.class_list,
+          horses: horses,
+          horses_joined: horses.join(", "),
+          classes: g.classes
+        });
+      }
+
+      groupsArr.sort(function (a, b) {
+        var as = a.class_group_sequence, bs = b.class_group_sequence;
+        if (as != null && bs != null && as !== bs) return as - bs;
+        return 0;
+      });
+
+      ringsOut.push({
+        ring: rObj.ring,
+        ring_name: rObj.ring_name,
+        ring_id: rObj.ring_id,
+        class_groups: groupsArr
+      });
+    }
 
     return {
-      entry_id: e?.entry_id ?? null,
-      horse,
-      rider_name: rider,
-      order_of_go: orderOfGo || 0,
-      estimated_go_time: goTime
+      generated_at: nowISO(),
+      counts: {
+        schedule_rings: ringKeys.length,
+        schedule_classes: scheduleNorm.length,
+        entries_total: entriesNorm.length,
+        rings_out: ringsOut.length,
+        orphan_entries: orphan
+      },
+      rings: ringsOut
     };
   }
 
-  function derive() {
-    // clear only our output key; keep log history
-    try { sessionStorage.removeItem(OUT_KEY); } catch {}
+  // ---------- MAIN ----------
 
-    const schedule = ssGet("schedule");
-    const entries = ssGet("entries");
+  function deriveTrainer() {
+    var state = { at: nowISO(), steps: [], warnings: [], errors: [] };
 
-    log("info", "trainer_derive:start", {
-      has_schedule: Array.isArray(schedule),
-      has_entries: Array.isArray(entries),
-      schedule_len: Array.isArray(schedule) ? schedule.length : null,
-      entries_len: Array.isArray(entries) ? entries.length : null
-    });
+    var scheduleRaw = ssGet(KEYS.schedule);
+    var entriesRaw = ssGet(KEYS.entries);
 
-    if (!Array.isArray(schedule) || !schedule.length) {
-      log("error", "trainer_derive:no_schedule", { key: "schedule" });
-      try { sessionStorage.setItem(OUT_KEY, JSON.stringify([])); } catch {}
-      return [];
+    var scheduleNorm = normalizeSchedule(scheduleRaw);
+    var entriesNorm = normalizeEntries(entriesRaw);
+
+    pushLog({
+      name: "inputs.normalized",
+      schedule_type: Array.isArray(scheduleNorm) ? "array" : typeof scheduleNorm,
+      entries_type: Array.isArray(entriesNorm) ? "array" : typeof entriesNorm,
+      schedule_len: scheduleNorm.length,
+      entries_len: entriesNorm.length,
+      sources: { schedule: "sessionStorage.schedule", entries: "sessionStorage.entries" }
+    }, state);
+
+    var missing = countMissing(scheduleNorm);
+    pushLog({
+      name: "schedule.missing_fields_counts",
+      missing_fields_counts: missing
+    }, state);
+
+    if (scheduleNorm.length === 0) {
+      state.errors.push("no_schedule_classes_after_normalize");
+    }
+    if (entriesNorm.length === 0) {
+      state.warnings.push("no_entries_after_normalize");
     }
 
-    // Build index from schedule by class_id -> location
-    const classIndex = new Map(); // class_id -> { ring_number, ring_name, class_group_id, class_group_sequence }
-    let scheduleClassCount = 0;
+    // Index summary
+    var byClassIdKeys = 0;
+    var byRingGroupKeys = Object.create(null);
+    var badEntries = 0;
 
-    for (const ring of schedule) {
-      const ringNum = safeNum(ring?.ring_number, null);
-      const ringName = ring?.ring_name ? String(ring.ring_name) : "";
-      const classes = Array.isArray(ring?.classes) ? ring.classes : [];
-
-      for (const c of classes) {
-        const cid = safeNum(c?.class_id, null);
-        if (!cid) continue;
-
-        scheduleClassCount++;
-
-        classIndex.set(cid, {
-          ring_number: ringNum,
-          ring_name: ringName,
-          class_group_id: safeNum(c?.class_group_id, null),
-          class_group_sequence: safeNum(c?.class_group_sequence, null)
-        });
+    for (var i = 0; i < entriesNorm.length; i++) {
+      var e = entriesNorm[i];
+      if (e.class_id == null) badEntries++;
+      if (e.ring != null && e.class_group_id != null) {
+        byRingGroupKeys[String(e.ring) + ":" + String(e.class_group_id)] = true;
       }
     }
-
-    // Prepare ring-first structure from schedule (authoritative order)
-    const ringsOut = [];
-    const ringMap = new Map(); // ring_number -> ringObj
-
-    function getRing(ring_number, ring_name) {
-      if (ringMap.has(ring_number)) return ringMap.get(ring_number);
-
-      const ro = {
-        ring_number,
-        ring_name: ring_name || "",
-        groups: [] // array of group objects
-      };
-      ringMap.set(ring_number, ro);
-      ringsOut.push(ro);
-      return ro;
+    // count distinct class_ids in entries
+    var seenClass = Object.create(null);
+    for (var j = 0; j < entriesNorm.length; j++) {
+      var e2 = entriesNorm[j];
+      if (e2.class_id != null) seenClass[String(e2.class_id)] = true;
     }
+    byClassIdKeys = Object.keys(seenClass).length;
 
-    function getOrCreateGroup(ringObj, groupKey, groupTemplate) {
-      // groupKey is string unique per ring
-      let g = ringObj.groups.find(x => x._k === groupKey);
-      if (g) return g;
+    pushLog({
+      name: "entries.indexed",
+      byClassId_keys: byClassIdKeys,
+      byRingGroup_keys: Object.keys(byRingGroupKeys).length,
+      bad_entries: badEntries
+    }, state);
 
-      g = {
-        _k: groupKey,
-        class_group_id: groupTemplate.class_group_id,
-        class_group_sequence: groupTemplate.class_group_sequence,
-        group_name: groupTemplate.group_name || "",
-        class_list: groupTemplate.class_list || "",
-        classes: []
-      };
-      ringObj.groups.push(g);
-      return g;
-    }
+    var model = buildModel(scheduleNorm, entriesNorm);
 
-    function getOrCreateClass(groupObj, classKey, classTemplate) {
-      let cl = groupObj.classes.find(x => x._k === classKey);
-      if (cl) return cl;
+    pushLog({
+      name: "model.built",
+      counts: model.counts
+    }, state);
 
-      cl = {
-        _k: classKey,
-        class_id: classTemplate.class_id,
-        class_number: classTemplate.class_number,
-        class_name: classTemplate.class_name || "",
-        estimated_start_time: classTemplate.estimated_start_time || "",
-        warmup_class: classTemplate.warmup_class ? 1 : 0,
-        // entries folded in below
-        entries: []
-      };
-      groupObj.classes.push(cl);
-      return cl;
-    }
+    var wroteRows = ssSet(KEYS.trainerRows, model);
+    var wroteLog = ssSet(KEYS.trainerLog, capArray(ssGet(KEYS.trainerLog) || [], 250)); // keep
 
-    // First: build all schedule groups/classes (full day, by ring)
-    for (const ring of schedule) {
-      const ringNum = safeNum(ring?.ring_number, null);
-      const ringName = ring?.ring_name ? String(ring.ring_name) : "";
-      if (!ringNum) continue;
-
-      const ringObj = getRing(ringNum, ringName);
-      const classes = Array.isArray(ring?.classes) ? ring.classes : [];
-
-      for (const c of classes) {
-        const classId = safeNum(c?.class_id, null);
-        if (!classId) continue;
-
-        const groupId = safeNum(c?.class_group_id, null);
-        const groupSeq = safeNum(c?.class_group_sequence, null);
-
-        const groupKey = `${ringNum}:${groupId || "nogroup"}:${groupSeq || "noseq"}`;
-
-        const groupObj = getOrCreateGroup(ringObj, groupKey, {
-          class_group_id: groupId,
-          class_group_sequence: groupSeq,
-          group_name: c?.group_name ? String(c.group_name) : "",
-          class_list: c?.class_list ? String(c.class_list) : ""
-        });
-
-        const classKey = `${classId}`;
-        getOrCreateClass(groupObj, classKey, {
-          class_id: classId,
-          class_number: safeNum(c?.class_number, null),
-          class_name: c?.class_name ? String(c.class_name) : "",
-          estimated_start_time: normalizeTime(c?.estimated_start_time) || normalizeTime(c?.start_time_default),
-          warmup_class: safeNum(c?.warmup_class, 0) === 1
-        });
+    pushLog({
+      name: "sessionStorage.writes",
+      trainer_rows: wroteRows,
+      trainer_log: wroteLog,
+      keys: {
+        schedule: KEYS.schedule,
+        entries: KEYS.entries,
+        trainerRows: KEYS.trainerRows,
+        trainerLog: KEYS.trainerLog
       }
-    }
+    }, state);
 
-    // Sort rings/groups/classes by schedule sequence (do NOT invent extra ordering)
-    ringsOut.sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
-    for (const r of ringsOut) {
-      r.groups.sort((a, b) => (a.class_group_sequence || 0) - (b.class_group_sequence || 0));
-      for (const g of r.groups) {
-        // Primary: start time if present, else class_number
-        g.classes.sort((a, b) => {
-          const ta = a.estimated_start_time || "";
-          const tb = b.estimated_start_time || "";
-          if (ta && tb && ta !== tb) return ta.localeCompare(tb);
-          const na = a.class_number || 0;
-          const nb = b.class_number || 0;
-          return na - nb;
-        });
-      }
-    }
-
-    // Second: fold barn entries into schedule by class_id
-    let matched = 0;
-    let unmatched = 0;
-
-    if (Array.isArray(entries) && entries.length) {
-      for (const e of entries) {
-        const classId =
-          safeNum(e?.entry_class?.class_id, null) ||
-          safeNum(e?.class_data?.class_id, null);
-
-        if (!classId) {
-          unmatched++;
-          continue;
-        }
-
-        const loc = classIndex.get(classId);
-
-        // If class is missing from schedule, do not guess. Log it.
-        if (!loc || !loc.ring_number) {
-          unmatched++;
-          continue;
-        }
-
-        const ringObj = ringMap.get(loc.ring_number);
-        if (!ringObj) {
-          unmatched++;
-          continue;
-        }
-
-        // Find the class inside the ring structure
-        let placed = false;
-        for (const g of ringObj.groups) {
-          const cl = g.classes.find(x => x.class_id === classId);
-          if (!cl) continue;
-
-          cl.entries.push(makeEntryLine(e));
-          matched++;
-          placed = true;
-          break;
-        }
-
-        if (!placed) unmatched++;
-      }
-    }
-
-    // Remove internal keys
-    for (const r of ringsOut) {
-      for (const g of r.groups) {
-        delete g._k;
-        for (const c of g.classes) delete c._k;
-      }
-    }
-
-    // Summary log
-    log("info", "trainer_derive:done", {
-      schedule_rings: ringsOut.length,
-      schedule_classes_indexed: scheduleClassCount,
-      barn_entries_in: Array.isArray(entries) ? entries.length : 0,
-      entries_matched_to_schedule: matched,
-      entries_unmatched: unmatched
-    });
-
-    // Persist output
-    try {
-      sessionStorage.setItem(OUT_KEY, JSON.stringify(ringsOut));
-    } catch {
-      log("error", "trainer_derive:write_failed", { key: OUT_KEY });
-    }
-
-    return ringsOut;
+    // Final summary object (also returned)
+    return {
+      at: nowISO(),
+      ok: state.errors.length === 0,
+      counts: model.counts,
+      warnings: state.warnings,
+      errors: state.errors
+    };
   }
 
-  // Expose required function name (used by your app.js)
-  window.CRT_trainerDerive = derive;
+  // Expose
+  window.CRT_trainerDerive = deriveTrainer;
+
 })();
