@@ -280,7 +280,7 @@
 
   function horseLabel(horse) {
     // Indicator only. No auto-select.
-    return horse.horseName + (horse.barnActive ? ' ⚡📌' : '');
+    return horse.horseName + (horse.barnActive ? ' 📍' : '');
   }
 
   // groupby barnActive (A→Z) then others (A→Z)
