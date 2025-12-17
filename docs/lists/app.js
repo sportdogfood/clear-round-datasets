@@ -1,50 +1,62 @@
 // app.js
-// TackLists.com – mobile horse tack lists, single in-memory session
+// TackLists.com – mobile horse tack lists
+// Session persists in sessionStorage; refresh does NOT wipe state.
+// Only New session and Restart session create a fresh session.
 
 (function () {
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // Config / labels
+  // Paths / storage keys
+  // ---------------------------------------------------------------------------
+
+  // docs/lists/data/horses.json
+  const HORSES_DATA_URL = './data/horses.json';
+
+  const STORAGE_KEY_SESSION = 'tacklists_session_v1';
+  const STORAGE_KEY_CATALOG = 'tacklists_horses_catalog_v1';
+
+  // ---------------------------------------------------------------------------
+  // Fallback (hardcoded) list — kept as backup
   // ---------------------------------------------------------------------------
 
   const HORSE_NAMES = [
-  "Cervin",
-"Charly",
-"Coin",
-"Darcy",
-"Dino",
-"Dottie",
-"Doug",
-"Elliot",
-"Gaston",
-"Indy",
-"Kenny",
-"King",
-"Knox",
-"Krypton",
-"Lenny",
-"Maiki",
-"Milo",
-"Minute",
-"Navy",
-"Oddur",
-"Orion",
-"Paisley",
-"Pedro",
-"Peri",
-"Q",
-"Rimini",
-"Star",
-"Tank",
-"Titan",
-"Zen",
-"Munster",
-"Bernie",
-"Hurricane",
-"Winnie",
-"Caymus",
-"BB"
+    "Cervin",
+    "Charly",
+    "Coin",
+    "Darcy",
+    "Dino",
+    "Dottie",
+    "Doug",
+    "Elliot",
+    "Gaston",
+    "Indy",
+    "Kenny",
+    "King",
+    "Knox",
+    "Krypton",
+    "Lenny",
+    "Maiki",
+    "Milo",
+    "Minute",
+    "Navy",
+    "Oddur",
+    "Orion",
+    "Paisley",
+    "Pedro",
+    "Peri",
+    "Q",
+    "Rimini",
+    "Star",
+    "Tank",
+    "Titan",
+    "Zen",
+    "Munster",
+    "Bernie",
+    "Hurricane",
+    "Winnie",
+    "Caymus",
+    "BB"
   ];
 
   const LIST_NAMES = [
@@ -62,6 +74,10 @@
     LIST_KEYS.map((key, i) => [key, LIST_NAMES[i]])
   );
 
+  // ---------------------------------------------------------------------------
+  // App state
+  // ---------------------------------------------------------------------------
+
   const state = {
     session: null,
     currentScreen: 'start',
@@ -75,7 +91,11 @@
       list4: true,
       list5: true
     },
-    stateFilter: ''
+    stateFilter: '',
+
+    // Catalog used ONLY when creating a new session (or restarting)
+    catalog: null,
+    catalogStatus: 'loading' // 'loading' | 'ready' | 'fallback'
   };
 
   // ---------------------------------------------------------------------------
@@ -89,14 +109,191 @@
   const navRow = document.getElementById('nav-row');
 
   // ---------------------------------------------------------------------------
+  // Storage helpers
+  // ---------------------------------------------------------------------------
+
+  function safeJSONParse(text) {
+    try {
+      return JSON.parse(text);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function loadSessionFromStorage() {
+    const raw = sessionStorage.getItem(STORAGE_KEY_SESSION);
+    if (!raw) return null;
+
+    const parsed = safeJSONParse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (!Array.isArray(parsed.horses)) return null;
+
+    // minimal shape checks
+    parsed.horses = parsed.horses
+      .filter((h) => h && typeof h === 'object')
+      .map((h) => ({
+        horseId: String(h.horseId || ''),
+        horseName: String(h.horseName || '').trim(),
+        barnActive: !!h.barnActive,
+        state: !!h.state,
+        lists: {
+          list1: !!(h.lists && h.lists.list1),
+          list2: !!(h.lists && h.lists.list2),
+          list3: !!(h.lists && h.lists.list3),
+          list4: !!(h.lists && h.lists.list4),
+          list5: !!(h.lists && h.lists.list5)
+        }
+      }))
+      .filter((h) => h.horseId && h.horseName);
+
+    if (!parsed.horses.length) return null;
+
+    return {
+      sessionId: String(parsed.sessionId || Date.now()),
+      createdAt: String(parsed.createdAt || new Date().toISOString()),
+      lastUpdated: parsed.lastUpdated ? String(parsed.lastUpdated) : null,
+      horses: parsed.horses
+    };
+  }
+
+  function saveSessionToStorage() {
+    if (!state.session) return;
+    sessionStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(state.session));
+  }
+
+  function clearSessionStorage() {
+    sessionStorage.removeItem(STORAGE_KEY_SESSION);
+  }
+
+  function loadCatalogFromStorage() {
+    const raw = sessionStorage.getItem(STORAGE_KEY_CATALOG);
+    if (!raw) return null;
+
+    const parsed = safeJSONParse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (!Array.isArray(parsed.items)) return null;
+
+    const items = parsed.items
+      .filter((x) => x && typeof x === 'object')
+      .map((x) => ({
+        horseName: String(x.horseName || '').trim(),
+        barnActive: !!x.barnActive
+      }))
+      .filter((x) => x.horseName);
+
+    if (!items.length) return null;
+
+    return items;
+  }
+
+  function saveCatalogToStorage(items) {
+    if (!Array.isArray(items) || !items.length) return;
+    sessionStorage.setItem(
+      STORAGE_KEY_CATALOG,
+      JSON.stringify({ savedAt: new Date().toISOString(), items })
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Catalog normalization (horses.json -> [{ horseName, barnActive }])
+  // Barn Name + Horse_Active only
+  // ---------------------------------------------------------------------------
+
+  function buildFallbackCatalog() {
+    return HORSE_NAMES
+      .map((name) => String(name || '').trim())
+      .filter(Boolean)
+      .map((horseName) => ({ horseName, barnActive: false }));
+  }
+
+  function normalizeCatalogStrict(raw) {
+    if (!Array.isArray(raw)) return [];
+
+    const out = [];
+    for (const row of raw) {
+      const barnName = row && row['Barn Name'];
+      const horseName = String(barnName || '').trim();
+      if (!horseName) continue;
+
+      out.push({
+        horseName,
+        barnActive: row && row.Horse_Active === true
+      });
+    }
+
+    return out;
+  }
+
+  async function loadCatalog() {
+    // 1) try cached catalog first
+    const cached = loadCatalogFromStorage();
+    if (cached && cached.length) {
+      state.catalog = cached;
+      state.catalogStatus = 'ready';
+      render();
+
+      // optional background refresh (silent)
+      try {
+        const res = await fetch(HORSES_DATA_URL, { cache: 'no-store' });
+        if (res && res.ok) {
+          const raw = await res.json();
+          const fresh = normalizeCatalogStrict(raw);
+          if (fresh.length) {
+            state.catalog = fresh;
+            state.catalogStatus = 'ready';
+            saveCatalogToStorage(fresh);
+            render();
+          }
+        }
+      } catch (_) {
+        // silent
+      }
+
+      return;
+    }
+
+    // 2) fetch horses.json
+    try {
+      const res = await fetch(HORSES_DATA_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad status');
+      const raw = await res.json();
+      const items = normalizeCatalogStrict(raw);
+
+      if (items.length) {
+        state.catalog = items;
+        state.catalogStatus = 'ready';
+        saveCatalogToStorage(items);
+        render();
+        return;
+      }
+
+      throw new Error('empty');
+    } catch (_) {
+      // 3) fallback
+      state.catalog = buildFallbackCatalog();
+      state.catalogStatus = 'fallback';
+      saveCatalogToStorage(state.catalog);
+      render();
+    }
+  }
+
+  function getCatalog() {
+    if (Array.isArray(state.catalog) && state.catalog.length) return state.catalog;
+    return buildFallbackCatalog();
+  }
+
+  // ---------------------------------------------------------------------------
   // Session helpers
   // ---------------------------------------------------------------------------
 
   function createNewSession() {
-    const horses = HORSE_NAMES.map((name, index) => ({
+    const catalog = getCatalog();
+
+    const horses = catalog.map((item, index) => ({
       horseId: `h${index + 1}`,
-      horseName: name,
-      state: false,
+      horseName: item.horseName,
+      barnActive: !!item.barnActive, // data indicator only
+      state: false,                  // manual selection only
       lists: {
         list1: false,
         list2: false,
@@ -112,6 +309,8 @@
       lastUpdated: null,
       horses
     };
+
+    saveSessionToStorage();
   }
 
   function ensureSession() {
@@ -123,12 +322,28 @@
   function updateLastUpdated() {
     if (state.session) {
       state.session.lastUpdated = new Date().toISOString();
+      saveSessionToStorage();
     }
   }
 
   function findHorse(horseId) {
     if (!state.session) return null;
     return state.session.horses.find((h) => h.horseId === horseId) || null;
+  }
+
+  function horseLabel(horse) {
+    // Indicator only (B explicit). No auto-select.
+    return horse.horseName + (horse.barnActive ? ' B' : '');
+  }
+
+  // groupby barnActive (A→Z) then others (A→Z)
+  function sortBarnActiveThenName(list) {
+    return list.slice().sort((a, b) => {
+      const af = a.barnActive ? 1 : 0;
+      const bf = b.barnActive ? 1 : 0;
+      if (af !== bf) return bf - af; // true first
+      return a.horseName.localeCompare(b.horseName);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -339,7 +554,6 @@
   // Screen renderers
   // ---------------------------------------------------------------------------
 
-  // Start (logo + session buttons)
   function renderStartScreen() {
     screenRoot.innerHTML = '';
 
@@ -369,6 +583,8 @@
         tagVariant: 'boolean',
         tagPositive: false,
         onClick: () => {
+          // New session is allowed to clear/overwrite any old storage
+          clearSessionStorage();
           createNewSession();
           setScreen('state');
         }
@@ -384,7 +600,6 @@
       tagVariant: 'boolean',
       tagPositive: true,
       onClick: () => {
-        ensureSession();
         setScreen('state');
       }
     });
@@ -393,7 +608,6 @@
       tagVariant: 'boolean',
       tagPositive: activeCount > 0,
       onClick: () => {
-        ensureSession();
         setScreen('summary');
       }
     });
@@ -402,15 +616,13 @@
       tagVariant: 'boolean',
       tagPositive: false,
       onClick: () => {
+        // Restart is the only other action that clears state
+        clearSessionStorage();
         createNewSession();
         setScreen('state');
       }
     });
   }
-
-  // ---------------------------------------------------------------------------
-  // Active horses (state screen)
-  // ---------------------------------------------------------------------------
 
   function handleStateHorseClick(horseId) {
     const horse = findHorse(horseId);
@@ -462,9 +674,7 @@
     searchWrap.appendChild(searchInput);
     screenRoot.appendChild(searchWrap);
 
-    const sorted = state.session.horses
-      .slice()
-      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+    const sorted = sortBarnActiveThenName(state.session.horses);
 
     const term = (state.stateFilter || '').trim().toLowerCase();
     const filtered = term
@@ -486,7 +696,7 @@
       screenRoot.appendChild(label);
 
       active.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(horseLabel(horse), {
           active: true,
           tagVariant: 'boolean',
           tagPositive: true,
@@ -508,7 +718,7 @@
       screenRoot.appendChild(label);
 
       inactive.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(horseLabel(horse), {
           tagVariant: 'boolean',
           tagPositive: false,
           onClick: () => handleStateHorseClick(horse.horseId)
@@ -516,10 +726,6 @@
       });
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // List screens (list1..list5)
-  // ---------------------------------------------------------------------------
 
   function toggleListMembership(listId, horseId) {
     const horse = findHorse(horseId);
@@ -535,9 +741,9 @@
     ensureSession();
     screenRoot.innerHTML = '';
 
-    const activeStateHorses = state.session.horses
-      .filter((h) => h.state)
-      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+    const activeStateHorses = sortBarnActiveThenName(
+      state.session.horses.filter((h) => h.state)
+    );
 
     if (activeStateHorses.length === 0) {
       createRow('No active horses.', {});
@@ -554,7 +760,7 @@
       screenRoot.appendChild(label);
 
       activeInList.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(horseLabel(horse), {
           active: true,
           tagVariant: 'boolean',
           tagPositive: true,
@@ -576,16 +782,12 @@
       screenRoot.appendChild(label);
 
       inactiveInList.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(horseLabel(horse), {
           tagVariant: 'boolean',
           tagPositive: false,
           onClick: () => toggleListMembership(listId, horse.horseId)
         });
       });
-    }
-
-    if (!activeInList.length && !inactiveInList.length) {
-      createRow('No active horses for this list.', {});
     }
   }
 
@@ -596,10 +798,6 @@
   function renderListDetailScreen(listId) {
     renderListGrouped(listId);
   }
-
-  // ---------------------------------------------------------------------------
-  // Summary screen
-  // ---------------------------------------------------------------------------
 
   function renderSummaryScreen() {
     ensureSession();
@@ -677,10 +875,7 @@
     const order = ['state', 'list1', 'list2', 'list3', 'list4', 'list5'];
 
     function addSection(header, members) {
-      if (lines.length > 0) {
-        lines.push('');
-      }
-
+      if (lines.length > 0) lines.push('');
       lines.push(header);
 
       if (members.length === 0) {
@@ -770,7 +965,6 @@
       return;
     }
 
-    // Fallback
     renderStartScreen();
   }
 
@@ -801,12 +995,7 @@
 
     if (action === 'go-first-list') {
       ensureSession();
-      const hasActive = state.session.horses.some((h) => h.state);
-      if (!hasActive) {
-        setScreen('list1'); // still allow; list will show "No active horses."
-      } else {
-        setScreen('list1');
-      }
+      setScreen('list1');
       return;
     }
 
@@ -823,7 +1012,7 @@
 
     switch (key) {
       case 'start':
-        setScreen('start');
+        setScreen('start'); // does NOT clear
         break;
 
       case 'state':
@@ -857,8 +1046,15 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Initial render
+  // Boot
   // ---------------------------------------------------------------------------
 
+  // 1) Restore session (so refresh does not wipe state)
+  state.session = loadSessionFromStorage();
+
+  // 2) Render immediately
   render();
+
+  // 3) Load catalog in background (used on New session / Restart session)
+  loadCatalog();
 })();
