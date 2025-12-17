@@ -197,7 +197,17 @@
 
   function labelWithBarnIndicator(horse) {
     // State + Lists only (per your rule)
-    return horse.horseName + (horse.barnActive ? ' ▫️' : '');
+    return horse.horseName + (horse.barnActive ? ' ℹ️' : '');
+  }
+
+  function sortByBarnActiveThenName(horses) {
+    // barnActive=true group first (A→Z), then others (A→Z)
+    return horses.slice().sort((a, b) => {
+      const aFlag = a.barnActive ? 1 : 0;
+      const bFlag = b.barnActive ? 1 : 0;
+      if (aFlag !== bFlag) return bFlag - aFlag; // true first
+      return a.horseName.localeCompare(b.horseName);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -546,9 +556,7 @@
     searchWrap.appendChild(searchInput);
     screenRoot.appendChild(searchWrap);
 
-    const sorted = state.session.horses
-      .slice()
-      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+    const sorted = sortByBarnActiveThenName(state.session.horses);
 
     const term = (state.stateFilter || '').trim().toLowerCase();
     const filtered = term
@@ -619,9 +627,9 @@
     ensureSession();
     screenRoot.innerHTML = '';
 
-    const activeStateHorses = state.session.horses
-      .filter((h) => h.state)
-      .sort((a, b) => a.horseName.localeCompare(b.horseName));
+    const activeStateHorses = sortByBarnActiveThenName(
+      state.session.horses.filter((h) => h.state)
+    );
 
     if (activeStateHorses.length === 0) {
       createRow('No active horses.', {});
@@ -898,11 +906,7 @@
     if (action === 'go-first-list') {
       ensureSession();
       const hasActive = state.session.horses.some((h) => h.state);
-      if (!hasActive) {
-        setScreen('list1'); // still allow; list will show "No active horses."
-      } else {
-        setScreen('list1');
-      }
+      setScreen('list1');
       return;
     }
 
@@ -962,6 +966,6 @@
   // Initial render + load horses
   // ---------------------------------------------------------------------------
 
-  render();          // shows Start (Loading horses…)
+  render();           // shows Start (Loading horses…)
   loadHorseCatalog(); // swaps to JSON horses, or fallback HORSE_NAMES
 })();
