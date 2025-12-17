@@ -539,53 +539,72 @@
   // ---------------------------------------------------------------------------
 
   function renderStartScreen() {
-    screenRoot.innerHTML = '';
+  screenRoot.innerHTML = '';
 
-    const logo = document.createElement('div');
-    logo.className = 'start-logo';
-    logo.innerHTML = `
-      <div class="start-logo-mark">
-        <img src="tacklists.png" class="start-logo-img" alt="TackLists.com logo" />
-      </div>
-      <div class="start-logo-text">
-        <div class="start-logo-title">TackLists.com</div>
-        <div class="start-logo-subtitle">Quick horse tack lists, on the fly.</div>
-      </div>
-    `;
-    screenRoot.appendChild(logo);
+  const logo = document.createElement('div');
+  logo.className = 'start-logo';
+  logo.innerHTML = `
+    <div class="start-logo-mark">
+      <img src="tacklists.png" class="start-logo-img" alt="TackLists.com logo" />
+    </div>
+    <div class="start-logo-text">
+      <div class="start-logo-title">TackLists.com</div>
+      <div class="start-logo-subtitle">Quick horse tack lists, on the fly.</div>
+    </div>
+  `;
+  screenRoot.appendChild(logo);
 
-    const hasSession = !!state.session;
+  // -------------------------------------------------------------------------
+  // Start screen only: Autosave indicator (non-clickable)
+  // NOTE: current code saves to sessionStorage, so this is "Tab" persistence.
+  // -------------------------------------------------------------------------
+  const statusRow = document.createElement('div');
+  statusRow.className = 'row'; // no "row--tap" => not visually tappable/cursor pointer
 
-    if (!hasSession) {
-      createRow('New session', {
-        tagVariant: 'boolean',
-        tagPositive: false,
-        onClick: () => {
-          clearSessionStorage();
-          createNewSession();
-          setScreen('state');
-        }
-      });
-      return;
+  const statusTitle = document.createElement('div');
+  statusTitle.className = 'row-title';
+
+  const statusTag = document.createElement('div');
+  statusTag.className = 'row-tag row-tag--count';
+
+  if (!state.session) {
+    statusTitle.textContent = 'Autosave: OFF (no session)';
+    statusTag.hidden = true;
+  } else {
+    // show last saved time (uses lastUpdated if present, else createdAt)
+    const iso = state.session.lastUpdated || state.session.createdAt || '';
+    let timeText = '';
+    if (iso) {
+      const d = new Date(iso);
+      if (!Number.isNaN(d.getTime())) {
+        timeText = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
     }
 
-    const horses = state.session.horses;
-    const activeCount = horses.filter((h) => h.state).length;
+    // detect whether sessionStorage actually contains the session key
+    let savedOk = false;
+    try {
+      savedOk = !!sessionStorage.getItem(STORAGE_KEY_SESSION);
+    } catch (_) {
+      savedOk = false;
+    }
 
-    createRow('In-session', {
-      active: true,
-      tagVariant: 'boolean',
-      tagPositive: true,
-      onClick: () => setScreen('state')
-    });
+    statusTitle.textContent = `Autosave: ON (Tab)${timeText ? ' • ' + timeText : ''}`;
+    statusTag.hidden = false;
+    statusTag.textContent = savedOk ? 'Saved' : 'Not saved';
 
-    createRow('Summary', {
-      tagVariant: 'boolean',
-      tagPositive: activeCount > 0,
-      onClick: () => setScreen('summary')
-    });
+    if (savedOk) statusTag.classList.add('row-tag--positive');
+    else statusTag.classList.remove('row-tag--positive');
+  }
 
-    createRow('Restart session', {
+  statusRow.appendChild(statusTitle);
+  statusRow.appendChild(statusTag);
+  screenRoot.appendChild(statusRow);
+
+  const hasSession = !!state.session;
+
+  if (!hasSession) {
+    createRow('New session', {
       tagVariant: 'boolean',
       tagPositive: false,
       onClick: () => {
@@ -594,7 +613,36 @@
         setScreen('state');
       }
     });
+    return;
   }
+
+  const horses = state.session.horses;
+  const activeCount = horses.filter((h) => h.state).length;
+
+  createRow('In-session', {
+    active: true,
+    tagVariant: 'boolean',
+    tagPositive: true,
+    onClick: () => setScreen('state')
+  });
+
+  createRow('Summary', {
+    tagVariant: 'boolean',
+    tagPositive: activeCount > 0,
+    onClick: () => setScreen('summary')
+  });
+
+  createRow('Restart session', {
+    tagVariant: 'boolean',
+    tagPositive: false,
+    onClick: () => {
+      clearSessionStorage();
+      createNewSession();
+      setScreen('state');
+    }
+  });
+}
+
 
   function handleStateHorseClick(horseId) {
     const horse = findHorse(horseId);
