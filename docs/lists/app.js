@@ -1,7 +1,8 @@
 // app.js
 // TackLists.com – mobile horse tack lists
-// Session persists in sessionStorage; refresh does NOT wipe state.
-// Only New session and Restart session create a fresh session.
+// Session persists in localStorage (survives tab close).
+// Session expires 12 hours after last save (sliding TTL).
+// Only New session and Restart session force a fresh session.
 
 (function () {
   'use strict';
@@ -15,6 +16,11 @@
 
   const STORAGE_KEY_SESSION = 'tacklists_session_v1';
   const STORAGE_KEY_CATALOG = 'tacklists_horses_catalog_v1';
+
+  // 12-hour TTL
+  const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 43200000
+  const SESSION_COOKIE_NAME = 'tacklists_session';
+  const SESSION_COOKIE_MAX_AGE = 12 * 60 * 60; // 43200 seconds
 
   // ---------------------------------------------------------------------------
   // Fallback (hardcoded) list — kept as backup
@@ -70,20 +76,71 @@
   const navRow = document.getElementById('nav-row');
 
   // ---------------------------------------------------------------------------
-  // Storage helpers
+  // Storage + cookie helpers
   // ---------------------------------------------------------------------------
+
+  function nowMs() {
+    return Date.now();
+  }
 
   function safeJSONParse(text) {
     try { return JSON.parse(text); } catch (_) { return null; }
   }
 
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+  }
+
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+  }
+
+  function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch (_) {}
+  }
+
+  function setSessionCookie() {
+    try {
+      document.cookie = `${SESSION_COOKIE_NAME}=1; Max-Age=${SESSION_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`;
+    } catch (_) {}
+  }
+
+  function clearSessionCookie() {
+    try {
+      document.cookie = `${SESSION_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+    } catch (_) {}
+  }
+
+  function touchSessionExpiry() {
+    if (!state.session) return;
+    state.session.expiresAt = new Date(nowMs() + SESSION_TTL_MS).toISOString();
+  }
+
+  function isExpired(expiresAt) {
+    if (!expiresAt) return false;
+    const t = Date.parse(String(expiresAt));
+    if (!Number.isFinite(t)) return false;
+    return t <= nowMs();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session storage (localStorage)
+  // ---------------------------------------------------------------------------
+
   function loadSessionFromStorage() {
-    const raw = sessionStorage.getItem(STORAGE_KEY_SESSION);
+    const raw = storageGet(STORAGE_KEY_SESSION);
     if (!raw) return null;
 
     const parsed = safeJSONParse(raw);
     if (!parsed || typeof parsed !== 'object') return null;
     if (!Array.isArray(parsed.horses)) return null;
+
+    // If expired, treat as no session.
+    if (parsed.expiresAt && isExpired(parsed.expiresAt)) {
+      storageRemove(STORAGE_KEY_SESSION);
+      clearSessionCookie();
+      return null;
+    }
 
     const horses = parsed.horses
       .filter((h) => h && typeof h === 'object')
@@ -98,8 +155,8 @@
           list3: !!(h.lists && h.lists.list3),
           list4: !!(h.lists && h.lists.list4),
           list5: !!(h.lists && h.lists.list5),
-          list6: !!(h.lists && h.lists.list6), // NEW
-          list7: !!(h.lists && h.lists.list7)  // NEW
+          list6: !!(h.lists && h.lists.list6),
+          list7: !!(h.lists && h.lists.list7)
         }
       }))
       .filter((h) => h.horseId && h.horseName);
@@ -107,24 +164,31 @@
     if (!horses.length) return null;
 
     return {
-      sessionId: String(parsed.sessionId || Date.now()),
+      sessionId: String(parsed.sessionId || nowMs()),
       createdAt: String(parsed.createdAt || new Date().toISOString()),
       lastUpdated: parsed.lastUpdated ? String(parsed.lastUpdated) : null,
+      expiresAt: parsed.expiresAt ? String(parsed.expiresAt) : null,
       horses
     };
   }
 
   function saveSessionToStorage() {
     if (!state.session) return;
-    sessionStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(state.session));
+    storageSet(STORAGE_KEY_SESSION, JSON.stringify(state.session));
+    setSessionCookie();
   }
 
   function clearSessionStorage() {
-    sessionStorage.removeItem(STORAGE_KEY_SESSION);
+    storageRemove(STORAGE_KEY_SESSION);
+    clearSessionCookie();
   }
 
+  // ---------------------------------------------------------------------------
+  // Catalog storage (localStorage)
+  // ---------------------------------------------------------------------------
+
   function loadCatalogFromStorage() {
-    const raw = sessionStorage.getItem(STORAGE_KEY_CATALOG);
+    const raw = storageGet(STORAGE_KEY_CATALOG);
     if (!raw) return null;
 
     const parsed = safeJSONParse(raw);
@@ -144,7 +208,7 @@
 
   function saveCatalogToStorage(items) {
     if (!Array.isArray(items) || !items.length) return;
-    sessionStorage.setItem(
+    storageSet(
       STORAGE_KEY_CATALOG,
       JSON.stringify({ savedAt: new Date().toISOString(), items })
     );
@@ -254,9 +318,10 @@
     }));
 
     state.session = {
-      sessionId: Date.now().toString(),
+      sessionId: nowMs().toString(),
       createdAt: new Date().toISOString(),
       lastUpdated: null,
+      expiresAt: new Date(nowMs() + SESSION_TTL_MS).toISOString(),
       horses
     };
 
@@ -270,6 +335,7 @@
   function updateLastUpdated() {
     if (!state.session) return;
     state.session.lastUpdated = new Date().toISOString();
+    touchSessionExpiry(); // sliding 12h TTL on any meaningful change
     saveSessionToStorage();
   }
 
@@ -755,7 +821,6 @@
       .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
     const activeCount = activeHorses.length;
-
     const lines = [];
     const title = mode === 'notPacked' ? 'NOT PACKED' : 'PACKED';
 
@@ -847,9 +912,8 @@
 
   headerAction.addEventListener('click', () => {
     const action = headerAction.dataset.action;
-    const scr = state.currentScreen;
 
-    if (scr === 'summary' && action === 'go-share') {
+    if (state.currentScreen === 'summary' && action === 'go-share') {
       setScreen('share');
       return;
     }
@@ -906,11 +970,29 @@
     }
   });
 
+  // Extra safety: persist on tab hide/close (no state changes, just a save)
+  window.addEventListener('pagehide', () => {
+    saveSessionToStorage();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveSessionToStorage();
+    }
+  });
+
   // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
 
   state.session = loadSessionFromStorage();
+
+  // If we resumed a valid session, extend TTL for another 12 hours (no lastUpdated change)
+  if (state.session) {
+    touchSessionExpiry();
+    saveSessionToStorage();
+  }
+
   render();
   loadCatalog(); // background (used for New/Restart)
 })();
