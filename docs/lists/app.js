@@ -8,43 +8,47 @@
   // Config / labels
   // ---------------------------------------------------------------------------
 
+  // JSON source (relative to docs/lists/index.html)
+  const HORSES_DATA_URL = './data/horses.json';
+
+  // Fallback if JSON fails to load
   const HORSE_NAMES = [
-  "Cervin",
-"Charly",
-"Coin",
-"Darcy",
-"Dino",
-"Dottie",
-"Doug",
-"Elliot",
-"Gaston",
-"Indy",
-"Kenny",
-"King",
-"Knox",
-"Krypton",
-"Lenny",
-"Maiki",
-"Milo",
-"Minute",
-"Navy",
-"Oddur",
-"Orion",
-"Paisley",
-"Pedro",
-"Peri",
-"Q",
-"Rimini",
-"Star",
-"Tank",
-"Titan",
-"Zen",
-"Munster",
-"Bernie",
-"Hurricane",
-"Winnie",
-"Caymus",
-"BB"
+    "Cervin",
+    "Charly",
+    "Coin",
+    "Darcy",
+    "Dino",
+    "Dottie",
+    "Doug",
+    "Elliot",
+    "Gaston",
+    "Indy",
+    "Kenny",
+    "King",
+    "Knox",
+    "Krypton",
+    "Lenny",
+    "Maiki",
+    "Milo",
+    "Minute",
+    "Navy",
+    "Oddur",
+    "Orion",
+    "Paisley",
+    "Pedro",
+    "Peri",
+    "Q",
+    "Rimini",
+    "Star",
+    "Tank",
+    "Titan",
+    "Zen",
+    "Munster",
+    "Bernie",
+    "Hurricane",
+    "Winnie",
+    "Caymus",
+    "BB"
   ];
 
   const LIST_NAMES = [
@@ -66,6 +70,11 @@
     session: null,
     currentScreen: 'start',
     history: [],
+
+    // horse catalog (from JSON, else fallback)
+    horseCatalogStatus: 'loading', // 'loading' | 'ready' | 'fallback'
+    horseCatalog: null,            // [{ horseName, barnActive }]
+
     shareMode: false,
     shareSelection: {
       state: true,
@@ -89,14 +98,69 @@
   const navRow = document.getElementById('nav-row');
 
   // ---------------------------------------------------------------------------
+  // Horse catalog loader
+  // ---------------------------------------------------------------------------
+
+  function buildFallbackCatalog() {
+    return HORSE_NAMES.map((name) => ({
+      horseName: String(name || '').trim(),
+      barnActive: false
+    })).filter((h) => h.horseName);
+  }
+
+  function normalizeCatalogFromJson(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((r, idx) => {
+      const barnName = r && r['Barn Name'];
+      const showName = r && r['Show Name'];
+      const horseName = String((barnName || showName || r?.Horse || `Horse ${idx + 1}`)).trim();
+      const barnActive = r && r.Horse_Active === true;
+      return { horseName, barnActive };
+    }).filter((h) => h.horseName);
+  }
+
+  async function loadHorseCatalog() {
+    state.horseCatalogStatus = 'loading';
+    state.horseCatalog = null;
+    render();
+
+    try {
+      const res = await fetch(HORSES_DATA_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const raw = await res.json();
+      const catalog = normalizeCatalogFromJson(raw);
+      if (!catalog.length) throw new Error('Empty catalog');
+
+      state.horseCatalog = catalog;
+      state.horseCatalogStatus = 'ready';
+    } catch (err) {
+      console.warn('horses.json load failed; using HORSE_NAMES fallback.', err);
+      state.horseCatalog = buildFallbackCatalog();
+      state.horseCatalogStatus = 'fallback';
+    }
+
+    render();
+  }
+
+  function getCatalog() {
+    return (state.horseCatalog && state.horseCatalog.length)
+      ? state.horseCatalog
+      : buildFallbackCatalog();
+  }
+
+  // ---------------------------------------------------------------------------
   // Session helpers
   // ---------------------------------------------------------------------------
 
   function createNewSession() {
-    const horses = HORSE_NAMES.map((name, index) => ({
+    const catalog = getCatalog();
+
+    const horses = catalog.map((item, index) => ({
       horseId: `h${index + 1}`,
-      horseName: name,
-      state: false,
+      horseName: item.horseName,
+      barnActive: !!item.barnActive, // <- data flag only (indicator)
+      state: false,                  // <- app active (manual)
       lists: {
         list1: false,
         list2: false,
@@ -131,11 +195,22 @@
     return state.session.horses.find((h) => h.horseId === horseId) || null;
   }
 
+  function labelWithBarnIndicator(horse) {
+    // State + Lists only (per your rule)
+    return horse.horseName + (horse.barnActive ? ' B' : '');
+  }
+
   // ---------------------------------------------------------------------------
   // Navigation / routing
   // ---------------------------------------------------------------------------
 
   function setScreen(newScreen, pushHistory = true) {
+    // While loading horses.json, keep user on Start unless a session already exists
+    if (!state.session && state.horseCatalogStatus === 'loading' && newScreen !== 'start') {
+      newScreen = 'start';
+      pushHistory = false;
+    }
+
     if (pushHistory && state.currentScreen && state.currentScreen !== newScreen) {
       state.history.push(state.currentScreen);
     }
@@ -362,6 +437,15 @@
     `;
     screenRoot.appendChild(logo);
 
+    // If we don't have a session yet, and the catalog is still loading, show loading state
+    if (!state.session && state.horseCatalogStatus === 'loading') {
+      createRow('Loading horses…', {
+        tagVariant: 'boolean',
+        tagPositive: false
+      });
+      return;
+    }
+
     const hasSession = !!state.session;
 
     if (!hasSession) {
@@ -486,7 +570,7 @@
       screenRoot.appendChild(label);
 
       active.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(labelWithBarnIndicator(horse), {
           active: true,
           tagVariant: 'boolean',
           tagPositive: true,
@@ -508,7 +592,7 @@
       screenRoot.appendChild(label);
 
       inactive.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(labelWithBarnIndicator(horse), {
           tagVariant: 'boolean',
           tagPositive: false,
           onClick: () => handleStateHorseClick(horse.horseId)
@@ -554,7 +638,7 @@
       screenRoot.appendChild(label);
 
       activeInList.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(labelWithBarnIndicator(horse), {
           active: true,
           tagVariant: 'boolean',
           tagPositive: true,
@@ -576,7 +660,7 @@
       screenRoot.appendChild(label);
 
       inactiveInList.forEach((horse) => {
-        createRow(horse.horseName, {
+        createRow(labelWithBarnIndicator(horse), {
           tagVariant: 'boolean',
           tagPositive: false,
           onClick: () => toggleListMembership(listId, horse.horseId)
@@ -738,6 +822,12 @@
   // ---------------------------------------------------------------------------
 
   function render() {
+    // If loading and no session, force Start
+    if (!state.session && state.horseCatalogStatus === 'loading' && state.currentScreen !== 'start') {
+      state.currentScreen = 'start';
+      state.history = [];
+    }
+
     renderHeader();
     renderNav();
     updateNavAggregates();
@@ -799,6 +889,12 @@
       return;
     }
 
+    // If still loading and no session, stay on Start
+    if (!state.session && state.horseCatalogStatus === 'loading') {
+      setScreen('start', false);
+      return;
+    }
+
     if (action === 'go-first-list') {
       ensureSession();
       const hasActive = state.session.horses.some((h) => h.state);
@@ -820,6 +916,12 @@
     if (!btn) return;
     const key = btn.dataset.screen;
     if (!key) return;
+
+    // While loading and no session, only allow Start
+    if (!state.session && state.horseCatalogStatus === 'loading' && key !== 'start') {
+      setScreen('start', false);
+      return;
+    }
 
     switch (key) {
       case 'start':
@@ -857,8 +959,9 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Initial render
+  // Initial render + load horses
   // ---------------------------------------------------------------------------
 
-  render();
+  render();          // shows Start (Loading horses…)
+  loadHorseCatalog(); // swaps to JSON horses, or fallback HORSE_NAMES
 })();
