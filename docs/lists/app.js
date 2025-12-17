@@ -197,7 +197,7 @@
 
   function labelWithBarnIndicator(horse) {
     // State + Lists only (per your rule)
-    return horse.horseName + (horse.barnActive ? ' 🚥🚨📍🖍️✏️🏷️⚡' : '');
+    return horse.horseName + (horse.barnActive ? ' B' : '');
   }
 
   // ---------------------------------------------------------------------------
