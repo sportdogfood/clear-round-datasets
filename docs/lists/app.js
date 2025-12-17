@@ -538,7 +538,7 @@
   // Screens
   // ---------------------------------------------------------------------------
 
-  function renderStartScreen() {
+function renderStartScreen() {
   screenRoot.innerHTML = '';
 
   const logo = document.createElement('div');
@@ -554,53 +554,6 @@
   `;
   screenRoot.appendChild(logo);
 
-  // -------------------------------------------------------------------------
-  // Start screen only: Autosave indicator (non-clickable)
-  // NOTE: current code saves to sessionStorage, so this is "Tab" persistence.
-  // -------------------------------------------------------------------------
-  const statusRow = document.createElement('div');
-  statusRow.className = 'row'; // no "row--tap" => not visually tappable/cursor pointer
-
-  const statusTitle = document.createElement('div');
-  statusTitle.className = 'row-title';
-
-  const statusTag = document.createElement('div');
-  statusTag.className = 'row-tag row-tag--count';
-
-  if (!state.session) {
-    statusTitle.textContent = 'Autosave: OFF (no session)';
-    statusTag.hidden = true;
-  } else {
-    // show last saved time (uses lastUpdated if present, else createdAt)
-    const iso = state.session.lastUpdated || state.session.createdAt || '';
-    let timeText = '';
-    if (iso) {
-      const d = new Date(iso);
-      if (!Number.isNaN(d.getTime())) {
-        timeText = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      }
-    }
-
-    // detect whether sessionStorage actually contains the session key
-    let savedOk = false;
-    try {
-      savedOk = !!sessionStorage.getItem(STORAGE_KEY_SESSION);
-    } catch (_) {
-      savedOk = false;
-    }
-
-    statusTitle.textContent = `Autosave: ON (Tab)${timeText ? ' • ' + timeText : ''}`;
-    statusTag.hidden = false;
-    statusTag.textContent = savedOk ? 'Saved' : 'Not saved';
-
-    if (savedOk) statusTag.classList.add('row-tag--positive');
-    else statusTag.classList.remove('row-tag--positive');
-  }
-
-  statusRow.appendChild(statusTitle);
-  statusRow.appendChild(statusTag);
-  screenRoot.appendChild(statusRow);
-
   const hasSession = !!state.session;
 
   if (!hasSession) {
@@ -615,6 +568,50 @@
     });
     return;
   }
+
+  const horses = state.session.horses;
+  const activeCount = horses.filter((h) => h.state).length;
+
+  createRow('In-session', {
+    active: true,
+    tagVariant: 'boolean',
+    tagPositive: true,
+    onClick: () => setScreen('state')
+  });
+
+  createRow('Summary', {
+    tagVariant: 'boolean',
+    tagPositive: activeCount > 0,
+    onClick: () => setScreen('summary')
+  });
+
+  createRow('Restart session', {
+    tagVariant: 'boolean',
+    tagPositive: false,
+    onClick: () => {
+      clearSessionStorage();
+      createNewSession();
+      setScreen('state');
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Start screen only: small autosave note under Restart (NOT a pill row)
+  // -------------------------------------------------------------------------
+  const note = document.createElement('div');
+  note.style.margin = '10px 10px 0';
+  note.style.fontSize = '12px';
+  note.style.color = 'rgba(209, 213, 219, 0.9)'; // matches your subtitle tone
+  note.style.lineHeight = '1.35';
+
+  // Your current implementation uses sessionStorage:
+  // - refresh is safe
+  // - closing the tab/browser clears this session
+  note.textContent =
+    'Autosave: ON (Tab). Refresh is safe. Closing this tab clears this session.';
+
+  screenRoot.appendChild(note);
+}
 
   const horses = state.session.horses;
   const activeCount = horses.filter((h) => h.state).length;
