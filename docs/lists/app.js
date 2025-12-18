@@ -1,6 +1,6 @@
 // app.js
 // TackLists.com – mobile horse tack lists
-// Session persists in localStorage (survives tab close).
+// Session persists in localStorage (survives tab close / refresh).
 // Session expires 12 hours after last save (sliding TTL).
 // Only New session and Restart session force a fresh session.
 
@@ -62,7 +62,10 @@
 
     // Catalog used ONLY when creating a new session (or restarting)
     catalog: null,
-    catalogStatus: 'loading' // 'loading' | 'ready' | 'fallback'
+    catalogStatus: 'loading', // 'loading' | 'ready' | 'fallback'
+
+    // storage health (for start-screen note)
+    storageOk: true
   };
 
   // ---------------------------------------------------------------------------
@@ -92,7 +95,14 @@
   }
 
   function storageSet(key, value) {
-    try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+    try {
+      localStorage.setItem(key, value);
+      state.storageOk = true;
+      return true;
+    } catch (_) {
+      state.storageOk = false;
+      return false;
+    }
   }
 
   function storageRemove(key) {
@@ -121,6 +131,23 @@
     const t = Date.parse(String(expiresAt));
     if (!Number.isFinite(t)) return false;
     return t <= nowMs();
+  }
+
+  // Migrate legacy sessionStorage -> localStorage (one-time, best-effort)
+  function migrateLegacySessionStorage() {
+    try {
+      const legacySession = sessionStorage.getItem(STORAGE_KEY_SESSION);
+      if (legacySession && !storageGet(STORAGE_KEY_SESSION)) {
+        storageSet(STORAGE_KEY_SESSION, legacySession);
+      }
+      if (legacySession) sessionStorage.removeItem(STORAGE_KEY_SESSION);
+
+      const legacyCatalog = sessionStorage.getItem(STORAGE_KEY_CATALOG);
+      if (legacyCatalog && !storageGet(STORAGE_KEY_CATALOG)) {
+        storageSet(STORAGE_KEY_CATALOG, legacyCatalog);
+      }
+      if (legacyCatalog) sessionStorage.removeItem(STORAGE_KEY_CATALOG);
+    } catch (_) {}
   }
 
   // ---------------------------------------------------------------------------
@@ -174,8 +201,8 @@
 
   function saveSessionToStorage() {
     if (!state.session) return;
-    storageSet(STORAGE_KEY_SESSION, JSON.stringify(state.session));
-    setSessionCookie();
+    const ok = storageSet(STORAGE_KEY_SESSION, JSON.stringify(state.session));
+    if (ok) setSessionCookie();
   }
 
   function clearSessionStorage() {
@@ -304,7 +331,7 @@
     const horses = catalog.map((item, index) => ({
       horseId: `h${index + 1}`,
       horseName: item.horseName,
-      barnActive: !!item.barnActive, // data indicator only
+      barnActive: !!item.barnActive, // indicator only
       state: false,                  // manual selection only
       lists: {
         list1: false,
@@ -335,7 +362,7 @@
   function updateLastUpdated() {
     if (!state.session) return;
     state.session.lastUpdated = new Date().toISOString();
-    touchSessionExpiry(); // sliding 12h TTL on any meaningful change
+    touchSessionExpiry(); // sliding TTL on any meaningful change
     saveSessionToStorage();
   }
 
@@ -357,6 +384,16 @@
       if (af !== bf) return bf - af; // true first
       return a.horseName.localeCompare(b.horseName);
     });
+  }
+
+  function formatTimeShort(iso) {
+    const t = Date.parse(String(iso || ''));
+    if (!Number.isFinite(t)) return null;
+    try {
+      return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -382,16 +419,13 @@
     const match = scr.match(/^list([1-7])(Detail)?$/);
     if (!match) return;
 
-    let idx = Number(match[1]);
+    const idx = Number(match[1]);
 
     if (direction === 'prev' && idx > 1) {
       setScreen(`list${idx - 1}`);
     } else if (direction === 'next') {
-      if (idx < 7) {
-        setScreen(`list${idx + 1}`);
-      } else if (idx === 7) {
-        setScreen('summary');
-      }
+      if (idx < 7) setScreen(`list${idx + 1}`);
+      else setScreen('summary');
     }
   }
 
@@ -456,17 +490,17 @@
       if (m) activeKey = `list${m[1]}`;
     }
 
-    const buttons = navRow.querySelectorAll('.nav-btn');
+    const buttons = navRow ? navRow.querySelectorAll('.nav-btn') : [];
     buttons.forEach((btn) => {
       btn.classList.remove('nav-btn--primary');
       const key = btn.dataset.screen;
-      if (activeKey && key === activeKey) {
-        btn.classList.add('nav-btn--primary');
-      }
+      if (activeKey && key === activeKey) btn.classList.add('nav-btn--primary');
     });
   }
 
   function updateNavAggregates() {
+    if (!navRow) return;
+
     const aggEls = navRow.querySelectorAll('[data-nav-agg]');
     if (!aggEls.length) return;
 
@@ -474,9 +508,7 @@
     const activeHorses = horses.filter((h) => h.state);
     const activeCount = activeHorses.length;
 
-    const listCounts = {
-      list1: 0, list2: 0, list3: 0, list4: 0, list5: 0, list6: 0, list7: 0
-    };
+    const listCounts = { list1: 0, list2: 0, list3: 0, list4: 0, list5: 0, list6: 0, list7: 0 };
 
     ['list1','list2','list3','list4','list5','list6','list7'].forEach((listId) => {
       listCounts[listId] = horses.filter((h) => h.state && h.lists[listId]).length;
@@ -539,72 +571,64 @@
   // ---------------------------------------------------------------------------
 
   function renderStartScreen() {
-  screenRoot.innerHTML = '';
+    screenRoot.innerHTML = '';
 
-  const logo = document.createElement('div');
-  logo.className = 'start-logo';
-  logo.innerHTML = `
-    <div class="start-logo-mark">
-      <img src="tacklists.png" class="start-logo-img" alt="TackLists.com logo" />
-    </div>
-    <div class="start-logo-text">
-      <div class="start-logo-title">TackLists.com</div>
-      <div class="start-logo-subtitle">Quick horse tack lists, on the fly.</div>
-    </div>
-  `;
-  screenRoot.appendChild(logo);
+    const logo = document.createElement('div');
+    logo.className = 'start-logo';
+    logo.innerHTML = `
+      <div class="start-logo-mark">
+        <img src="tacklists.png" class="start-logo-img" alt="TackLists.com logo" />
+      </div>
+      <div class="start-logo-text">
+        <div class="start-logo-title">TackLists.com</div>
+        <div class="start-logo-subtitle">Quick horse tack lists, on the fly.</div>
+      </div>
+    `;
+    screenRoot.appendChild(logo);
 
-  // -------------------------------------------------------------------------
-  // Start screen only: Autosave indicator (non-clickable)
-  // NOTE: current code saves to sessionStorage, so this is "Tab" persistence.
-  // -------------------------------------------------------------------------
-  const statusRow = document.createElement('div');
-  statusRow.className = 'row'; // no "row--tap" => not visually tappable/cursor pointer
+    const hasSession = !!state.session;
 
-  const statusTitle = document.createElement('div');
-  statusTitle.className = 'row-title';
+    if (!hasSession) {
+      createRow('New session', {
+        tagVariant: 'boolean',
+        tagPositive: false,
+        onClick: () => {
+          clearSessionStorage();
+          createNewSession();
+          setScreen('state');
+        }
+      });
 
-  const statusTag = document.createElement('div');
-  statusTag.className = 'row-tag row-tag--count';
+      const note = document.createElement('div');
+      note.style.margin = '10px 10px 0';
+      note.style.fontSize = '12px';
+      note.style.color = 'rgba(209, 213, 219, 0.9)';
+      note.style.lineHeight = '1.35';
+      note.textContent = state.storageOk
+        ? 'Autosave: ON (device). Expires after 12 hours of inactivity.'
+        : 'Autosave: OFF (storage blocked in this browser).';
+      screenRoot.appendChild(note);
 
-  if (!state.session) {
-    statusTitle.textContent = 'Autosave: OFF (no session)';
-    statusTag.hidden = true;
-  } else {
-    // show last saved time (uses lastUpdated if present, else createdAt)
-    const iso = state.session.lastUpdated || state.session.createdAt || '';
-    let timeText = '';
-    if (iso) {
-      const d = new Date(iso);
-      if (!Number.isNaN(d.getTime())) {
-        timeText = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      }
+      return;
     }
 
-    // detect whether sessionStorage actually contains the session key
-    let savedOk = false;
-    try {
-      savedOk = !!sessionStorage.getItem(STORAGE_KEY_SESSION);
-    } catch (_) {
-      savedOk = false;
-    }
+    const horses = state.session.horses;
+    const activeCount = horses.filter((h) => h.state).length;
 
-    statusTitle.textContent = `Autosave: ON (Tab)${timeText ? ' • ' + timeText : ''}`;
-    statusTag.hidden = false;
-    statusTag.textContent = savedOk ? 'Saved' : 'Not saved';
+    createRow('In-session', {
+      active: true,
+      tagVariant: 'boolean',
+      tagPositive: true,
+      onClick: () => setScreen('state')
+    });
 
-    if (savedOk) statusTag.classList.add('row-tag--positive');
-    else statusTag.classList.remove('row-tag--positive');
-  }
+    createRow('Summary', {
+      tagVariant: 'boolean',
+      tagPositive: activeCount > 0,
+      onClick: () => setScreen('summary')
+    });
 
-  statusRow.appendChild(statusTitle);
-  statusRow.appendChild(statusTag);
-  screenRoot.appendChild(statusRow);
-
-  const hasSession = !!state.session;
-
-  if (!hasSession) {
-    createRow('New session', {
+    createRow('Restart session', {
       tagVariant: 'boolean',
       tagPositive: false,
       onClick: () => {
@@ -613,36 +637,31 @@
         setScreen('state');
       }
     });
-    return;
-  }
 
-  const horses = state.session.horses;
-  const activeCount = horses.filter((h) => h.state).length;
+    // Start screen only: simple text under Restart (NOT a pill row)
+    const lastSavedIso = state.session.lastUpdated || state.session.createdAt;
+    const lastSaved = formatTimeShort(lastSavedIso);
+    const expires = formatTimeShort(state.session.expiresAt);
 
-  createRow('In-session', {
-    active: true,
-    tagVariant: 'boolean',
-    tagPositive: true,
-    onClick: () => setScreen('state')
-  });
+    const note = document.createElement('div');
+    note.style.margin = '10px 10px 0';
+    note.style.fontSize = '12px';
+    note.style.color = 'rgba(209, 213, 219, 0.9)';
+    note.style.lineHeight = '1.35';
 
-  createRow('Summary', {
-    tagVariant: 'boolean',
-    tagPositive: activeCount > 0,
-    onClick: () => setScreen('summary')
-  });
-
-  createRow('Restart session', {
-    tagVariant: 'boolean',
-    tagPositive: false,
-    onClick: () => {
-      clearSessionStorage();
-      createNewSession();
-      setScreen('state');
+    if (!state.storageOk) {
+      note.textContent = 'Autosave: OFF (storage blocked in this browser).';
+    } else {
+      const parts = [];
+      parts.push('Autosave: ON (device).');
+      if (lastSaved) parts.push(`Last save: ${lastSaved}.`);
+      if (expires) parts.push(`Expires: ${expires}.`);
+      else parts.push('Expires after 12 hours of inactivity.');
+      note.textContent = parts.join(' ');
     }
-  });
-}
 
+    screenRoot.appendChild(note);
+  }
 
   function handleStateHorseClick(horseId) {
     const horse = findHorse(horseId);
@@ -872,7 +891,6 @@
     const lines = [];
     const title = mode === 'notPacked' ? 'NOT PACKED' : 'PACKED';
 
-    // Always include Active Horses section
     lines.push(`Active Horses (${activeCount})`);
     if (!activeHorses.length) lines.push('[none]');
     else activeHorses.forEach((h) => lines.push(h.horseName));
@@ -977,46 +995,48 @@
     }
   });
 
-  navRow.addEventListener('click', (evt) => {
-    const btn = evt.target.closest('.nav-btn');
-    if (!btn) return;
+  if (navRow) {
+    navRow.addEventListener('click', (evt) => {
+      const btn = evt.target.closest('.nav-btn');
+      if (!btn) return;
 
-    const key = btn.dataset.screen;
-    if (!key) return;
+      const key = btn.dataset.screen;
+      if (!key) return;
 
-    switch (key) {
-      case 'start':
-        setScreen('start');
-        break;
+      switch (key) {
+        case 'start':
+          setScreen('start');
+          break;
 
-      case 'state':
-        ensureSession();
-        setScreen('state');
-        break;
+        case 'state':
+          ensureSession();
+          setScreen('state');
+          break;
 
-      case 'summary':
-        ensureSession();
-        setScreen('summary');
-        break;
+        case 'summary':
+          ensureSession();
+          setScreen('summary');
+          break;
 
-      case 'list1':
-      case 'list2':
-      case 'list3':
-      case 'list4':
-      case 'list5':
-      case 'list6':
-      case 'list7': {
-        ensureSession();
-        const hasActive = state.session.horses.some((h) => h.state);
-        if (!hasActive) setScreen('state');
-        else setScreen(key);
-        break;
+        case 'list1':
+        case 'list2':
+        case 'list3':
+        case 'list4':
+        case 'list5':
+        case 'list6':
+        case 'list7': {
+          ensureSession();
+          const hasActive = state.session.horses.some((h) => h.state);
+          if (!hasActive) setScreen('state');
+          else setScreen(key);
+          break;
+        }
+
+        default:
+          break;
       }
-
-      default:
-        break;
-    }
-  });
+    });
+  }
 
   // Extra safety: persist on tab hide/close (no state changes, just a save)
   window.addEventListener('pagehide', () => {
@@ -1032,6 +1052,8 @@
   // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
+
+  migrateLegacySessionStorage();
 
   state.session = loadSessionFromStorage();
 
