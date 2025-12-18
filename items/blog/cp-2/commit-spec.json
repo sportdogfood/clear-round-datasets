@@ -1,6 +1,6 @@
 {
   "file": "commit-spec.json",
-  "version": "v2025-12-18-commit-02",
+  "version": "v2025-12-18-commit-03",
   "street": "blog",
   "house": "cp:2",
   "purpose": [
@@ -66,19 +66,22 @@
       "required": true,
       "content_source": "final_out_bin",
       "content_type": "application/json",
-      "mutation": "none"
+      "mutation": "none",
+      "path_ref": "final_json_path"
     },
     "final_html": {
       "required_when": {
         "job_definition_output_format_in": ["html", "json+html"]
       },
       "content_source": "deterministic_renderer",
-      "content_type": "text/html"
+      "content_type": "text/html",
+      "path_ref": "final_html_path"
     },
     "run_log_json": {
       "required": true,
       "content_type": "application/json",
       "content_source": "commit_step_builder",
+      "path_ref": "run_log_path",
       "shape": {
         "job_id": "string",
         "job_id_fs": "string",
@@ -100,14 +103,21 @@
     ],
     "expected_sections_hint": {
       "collection_blocks": ["paragraph_1", "paragraph_2"],
-      "places_blocks": ["stay_paragraph", "dine_paragraph", "essentials_paragraph", "locale_paragraph", "outro_paragraph"]
+      "places_blocks": [
+        "stay_paragraph",
+        "dine_paragraph",
+        "essentials_paragraph",
+        "locale_paragraph",
+        "outro_paragraph"
+      ]
     }
   },
   "commit_call": {
     "tool": "docs_commit_bulk",
     "overwrite": true,
     "message_pattern": "Final commit for {job_definition.job_id}",
-    "files_order": ["final_json", "final_html_optional", "run_log_json"]
+    "files_order": ["final_json", "final_html", "run_log_json"],
+    "optional_artifacts": ["final_html"]
   },
   "failure_behavior": {
     "on_missing_required_input": { "action": "halt", "error_code": "COMMIT_INPUT_MISSING" },
