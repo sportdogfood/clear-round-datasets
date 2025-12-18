@@ -248,6 +248,7 @@ On success: send exactly one message containing:
 - HTML path (if generated)
 - LOG path
 - commit SHA (if available)
+- runner_marker: toaster-verify-2025-12-18-A
 
 On failure: send exactly one message containing:
 - a concise error
