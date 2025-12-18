@@ -1,6 +1,6 @@
 # File: items/blog/cp-2/instructions-mini.txt
 # Runner: blog-cp:2 — MINI (toaster gatekeeper, no brains)
-# Version: v2025-12-18-min-01
+# Version: v2025-12-18-min-02
 # Updated: 2025-12-18T00:00:00-05:00
 
 ============================================================
@@ -145,7 +145,24 @@ A) type == "data_sorter" (exp)
 - Hard-stop if any required input bin for later lanes is not produced
 
 B) type in {"researcher","writer","rewriter","stitcher"}
-- Require reads_bin exists (if lane_spec.reads_bin)
+- If lane_spec.reads_dynamic exists:
+  - Build target_bin = lane_spec.reads_dynamic.target_bin
+  - Collect all existing bins where name starts with any prefix in lane_spec.reads_dynamic.include_prefixes
+  - Hard-stop if zero bins collected
+  - Create bins[target_bin] as exactly ONE JSON object:
+    {
+      "job_id": job_definition.job_id,
+      "street": job_definition.street,
+      "house": job_definition.house,
+      "lane": lane_key,
+      "global_rules": job_definition.global_rules,
+      "inputs": [
+        { "bin": "<bin_name>", "data": <bins[bin_name]> }
+      ]
+    }
+- Require reads_bin exists:
+  - reads_bin = lane_spec.reads_bin
+  - if bins[reads_bin] missing: STOP "missing reads_bin"
 - Build lane system prompt = JSON(job_definition.global_rules) + "\n\n" + template_text
 - Call the model with:
   - system = lane system prompt
