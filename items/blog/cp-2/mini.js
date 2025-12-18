@@ -1,25 +1,25 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-// Utility to load the local MINI instructions text
+// Load local contract file
 export async function loadMiniText() {
   const p = path.resolve(process.cwd(), "instructions-mini.txt");
   return await fs.readFile(p, "utf8");
 }
 
-// Diagnostic output (instead of committing)
+// Diagnostic helper to inspect pre-commit output
 export async function showFinalOutput(state) {
   if (!state?.final_output) {
-    console.error("❌ No final_output found in state");
+    console.error("⚠️  No final_output in state");
     return;
   }
 
-  console.log("=== FINAL OUTPUT (pre-commit) ===");
+  console.log("===== FINAL OUTPUT (pre-commit) =====");
   console.log(JSON.stringify(state.final_output, null, 2));
-  console.log("================================");
+  console.log("=====================================");
 }
 
-// REQUIRED BY brain.js — glue only, no OpenAPI call
+// REQUIRED BY brain.js — glue only, no OpenAPI
 export async function callOpenAI(payload) {
   return {
     ok: true,
