@@ -1,6 +1,6 @@
 {
   "file": "pipeline-spec.json",
-  "version": "v2025-12-18-pipeline-02",
+  "version": "v2025-12-18-pipeline-03",
   "street": "blog",
   "house": "cp:2",
   "purpose": [
@@ -55,7 +55,8 @@
     "p_writer_bin": "p_writer_{n}",
     "p_output_bin": "p_out_{n}",
     "stitched_bin": "stitched_out",
-    "final_bin": "final_out"
+    "final_bin": "final_out",
+    "stitcher_input_bin": "stchr_in"
   },
   "templates": {
     "exp": "expeditor-contract.json",
@@ -114,9 +115,11 @@
     "stchr": {
       "type": "stitcher",
       "template_ref": "stchr",
+      "reads_bin": "stchr_in",
       "reads_dynamic": {
-        "description": "Collect all c_out_{n} and p_out_{n} bins that exist for lanes present earlier in run_order.",
-        "include_prefixes": ["c_out_", "p_out_"]
+        "description": "Build stchr_in by collecting all c_out_{n} and p_out_{n} bins that exist for lanes present earlier in run_order.",
+        "include_prefixes": ["c_out_", "p_out_"],
+        "target_bin": "stchr_in"
       },
       "writes_bin": "stitched_out"
     },
