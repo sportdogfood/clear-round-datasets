@@ -3,15 +3,14 @@
   "version": "v2025-12-18-final-02",
   "street": "blog",
   "house": "cp:2",
-  "fields": [
+  "required_top_level_fields": [
     "job_id",
     "shape",
     "mode",
     "street",
     "house",
-    "output_format",
-    "collection_body",
-    "places_body"
+    "collection_blocks",
+    "places_blocks"
   ],
   "types": {
     "job_id": "string",
@@ -19,62 +18,48 @@
     "mode": "string",
     "street": "string",
     "house": "string",
-    "output_format": "string",
-    "collection_body": {
-      "type": "object",
-      "required": [
-        "passes"
-      ],
-      "properties": {
-        "passes": {
-          "type": "array",
-          "min_items": 0,
-          "items": {
-            "type": "object",
-            "required": [
-              "pass",
-              "paragraph_1",
-              "paragraph_2"
-            ],
-            "properties": {
-              "pass": "integer",
-              "paragraph_1": "string",
-              "paragraph_2": "string"
-            }
-          }
-        }
+    "collection_blocks": {
+      "type": "array",
+      "min_items": 1,
+      "items": {
+        "type": "object",
+        "required": ["pass_n", "paragraph_1", "paragraph_2"],
+        "properties": {
+          "pass_n": "number",
+          "paragraph_1": "string",
+          "paragraph_2": "string"
+        },
+        "no_extra_keys": true
       }
     },
-    "places_body": {
-      "type": "object",
-      "required": [
-        "passes"
-      ],
-      "properties": {
-        "passes": {
-          "type": "array",
-          "min_items": 0,
-          "items": {
-            "type": "object",
-            "required": [
-              "pass",
-              "stay_paragraph",
-              "dine_paragraph",
-              "essentials_paragraph",
-              "locale_paragraph",
-              "outro_paragraph"
-            ],
-            "properties": {
-              "pass": "integer",
-              "stay_paragraph": "string",
-              "dine_paragraph": "string",
-              "essentials_paragraph": "string",
-              "locale_paragraph": "string",
-              "outro_paragraph": "string"
-            }
-          }
-        }
+    "places_blocks": {
+      "type": "array",
+      "min_items": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "pass_n",
+          "stay_paragraph",
+          "dine_paragraph",
+          "essentials_paragraph",
+          "locale_paragraph",
+          "outro_paragraph"
+        ],
+        "properties": {
+          "pass_n": "number",
+          "stay_paragraph": "string",
+          "dine_paragraph": "string",
+          "essentials_paragraph": "string",
+          "locale_paragraph": "string",
+          "outro_paragraph": "string"
+        },
+        "no_extra_keys": true
       }
     }
+  },
+  "structural_rules": {
+    "no_extra_top_level_keys": true,
+    "ascii_safe_strings_only": true,
+    "never_allow_literal_sentinel": "could-not-verify"
   }
 }
