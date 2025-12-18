@@ -1,451 +1,337 @@
 # File: items/blog/cp-2/instructions.txt
-# Runner: blog-cp:2 — HOUSE INSTRUCTIONS
-# Version: v2025-12-11T22:45Z
+# Runner: blog-cp:2 — HOUSE CONTRACT
+# Version: v2025-12-15-house-04
+# Updated: 2025-12-15T22:10Z
 
 ============================================================
-0. PURPOSE AND SCOPE
+0. PURPOSE (STRICT)
 ============================================================
 
-These instructions define how the BLOG cp:2 house behaves when the
-runner is triggered as:
+This file defines the **behavioral contract** for the BLOG cp:2 house.
 
-  start blog-cp:2
+It describes:
+- lane responsibilities,
+- allowed inputs and outputs,
+- enforcement rules,
+- validation points.
 
-They apply to the runner implementation that:
+It does NOT:
+- execute logic,
+- infer behavior,
+- override job_definition,
+- redefine schemas declared elsewhere.
 
-- loads a job_definition from Rows,
-- uses cp:2 house files under items/blog/cp-2/,
-- executes the lanes in job_definition.run_order
-  (exp → crr → cwr → prr → pwr → rwt),
-- commits finals and logs using job_definition.paths.
-
-This file is descriptive (the contract), not JSON. It must stay in sync
-with:
-
-- items/blog/cp-2/instructions-mini.txt
-- items/blog/cp-2/pipeline-spec.json
-- items/blog/cp-2/commit-spec.json
-- job_definition stored in Rows.
-
+This file MUST remain consistent with:
+- SYSTEM-SPINE.md
+- instructions-mini.txt (V2)
+- pipeline-spec.json
+- commit-spec.json
+- job_definition stored in Rows
 
 ============================================================
 1. TRIGGER AND MODE
 ============================================================
 
-Accepted trigger (chat or system):
+Accepted trigger:
 
-- "start blog-cp:2"
+- start blog-cp:2
 
-No arguments, no alternate spellings. On any other trigger, do nothing.
+No arguments.
+No variants.
+On any other input: do nothing.
 
-Mode is controlled by job_definition.mode:
+Execution mode is determined solely by:
 
-- Allowed values:
-  - "live"
+- job_definition.mode
 
+Allowed value:
+- "live"
 
 Rules:
-
 - If job_definition.mode != "live":
-  - DO NOT call Docs commit APIs.
-  - DO NOT claim that finals or logs were written.
-  - Return ONE concise error:
-    - "blog-cp:2 requires job_definition.mode == 'live'. Current mode: {value}."
-
-- Only when job_definition.mode == "live" may the runner:
-  - execute all lanes,
-  - call Docs commit per commit-spec.json,
-  - report final JSON/HTML/log paths as committed.
-
+  - NO lanes execute
+  - NO commits occur
+  - Respond with ONE error:
+    "blog-cp:2 requires job_definition.mode == 'live'"
 
 ============================================================
-2. JOB DEFINITION CONTRACT (Rows)
+2. JOB DEFINITION (AUTHORITATIVE)
 ============================================================
 
-The runner loads job_definition from Rows, using the job-definition row
-whose trigger key is:
+job_definition is loaded from Rows using trigger key:
 
 - "blog-cp:2"
 
-Required top-level fields in job_definition:
+The following fields are REQUIRED:
 
-- job_id          : string
-- street          : "blog"
-- house           : "cp:2"
-- mode            : "live" | "sandbox" (optional, default "sandbox")
-- output_format   : string (e.g. "html")
-- run_order       : array of lane names, e.g. ["exp","crr","cwr","prr","pwr","rwt"]
-- global_rules    : object (truth, structure, safety, tone, narrative, CNV)
-- datasets        : array of dataset descriptors
-- paths           : object containing:
-    - items_root       : string (jobs workspace prefix)
-    - docs_finals_root : string (finals prefix, must start with "docs/")
-    - docs_logs_root   : string (logs prefix, must start with "docs/")
+- job_id        : string
+- street        : "blog"
+- house         : "cp:2"
+- run_order     : non-empty array
+- global_rules  : object
+- datasets      : non-empty array
+- paths         : object containing:
+    - docs_finals_root (starts with "docs/")
+    - docs_logs_root   (starts with "docs/")
 
-Minimal validations:
-
-- street == "blog"
-- house  == "cp:2"
-- run_order is a non-empty array
-- datasets is a non-empty array
-- paths.docs_finals_root starts with "docs/"
-- paths.docs_logs_root   starts with "docs/"
-
-No house file may override:
-
-- run_order
-- global_rules
-- datasets
-- paths
-
-These are controlled only by job_definition. House files must treat
-them as authoritative.
-
+Rules:
+- job_definition is authoritative.
+- House files MUST NOT override:
+  - run_order
+  - global_rules
+  - datasets
+  - paths
+- Any violation is a hard failure.
 
 ============================================================
-3. HOUSE FILES (cp:2)
+3. HOUSE FILES (REQUIRED)
 ============================================================
 
-The runner resolves:
+House root:
 
-- house_root = "items/blog/cp-2/"
+- items/blog/cp-2/
 
-It MUST be able to read the following cp:2 house files:
+The following files MUST exist:
 
+- instructions-mini.txt
+- instructions.txt
 - pipeline-spec.json
-- style-spec.json
-- expeditor-contract.json
-- final-schema.json
 - commit-spec.json
-- checker.json
+- final-schema.json
 
-- member-template-cr.prompt
-- member-template-cw.prompt
-- member-template-pr.prompt
-- member-template-pw.prompt
-- member-template-rwt.prompt
+Lane prompts:
+- member-template-cr-prompt.txt
+- member-template-cw-prompt.txt
+- member-template-pr-prompt.txt
+- member-template-pw-prompt.txt
+- member-template-rwt-prompt.txt
 
-- instructions.txt          (this file)
-- instructions-mini.txt     (operational sequence)
-
-If any required file is missing or invalid:
-
-- STOP and return ONE concise error:
-  - "blog-cp:2 house misconfigured: missing or invalid {filename}."
-
+If ANY required file is missing:
+- STOP
+- Return ONE error:
+  "cp:2 house misconfigured: missing {filename}"
 
 ============================================================
-4. DATASETS AND ROLES
+4. DATASETS (DECLARATIVE ONLY)
 ============================================================
 
-job_definition.datasets provides lane-level dataset mapping. Each entry:
+Datasets are declared ONLY in job_definition.datasets.
 
-- role_key : string (e.g. "cr0", "pr1")
-- domains  : array of domain labels
-- sheet_id : Rows spreadsheet id
-- table_id : Rows table id
-- range    : Rows range string
+Each dataset entry MUST contain:
+- role_key
+- sheet_id
+- table_id
+- range
 
-For cp:2 the expected roles include:
-
-- cr0 : ["event","venue","city_season"]
-- pr1 : ["stay","dine","essentials","locale"]
-
-The runner MUST:
-
-- Fetch each dataset via Rows using its own sheet_id, table_id, range.
-- Cache results keyed by role_key:
-    datasets_by_role[role_key] = {
-      "role_key": role_key,
-      "domains": domains,
-      "items":   <raw rows array>
-    }
-
-expeditor-map.json is NOT used. Role → domain mapping comes entirely
-from job_definition.datasets. Any future changes to datasets MUST be
-done by editing job_definition, not the house.
-
+Rules:
+- The house does NOT assume meaning from role_key names.
+- No implicit role-to-lane mapping exists outside expeditor.
+- Datasets are passed raw to expeditor.
 
 ============================================================
-5. PIPELINE LANES AND RESPONSIBILITIES
+5. PIPELINE EXECUTION MODEL
 ============================================================
 
-Lane ordering is defined by:
+Execution order is EXACTLY:
 
-- run_order = job_definition.run_order
+- job_definition.run_order
 
-For cp:2 this is normally:
+The house defines NO default order.
 
-- ["exp","crr","cwr","prr","pwr","rwt"]
+Each lane:
+- runs once,
+- in sequence,
+- in memory,
+- using only declared inputs.
 
-Each lane MUST run in-memory, in order, using only:
+No lane may:
+- access Rows,
+- access Docs,
+- call tools,
+- browse,
+- read other lanes’ outputs unless explicitly passed.
 
-- lane-specific member-template-*.prompt
-- global_rules from job_definition
-- lane inputs passed via state
-- any structural helpers (final-schema, checker, commit-spec)
+============================================================
+6. LANE CONTRACTS (CANONICAL)
+============================================================
 
-No lane may call external tools, Rows, or Docs directly. All network IO
-is done by the runner wrapper, not by lane prompts.
-
-
--------------------------------
-5.1 exp — Expeditor
--------------------------------
+---------------------------------
+6.1 exp — Expeditor
+---------------------------------
 
 Role:
-
-- Only permitted shaper.
-- No narrative, no inference, no fabrication.
+- The ONLY shaping lane.
 
 Inputs:
-
 - job_definition
-- datasets_by_role (cr0, pr1, etc.)
+- datasets_by_role
+- global_rules
 - expeditor-contract.json
-- global_rules
 
-Output:
+Outputs:
+- Structured lane inputs only.
 
-- state.exp_output, including lane inputs such as:
-  - cr0_input : JSON payload for collection researcher
-  - pr1_input : JSON payload for places researcher
+Rules:
+- Normalize empty values → "could-not-verify"
+- Enforce declared schemas
+- NO prose
+- NO inference
+- NO enrichment
 
-Requirements:
-
-- Normalize null/empty string fields → "could-not-verify" where required.
-- Enforce any structural constraints from expeditor-contract.json.
-- Do NOT produce prose; only structured JSON.
-
-
--------------------------------
-5.2 crr — Collection Researcher
--------------------------------
+---------------------------------
+6.2 cr — Collection Researcher
+---------------------------------
 
 Role:
-
-- Produce facts-only research blocks for event/venue/city_season.
+- Facts-only research for:
+  - event
+  - venue
+  - city_season
 
 Inputs:
-
-- state.exp_output.cr0_input
+- exp-produced CR input
 - global_rules
-- member-template-cr.prompt
-- instructions.txt (this file, for lane context)
+- member-template-cr-prompt.txt
 
 Output:
+- collection-research-bin
 
-- state.crr_output
+Rules:
+- No narrative
+- No external research
+- No schema mutation
 
-Requirements:
-
-- Obey job_definition.global_rules.truth_rules.
-- No narrative paragraphs; only structured research JSON.
-- No external research; use only exp_output-provided data.
-
-
--------------------------------
-5.3 cwr — Collection Writer
--------------------------------
+---------------------------------
+6.3 cw — Collection Writer
+---------------------------------
 
 Role:
-
-- Turn crr research into two paragraphs describing event + venue bubble
-  and the surrounding city/season, within the cp:2 narrative contract.
+- Narrative transformation ONLY.
 
 Inputs:
-
-- state.crr_output
+- collection-research-bin
+- event_identity
 - global_rules
-- member-template-cw.prompt
 
 Output:
+- collection-writer-bin
 
-- state.cwr_output
+Rules:
+- Exactly two paragraphs
+- No facts added
+- No lists
+- No schema changes
 
-Requirements (high level):
-
-- Use only event_identity + collection_research from crr_output.
-- Respect prestige ceilings and CNV rules in global_rules.
-- Produce exactly two paragraphs as defined in member-template-cw.prompt.
-- No lists, headings, or markdown.
-
-
--------------------------------
-5.4 prr — Places Researcher
--------------------------------
+---------------------------------
+6.4 pr — Places Researcher
+---------------------------------
 
 Role:
-
-- Produce facts-only research for stay/dine/essentials/locale.
+- Facts-only research for Places lanes:
+  - stay
+  - dine
+  - essentials
+  - locale
 
 Inputs:
-
-- state.exp_output.pr1_input
+- exp-produced PR input
 - global_rules
-- member-template-pr.prompt
+- member-template-pr-prompt.txt
 
 Output:
+- places-research-bin
 
-- state.prr_output
+Rules:
+- Locale may contain facts
+- Other lanes may be empty or sentinel-only
+- No narrative
+- No enrichment
 
-Requirements:
-
-- Same truth / CNV constraints as crr, but for places domains.
-- No narrative prose; only structured research JSON.
-
-
--------------------------------
-5.5 pwr — Places Writer
--------------------------------
+---------------------------------
+6.5 pw — Places Writer
+---------------------------------
 
 Role:
-
-- Turn prr research into narrative paragraphs for stay/dine/essentials/
-  locale/outro lanes.
+- Narrative transformation ONLY.
 
 Inputs:
-
-- state.prr_output
+- places-research-bin
+- expeditor-curated place rows
 - global_rules
-- member-template-pw.prompt
 
 Output:
+- places-writer-bin
 
-- state.pwr_output
+Rules:
+- Lane-symmetric output:
+  - stay, dine, essentials, locale
+- Generic prose allowed when research is empty
+- No invention
+- No cross-lane borrowing
 
-Requirements (high level):
-
-- Use only prr-provided research blocks.
-- No new places, distances, prices, or offers beyond research input.
-- Produce exactly the paragraph fields defined in member-template-pw.prompt.
-- Tone and safety must follow global_rules.tone_rules and safety_rules.
-
-
--------------------------------
-5.6 rwt — Final Rewriter
--------------------------------
+---------------------------------
+6.6 rwt — Rewriter
+---------------------------------
 
 Role:
-
-- Final text-only polish pass over the assembled output JSON.
-- Generic: not bound to a specific content schema beyond:
-    - preserve structure,
-    - preserve non-string values.
+- Text hygiene pass ONLY.
 
 Inputs:
-
-- rwt-input.json (assembled by the runner from previous lane outputs)
-  — typically a JSON containing collection_body and places_body fields
-    plus identifiers and metadata.
-- global_rules
-- member-template-rwt.prompt
+- collection-writer-bin
+- places-writer-bin
 
 Output:
+- rewritten-writer-bin
 
-- state.rwt_output:
-    - same JSON structure as rwt-input.json,
-    - all non-string values unchanged,
-    - text fields cleaned and neutralized per rwt rules.
-
-Requirements:
-
-- Do NOT move content between fields.
-- Do NOT introduce new entities or claims.
-- Enforce:
-  - ASCII-only,
-  - no bullets, headings, or markdown,
-  - no "galactic" or nonsense wording,
-  - no meta language (“in this article…”, etc.).
-- Rely on member-template-rwt.prompt for the exact micro-rules on how
-  to edit string fields safely.
-
+Rules:
+- Structure preserved exactly
+- Non-string values untouched
+- Prose cleaned only
+- No new facts
+- ASCII only
 
 ============================================================
-6. CHECKER, FINAL-SCHEMA, AND VALIDATION
+7. FINAL ASSEMBLY AND VALIDATION
 ============================================================
 
-final-schema.json:
+Assembly:
+- rewritten-writer-bin is validated against final-schema.json
 
-- Defines the expected shape for the assembled cp:2 final object before
-  it is handed to rwt (keys, required sections, field types).
-- The runner MUST validate the assembled pre-rwt JSON against
-  final-schema.json.
-- On schema failure:
-  - Do NOT call rwt.
-  - Log a structured error into the cp:2 logs area.
-  - Return ONE concise error message to the user naming the failing
-    phase ("schema validation before rwt").
+Validation failures:
+- STOP execution
+- Write log
+- Return ONE error:
+  "final schema validation failure"
 
 checker.json:
-
-- Provides configuration for additional validations:
-  - severity levels (e.g. error, warn),
-  - categories (structure, tone, safety, cnv).
-- The runner MAY apply these checks to state.rwt_output before commit.
-- On checker "error":
-  - Treat as a hard failure:
-    - no commit,
-    - write an error log,
-    - return ONE concise error naming "checker" as failing phase.
-- On checker "warn":
-  - Runner may still commit but should include a note in logs.  
-
+- Applied after rewrite
+- Errors are fatal
+- Warnings are logged only
 
 ============================================================
-7. COMMITS, LOGS, AND USER RESPONSE
+8. COMMIT AND USER RESPONSE
 ============================================================
 
-Commits are driven by:
+Commits are driven solely by:
+- commit-spec.json
+- job_definition.paths
 
-- job_definition.paths:
-    - docs_finals_root
-    - docs_logs_root
-- items/blog/cp-2/commit-spec.json
+Artifacts committed:
+- final JSON
+- final HTML (deterministic render)
+- run log JSON
 
-At commit time, the runner MUST:
-
-- Expand commit-spec.json placeholders using:
-    - {job_id}           → job_definition.job_id
-    - {docs_finals_root} → job_definition.paths.docs_finals_root
-    - {docs_logs_root}   → job_definition.paths.docs_logs_root
-- Build file payloads:
-    - final JSON  from state.rwt_output,
-    - final HTML  rendered from the cp:2 final JSON (paragraph layout),
-    - rwt log JSON containing at minimum:
-        - job_id
-        - run_order
-        - crr_output
-        - cwr_output
-        - prr_output
-        - pwr_output
-        - rwt_output
-- Base64-encode each file content.
-
-The runner MUST then call the Docs bulk commit endpoint (as defined in
-git_openapi.yaml) with:
-
-- commit_message from commit-spec.json (after placeholder substitution),
-- overwrite flag from commit-spec.json,
-- files[] from commit-spec.json.
-
-On commit success:
-
-- Record the commit SHA (if returned) into the cp:2 log JSON.
-- Respond to the user with ONE compact success message containing:
+On success:
+- Return ONE message with:
   - job_id
-  - executed run_order
-  - final JSON path
-  - final HTML path
-  - log path
+  - run_order
+  - paths
   - commit SHA (if available)
 
-On commit failure:
+On failure:
+- ONE error message
+- Name failing phase ONLY
 
-- Write an error log under docs_logs_root for this job_id.
-- Respond with ONE concise failure message naming:
-  - failing phase: "commit"
-  - minimal reason (HTTP status or parsed error text).
-
-Lanes themselves MUST NEVER send user-facing text. Only the runner’s
-top-level response is visible to the user.
+============================================================
+END OF FILE
+============================================================
