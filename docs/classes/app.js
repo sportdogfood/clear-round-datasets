@@ -1,172 +1,216 @@
-// app.js
-// Desktop Session Shell — CRT
-// Version: v2025-12-14-01
-// Scope: session + screen routing ONLY (no Rows, no report logic)
+/* ============================================================================
+   Trainer / Team App
+   Single-pass, no persistence, no UX changes
+   ========================================================================== */
 
-(function () {
+(() => {
   'use strict';
 
-  // ------------------------------------------------------------
-  // DOM contract (LOCKED)
-  // ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   DOM
+   -------------------------------------------------------------------------- */
+  const screenRoot = document.getElementById('screen-root');
 
-  const appRoot = document.getElementById('app');
-  const headerTitle = document.getElementById('header-title');
-  const headerBack = document.getElementById('header-back');
-  const headerPrint = document.getElementById('header-print');
-  const renderContainer = document.getElementById('render-container');
-
-  if (!appRoot || !renderContainer) {
-    console.error('[CRT] Required DOM elements missing.');
-    return;
-  }
-
-  // ------------------------------------------------------------
-  // Session state (minimal)
-  // ------------------------------------------------------------
-
-  const state = {
-    sessionId: null,
-    createdAt: null,
-    screen: 'index', // index | trainer | entries | report
-    history: []
+  /* --------------------------------------------------------------------------
+   DATA PATHS
+   -------------------------------------------------------------------------- */
+  const DATA_PATHS = {
+    team: './data/team_enriched.json',
+    rings: './data/rings.json',
+    classes: './data/classes.json'
   };
 
-  // ------------------------------------------------------------
-  // Session helpers
-  // ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   STATE (in-memory only)
+   -------------------------------------------------------------------------- */
+  const state = {
+    expandedRings: new Set(),
+    expandedGroups: new Set()
+  };
 
-  function startSession() {
-    state.sessionId = 'sess-' + Date.now();
-    state.createdAt = new Date().toISOString();
-  }
+  /* --------------------------------------------------------------------------
+   UTIL
+   -------------------------------------------------------------------------- */
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
 
-  function resetSession() {
-    state.sessionId = null;
-    state.createdAt = null;
-    state.history = [];
-    setScreen('index', false);
-  }
+  const pillRow = (label, right, active = false) => {
+    const row = el('div', 'row row--tap');
+    if (active) row.classList.add('row--active');
 
-  // ------------------------------------------------------------
-  // Screen routing
-  // ------------------------------------------------------------
+    const title = el('div', 'row-title', label);
+    row.appendChild(title);
 
-  function setScreen(next, pushHistory = true) {
-    if (pushHistory && state.screen !== next) {
-      state.history.push(state.screen);
+    if (right != null) {
+      const tag = el('div', 'row-tag', right);
+      row.appendChild(tag);
     }
-    state.screen = next;
-    render();
+    return row;
+  };
+
+  const divider = () => el('div', 'list-group-divider');
+  const label = txt => el('div', 'list-group-label', txt);
+
+  /* --------------------------------------------------------------------------
+   LOAD
+   -------------------------------------------------------------------------- */
+  async function loadJSON(path) {
+    const res = await fetch(path, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Failed ${path}`);
+    return res.json();
   }
 
-  function goBack() {
-    const prev = state.history.pop();
-    if (prev) {
-      state.screen = prev;
-      render();
-    }
+  Promise.all([
+    loadJSON(DATA_PATHS.team),
+    loadJSON(DATA_PATHS.rings),
+    loadJSON(DATA_PATHS.classes)
+  ]).then(([teamRows, rings, classes]) => {
+    build(teamRows, rings, classes);
+  }).catch(err => {
+    screenRoot.textContent = err.message;
+  });
+
+  /* --------------------------------------------------------------------------
+   BUILD
+   -------------------------------------------------------------------------- */
+  function build(rows, rings, classes) {
+    screenRoot.innerHTML = '';
+
+    const ringMap = Object.fromEntries(
+      rings.map(r => [String(r.ring_id), r])
+    );
+
+    const classMap = Object.fromEntries(
+      classes.map(c => [String(c.class_id), c])
+    );
+
+    /* Group by Ring */
+    const ringGroups = {};
+    rows.forEach(r => {
+      const ringId = String(r['Ring Id']);
+      if (!ringGroups[ringId]) ringGroups[ringId] = [];
+      ringGroups[ringId].push(r);
+    });
+
+    /* Sort rings by priority */
+    const orderedRings = Object.keys(ringGroups).sort((a, b) => {
+      return (ringMap[a]?.ring_priority ?? 999) -
+             (ringMap[b]?.ring_priority ?? 999);
+    });
+
+    orderedRings.forEach(ringId => {
+      renderRing(ringId, ringGroups[ringId], ringMap, classMap);
+    });
   }
 
-  // ------------------------------------------------------------
-  // Header control
-  // ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   RENDER RING
+   -------------------------------------------------------------------------- */
+  function renderRing(ringId, rows, ringMap, classMap) {
+    const ring = ringMap[ringId] || {};
+    const ringKey = `ring:${ringId}`;
+    const open = state.expandedRings.has(ringKey);
 
-  function updateHeader() {
-    headerBack.hidden = state.history.length === 0;
-    headerPrint.hidden = state.screen === 'index';
+    const ringRow = pillRow(
+      `${ring.ring_nickname || ring['Ring Nickname'] || ''} → ${ring['Ring Name'] || ring.ring_name || ''}`,
+      open ? '−' : '+',
+      open
+    );
 
-    switch (state.screen) {
-      case 'index':
-        headerTitle.textContent = 'Session';
-        break;
-      case 'trainer':
-        headerTitle.textContent = 'Trainer';
-        break;
-      case 'entries':
-        headerTitle.textContent = 'Entries';
-        break;
-      case 'report':
-        headerTitle.textContent = 'Report';
-        break;
-      default:
-        headerTitle.textContent = '';
-    }
+    ringRow.onclick = () => {
+      open ? state.expandedRings.delete(ringKey)
+           : state.expandedRings.add(ringKey);
+      rebuild();
+    };
+
+    screenRoot.appendChild(ringRow);
+
+    if (!open) return;
+
+    /* Group by Class Group */
+    const groupMap = {};
+    rows.forEach(r => {
+      const gid = String(r['Class Group Id']);
+      if (!groupMap[gid]) groupMap[gid] = [];
+      groupMap[gid].push(r);
+    });
+
+    Object.keys(groupMap)
+      .sort((a, b) =>
+        (groupMap[a][0]['Class Group Sequence'] ?? 0) -
+        (groupMap[b][0]['Class Group Sequence'] ?? 0)
+      )
+      .forEach(gid => {
+        renderGroup(gid, groupMap[gid], classMap);
+      });
   }
 
-  // ------------------------------------------------------------
-  // Render dispatcher (NO report logic)
-  // ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   RENDER GROUP
+   -------------------------------------------------------------------------- */
+  function renderGroup(groupId, rows, classMap) {
+    const key = `group:${groupId}`;
+    const open = state.expandedGroups.has(key);
+    const meta = rows[0];
 
-  function render() {
-    updateHeader();
-    renderContainer.innerHTML = '';
+    const row = pillRow(
+      `${meta['Group Name']}`,
+      open ? '−' : '+',
+      open
+    );
 
-    switch (state.screen) {
-      case 'index':
-        renderIndex();
-        break;
-      case 'trainer':
-        renderTrainer();
-        break;
-      case 'entries':
-        renderEntries();
-        break;
-      case 'report':
-        renderReportPlaceholder();
-        break;
-    }
+    row.onclick = () => {
+      open ? state.expandedGroups.delete(key)
+           : state.expandedGroups.add(key);
+      rebuild();
+    };
+
+    screenRoot.appendChild(row);
+
+    if (!open) return;
+
+    screenRoot.appendChild(divider());
+
+    /* Classes */
+    const classIds = [...new Set(rows.map(r => String(r['Class Id'])))];
+    classIds.forEach(cid => {
+      const c = classMap[cid] || {};
+      const r = rows.find(x => String(x['Class Id']) === cid);
+
+      screenRoot.appendChild(
+        pillRow(
+          `${c.class_nickname || ''} → ${r['Class Name']} #${r['Class Number']}`
+        )
+      );
+    });
+
+    /* Horses / Riders */
+    rows.forEach(r => {
+      screenRoot.appendChild(
+        pillRow(
+          `${r['Barn Name']} → ${r['Horse']}  •  ${r['Team Name']} → ${r['Rider Name']} #${r['Entry Number']}`
+        )
+      );
+    });
+
+    screenRoot.appendChild(divider());
   }
 
-  // ------------------------------------------------------------
-  // Screen views (placeholders only)
-  // ------------------------------------------------------------
-
-  function renderIndex() {
-    renderButton('Trainer', () => setScreen('trainer'));
-    renderButton('Entries', () => setScreen('entries'));
-    renderButton('Restart Session', resetSession);
+  /* --------------------------------------------------------------------------
+   REBUILD
+   -------------------------------------------------------------------------- */
+  function rebuild() {
+    Promise.all([
+      loadJSON(DATA_PATHS.team),
+      loadJSON(DATA_PATHS.rings),
+      loadJSON(DATA_PATHS.classes)
+    ]).then(([teamRows, rings, classes]) => {
+      build(teamRows, rings, classes);
+    });
   }
 
-  function renderTrainer() {
-    renderButton('Trainer Report A', () => setScreen('report'));
-    renderButton('Trainer Report B', () => setScreen('report'));
-  }
-
-  function renderEntries() {
-    renderButton('Entries Report', () => setScreen('report'));
-  }
-
-  function renderReportPlaceholder() {
-    const el = document.createElement('div');
-    el.className = 'report-placeholder';
-    el.textContent = 'Report rendered here';
-    renderContainer.appendChild(el);
-  }
-
-  // ------------------------------------------------------------
-  // UI helpers
-  // ------------------------------------------------------------
-
-  function renderButton(label, onClick) {
-    const btn = document.createElement('button');
-    btn.className = 'ui-button';
-    btn.textContent = label;
-    btn.addEventListener('click', onClick);
-    renderContainer.appendChild(btn);
-  }
-
-  // ------------------------------------------------------------
-  // Events
-  // ------------------------------------------------------------
-
-  headerBack.addEventListener('click', goBack);
-  headerPrint.addEventListener('click', () => window.print());
-
-  // ------------------------------------------------------------
-  // Init
-  // ------------------------------------------------------------
-
-  startSession();
-  render();
 })();
