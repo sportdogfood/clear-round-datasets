@@ -1,10 +1,153 @@
 {
-  "expeditor": {
-    "only_shaper": true,
-    "forbid_narrative": true,
-    "forbid_inference": true,
-    "enforce_field_order": true,
-    "forbid_fabrication": true,
-    "enforce_schema_validation": true
-  }
+  "file": "expeditor-contract.json",
+  "version": "v2025-12-16-expeditor-v2",
+  "street": "blog",
+  "house": "cp:2",
+  "role": "exp",
+
+  "purpose": [
+    "Shape raw datasets into lane-safe, schema-stable inputs",
+    "Normalize null and empty values deterministically",
+    "Route data into fixed researcher input bins",
+    "Produce NO narrative and NO inference"
+  ],
+
+  "global_constraints": {
+    "no_prose": true,
+    "no_inference": true,
+    "no_external_lookup": true,
+    "no_cross_lane_data": true,
+    "input_is_authoritative": true,
+    "schema_is_fixed": true,
+    "empty_is_safer_than_guessing": true
+  },
+
+  "normalization_rules": {
+    "string_fields": {
+      "null": "could-not-verify",
+      "empty_string": "could-not-verify",
+      "whitespace_only": "could-not-verify"
+    },
+    "numeric_fields": {
+      "invalid": null
+    },
+    "arrays": {
+      "missing": [],
+      "null": []
+    },
+    "objects": {
+      "missing": {}
+    }
+  },
+
+  "inputs": {
+    "job_definition": {
+      "required": true,
+      "read_only": true
+    },
+    "datasets_by_role": {
+      "required": true,
+      "expected_roles": ["cr0", "pr1"]
+    }
+  },
+
+  "output_bins": {
+    "cr0_input": {
+      "role": "collection_researcher",
+      "domains": ["event", "venue", "city_season"],
+      "shape": {
+        "creation_id": "string",
+        "event_identity": "object",
+        "event_rows": "array",
+        "venue_rows": "array",
+        "city_season_rows": "array",
+        "source_log": "array"
+      }
+    },
+
+    "pr1_input": {
+      "role": "places_researcher",
+      "domains": ["stay", "dine", "essentials", "locale"],
+      "shape": {
+        "creation_id": "string",
+        "stay": {
+          "feature": "array",
+          "list_only": "array"
+        },
+        "dine": {
+          "feature": "array",
+          "list_only": "array"
+        },
+        "essentials": {
+          "feature": "array",
+          "list_only": "array"
+        },
+        "locale": {
+          "rows": "array"
+        },
+        "source_log": "array"
+      }
+    }
+  },
+
+  "routing_rules": {
+    "cr0": {
+      "required_domains": ["event", "venue", "city_season"],
+      "destination_bin": "cr0_input",
+      "failure_behavior": "halt"
+    },
+    "pr1": {
+      "required_domains": ["stay", "dine", "essentials", "locale"],
+      "destination_bin": "pr1_input",
+      "failure_behavior": "halt"
+    }
+  },
+
+  "lane_isolation": {
+    "collection_domains": ["event", "venue", "city_season"],
+    "places_domains": ["stay", "dine", "essentials", "locale"],
+    "rules": [
+      "collection data MUST NOT appear in places bins",
+      "places data MUST NOT appear in collection bins",
+      "locale data MUST NOT be expanded beyond provided rows"
+    ]
+  },
+
+  "forbidden_behaviors": [
+    "adding derived fields",
+    "renaming keys",
+    "dropping required keys",
+    "creating prose or summaries",
+    "repairing data semantically",
+    "guessing missing values",
+    "merging domains"
+  ],
+
+  "error_handling": {
+    "missing_required_dataset": {
+      "action": "halt",
+      "error_code": "EXP_MISSING_DATASET"
+    },
+    "schema_violation": {
+      "action": "halt",
+      "error_code": "EXP_SCHEMA_VIOLATION"
+    },
+    "unexpected_domain": {
+      "action": "halt",
+      "error_code": "EXP_UNEXPECTED_DOMAIN"
+    }
+  },
+
+  "logging": {
+    "emit_source_log": true,
+    "include_row_counts": true,
+    "include_domain_coverage": true
+  },
+
+  "guarantees": [
+    "All downstream lanes receive schema-stable inputs",
+    "All missing values are explicitly normalized",
+    "No lane receives data it is not contractually allowed to see",
+    "Failure is explicit and early"
+  ]
 }
