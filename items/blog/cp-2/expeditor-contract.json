@@ -1,217 +1,141 @@
 {
   "file": "expeditor-contract.json",
-  "version": "v2025-12-18-expeditor-04",
+  "version": "v2025-12-18-expeditor-05",
   "street": "blog",
   "house": "cp:2",
-  "role": "exp",
+  "envelope": "member-template",
   "purpose": [
-    "Shape raw datasets into lane-safe, schema-stable inputs",
-    "Normalize null/empty deterministically (including sentinel handling)",
-    "Bind numbered passes (crN/prN) to datasets by family order (C/P)",
-    "Write ONLY the numbered input bins required by job_definition.run_order",
-    "Produce NO narrative and NO inference"
+    "EXP conforms to member-template lane inputs (CR/PR lanes read EXP bins)",
+    "Bind datasets to passes deterministically (C family -> c_in_{n}, P family -> p_in_{n})",
+    "Normalize null/empty to \"could-not-verify\" only inside EXP-produced bins"
   ],
-  "global_constraints": {
-    "no_prose": true,
-    "no_inference": true,
-    "no_external_lookup": true,
-    "input_is_authoritative": true,
-    "schema_is_fixed": true,
-    "empty_is_safer_than_guessing": true
-  },
-  "normalization_rules": {
-    "string_fields": {
-      "null": "could-not-verify",
-      "empty_string": "could-not-verify",
-      "whitespace_only": "could-not-verify"
-    },
-    "numeric_fields": {
-      "invalid": null
-    },
-    "arrays": {
-      "missing": [],
-      "null": []
-    },
-    "objects": {
-      "missing": {}
-    }
-  },
   "inputs": {
-    "job_definition": {
-      "required": true,
-      "read_only": true,
-      "required_fields": ["job_id", "shape", "street", "house", "run_order", "datasets", "global_rules"]
+    "job_definition": { "required": true, "read_only": true },
+    "datasets_by_role": { "required": true, "read_only": true }
+  },
+  "determinism": {
+    "no_inference": true,
+    "no_prose": true,
+    "no_external_sources": true,
+    "no_schema_mutation": true
+  },
+  "normalization": {
+    "strings": {
+      "null_or_empty_or_whitespace": "could-not-verify"
     },
-    "datasets_by_role": {
-      "required": true,
-      "read_only": true,
-      "rule": "Must contain every dataset role_key declared in job_definition.datasets"
+    "numbers": {
+      "invalid": null
     }
   },
-  "dataset_families": {
-    "C": { "domains_all": ["event", "venue", "city_season"] },
-    "P": { "domains_all": ["stay", "dine", "essentials", "locale"] }
+  "pass_requirements": {
+    "collection_passes_from_run_order": {
+      "detect_by_regex": "^cr(\\d+)$",
+      "write_bins": "c_in_{n}"
+    },
+    "places_passes_from_run_order": {
+      "detect_by_regex": "^pr(\\d+)$",
+      "write_bins": "p_in_{n}"
+    }
   },
-  "pass_detection": {
-    "collection_lane_prefixes": ["cr", "cw", "crwtr"],
-    "places_lane_prefixes": ["pr", "pw", "prwtr"],
-    "pass_number_regex": "^[a-z]+(\\d+)$",
-    "pass_requirement_source": "job_definition.run_order"
-  },
-  "dataset_binding_rules": {
-    "binding_mode": "family_ordered_by_job_definition_datasets",
+  "dataset_binding": {
+    "family_ordered_by_job_definition_datasets": true,
+    "C_family_match": { "domains_all": ["event", "venue", "city_season"] },
+    "P_family_match": { "domains_all": ["stay", "dine", "essentials", "locale"] },
     "c_pass_n_binds_to": "nth dataset (1-indexed) in family C",
     "p_pass_n_binds_to": "nth dataset (1-indexed) in family P",
-    "on_missing_dataset_for_required_pass": {
-      "action": "halt",
-      "error_code": "EXP_MISSING_DATASET_FOR_PASS"
+    "on_missing_dataset_for_required_pass": { "action": "halt", "error_code": "EXP_MISSING_DATASET_FOR_PASS" }
+  },
+  "rows_items_shape": {
+    "expected": "Array([key,value]) pairs from A2:B999",
+    "key_index": 0,
+    "value_index": 1
+  },
+  "c_in_envelope": {
+    "must_match": "member-template-cr-prompt.txt input logical shape",
+    "top_level": ["job_id", "shape", "mode", "street", "house", "lane", "dataset_id", "cid", "global_rules", "event_identity", "maps_anchor", "collection_input", "source_log"],
+    "build": {
+      "job_id": "job_definition.job_id",
+      "shape": "job_definition.shape",
+      "mode": "job_definition.mode_or_default_live",
+      "street": "job_definition.street",
+      "house": "job_definition.house",
+      "lane": "cr{n}",
+      "dataset_id": "bound_dataset.role_key",
+      "cid": "job_definition.cid_or_could_not_verify",
+      "global_rules": "job_definition.global_rules",
+      "event_identity": {
+        "event_leg_key": "kv.event_leg_key",
+        "event_name": "kv.event_name",
+        "event_acronym": "kv.event_acronym",
+        "venue_name": "kv.venue_name",
+        "city": "kv.city",
+        "state": "kv.state",
+        "season_label": "kv.season_label",
+        "rating_string": "kv.rating_string",
+        "rider_caliber": "kv.rider_caliber"
+      },
+      "maps_anchor": {
+        "place_id": "kv.place_id",
+        "lat": "kv.lat_number_or_null",
+        "lng": "kv.lng_number_or_null"
+      },
+      "collection_input": {
+        "event_notes": "kv.event_notes",
+        "venue_notes": "kv.venue_notes",
+        "city_season_notes": "kv.city_season_notes"
+      },
+      "source_log": []
     }
   },
-  "output_envelope": {
-    "description": "EXP outputs a single JSON object whose top-level keys are the produced bin names (c_in_N and/or p_in_N). No other top-level keys are permitted.",
-    "only_allowed_bin_prefixes": ["c_in_", "p_in_"]
-  },
-  "output_bins": {
-    "c_in_n": {
-      "bin_name_pattern": "c_in_{n}",
-      "lane_name_pattern": "cr{n}",
-      "shape": {
-        "job_id": "string",
-        "street": "string",
-        "house": "string",
-        "lane": "string",
-        "dataset_id": "string",
-        "cid": "string",
-        "global_rules": "object",
-        "event_identity": {
-          "event_leg_key": "string",
-          "event_name": "string",
-          "event_acronym": "string",
-          "venue_name": "string",
-          "city": "string",
-          "state": "string",
-          "season_label": "string",
-          "rating_string": "string",
-          "rider_caliber": "string"
-        },
-        "maps_anchor": {
-          "place_id": "string",
-          "lat": "number_or_null",
-          "lng": "number_or_null"
-        },
-        "collection_input": {
-          "event_notes": "string",
-          "venue_notes": "string",
-          "city_season_notes": "string"
-        }
-      }
-    },
-    "p_in_n": {
-      "bin_name_pattern": "p_in_{n}",
-      "lane_name_pattern": "pr{n}",
-      "shape": {
-        "job_id": "string",
-        "street": "string",
-        "house": "string",
-        "lane": "string",
-        "dataset_id": "string",
-        "cid": "string",
-        "global_rules": "object",
-        "stay": { "feature": "array", "list_only": "array" },
-        "dine": { "feature": "array", "list_only": "array" },
-        "essentials": { "feature": "array", "list_only": "array" },
-        "locale": { "rows": "array" }
-      }
+  "p_in_envelope": {
+    "must_match": "member-template-pr-prompt.txt input logical shape (places family)",
+    "top_level": ["job_id", "shape", "mode", "street", "house", "lane", "dataset_id", "cid", "global_rules", "event_identity", "maps_anchor", "places_input", "source_log"],
+    "build": {
+      "job_id": "job_definition.job_id",
+      "shape": "job_definition.shape",
+      "mode": "job_definition.mode_or_default_live",
+      "street": "job_definition.street",
+      "house": "job_definition.house",
+      "lane": "pr{n}",
+      "dataset_id": "bound_dataset.role_key",
+      "cid": "job_definition.cid_or_could_not_verify",
+      "global_rules": "job_definition.global_rules",
+      "event_identity": {
+        "event_name": "kv.event_name",
+        "event_acronym": "kv.event_acronym",
+        "venue_name": "kv.venue_name",
+        "city": "kv.city",
+        "state": "kv.state",
+        "season_label": "kv.season_label",
+        "rating_string": "kv.rating_string",
+        "rider_caliber": "kv.rider_caliber"
+      },
+      "maps_anchor": {
+        "place_id": "kv.place_id",
+        "lat": "kv.lat_number_or_null",
+        "lng": "kv.lng_number_or_null"
+      },
+      "places_input": {
+        "stay": "kv.stay_rows_or_could_not_verify",
+        "dine": "kv.dine_rows_or_could_not_verify",
+        "essentials": "kv.essentials_rows_or_could_not_verify",
+        "locale": "kv.locale_rows_or_could_not_verify"
+      },
+      "source_log": []
     }
   },
-  "dataset_extraction_rules": {
-    "kv_map_build": {
-      "description": "Build a normalized key/value map from datasets_by_role[role_key].items when items are row-like.",
-      "accepted_row_shapes": [
-        "array_len_2_or_more: [key, value, ...]",
-        "object_with_keys: { \"0\": key, \"1\": value }",
-        "object_with_col_keys: { \"Col1\": key, \"Col2\": value }",
-        "object_with_A_B_keys: { \"A\": key, \"B\": value }"
-      ],
-      "key_trim": true,
-      "value_trim_if_string": true,
-      "on_duplicate_key": "last_wins"
-    },
-    "sentinel_policy": {
-      "description": "Any missing/empty scalar text becomes \"could-not-verify\".",
-      "string_missing_to_sentinel": true,
-      "string_empty_to_sentinel": true
-    }
-  },
-  "collection_bin_assembly": {
-    "event_identity_keys": {
-      "event_leg_key": ["event_leg_key", "eventLegKey"],
-      "event_name": ["event_name", "eventName"],
-      "event_acronym": ["event_acronym", "eventAcronym"],
-      "venue_name": ["venue_name", "venueName"],
-      "city": ["city"],
-      "state": ["state"],
-      "season_label": ["season_label", "seasonLabel"],
-      "rating_string": ["rating_string", "ratingString"],
-      "rider_caliber": ["rider_caliber", "riderCaliber"]
-    },
-    "maps_anchor_keys": {
-      "place_id": ["place_id", "placeId"],
-      "lat": ["lat", "latitude"],
-      "lng": ["lng", "longitude"]
-    },
-    "collection_input_keys": {
-      "event_notes": ["event_notes", "eventNotes"],
-      "venue_notes": ["venue_notes", "venueNotes"],
-      "city_season_notes": ["city_season_notes", "citySeasonNotes"]
-    }
-  },
-  "places_bin_assembly": {
-    "row_partitioning": {
-      "description": "If places lists are not already arrays, partition from kv_map keys using deterministic prefixes; otherwise use empty arrays.",
-      "prefixes": {
-        "stay_feature": "stay:feature:",
-        "stay_list_only": "stay:list_only:",
-        "dine_feature": "dine:feature:",
-        "dine_list_only": "dine:list_only:",
-        "essentials_feature": "essentials:feature:",
-        "essentials_list_only": "essentials:list_only:",
-        "locale_row": "locale:row:"
-      }
-    },
-    "fallback_when_unmatched": {
-      "stay": { "feature": [], "list_only": [] },
-      "dine": { "feature": [], "list_only": [] },
-      "essentials": { "feature": [], "list_only": [] },
-      "locale": { "rows": [] }
-    }
-  },
-  "forbidden_behaviors": [
-    "adding derived fields",
-    "renaming keys",
-    "dropping required keys",
-    "creating prose or summaries",
-    "repairing data semantically",
-    "guessing missing values",
-    "merging domains",
-    "adding any top-level output keys beyond produced bin names"
-  ],
-  "error_handling": {
-    "missing_required_dataset": { "action": "halt", "error_code": "EXP_MISSING_DATASET" },
-    "missing_dataset_for_required_pass": { "action": "halt", "error_code": "EXP_MISSING_DATASET_FOR_PASS" },
-    "schema_violation": { "action": "halt", "error_code": "EXP_SCHEMA_VIOLATION" },
-    "unexpected_domain": { "action": "halt", "error_code": "EXP_UNEXPECTED_DOMAIN" }
-  },
-  "logging": {
-    "emit_source_log": false,
-    "include_row_counts": true,
-    "include_domain_coverage": true,
-    "include_bound_pass_to_dataset_role_key": true
-  },
-  "guarantees": [
-    "EXP produces only c_in_N / p_in_N bins required by run_order",
-    "Each produced bin matches its declared shape exactly",
-    "All missing/empty scalar text is normalized deterministically",
-    "Failure is explicit and early"
-  ]
+  "outputs": {
+    "only_bins_allowed": ["c_in_{n}", "p_in_{n}"],
+    "forbidden_bins": [
+      "c_research_{n}",
+      "c_writer_{n}",
+      "c_out_{n}",
+      "p_research_{n}",
+      "p_writer_{n}",
+      "p_out_{n}",
+      "stchr_in",
+      "stitched_out",
+      "final_out"
+    ]
+  }
 }

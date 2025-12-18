@@ -1,18 +1,18 @@
 {
   "file": "commit-spec.json",
-  "version": "v2025-12-18-commit-03",
+  "version": "v2025-12-18-commit-04",
   "street": "blog",
   "house": "cp:2",
   "purpose": [
     "Commit final artifacts exactly as produced (no mutation of final JSON)",
     "Derive filesystem-safe filenames from job_id (normalize ':' -> '-')",
-    "Write finals + run log into job_definition.paths roots via docs_commit_bulk"
+    "Write finals + run log into job_definition.paths roots via docs_commit_bulk (/docs/commit-bulk)"
   ],
   "inputs": {
     "job_definition": {
       "required": true,
       "read_only": true,
-      "required_fields": ["job_id", "street", "house", "paths", "output_format", "run_order"]
+      "required_fields": ["job_id", "street", "house", "paths", "output_format", "run_order", "shape"]
     },
     "final_out_bin": {
       "required": true,
@@ -20,7 +20,7 @@
       "read_only": true
     },
     "lane_logs": {
-      "required": false,
+      "required": true,
       "read_only": true
     }
   },
@@ -28,15 +28,10 @@
     "job_id_fs": {
       "description": "Filesystem-safe job id used for filenames only",
       "source": "job_definition.job_id",
-      "replace_chars": {
-        ":": "-"
-      },
+      "replace_chars": { ":": "-" },
       "validation": {
         "allowed_chars_regex": "^[A-Za-z0-9._-]+$",
-        "on_fail": {
-          "action": "halt",
-          "error_code": "COMMIT_JOB_ID_FS_INVALID"
-        }
+        "on_fail": { "action": "halt", "error_code": "COMMIT_JOB_ID_FS_INVALID" }
       }
     }
   },
@@ -51,15 +46,9 @@
       "must_start_with": "docs/",
       "must_end_with": "/"
     },
-    "final_json_path": {
-      "pattern": "{finals_root}{job_id_fs}.json"
-    },
-    "final_html_path": {
-      "pattern": "{finals_root}{job_id_fs}.html"
-    },
-    "run_log_path": {
-      "pattern": "{logs_root}{job_id_fs}-run.json"
-    }
+    "final_json_path": { "pattern": "{finals_root}{job_id_fs}.json" },
+    "final_html_path": { "pattern": "{finals_root}{job_id_fs}.html" },
+    "run_log_path": { "pattern": "{logs_root}{job_id_fs}-run.json" }
   },
   "artifacts": {
     "final_json": {
@@ -70,9 +59,7 @@
       "path_ref": "final_json_path"
     },
     "final_html": {
-      "required_when": {
-        "job_definition_output_format_in": ["html", "json+html"]
-      },
+      "required_when": { "job_definition_output_format_in": ["html", "json+html"] },
       "content_source": "deterministic_renderer",
       "content_type": "text/html",
       "path_ref": "final_html_path"
@@ -86,15 +73,14 @@
         "job_id": "string",
         "job_id_fs": "string",
         "mode": "string",
+        "shape": "string",
         "run_order": "array",
-        "lane_logs": "object_or_null"
+        "lane_logs": "object"
       }
     }
   },
   "html_renderer": {
-    "enabled_when": {
-      "job_definition_output_format_in": ["html", "json+html"]
-    },
+    "enabled_when": { "job_definition_output_format_in": ["html", "json+html"] },
     "rules": [
       "Deterministic render only (no inference, no new facts)",
       "Render only fields present in final_out_bin",
@@ -119,6 +105,11 @@
     "files_order": ["final_json", "final_html", "run_log_json"],
     "optional_artifacts": ["final_html"]
   },
+  "post_commit_verification": {
+    "required": true,
+    "verify_each_committed_path_with": "docs_get",
+    "on_404": { "action": "halt", "error_code": "COMMIT_VERIFY_404" }
+  },
   "failure_behavior": {
     "on_missing_required_input": { "action": "halt", "error_code": "COMMIT_INPUT_MISSING" },
     "on_path_validation_fail": { "action": "halt", "error_code": "COMMIT_PATH_INVALID" },
@@ -127,6 +118,7 @@
   "guarantees": [
     "Final JSON is committed exactly as produced (no edits)",
     "Filenames are stable and filesystem-safe via job_id_fs",
-    "Run log is always committed alongside finals"
+    "Run log is always committed alongside finals",
+    "Runner proves existence by docs_get verification of committed_paths"
   ]
 }

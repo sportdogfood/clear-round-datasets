@@ -19,15 +19,11 @@
   "dataset_families": {
     "C": {
       "description": "Collection datasets (event / venue / city_season)",
-      "match": {
-        "domains_all": ["event", "venue", "city_season"]
-      }
+      "match": { "domains_all": ["event", "venue", "city_season"] }
     },
     "P": {
       "description": "Places datasets (stay / dine / essentials / locale)",
-      "match": {
-        "domains_all": ["stay", "dine", "essentials", "locale"]
-      }
+      "match": { "domains_all": ["stay", "dine", "essentials", "locale"] }
     }
   },
   "pass_detection": {
@@ -87,31 +83,24 @@
         "p_inputs": "p_in_{n}"
       }
     },
-
     "cr1": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_1", "writes_bin": "c_research_1" },
     "cw1": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_1", "writes_bin": "c_writer_1" },
     "crwtr1": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_1", "writes_bin": "c_out_1" },
-
     "cr2": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_2", "writes_bin": "c_research_2" },
     "cw2": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_2", "writes_bin": "c_writer_2" },
     "crwtr2": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_2", "writes_bin": "c_out_2" },
-
     "cr3": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_3", "writes_bin": "c_research_3" },
     "cw3": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_3", "writes_bin": "c_writer_3" },
     "crwtr3": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_3", "writes_bin": "c_out_3" },
-
     "pr1": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_1", "writes_bin": "p_research_1" },
     "pw1": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_1", "writes_bin": "p_writer_1" },
     "prwtr1": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_1", "writes_bin": "p_out_1" },
-
     "pr2": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_2", "writes_bin": "p_research_2" },
     "pw2": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_2", "writes_bin": "p_writer_2" },
     "prwtr2": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_2", "writes_bin": "p_out_2" },
-
     "pr3": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_3", "writes_bin": "p_research_3" },
     "pw3": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_3", "writes_bin": "p_writer_3" },
     "prwtr3": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_3", "writes_bin": "p_out_3" },
-
     "stchr": {
       "type": "stitcher",
       "template_ref": "stchr",
@@ -123,14 +112,12 @@
       },
       "writes_bin": "stitched_out"
     },
-
     "srwrtr": {
       "type": "rewriter",
       "template_ref": "srwrtr",
       "reads_bin": "stitched_out",
       "writes_bin": "final_out"
     },
-
     "commit": {
       "type": "commit",
       "template_ref": "commit",

@@ -1,7 +1,8 @@
 # File: items/blog/cp-2/instructions.txt
 # Runner: blog-cp:2 — FULL (toaster spec, no brains)
-# Version: v2025-12-18-full-01
+# Version: v2025-12-18-full-02
 # Updated: 2025-12-18T00:00:00-05:00
+RUNNER_MARKER: toaster-verify-2025-12-18-A
 
 ============================================================
 A) DEFINITIONS (CANONICAL)
@@ -9,30 +10,32 @@ A) DEFINITIONS (CANONICAL)
 
 1) Street / House identity
 - street_token = "blog"
-- house_token  = "cp:2"   (semantic)
+- house_token  = "cp:2"
 - house_slug   = "cp-2"   (filesystem: replace ':' -> '-')
 
 2) Execution model (NO BRAINS)
-- The runner executes job_definition.run_order directly.
-- There is no delegation endpoint.
-- There is no hidden orchestration.
+- Execute job_definition.run_order directly, sequentially.
+- No delegation endpoint. No "mini vs full" logic branches.
 - All coordination is via explicit bins inside one run.
 
-3) Bins (ephemeral map)
+3) Templates (MADLIBS ARE STATIC TEXT)
+- Member templates are STATIC TEXT files under items/blog/cp-2/.
+- They MUST be loaded fresh from Git for each run (no caching across runs).
+- They are NOT instances and MUST NOT be treated as in-memory state beyond the current lane call.
+
+4) Bins (ephemeral map)
 - bins is a per-run in-memory map: bins[bin_name] = JSON object
 - bins are not persisted between runs
-- overwrite is forbidden (one write per bin)
+- overwrite is forbidden (one write per bin; hard stop if exists)
 
-4) Global rules injection (HARD)
-- job_definition.global_rules MUST be injected into EVERY lane execution.
-- Injection method:
-  system_prompt = JSON(job_definition.global_rules) + "\n\n" + member_template_text
-  user_message  = JSON(lane_input_object)
-- The user_message MUST be exactly one JSON object (the lane input).
-- No additional wrappers inside the user_message unless the lane template requires it.
+5) Global rules injection (HARD)
+For every member lane (researcher/writer/rewriter/stitcher):
+- system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+- user_message  = JSON.stringify(lane_input_object)
+- user_message MUST be exactly one JSON object (no wrapper)
 
 ============================================================
-B) REQUIRED HOUSE FILES
+B) REQUIRED HOUSE FILES (HARD)
 ============================================================
 
 House root:
@@ -59,7 +62,16 @@ Hard stop if:
 - any referenced template file is missing
 
 ============================================================
-C) JOB-DEFINITION (ROWS) — HARD VALIDATION
+C) TRIGGER (HARD)
+============================================================
+
+Accept ONLY:
+- start blog-cp:2
+Else:
+- DO NOTHING.
+
+============================================================
+D) LOAD job_definition (ROWS) — HARD VALIDATION
 ============================================================
 
 Rows lookup:
@@ -69,31 +81,41 @@ Select:
 - Col A == "blog-cp:2"
 - Col B parse JSON -> job_definition
 
-Required fields (hard stop if missing / wrong type):
-- job_id (string)
-- street (string) == "blog"
-- house  (string) == "cp:2"
-- output_format (string)
-- run_order (array of strings, non-empty)
-- global_rules (object)
-- datasets (array, non-empty)
-- paths (object) with:
-  - docs_finals_root (string, starts "docs/", ends "/")
-  - docs_logs_root   (string, starts "docs/", ends "/")
+Hard validations (stop if any fail):
+- job_definition.street == "blog"
+- job_definition.house  == "cp:2"
+- job_definition.job_id exists (string)
+- job_definition.shape exists (string)
+- job_definition.output_format exists (string)
+- job_definition.run_order exists (non-empty array of strings)
+- job_definition.global_rules exists (object)
+- job_definition.datasets exists (non-empty array)
+- job_definition.paths.docs_finals_root starts "docs/" and ends "/"
+- job_definition.paths.docs_logs_root   starts "docs/" and ends "/"
 
-Optional:
-- mode (string) default "live"
-- shape (string) allowed, runner does not interpret beyond logging
-
-Hard stop if:
-- run_order contains duplicates (same lane key repeated)
-- any run_order lane key is not present in pipeline-spec.json lane_registry
+Derive:
+- mode = job_definition.mode if present else "live"
 
 ============================================================
-D) DATASETS (ROWS) — FETCH + STORE
+E) LOAD pipeline-spec.json (HARD)
 ============================================================
 
-For each datasets[i]:
+Load pipeline_spec from items/blog/cp-2/pipeline-spec.json
+
+Hard validations (stop if any fail):
+- pipeline_spec.street == "blog"
+- pipeline_spec.house  == "cp:2"
+- pipeline_spec.lane_registry exists (object)
+- pipeline_spec.templates exists (object)
+
+All lane keys in job_definition.run_order MUST exist in pipeline_spec.lane_registry.
+Stop if any missing.
+
+============================================================
+F) FETCH DATASETS (ROWS) — FETCH + STORE (HARD)
+============================================================
+
+For each entry in job_definition.datasets (in order given):
 Required keys:
 - role_key (string)
 - domains (array of strings)
@@ -107,8 +129,8 @@ GET /spreadsheets/{sheet_id}/tables/{table_id}/values/{range}
 Store:
 datasets_by_role[role_key] = {
   "role_key": role_key,
-  "domains": datasets[i].domains,
-  "items": <rows from Rows>
+  "domains": <domains from job_definition>,
+  "items": <Rows response items, unmodified>
 }
 
 Hard stop if:
@@ -116,142 +138,154 @@ Hard stop if:
 - role_key repeats
 
 ============================================================
-E) THE TOASTER RUN-LOOP (EXECUTE run_order)
+G) THE TOASTER RUN-LOOP (EXECUTE run_order) (HARD)
 ============================================================
 
 Initialize:
 - bins = {}
 - lane_logs = {}
 
-Load pipeline_spec from pipeline-spec.json.
-
-For each lane_key in job_definition.run_order:
+For each lane_key in job_definition.run_order (in order):
 
 1) Resolve lane_spec
 - lane_spec = pipeline_spec.lane_registry[lane_key]
 Hard stop if missing.
 
-2) Enforce reads_bin (when applicable)
-- If lane_spec has reads_bin:
-  - hard stop if bins[reads_bin] missing
+2) Enforce reads_bin (when lane_spec.reads_bin exists)
+- hard stop if bins[reads_bin] missing
 
-3) Execute by type
+3) Enforce writes_bin (when lane_spec.writes_bin exists)
+- hard stop if bins[writes_bin] already exists
 
---------------------------------------------
-E1) exp (data_sorter)
---------------------------------------------
+------------------------------------------------------------
+G1) exp (data_sorter) — MEMBER-TEMPLATE ENVELOPE
+------------------------------------------------------------
 
 Lane key: "exp"
 lane_spec.type must be "data_sorter"
 
-Input object passed to exp step:
+Input object passed to EXP:
 {
   "job_definition": <job_definition>,
   "datasets_by_role": <datasets_by_role>
 }
 
 Execution rule:
-- exp MUST behave deterministically under expeditor-contract.json
-- exp MUST normalize null/empty string fields as declared
-- exp MUST NOT produce prose, summaries, or inference
-- exp MUST write ONLY numbered input bins required by run_order:
-  - c_in_{n} for each CR pass referenced (cr1/cr2/...)
-  - p_in_{n} for each PR pass referenced (pr1/pr2/...)
-- exp MUST NOT write any downstream bins (research/writer/out)
+- EXP MUST follow expeditor-contract.json (member-template envelope).
+- EXP MUST produce ONLY the numbered input bins required by run_order:
+  - c_in_{n} for each CR pass referenced (cr1/cr2/cr3...)
+  - p_in_{n} for each PR pass referenced (pr1/pr2/pr3...)
+- EXP MUST NOT write downstream bins (research/writer/out/stitch/final).
+- EXP output MUST be a JSON object where each top-level key is a produced bin name.
 
 Write rule:
-- exp output must be a JSON object where each key is a bin name:
-  - e.g. { "c_in_1": {...}, "p_in_1": {...} }
 - For each produced bin:
   - bins[bin_name] = bin_object
   - hard stop if bin_name already exists
 
 Hard stop if:
-- any required input bin (for later lanes) is missing after exp completes
+- any required input bin for later lanes is missing after EXP completes
 
-Logging:
-lane_logs["exp"] = {
-  "writes": ["<each produced bin name>"],
-  "dataset_roles_seen": ["<role_keys>"]
-}
+Log:
+lane_logs["exp"] = { "writes": [produced bin names] }
 
---------------------------------------------
-E2) researcher / writer / rewriter / stitcher
---------------------------------------------
+------------------------------------------------------------
+G2) researcher / writer / rewriter / stitcher (LLM STEPS)
+------------------------------------------------------------
 
-For lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
+If lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
 
 Template resolution:
 - template_file = pipeline_spec.templates[lane_spec.template_ref]
-- hard stop if template_file missing
+- load template_text from items/blog/cp-2/{template_file}
+- hard stop if missing
 
 Prompt construction (HARD):
-- system_prompt = JSON(job_definition.global_rules) + "\n\n" + template_text
-- user_payload  = bins[reads_bin] (exactly one JSON object)
+- system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+- user_message  = JSON.stringify(bins[reads_bin])   // exactly one object
 
-Model call:
-- Must return one JSON object as plain text
-- Parse JSON
-- Hard stop if parse fails
+Model call (HARD):
+- system = system_prompt
+- user   = user_message
+
+Parse:
+- parse model output as JSON object
+- hard stop if parse fails or output is not an object
 
 Write:
 - bins[writes_bin] = parsed_object
 - hard stop if writes_bin already exists
 
-Minimal validation:
-- parsed_object must be an object
-- if parsed_object includes job_id/street/house/lane keys, they must match job_definition + lane_key intent
-- no tool calls inside the lane (members_cannot_call_tools)
+Log:
+lane_logs[lane_key] = { "reads": reads_bin, "writes": writes_bin }
 
-Logging:
-lane_logs[lane_key] = {
-  "reads": reads_bin,
-  "writes": writes_bin
+------------------------------------------------------------
+G3) stchr (stitcher) — READS_DYNAMIC BUILDER (HARD)
+------------------------------------------------------------
+
+If lane_key == "stchr" and lane_spec.reads_dynamic exists:
+
+Build stchr_in deterministically:
+1) Collect all existing bins matching c_out_1, c_out_2, c_out_3... ascending
+2) Then collect all existing bins matching p_out_1, p_out_2, p_out_3... ascending
+
+Write bins["stchr_in"] exactly once:
+{
+  "job_id": job_definition.job_id,
+  "shape": job_definition.shape,
+  "mode": mode,
+  "street": job_definition.street,
+  "house": job_definition.house,
+  "global_rules": job_definition.global_rules,
+  "collection_out_bins": [ ...objects... ],
+  "places_out_bins": [ ...objects... ]
 }
 
---------------------------------------------
-E3) commit
---------------------------------------------
+Then run the stchr lane as a normal stitcher LLM step (G2),
+reading bins["stchr_in"] and writing bins["stitched_out"].
+
+------------------------------------------------------------
+G4) commit (commit)
+------------------------------------------------------------
 
 Lane key: "commit"
 lane_spec.type must be "commit"
 
 Preconditions:
 - bins["final_out"] must exist
-- final_out must validate against final-schema.json (hard stop if mismatch)
+
+Validate final_out BEFORE commit:
+- validate bins["final_out"] against items/blog/cp-2/final-schema.json
+- enforce: literal "could-not-verify" MUST NOT appear anywhere in final_out
+Hard stop if any fail.
 
 Commit behavior (HARD):
-- Follow commit-spec.json exactly
-- Final JSON is committed with mutation: none
-- HTML rendered deterministically only if output_format requires
-- Run log committed to docs_logs_root
+- Follow items/blog/cp-2/commit-spec.json exactly.
+- Use /docs/commit-bulk (operationId: docs_commit_bulk).
+- final JSON content MUST be committed with mutation: none.
+- HTML is rendered deterministically only if output_format in ["html","json+html"].
+- Run log JSON is always committed alongside finals.
 
-Hard stop if commit fails.
-
-============================================================
-F) FINAL-SCHEMA VALIDATION (HARD)
-============================================================
-
-Before commit:
-- Validate bins["final_out"] against final-schema.json
-Hard stop on any mismatch.
+POST-COMMIT VERIFICATION (HARD; PROVES COMMITS ARE REAL):
+- After docs_commit_bulk returns committed_paths,
+  runner MUST immediately GET each path via /docs/{path} and hard stop if any 404.
 
 ============================================================
-G) SINGLE USER RESPONSE (HARD)
+H) SINGLE USER RESPONSE (ONE MESSAGE ONLY) (HARD)
 ============================================================
 
-On success: send exactly one message containing:
+On success, send exactly one message containing:
 - job_id
 - mode
 - executed run_order
-- JSON path
-- HTML path (if generated)
-- LOG path
-- commit SHA (if available)
+- committed JSON path (from commit-spec path_derivation)
+- committed HTML path (if output_format requires)
+- committed RUN LOG path (from commit-spec path_derivation; JSON)
+- commit SHA (from docs_commit_bulk response)
 - runner_marker: toaster-verify-2025-12-18-A
 
-On failure: send exactly one message containing:
-- a concise error
+On failure, send exactly one message containing:
+- concise error
 - phase name only:
   - job_definition
   - house load
@@ -259,8 +293,6 @@ On failure: send exactly one message containing:
   - lane execution
   - final validation
   - commit
-
-No partial progress chatter.
 
 ============================================================
 END OF FILE
