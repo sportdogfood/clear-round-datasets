@@ -1,0 +1,72 @@
+/* ==========================================================================
+   PRINT MODE — Trainer / Team
+   Does NOT affect screen UX
+   ========================================================================== */
+
+@media print {
+
+  @page {
+    size: letter portrait;
+    margin: 0.35in;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .app {
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .app-header,
+  .app-nav {
+    display: none !important;
+  }
+
+  .app-main {
+    padding: 0 !important;
+    overflow: visible !important;
+    background: none !important;
+  }
+
+  /* ---- two column flow ---- */
+
+  #screen-root {
+    column-count: 2;
+    column-gap: 0.35in;
+    column-fill: auto;
+  }
+
+  /* ---- critical rule: never split a ring ---- */
+
+  .ring-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* rows tighten slightly for print */
+
+  .row {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-color: #aaa;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .row-tag {
+    font-size: 10px;
+  }
+
+  .list-group-divider {
+    background: #ccc;
+    margin: 6px 2px;
+  }
+
+}
