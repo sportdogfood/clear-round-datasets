@@ -1,20 +1,20 @@
 {
   "file": "expeditor-contract.json",
-  "version": "v2025-12-18-expeditor-03",
+  "version": "v2025-12-18-expeditor-04",
   "street": "blog",
   "house": "cp:2",
   "role": "exp",
   "purpose": [
     "Shape raw datasets into lane-safe, schema-stable inputs",
-    "Normalize null and empty values deterministically",
-    "Route data into numbered input bins required by job_definition.run_order",
+    "Normalize null/empty deterministically (including sentinel handling)",
+    "Bind numbered passes (crN/prN) to datasets by family order (C/P)",
+    "Write ONLY the numbered input bins required by job_definition.run_order",
     "Produce NO narrative and NO inference"
   ],
   "global_constraints": {
     "no_prose": true,
     "no_inference": true,
     "no_external_lookup": true,
-    "no_cross_lane_data": true,
     "input_is_authoritative": true,
     "schema_is_fixed": true,
     "empty_is_safer_than_guessing": true
@@ -49,71 +49,142 @@
     }
   },
   "dataset_families": {
-    "C": {
-      "domains_all": ["event", "venue", "city_season"]
-    },
-    "P": {
-      "domains_all": ["stay", "dine", "essentials", "locale"]
-    }
+    "C": { "domains_all": ["event", "venue", "city_season"] },
+    "P": { "domains_all": ["stay", "dine", "essentials", "locale"] }
+  },
+  "pass_detection": {
+    "collection_lane_prefixes": ["cr", "cw", "crwtr"],
+    "places_lane_prefixes": ["pr", "pw", "prwtr"],
+    "pass_number_regex": "^[a-z]+(\\d+)$",
+    "pass_requirement_source": "job_definition.run_order"
   },
   "dataset_binding_rules": {
     "binding_mode": "family_ordered_by_job_definition_datasets",
     "c_pass_n_binds_to": "nth dataset (1-indexed) in family C",
     "p_pass_n_binds_to": "nth dataset (1-indexed) in family P",
-    "pass_requirement_source": "job_definition.run_order",
     "on_missing_dataset_for_required_pass": {
       "action": "halt",
       "error_code": "EXP_MISSING_DATASET_FOR_PASS"
     }
   },
+  "output_envelope": {
+    "description": "EXP outputs a single JSON object whose top-level keys are the produced bin names (c_in_N and/or p_in_N). No other top-level keys are permitted.",
+    "only_allowed_bin_prefixes": ["c_in_", "p_in_"]
+  },
   "output_bins": {
     "c_in_n": {
-      "role": "collection_researcher",
-      "domains": ["event", "venue", "city_season"],
       "bin_name_pattern": "c_in_{n}",
+      "lane_name_pattern": "cr{n}",
       "shape": {
-        "creation_id": "string",
         "job_id": "string",
-        "shape": "string",
         "street": "string",
         "house": "string",
-        "pass_n": "number",
-        "dataset_role_key": "string",
-        "event_identity": "object",
-        "event_rows": "array",
-        "venue_rows": "array",
-        "city_season_rows": "array",
-        "source_log": "array"
+        "lane": "string",
+        "dataset_id": "string",
+        "cid": "string",
+        "global_rules": "object",
+        "event_identity": {
+          "event_leg_key": "string",
+          "event_name": "string",
+          "event_acronym": "string",
+          "venue_name": "string",
+          "city": "string",
+          "state": "string",
+          "season_label": "string",
+          "rating_string": "string",
+          "rider_caliber": "string"
+        },
+        "maps_anchor": {
+          "place_id": "string",
+          "lat": "number_or_null",
+          "lng": "number_or_null"
+        },
+        "collection_input": {
+          "event_notes": "string",
+          "venue_notes": "string",
+          "city_season_notes": "string"
+        }
       }
     },
     "p_in_n": {
-      "role": "places_researcher",
-      "domains": ["stay", "dine", "essentials", "locale"],
       "bin_name_pattern": "p_in_{n}",
+      "lane_name_pattern": "pr{n}",
       "shape": {
-        "creation_id": "string",
         "job_id": "string",
-        "shape": "string",
         "street": "string",
         "house": "string",
-        "pass_n": "number",
-        "dataset_role_key": "string",
+        "lane": "string",
+        "dataset_id": "string",
+        "cid": "string",
+        "global_rules": "object",
         "stay": { "feature": "array", "list_only": "array" },
         "dine": { "feature": "array", "list_only": "array" },
         "essentials": { "feature": "array", "list_only": "array" },
-        "locale": { "rows": "array" },
-        "source_log": "array"
+        "locale": { "rows": "array" }
       }
     }
   },
-  "lane_isolation": {
-    "collection_domains": ["event", "venue", "city_season"],
-    "places_domains": ["stay", "dine", "essentials", "locale"],
-    "rules": [
-      "collection data MUST NOT appear in places bins",
-      "places data MUST NOT appear in collection bins",
-      "locale data MUST NOT be expanded beyond provided rows"
-    ]
+  "dataset_extraction_rules": {
+    "kv_map_build": {
+      "description": "Build a normalized key/value map from datasets_by_role[role_key].items when items are row-like.",
+      "accepted_row_shapes": [
+        "array_len_2_or_more: [key, value, ...]",
+        "object_with_keys: { \"0\": key, \"1\": value }",
+        "object_with_col_keys: { \"Col1\": key, \"Col2\": value }",
+        "object_with_A_B_keys: { \"A\": key, \"B\": value }"
+      ],
+      "key_trim": true,
+      "value_trim_if_string": true,
+      "on_duplicate_key": "last_wins"
+    },
+    "sentinel_policy": {
+      "description": "Any missing/empty scalar text becomes \"could-not-verify\".",
+      "string_missing_to_sentinel": true,
+      "string_empty_to_sentinel": true
+    }
+  },
+  "collection_bin_assembly": {
+    "event_identity_keys": {
+      "event_leg_key": ["event_leg_key", "eventLegKey"],
+      "event_name": ["event_name", "eventName"],
+      "event_acronym": ["event_acronym", "eventAcronym"],
+      "venue_name": ["venue_name", "venueName"],
+      "city": ["city"],
+      "state": ["state"],
+      "season_label": ["season_label", "seasonLabel"],
+      "rating_string": ["rating_string", "ratingString"],
+      "rider_caliber": ["rider_caliber", "riderCaliber"]
+    },
+    "maps_anchor_keys": {
+      "place_id": ["place_id", "placeId"],
+      "lat": ["lat", "latitude"],
+      "lng": ["lng", "longitude"]
+    },
+    "collection_input_keys": {
+      "event_notes": ["event_notes", "eventNotes"],
+      "venue_notes": ["venue_notes", "venueNotes"],
+      "city_season_notes": ["city_season_notes", "citySeasonNotes"]
+    }
+  },
+  "places_bin_assembly": {
+    "row_partitioning": {
+      "description": "If places lists are not already arrays, partition from kv_map keys using deterministic prefixes; otherwise use empty arrays.",
+      "prefixes": {
+        "stay_feature": "stay:feature:",
+        "stay_list_only": "stay:list_only:",
+        "dine_feature": "dine:feature:",
+        "dine_list_only": "dine:list_only:",
+        "essentials_feature": "essentials:feature:",
+        "essentials_list_only": "essentials:list_only:",
+        "locale_row": "locale:row:"
+      }
+    },
+    "fallback_when_unmatched": {
+      "stay": { "feature": [], "list_only": [] },
+      "dine": { "feature": [], "list_only": [] },
+      "essentials": { "feature": [], "list_only": [] },
+      "locale": { "rows": [] }
+    }
   },
   "forbidden_behaviors": [
     "adding derived fields",
@@ -122,7 +193,8 @@
     "creating prose or summaries",
     "repairing data semantically",
     "guessing missing values",
-    "merging domains"
+    "merging domains",
+    "adding any top-level output keys beyond produced bin names"
   ],
   "error_handling": {
     "missing_required_dataset": { "action": "halt", "error_code": "EXP_MISSING_DATASET" },
@@ -131,15 +203,15 @@
     "unexpected_domain": { "action": "halt", "error_code": "EXP_UNEXPECTED_DOMAIN" }
   },
   "logging": {
-    "emit_source_log": true,
+    "emit_source_log": false,
     "include_row_counts": true,
     "include_domain_coverage": true,
     "include_bound_pass_to_dataset_role_key": true
   },
   "guarantees": [
-    "All downstream lanes receive schema-stable inputs",
-    "All missing values are explicitly normalized",
-    "No lane receives data it is not contractually allowed to see",
+    "EXP produces only c_in_N / p_in_N bins required by run_order",
+    "Each produced bin matches its declared shape exactly",
+    "All missing/empty scalar text is normalized deterministically",
     "Failure is explicit and early"
   ]
 }
