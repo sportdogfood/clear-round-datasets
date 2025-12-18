@@ -1,21 +1,134 @@
 {
-  "commit_message": "Final commit for {job_id}",
-  "overwrite": true,
-  "files": [
-    {
-      "path": "{docs_finals_root}{job_id}.json",
-      "content_type": "application/json",
-      "content_base64": "<base64-encoded-final-json-content>"
+  "file": "commit-spec.json",
+  "version": "v2025-12-18-commit-01",
+  "street": "blog",
+  "house": "cp:2",
+
+  "purpose": [
+    "Commit final artifacts exactly as produced (no mutation of final JSON)",
+    "Derive filesystem-safe filenames from job_id (normalize ':' -> '-')",
+    "Write finals + run log into job_definition.paths roots via docs_commit_bulk"
+  ],
+
+  "inputs": {
+    "job_definition": {
+      "required": true,
+      "read_only": true,
+      "required_fields": ["job_id", "street", "house", "paths", "output_format", "run_order"]
     },
-    {
-      "path": "{docs_finals_root}{job_id}.html",
-      "content_type": "text/html",
-      "content_base64": "<base64-encoded-final-html-content>"
+    "final_out_bin": {
+      "required": true,
+      "bin_name": "final_out",
+      "read_only": true
     },
-    {
-      "path": "{docs_logs_root}{job_id}-rwt.json",
-      "content_type": "application/json",
-      "content_base64": "<base64-encoded-rwt-log-json>"
+    "lane_logs": {
+      "required": false,
+      "read_only": true
     }
+  },
+
+  "normalization": {
+    "job_id_fs": {
+      "description": "Filesystem-safe job id used for filenames only",
+      "source": "job_definition.job_id",
+      "replace_chars": {
+        ":": "-"
+      },
+      "validation": {
+        "allowed_chars_regex": "^[A-Za-z0-9._-]+$",
+        "on_fail": {
+          "action": "halt",
+          "error_code": "COMMIT_JOB_ID_FS_INVALID"
+        }
+      }
+    }
+  },
+
+  "path_derivation": {
+    "finals_root": {
+      "source": "job_definition.paths.docs_finals_root",
+      "must_start_with": "docs/",
+      "must_end_with": "/"
+    },
+    "logs_root": {
+      "source": "job_definition.paths.docs_logs_root",
+      "must_start_with": "docs/",
+      "must_end_with": "/"
+    },
+
+    "final_json_path": {
+      "pattern": "{finals_root}{job_id_fs}.json"
+    },
+    "final_html_path": {
+      "pattern": "{finals_root}{job_id_fs}.html"
+    },
+    "run_log_path": {
+      "pattern": "{logs_root}{job_id_fs}-run.json"
+    }
+  },
+
+  "artifacts": {
+    "final_json": {
+      "required": true,
+      "content_source": "final_out_bin",
+      "content_type": "application/json",
+      "mutation": "none"
+    },
+
+    "final_html": {
+      "required_when": {
+        "job_definition_output_format_in": ["html", "json+html"]
+      },
+      "content_source": "deterministic_renderer",
+      "content_type": "text/html"
+    },
+
+    "run_log_json": {
+      "required": true,
+      "content_type": "application/json",
+      "content_source": "commit_step_builder",
+      "shape": {
+        "job_id": "string",
+        "job_id_fs": "string",
+        "mode": "string",
+        "run_order": "array",
+        "lane_logs": "object_or_null"
+      }
+    }
+  },
+
+  "html_renderer": {
+    "enabled_when": {
+      "job_definition_output_format_in": ["html", "json+html"]
+    },
+    "rules": [
+      "Deterministic render only (no inference, no new facts)",
+      "Render only fields present in final_out_bin",
+      "If a required section is missing, render empty placeholders (<p></p>) rather than invent content",
+      "Must not leak the literal string \"could-not-verify\" into visible HTML"
+    ],
+    "expected_sections_hint": {
+      "collection_body": ["paragraph_1", "paragraph_2"],
+      "places_body": ["stay", "dine", "essentials", "locale"]
+    }
+  },
+
+  "commit_call": {
+    "tool": "docs_commit_bulk",
+    "overwrite": true,
+    "message_pattern": "Final commit for {job_definition.job_id}",
+    "files_order": ["final_json", "final_html_optional", "run_log_json"]
+  },
+
+  "failure_behavior": {
+    "on_missing_required_input": { "action": "halt", "error_code": "COMMIT_INPUT_MISSING" },
+    "on_path_validation_fail": { "action": "halt", "error_code": "COMMIT_PATH_INVALID" },
+    "on_commit_fail": { "action": "halt", "error_code": "COMMIT_FAILURE" }
+  },
+
+  "guarantees": [
+    "Final JSON is committed exactly as produced (no edits)",
+    "Filenames are stable and filesystem-safe via job_id_fs",
+    "Run log is always committed alongside finals"
   ]
 }
