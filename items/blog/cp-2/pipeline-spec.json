@@ -1,14 +1,15 @@
 {
   "file": "pipeline-spec.json",
-  "version": "v2025-12-18-pipeline-01",
+  "version": "v2025-12-18-pipeline-02",
   "street": "blog",
   "house": "cp:2",
   "purpose": [
     "Declare allowed lane keys for this house",
     "Declare deterministic reads_bin -> writes_bin routing per lane key",
-    "Declare how numbered C/P passes bind to datasets (by domains)",
+    "Declare how numbered C/P passes bind to datasets (by domains) in-order",
     "Enable runner to execute job_definition.run_order without any 'brains' delegation"
   ],
+
   "filesystem_normalization": {
     "house_slug_rule": {
       "replace_chars": {
@@ -16,6 +17,7 @@
       }
     }
   },
+
   "dataset_families": {
     "C": {
       "description": "Collection datasets (event / venue / city_season)",
@@ -30,36 +32,70 @@
       }
     }
   },
+
+  "dataset_binding_rules": {
+    "description": "Bind numbered input bins to matching datasets in job_definition.datasets order.",
+    "algorithm": [
+      "From job_definition.datasets, build an ordered list C_list of datasets whose domains contain all dataset_families.C.match.domains_all.",
+      "From job_definition.datasets, build an ordered list P_list of datasets whose domains contain all dataset_families.P.match.domains_all.",
+      "Bind c_in_1 to C_list[0], c_in_2 to C_list[1], ... (1-indexed).",
+      "Bind p_in_1 to P_list[0], p_in_2 to P_list[1], ... (1-indexed)."
+    ],
+    "invariants": {
+      "job_definition_datasets_order_is_authoritative": true,
+      "no_guess_on_insufficient_datasets": true
+    },
+    "failure_behavior": {
+      "on_missing_required_binding": {
+        "action": "halt",
+        "error_code": "PIPE_DATASET_BINDING_MISSING"
+      },
+      "on_ambiguous_binding": {
+        "action": "halt",
+        "error_code": "PIPE_DATASET_BINDING_AMBIGUOUS"
+      }
+    }
+  },
+
   "bin_naming": {
     "c_input_bin": "c_in_{n}",
     "c_research_bin": "c_research_{n}",
     "c_writer_bin": "c_writer_{n}",
     "c_output_bin": "c_out_{n}",
+
     "p_input_bin": "p_in_{n}",
     "p_research_bin": "p_research_{n}",
     "p_writer_bin": "p_writer_{n}",
     "p_output_bin": "p_out_{n}",
+
     "stitched_bin": "stitched_out",
     "final_bin": "final_out"
   },
+
   "templates": {
     "exp": "expeditor-contract.json",
+
     "cr": "member-template-cr-prompt.txt",
     "cw": "member-template-cw-prompt.txt",
     "crwtr": "member-template-crwtr-prompt.txt",
+
     "pr": "member-template-pr-prompt.txt",
     "pw": "member-template-pw-prompt.txt",
     "prwtr": "member-template-prwtr-prompt.txt",
+
     "stchr": "member-template-stchr-prompt.txt",
     "srwrtr": "member-template-srwrtr-prompt.txt",
+
     "commit": "commit-spec.json"
   },
+
   "execution_rules": {
     "reads_bin_required": true,
     "writes_bin_required": true,
     "hard_stop_on_missing_reads_bin": true,
     "hard_stop_on_missing_template_file": true
   },
+
   "lane_registry": {
     "exp": {
       "type": "data_sorter",
@@ -101,17 +137,24 @@
       "template_ref": "stchr",
       "reads_dynamic": {
         "description": "Collect all c_out_{n} and p_out_{n} bins that exist for lanes present earlier in run_order.",
-        "include_prefixes": ["c_out_", "p_out_"]
+        "include_prefixes": ["c_out_", "p_out_"],
+        "sort_rule": "numeric_suffix_ascending"
       },
       "writes_bin": "stitched_out"
     },
 
-    "srwrtr": { "type": "rewriter", "template_ref": "srwrtr", "reads_bin": "stitched_out", "writes_bin": "final_out" },
+    "srwrtr": {
+      "type": "rewriter",
+      "template_ref": "srwrtr",
+      "reads_bin": "stitched_out",
+      "writes_bin": "final_out"
+    },
 
     "commit": {
       "type": "commit",
       "template_ref": "commit",
-      "reads_bin": "final_out",
+      "reads": ["job_definition", "final_out"],
+      "reads_optional": ["lane_logs"],
       "writes": ["docs_finals", "docs_logs"]
     }
   }
