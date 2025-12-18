@@ -1,72 +1,118 @@
 {
   "file": "pipeline-spec.json",
-  "version": "v2025-12-16-pipeline-v2",
+  "version": "v2025-12-18-pipeline-01",
   "street": "blog",
   "house": "cp:2",
-
-  "lanes": [
-    {
-      "lane_id": "exp",
-      "lane_type": "expeditor",
-      "prompt_file": "expeditor-contract.json",
-      "input": ["job_definition", "datasets_by_role"],
-      "output": ["cr0_input", "pr1_input"]
-    },
-
-    {
-      "lane_id": "cr1",
-      "lane_type": "researcher",
-      "prompt_file": "member-template-cr-prompt.txt",
-      "input": ["cr0_input"],
-      "output": ["cr1_output"]
-    },
-
-    {
-      "lane_id": "cw1",
-      "lane_type": "writer",
-      "prompt_file": "member-template-cw-prompt.txt",
-      "input": ["cr1_output"],
-      "output": ["cw1_output"]
-    },
-
-    {
-      "lane_id": "crwtr1",
-      "lane_type": "rewriter",
-      "prompt_file": "member-template-rwt-prompt.txt",
-      "input": ["cw1_output"],
-      "output": ["crwtr1_output"]
-    },
-
-    {
-      "lane_id": "pr1",
-      "lane_type": "researcher",
-      "prompt_file": "member-template-pr-prompt.txt",
-      "input": ["pr1_input"],
-      "output": ["pr1_output"]
-    },
-
-    {
-      "lane_id": "pw1",
-      "lane_type": "writer",
-      "prompt_file": "member-template-pw-prompt.txt",
-      "input": ["pr1_output"],
-      "output": ["pw1_output"]
-    },
-
-    {
-      "lane_id": "prwtr1",
-      "lane_type": "rewriter",
-      "prompt_file": "member-template-rwt-prompt.txt",
-      "input": ["pw1_output"],
-      "output": ["prwtr1_output"]
-    },
-
-    {
-      "lane_id": "stchr",
-      "lane_type": "stitcher",
-      "prompt_file": null,
-      "input": ["crwtr1_output", "prwtr1_output"],
-      "output": ["final_pre_rwt"]
+  "purpose": [
+    "Declare allowed lane keys for this house",
+    "Declare deterministic reads_bin -> writes_bin routing per lane key",
+    "Declare how numbered C/P passes bind to datasets (by domains)",
+    "Enable runner to execute job_definition.run_order without any 'brains' delegation"
+  ],
+  "filesystem_normalization": {
+    "house_slug_rule": {
+      "replace_chars": {
+        ":": "-"
+      }
     }
-  ]
+  },
+  "dataset_families": {
+    "C": {
+      "description": "Collection datasets (event / venue / city_season)",
+      "match": {
+        "domains_all": ["event", "venue", "city_season"]
+      }
+    },
+    "P": {
+      "description": "Places datasets (stay / dine / essentials / locale)",
+      "match": {
+        "domains_all": ["stay", "dine", "essentials", "locale"]
+      }
+    }
+  },
+  "bin_naming": {
+    "c_input_bin": "c_in_{n}",
+    "c_research_bin": "c_research_{n}",
+    "c_writer_bin": "c_writer_{n}",
+    "c_output_bin": "c_out_{n}",
+    "p_input_bin": "p_in_{n}",
+    "p_research_bin": "p_research_{n}",
+    "p_writer_bin": "p_writer_{n}",
+    "p_output_bin": "p_out_{n}",
+    "stitched_bin": "stitched_out",
+    "final_bin": "final_out"
+  },
+  "templates": {
+    "exp": "expeditor-contract.json",
+    "cr": "member-template-cr-prompt.txt",
+    "cw": "member-template-cw-prompt.txt",
+    "crwtr": "member-template-crwtr-prompt.txt",
+    "pr": "member-template-pr-prompt.txt",
+    "pw": "member-template-pw-prompt.txt",
+    "prwtr": "member-template-prwtr-prompt.txt",
+    "stchr": "member-template-stchr-prompt.txt",
+    "srwrtr": "member-template-srwrtr-prompt.txt",
+    "commit": "commit-spec.json"
+  },
+  "execution_rules": {
+    "reads_bin_required": true,
+    "writes_bin_required": true,
+    "hard_stop_on_missing_reads_bin": true,
+    "hard_stop_on_missing_template_file": true
+  },
+  "lane_registry": {
+    "exp": {
+      "type": "data_sorter",
+      "template_ref": "exp",
+      "reads": ["job_definition", "datasets_by_role"],
+      "writes_dynamic": {
+        "description": "Produce only the numbered input bins required by job_definition.run_order.",
+        "c_inputs": "c_in_{n}",
+        "p_inputs": "p_in_{n}"
+      }
+    },
+
+    "cr1": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_1", "writes_bin": "c_research_1" },
+    "cw1": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_1", "writes_bin": "c_writer_1" },
+    "crwtr1": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_1", "writes_bin": "c_out_1" },
+
+    "cr2": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_2", "writes_bin": "c_research_2" },
+    "cw2": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_2", "writes_bin": "c_writer_2" },
+    "crwtr2": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_2", "writes_bin": "c_out_2" },
+
+    "cr3": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_3", "writes_bin": "c_research_3" },
+    "cw3": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_3", "writes_bin": "c_writer_3" },
+    "crwtr3": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_3", "writes_bin": "c_out_3" },
+
+    "pr1": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_1", "writes_bin": "p_research_1" },
+    "pw1": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_1", "writes_bin": "p_writer_1" },
+    "prwtr1": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_1", "writes_bin": "p_out_1" },
+
+    "pr2": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_2", "writes_bin": "p_research_2" },
+    "pw2": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_2", "writes_bin": "p_writer_2" },
+    "prwtr2": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_2", "writes_bin": "p_out_2" },
+
+    "pr3": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_3", "writes_bin": "p_research_3" },
+    "pw3": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_3", "writes_bin": "p_writer_3" },
+    "prwtr3": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_3", "writes_bin": "p_out_3" },
+
+    "stchr": {
+      "type": "stitcher",
+      "template_ref": "stchr",
+      "reads_dynamic": {
+        "description": "Collect all c_out_{n} and p_out_{n} bins that exist for lanes present earlier in run_order.",
+        "include_prefixes": ["c_out_", "p_out_"]
+      },
+      "writes_bin": "stitched_out"
+    },
+
+    "srwrtr": { "type": "rewriter", "template_ref": "srwrtr", "reads_bin": "stitched_out", "writes_bin": "final_out" },
+
+    "commit": {
+      "type": "commit",
+      "template_ref": "commit",
+      "reads_bin": "final_out",
+      "writes": ["docs_finals", "docs_logs"]
+    }
+  }
 }
