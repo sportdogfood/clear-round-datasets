@@ -1,6 +1,6 @@
 {
   "file": "expeditor-contract.json",
-  "version": "v2025-12-16-expeditor-v2",
+  "version": "v2025-12-18-expeditor-v3",
   "street": "blog",
   "house": "cp:2",
   "role": "exp",
@@ -8,7 +8,8 @@
   "purpose": [
     "Shape raw datasets into lane-safe, schema-stable inputs",
     "Normalize null and empty values deterministically",
-    "Route data into fixed researcher input bins",
+    "Bind datasets to numbered C/P passes in-order (no guessing)",
+    "Produce only the numbered input bins required by job_definition.run_order",
     "Produce NO narrative and NO inference"
   ],
 
@@ -47,68 +48,140 @@
     },
     "datasets_by_role": {
       "required": true,
-      "expected_roles": ["cr0", "pr1"]
+      "rule": "MUST contain every role_key referenced by job_definition.datasets[*].role_key"
+    }
+  },
+
+  "dataset_families": {
+    "C": {
+      "description": "Collection datasets (event / venue / city_season)",
+      "match": {
+        "domains_all": ["event", "venue", "city_season"]
+      }
+    },
+    "P": {
+      "description": "Places datasets (stay / dine / essentials / locale)",
+      "match": {
+        "domains_all": ["stay", "dine", "essentials", "locale"]
+      }
+    }
+  },
+
+  "dataset_binding_rules": {
+    "description": "Bind numbered input bins to matching datasets in job_definition.datasets order.",
+    "algorithm": [
+      "From job_definition.datasets, build ordered C_list where dataset.domains contains all dataset_families.C.match.domains_all.",
+      "From job_definition.datasets, build ordered P_list where dataset.domains contains all dataset_families.P.match.domains_all.",
+      "Bind c_in_1 to C_list[0], c_in_2 to C_list[1], ... (1-indexed).",
+      "Bind p_in_1 to P_list[0], p_in_2 to P_list[1], ... (1-indexed)."
+    ],
+    "invariants": {
+      "job_definition_datasets_order_is_authoritative": true,
+      "no_guess_on_insufficient_datasets": true
+    },
+    "failure_behavior": {
+      "on_missing_required_binding": {
+        "action": "halt",
+        "error_code": "EXP_DATASET_BINDING_MISSING"
+      },
+      "on_ambiguous_binding": {
+        "action": "halt",
+        "error_code": "EXP_DATASET_BINDING_AMBIGUOUS"
+      }
+    }
+  },
+
+  "run_order_driven_outputs": {
+    "description": "Determine which numbered bins to produce by scanning job_definition.run_order.",
+    "rules": [
+      "If run_order contains cr{n} then exp MUST produce c_in_{n}.",
+      "If run_order contains pr{n} then exp MUST produce p_in_{n}.",
+      "If run_order contains cw{n}/crwtr{n} but cr{n} is absent, exp does NOT invent c_in_{n}; downstream will halt on missing reads_bin.",
+      "If run_order contains pw{n}/prwtr{n} but pr{n} is absent, exp does NOT invent p_in_{n}; downstream will halt on missing reads_bin."
+    ],
+    "failure_behavior": {
+      "on_required_bin_without_dataset": {
+        "action": "halt",
+        "error_code": "EXP_REQUIRED_BIN_MISSING_DATASET"
+      }
     }
   },
 
   "output_bins": {
-    "cr0_input": {
+    "c_in_pattern": {
+      "bin_name_pattern": "c_in_{n}",
       "role": "collection_researcher",
       "domains": ["event", "venue", "city_season"],
       "shape": {
-        "creation_id": "string",
+        "job_id": "string",
+        "street": "string",
+        "house": "string",
+        "lane": "string",
+        "dataset_id": "string",
+        "cid": "string",
+        "global_rules": "object",
         "event_identity": "object",
-        "event_rows": "array",
-        "venue_rows": "array",
-        "city_season_rows": "array",
+        "maps_anchor": "object",
+        "collection_input": "object",
         "source_log": "array"
-      }
+      },
+      "notes": [
+        "This bin is the direct input for member-template-cr-prompt.txt",
+        "All missing scalar text MUST already be normalized to could-not-verify"
+      ]
     },
 
-    "pr1_input": {
+    "p_in_pattern": {
+      "bin_name_pattern": "p_in_{n}",
       "role": "places_researcher",
       "domains": ["stay", "dine", "essentials", "locale"],
       "shape": {
-        "creation_id": "string",
-        "stay": {
-          "feature": "array",
-          "list_only": "array"
-        },
-        "dine": {
-          "feature": "array",
-          "list_only": "array"
-        },
-        "essentials": {
-          "feature": "array",
-          "list_only": "array"
-        },
-        "locale": {
-          "rows": "array"
-        },
+        "job_id": "string",
+        "street": "string",
+        "house": "string",
+        "lane": "string",
+        "dataset_id": "string",
+        "cid": "string",
+        "global_rules": "object",
+        "stay": { "feature": "array", "list_only": "array" },
+        "dine": { "feature": "array", "list_only": "array" },
+        "essentials": { "feature": "array", "list_only": "array" },
+        "locale": { "rows": "array" },
         "source_log": "array"
       }
     }
   },
 
-  "routing_rules": {
-    "cr0": {
-      "required_domains": ["event", "venue", "city_season"],
-      "destination_bin": "cr0_input",
-      "failure_behavior": "halt"
-    },
-    "pr1": {
-      "required_domains": ["stay", "dine", "essentials", "locale"],
-      "destination_bin": "pr1_input",
-      "failure_behavior": "halt"
-    }
+  "required_field_sets": {
+    "c_in_event_identity_fields": [
+      "event_leg_key",
+      "event_name",
+      "event_acronym",
+      "venue_name",
+      "city",
+      "state",
+      "season_label",
+      "rating_string",
+      "rider_caliber"
+    ],
+    "c_in_maps_anchor_fields": [
+      "place_id",
+      "lat",
+      "lng"
+    ],
+    "c_in_collection_input_fields": [
+      "event_notes",
+      "venue_notes",
+      "city_season_notes"
+    ]
   },
 
   "lane_isolation": {
     "collection_domains": ["event", "venue", "city_season"],
     "places_domains": ["stay", "dine", "essentials", "locale"],
     "rules": [
-      "collection data MUST NOT appear in places bins",
-      "places data MUST NOT appear in collection bins",
+      "collection data MUST NOT appear in p_in_* bins",
+      "places data MUST NOT appear in c_in_* bins",
       "locale data MUST NOT be expanded beyond provided rows"
     ]
   },
@@ -120,13 +193,14 @@
     "creating prose or summaries",
     "repairing data semantically",
     "guessing missing values",
-    "merging domains"
+    "merging domains across C and P",
+    "calling tools or browsing"
   ],
 
   "error_handling": {
-    "missing_required_dataset": {
+    "missing_required_dataset_role_key": {
       "action": "halt",
-      "error_code": "EXP_MISSING_DATASET"
+      "error_code": "EXP_MISSING_DATASET_ROLE_KEY"
     },
     "schema_violation": {
       "action": "halt",
@@ -141,12 +215,14 @@
   "logging": {
     "emit_source_log": true,
     "include_row_counts": true,
-    "include_domain_coverage": true
+    "include_domain_coverage": true,
+    "include_dataset_bindings": true
   },
 
   "guarantees": [
     "All downstream lanes receive schema-stable inputs",
     "All missing values are explicitly normalized",
+    "Only bins required by run_order are produced",
     "No lane receives data it is not contractually allowed to see",
     "Failure is explicit and early"
   ]
