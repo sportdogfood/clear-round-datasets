@@ -1,28 +1,42 @@
 # File: items/blog/cp-2/instructions-mini.txt
-# Runner: blog-cp:2 — MINI (end-to-end)
-# Version: v2025-12-11-min-03
-# Updated: 2025-12-11T17:10:00Z
+# Runner: blog-cp:2 — MINI (end-to-end gatekeeper)
+# Version: v2025-12-15-min-04
+# Updated: 2025-12-15T21:30:00Z
 
-# PURPOSE
-# - Trigger: "start blog-cp:2"
-# - Load job_definition from Rows (including mode)
-# - Load cp:2 house files
-# - Fetch datasets defined in job_definition
-# - Hand off full pipeline (exp → crr → cwr → prr → pwr → rwt) to git.brains
-# - Commit final JSON + HTML (+ log) using job_definition.paths.docs_finals_root / docs_logs_root
-# - Send ONE final success/failure summary to the user
+============================================================
+PURPOSE (NON-NEGOTIABLE)
+============================================================
+
+This MINI runner is a deterministic gatekeeper.
+
+It is responsible for:
+- validating trigger and job-definition,
+- loading required house assets,
+- fetching declared datasets,
+- delegating execution to git.brains,
+- committing final artifacts exactly as produced,
+- returning ONE final success or failure message.
+
+It MUST NOT:
+- infer intent,
+- alter schemas,
+- reshape outputs,
+- add logic beyond validation and delegation,
+- emit partial progress messages.
 
 ============================================================
 1. TRIGGER
 ============================================================
 
-Accept only:
+Accept ONLY the literal command:
 
 - start blog-cp:2
 
-On anything else: do nothing.
+On any other input:
+- DO NOTHING.
 
-Let:
+Set constants:
+
 - street_token = "blog"
 - house_token  = "cp:2"
 
@@ -32,223 +46,213 @@ Let:
 
 Call Rows:
 
-- GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
+GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
 
-Interpret:
-- column A (items[row][0]) = trigger key
-- column B (items[row][1]) = JSON string
+Interpret rows:
+- Column A = trigger key
+- Column B = JSON string
 
-Find row where:
-- items[row][0] == "blog-cp:2"
+Select row where:
+- trigger key == "blog-cp:2"
 
-Parse items[row][1] → job_definition.
+Parse column B into job_definition.
 
-Minimal checks:
+REQUIRED VALIDATIONS (HARD STOP IF ANY FAIL):
+
 - job_definition.street == "blog"
-- job_definition.house  == "cp:2"
-- job_definition.run_order is array
-- job_definition.datasets is non-empty
+- job_definition.house == "cp:2"
+- job_definition.job_id exists and is string
+- job_definition.run_order is a non-empty array
+- job_definition.datasets is a non-empty array
 - job_definition.paths.docs_finals_root starts with "docs/"
+- job_definition.paths.docs_logs_root starts with "docs/"
 
 Derive:
 - mode = job_definition.mode if present, else "live"
 
-If any check fails:
-- STOP and reply with a short error message.
-Else keep job_definition and mode in memory.
+If any validation fails:
+- STOP
+- Send ONE error naming: "job_definition validation"
 
 ============================================================
 3. LOAD HOUSE FILES (cp:2)
 ============================================================
 
-Use house_root from runner.txt:
+House root is fixed:
 
 - house_root = "items/blog/cp-2/"
 
-Read (for internal use only):
+The following files MUST exist:
 
+- instructions.txt
 - pipeline-spec.json
-- style-spec.json
-- expeditor-contract.json
-- final-schema.json
 - commit-spec.json
-- checker.json
+- final-schema.json
 - member-template-cr-prompt.txt
 - member-template-cw-prompt.txt
 - member-template-pr-prompt.txt
 - member-template-pw-prompt.txt
 - member-template-rwt-prompt.txt
-- instructions.txt
 
-Notes:
-- pipeline-spec.json defines lane names, types, and prompt_file for each lane.
-- final-schema.json is enforced by git.brains / rwt, not by this MINI.
+Rules:
+- These files are loaded for validation only.
+- MINI does NOT interpret prompt contents.
+- MINI does NOT resolve lane logic.
 
-If final-schema.json or any required member-template is missing:
-- STOP and tell user: house not fully configured.
-
-No user messages yet.
+If any file is missing:
+- STOP
+- Send ONE error: "house configuration incomplete"
 
 ============================================================
 4. FETCH DATASETS (Rows)
 ============================================================
 
-From job_definition.datasets, for each dataset:
+For EACH entry in job_definition.datasets:
 
+Required fields per dataset:
 - role_key
-- domains
 - sheet_id
 - table_id
 - range
 
 Call Rows:
 
-- GET /spreadsheets/{sheet_id}/tables/{table_id}/values/{range}
+GET /spreadsheets/{sheet_id}/tables/{table_id}/values/{range}
 
-Store in memory:
+Store results as:
 
-- datasets_by_role[role_key] = {
-    "role_key": role_key,
-    "domains": domains,
-    "items": <rows from Rows>
-  }
+datasets_by_role[role_key] = {
+  "role_key": role_key,
+  "items": <rows>
+}
 
-If any dataset fetch fails:
-- STOP and send a short error naming the failing role_key.
+Rules:
+- MINI does NOT reshape rows
+- MINI does NOT filter or enrich data
 
-Still no progress updates to user.
+If ANY dataset fetch fails:
+- STOP
+- Send ONE error naming the failing role_key
 
 ============================================================
-5. CALL git.brains FOR cp:2
+5. DELEGATE TO git.brains
 ============================================================
 
-The MINI does NOT execute exp / crr / cwr / prr / pwr / rwt itself.
-It delegates the full pipeline to git.brains.
+MINI does NOT execute lanes.
 
-Force mode to "live" for all executions:
+It delegates the FULL pipeline to git.brains.
 
-- mode = "live"
+Force execution mode:
 
-Define the brains endpoint:
+- execution_mode = "live"
 
-- brains_endpoint = "/brains/blog-cp-2"
+Define endpoint:
 
-Build one request payload:
+- POST /brains/blog-cp-2
 
-brains_request = {
+Payload:
+
+{
   "runner_id": "blog-cp:2",
-  "mode": "live",                   # always live
-  "job_definition": job_definition, # as loaded in step 2
+  "mode": "live",
+  "job_definition": job_definition,
   "datasets_by_role": datasets_by_role
 }
 
-POST brains_request to brains_endpoint.
-
-Expect a JSON response of the form:
+Expected response shape:
 
 {
-  "job_id": "<job-4434456>",
-  "final_json": { ... },          # rwt-equivalent final tree
-  "lane_logs": {                  # OPTIONAL per-lane logs
-    "crr_output": { ... },
-    "cwr_output": { ... },
-    "prr_output": { ... },
-    "pwr_output": { ... },
-    "rwt_output": { ... }
-  }
+  "job_id": "<job_id>",
+  "final_output": { ... },
+  "lane_logs": { ... }   // optional
 }
 
-Minimal checks:
+VALIDATIONS:
 
 - response.job_id == job_definition.job_id
-- response.final_json is a JSON object
+- response.final_output is an object
 
-If any check fails:
-- STOP and send a concise error naming "brains pipeline" as failing phase.
+If validation fails:
+- STOP
+- Send ONE error: "brains pipeline failure"
 
-If OK:
-
-- state.rwt_output = response.final_json
-- state.lane_logs  = response.lane_logs (may be null/empty)
-
-No user messages yet.
+Store:
+- state.final_output = response.final_output
+- state.lane_logs    = response.lane_logs (optional)
 
 ============================================================
-6. COMMIT FINAL JSON + HTML + LOG
+6. COMMIT FINAL ARTIFACTS
 ============================================================
 
-From job_definition.paths:
+Paths (from job_definition.paths):
 
-- finals_root = job_definition.paths.docs_finals_root
-  (e.g. "docs/blog/cp-2/finals/")
-- logs_root   = job_definition.paths.docs_logs_root
-  (e.g. "docs/blog/cp-2/logs/")
+- finals_root = docs_finals_root
+- logs_root   = docs_logs_root
 - job_id      = job_definition.job_id
 
-Derive:
+Derive commit paths:
 
-- json_path = finals_root + job_id + ".json"
-- html_path = finals_root + job_id + ".html"
-- log_path  = logs_root   + job_id + "-rwt.json"
+- JSON: finals_root + job_id + ".json"
+- HTML: finals_root + job_id + ".html"
+- LOG:  logs_root   + job_id + "-run.json"
 
-Build:
+Artifacts:
 
-- final_json = JSON(state.rwt_output)
+1) final_json
+- EXACT serialization of state.final_output
+- NO mutation
 
-- html_output = HTML string rendering the main paragraphs, for example:
+2) html_output
+- Deterministic render of final_output
+- Uses ONLY known sections:
+  - collection_body paragraphs
+  - places_body lanes (stay, dine, essentials, locale)
 
-  <html>
-    <body>
-      <p>{{collection_body.paragraph_1}}</p>
-      <p>{{collection_body.paragraph_2}}</p>
+- NO inference
+- Missing sections render as empty <p></p>
 
-      <hr />
+3) log_json
+{
+  "job_id": job_id,
+  "mode": execution_mode,
+  "run_order": job_definition.run_order,
+  "lane_logs": state.lane_logs
+}
 
-      <p>{{places_body.stay_paragraph}}</p>
-      <p>{{places_body.dine_paragraph}}</p>
-      <p>{{places_body.essentials_paragraph}}</p>
-      <p>{{places_body.locale_paragraph}}</p>
-      <p>{{places_body.outro_paragraph}}</p>
-    </body>
-  </html>
-
-- log_json = JSON({
-    "job_id": job_id,
-    "mode": mode,
-    "run_order": job_definition.run_order,
-    "lane_logs": state.lane_logs
-  })
-
-Base64-encode all three and call docs_commit_bulk (per commit-spec.json):
-
-- message:   "Final commit for " + job_id
-- overwrite: true
-- files:
-  - { path: json_path, content_type: "application/json", content_base64: <json> }
-  - { path: html_path, content_type: "text/html",        content_base64: <html> }
-  - { path: log_path,  content_type: "application/json", content_base64: <log_json> }
+Commit via docs_commit_bulk:
+- overwrite = true
+- message   = "Final commit for " + job_id
 
 If commit fails:
-- STOP and send a concise error to the user.
+- STOP
+- Send ONE error: "commit failure"
 
 ============================================================
-7. USER RESPONSE (ONE MESSAGE)
+7. USER RESPONSE (ONE MESSAGE ONLY)
 ============================================================
 
-If everything succeeds:
+On SUCCESS, send exactly ONE message containing:
 
-- Send ONE summary message:
-  - job_id
-  - mode
-  - executed run_order
-  - final JSON path
-  - final HTML path
-  - log JSON path
-  - commit SHA (if returned)
+- job_id
+- mode
+- executed run_order
+- JSON path
+- HTML path
+- LOG path
+- commit SHA (if available)
 
-If anything fails earlier:
-- Send ONE concise error, naming:
-  - failing phase (job load, datasets, brains pipeline, commit)
-  - minimal reason.
+On FAILURE:
+- ONE concise error
+- Name the failing phase ONLY:
+  - job_definition
+  - house load
+  - dataset fetch
+  - brains pipeline
+  - commit
 
-No step-by-step progress chatter; only final success or failure.
+NO progress chatter.
+NO partial updates.
+
+============================================================
+END OF FILE
+============================================================
