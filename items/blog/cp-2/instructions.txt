@@ -1,336 +1,265 @@
 # File: items/blog/cp-2/instructions.txt
-# Runner: blog-cp:2 — HOUSE CONTRACT
-# Version: v2025-12-15-house-04
-# Updated: 2025-12-15T22:10Z
+# Runner: blog-cp:2 — FULL (toaster spec, no brains)
+# Version: v2025-12-18-full-01
+# Updated: 2025-12-18T00:00:00-05:00
 
 ============================================================
-0. PURPOSE (STRICT)
+A) DEFINITIONS (CANONICAL)
 ============================================================
 
-This file defines the **behavioral contract** for the BLOG cp:2 house.
+1) Street / House identity
+- street_token = "blog"
+- house_token  = "cp:2"   (semantic)
+- house_slug   = "cp-2"   (filesystem: replace ':' -> '-')
 
-It describes:
-- lane responsibilities,
-- allowed inputs and outputs,
-- enforcement rules,
-- validation points.
+2) Execution model (NO BRAINS)
+- The runner executes job_definition.run_order directly.
+- There is no delegation endpoint.
+- There is no hidden orchestration.
+- All coordination is via explicit bins inside one run.
 
-It does NOT:
-- execute logic,
-- infer behavior,
-- override job_definition,
-- redefine schemas declared elsewhere.
+3) Bins (ephemeral map)
+- bins is a per-run in-memory map: bins[bin_name] = JSON object
+- bins are not persisted between runs
+- overwrite is forbidden (one write per bin)
 
-This file MUST remain consistent with:
-- SYSTEM-SPINE.md
-- instructions-mini.txt (V2)
-- pipeline-spec.json
-- commit-spec.json
-- job_definition stored in Rows
-
-============================================================
-1. TRIGGER AND MODE
-============================================================
-
-Accepted trigger:
-
-- start blog-cp:2
-
-No arguments.
-No variants.
-On any other input: do nothing.
-
-Execution mode is determined solely by:
-
-- job_definition.mode
-
-Allowed value:
-- "live"
-
-Rules:
-- If job_definition.mode != "live":
-  - NO lanes execute
-  - NO commits occur
-  - Respond with ONE error:
-    "blog-cp:2 requires job_definition.mode == 'live'"
+4) Global rules injection (HARD)
+- job_definition.global_rules MUST be injected into EVERY lane execution.
+- Injection method:
+  system_prompt = JSON(job_definition.global_rules) + "\n\n" + member_template_text
+  user_message  = JSON(lane_input_object)
+- The user_message MUST be exactly one JSON object (the lane input).
+- No additional wrappers inside the user_message unless the lane template requires it.
 
 ============================================================
-2. JOB DEFINITION (AUTHORITATIVE)
-============================================================
-
-job_definition is loaded from Rows using trigger key:
-
-- "blog-cp:2"
-
-The following fields are REQUIRED:
-
-- job_id        : string
-- street        : "blog"
-- house         : "cp:2"
-- run_order     : non-empty array
-- global_rules  : object
-- datasets      : non-empty array
-- paths         : object containing:
-    - docs_finals_root (starts with "docs/")
-    - docs_logs_root   (starts with "docs/")
-
-Rules:
-- job_definition is authoritative.
-- House files MUST NOT override:
-  - run_order
-  - global_rules
-  - datasets
-  - paths
-- Any violation is a hard failure.
-
-============================================================
-3. HOUSE FILES (REQUIRED)
+B) REQUIRED HOUSE FILES
 ============================================================
 
 House root:
-
 - items/blog/cp-2/
 
-The following files MUST exist:
-
-- instructions-mini.txt
-- instructions.txt
+Required:
 - pipeline-spec.json
-- commit-spec.json
+- expeditor-contract.json
 - final-schema.json
+- commit-spec.json
 
-Lane prompts:
+Member templates required if referenced by pipeline-spec.json.templates:
 - member-template-cr-prompt.txt
 - member-template-cw-prompt.txt
+- member-template-crwtr-prompt.txt
 - member-template-pr-prompt.txt
 - member-template-pw-prompt.txt
-- member-template-rwt-prompt.txt
+- member-template-prwtr-prompt.txt
+- member-template-stchr-prompt.txt
+- member-template-srwrtr-prompt.txt
 
-If ANY required file is missing:
-- STOP
-- Return ONE error:
-  "cp:2 house misconfigured: missing {filename}"
-
-============================================================
-4. DATASETS (DECLARATIVE ONLY)
-============================================================
-
-Datasets are declared ONLY in job_definition.datasets.
-
-Each dataset entry MUST contain:
-- role_key
-- sheet_id
-- table_id
-- range
-
-Rules:
-- The house does NOT assume meaning from role_key names.
-- No implicit role-to-lane mapping exists outside expeditor.
-- Datasets are passed raw to expeditor.
+Hard stop if:
+- any required file is missing
+- any referenced template file is missing
 
 ============================================================
-5. PIPELINE EXECUTION MODEL
+C) JOB-DEFINITION (ROWS) — HARD VALIDATION
 ============================================================
 
-Execution order is EXACTLY:
+Rows lookup:
+GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
 
-- job_definition.run_order
+Select:
+- Col A == "blog-cp:2"
+- Col B parse JSON -> job_definition
 
-The house defines NO default order.
+Required fields (hard stop if missing / wrong type):
+- job_id (string)
+- street (string) == "blog"
+- house  (string) == "cp:2"
+- output_format (string)
+- run_order (array of strings, non-empty)
+- global_rules (object)
+- datasets (array, non-empty)
+- paths (object) with:
+  - docs_finals_root (string, starts "docs/", ends "/")
+  - docs_logs_root   (string, starts "docs/", ends "/")
 
-Each lane:
-- runs once,
-- in sequence,
-- in memory,
-- using only declared inputs.
+Optional:
+- mode (string) default "live"
+- shape (string) allowed, runner does not interpret beyond logging
 
-No lane may:
-- access Rows,
-- access Docs,
-- call tools,
-- browse,
-- read other lanes’ outputs unless explicitly passed.
-
-============================================================
-6. LANE CONTRACTS (CANONICAL)
-============================================================
-
----------------------------------
-6.1 exp — Expeditor
----------------------------------
-
-Role:
-- The ONLY shaping lane.
-
-Inputs:
-- job_definition
-- datasets_by_role
-- global_rules
-- expeditor-contract.json
-
-Outputs:
-- Structured lane inputs only.
-
-Rules:
-- Normalize empty values → "could-not-verify"
-- Enforce declared schemas
-- NO prose
-- NO inference
-- NO enrichment
-
----------------------------------
-6.2 cr — Collection Researcher
----------------------------------
-
-Role:
-- Facts-only research for:
-  - event
-  - venue
-  - city_season
-
-Inputs:
-- exp-produced CR input
-- global_rules
-- member-template-cr-prompt.txt
-
-Output:
-- collection-research-bin
-
-Rules:
-- No narrative
-- No external research
-- No schema mutation
-
----------------------------------
-6.3 cw — Collection Writer
----------------------------------
-
-Role:
-- Narrative transformation ONLY.
-
-Inputs:
-- collection-research-bin
-- event_identity
-- global_rules
-
-Output:
-- collection-writer-bin
-
-Rules:
-- Exactly two paragraphs
-- No facts added
-- No lists
-- No schema changes
-
----------------------------------
-6.4 pr — Places Researcher
----------------------------------
-
-Role:
-- Facts-only research for Places lanes:
-  - stay
-  - dine
-  - essentials
-  - locale
-
-Inputs:
-- exp-produced PR input
-- global_rules
-- member-template-pr-prompt.txt
-
-Output:
-- places-research-bin
-
-Rules:
-- Locale may contain facts
-- Other lanes may be empty or sentinel-only
-- No narrative
-- No enrichment
-
----------------------------------
-6.5 pw — Places Writer
----------------------------------
-
-Role:
-- Narrative transformation ONLY.
-
-Inputs:
-- places-research-bin
-- expeditor-curated place rows
-- global_rules
-
-Output:
-- places-writer-bin
-
-Rules:
-- Lane-symmetric output:
-  - stay, dine, essentials, locale
-- Generic prose allowed when research is empty
-- No invention
-- No cross-lane borrowing
-
----------------------------------
-6.6 rwt — Rewriter
----------------------------------
-
-Role:
-- Text hygiene pass ONLY.
-
-Inputs:
-- collection-writer-bin
-- places-writer-bin
-
-Output:
-- rewritten-writer-bin
-
-Rules:
-- Structure preserved exactly
-- Non-string values untouched
-- Prose cleaned only
-- No new facts
-- ASCII only
+Hard stop if:
+- run_order contains duplicates (same lane key repeated)
+- any run_order lane key is not present in pipeline-spec.json lane_registry
 
 ============================================================
-7. FINAL ASSEMBLY AND VALIDATION
+D) DATASETS (ROWS) — FETCH + STORE
 ============================================================
 
-Assembly:
-- rewritten-writer-bin is validated against final-schema.json
+For each datasets[i]:
+Required keys:
+- role_key (string)
+- domains (array of strings)
+- sheet_id (string)
+- table_id (string)
+- range (string)
 
-Validation failures:
-- STOP execution
-- Write log
-- Return ONE error:
-  "final schema validation failure"
+Fetch:
+GET /spreadsheets/{sheet_id}/tables/{table_id}/values/{range}
 
-checker.json:
-- Applied after rewrite
-- Errors are fatal
-- Warnings are logged only
+Store:
+datasets_by_role[role_key] = {
+  "role_key": role_key,
+  "domains": datasets[i].domains,
+  "items": <rows from Rows>
+}
+
+Hard stop if:
+- any dataset fetch fails
+- role_key repeats
 
 ============================================================
-8. COMMIT AND USER RESPONSE
+E) THE TOASTER RUN-LOOP (EXECUTE run_order)
 ============================================================
 
-Commits are driven solely by:
-- commit-spec.json
-- job_definition.paths
+Initialize:
+- bins = {}
+- lane_logs = {}
 
-Artifacts committed:
-- final JSON
-- final HTML (deterministic render)
-- run log JSON
+Load pipeline_spec from pipeline-spec.json.
 
-On success:
-- Return ONE message with:
-  - job_id
-  - run_order
-  - paths
-  - commit SHA (if available)
+For each lane_key in job_definition.run_order:
 
-On failure:
-- ONE error message
-- Name failing phase ONLY
+1) Resolve lane_spec
+- lane_spec = pipeline_spec.lane_registry[lane_key]
+Hard stop if missing.
+
+2) Enforce reads_bin (when applicable)
+- If lane_spec has reads_bin:
+  - hard stop if bins[reads_bin] missing
+
+3) Execute by type
+
+--------------------------------------------
+E1) exp (data_sorter)
+--------------------------------------------
+
+Lane key: "exp"
+lane_spec.type must be "data_sorter"
+
+Input object passed to exp step:
+{
+  "job_definition": <job_definition>,
+  "datasets_by_role": <datasets_by_role>
+}
+
+Execution rule:
+- exp MUST behave deterministically under expeditor-contract.json
+- exp MUST normalize null/empty string fields as declared
+- exp MUST NOT produce prose, summaries, or inference
+- exp MUST write ONLY numbered input bins required by run_order:
+  - c_in_{n} for each CR pass referenced (cr1/cr2/...)
+  - p_in_{n} for each PR pass referenced (pr1/pr2/...)
+- exp MUST NOT write any downstream bins (research/writer/out)
+
+Write rule:
+- exp output must be a JSON object where each key is a bin name:
+  - e.g. { "c_in_1": {...}, "p_in_1": {...} }
+- For each produced bin:
+  - bins[bin_name] = bin_object
+  - hard stop if bin_name already exists
+
+Hard stop if:
+- any required input bin (for later lanes) is missing after exp completes
+
+Logging:
+lane_logs["exp"] = {
+  "writes": ["<each produced bin name>"],
+  "dataset_roles_seen": ["<role_keys>"]
+}
+
+--------------------------------------------
+E2) researcher / writer / rewriter / stitcher
+--------------------------------------------
+
+For lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
+
+Template resolution:
+- template_file = pipeline_spec.templates[lane_spec.template_ref]
+- hard stop if template_file missing
+
+Prompt construction (HARD):
+- system_prompt = JSON(job_definition.global_rules) + "\n\n" + template_text
+- user_payload  = bins[reads_bin] (exactly one JSON object)
+
+Model call:
+- Must return one JSON object as plain text
+- Parse JSON
+- Hard stop if parse fails
+
+Write:
+- bins[writes_bin] = parsed_object
+- hard stop if writes_bin already exists
+
+Minimal validation:
+- parsed_object must be an object
+- if parsed_object includes job_id/street/house/lane keys, they must match job_definition + lane_key intent
+- no tool calls inside the lane (members_cannot_call_tools)
+
+Logging:
+lane_logs[lane_key] = {
+  "reads": reads_bin,
+  "writes": writes_bin
+}
+
+--------------------------------------------
+E3) commit
+--------------------------------------------
+
+Lane key: "commit"
+lane_spec.type must be "commit"
+
+Preconditions:
+- bins["final_out"] must exist
+- final_out must validate against final-schema.json (hard stop if mismatch)
+
+Commit behavior (HARD):
+- Follow commit-spec.json exactly
+- Final JSON is committed with mutation: none
+- HTML rendered deterministically only if output_format requires
+- Run log committed to docs_logs_root
+
+Hard stop if commit fails.
+
+============================================================
+F) FINAL-SCHEMA VALIDATION (HARD)
+============================================================
+
+Before commit:
+- Validate bins["final_out"] against final-schema.json
+Hard stop on any mismatch.
+
+============================================================
+G) SINGLE USER RESPONSE (HARD)
+============================================================
+
+On success: send exactly one message containing:
+- job_id
+- mode
+- executed run_order
+- JSON path
+- HTML path (if generated)
+- LOG path
+- commit SHA (if available)
+
+On failure: send exactly one message containing:
+- a concise error
+- phase name only:
+  - job_definition
+  - house load
+  - dataset fetch
+  - lane execution
+  - final validation
+  - commit
+
+No partial progress chatter.
 
 ============================================================
 END OF FILE
