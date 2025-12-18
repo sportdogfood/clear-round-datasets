@@ -1,41 +1,72 @@
 {
-  "pipeline": "cp:2",
-  "steps": [
+  "file": "pipeline-spec.json",
+  "version": "v2025-12-16-pipeline-v2",
+  "street": "blog",
+  "house": "cp:2",
+
+  "lanes": [
     {
-      "name": "exp",
-      "description": "Initial data shaping phase",
-      "type": "expeditor",
-      "prompt_file": null
+      "lane_id": "exp",
+      "lane_type": "expeditor",
+      "prompt_file": "expeditor-contract.json",
+      "input": ["job_definition", "datasets_by_role"],
+      "output": ["cr0_input", "pr1_input"]
     },
+
     {
-      "name": "crr",
-      "description": "Event, venue, and city/season research phase",
-      "type": "researcher",
-      "prompt_file": "member-template-cr.prompt"
+      "lane_id": "cr1",
+      "lane_type": "researcher",
+      "prompt_file": "member-template-cr-prompt.txt",
+      "input": ["cr0_input"],
+      "output": ["cr1_output"]
     },
+
     {
-      "name": "cwr",
-      "description": "Collection writer for event/venue/city-season body",
-      "type": "writer",
-      "prompt_file": "member-template-cw.prompt"
+      "lane_id": "cw1",
+      "lane_type": "writer",
+      "prompt_file": "member-template-cw-prompt.txt",
+      "input": ["cr1_output"],
+      "output": ["cw1_output"]
     },
+
     {
-      "name": "prr",
-      "description": "Stay, dine, essentials, and locale research phase",
-      "type": "researcher",
-      "prompt_file": "member-template-pr.prompt"
+      "lane_id": "crwtr1",
+      "lane_type": "rewriter",
+      "prompt_file": "member-template-rwt-prompt.txt",
+      "input": ["cw1_output"],
+      "output": ["crwtr1_output"]
     },
+
     {
-      "name": "pwr",
-      "description": "Places writer for stay/dine/essentials/locale body",
-      "type": "writer",
-      "prompt_file": "member-template-pw.prompt"
+      "lane_id": "pr1",
+      "lane_type": "researcher",
+      "prompt_file": "member-template-pr-prompt.txt",
+      "input": ["pr1_input"],
+      "output": ["pr1_output"]
     },
+
     {
-      "name": "rwt",
-      "description": "Final rewriter and polish phase",
-      "type": "rewriter",
-      "prompt_file": "member-template-rwt.prompt"
+      "lane_id": "pw1",
+      "lane_type": "writer",
+      "prompt_file": "member-template-pw-prompt.txt",
+      "input": ["pr1_output"],
+      "output": ["pw1_output"]
+    },
+
+    {
+      "lane_id": "prwtr1",
+      "lane_type": "rewriter",
+      "prompt_file": "member-template-rwt-prompt.txt",
+      "input": ["pw1_output"],
+      "output": ["prwtr1_output"]
+    },
+
+    {
+      "lane_id": "stchr",
+      "lane_type": "stitcher",
+      "prompt_file": null,
+      "input": ["crwtr1_output", "prwtr1_output"],
+      "output": ["final_pre_rwt"]
     }
   ]
 }
