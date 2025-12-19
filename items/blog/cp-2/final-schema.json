@@ -1,7 +1,10 @@
 {
-  "file": "final-schema.json",
-  "version": "v2025-12-19-final-03",
-  "fields": [
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clearroundtravel.com/schemas/blog/cp-2/final-schema.json",
+  "title": "Final Output Schema for blog/cp-2",
+  "description": "Schema validation for the final_out bin produced by srwrtr lane before commit.",
+  "type": "object",
+  "required": [
     "job_id",
     "shape",
     "mode",
@@ -11,16 +14,19 @@
     "collection_body",
     "places_body"
   ],
-  "types": {
-    "job_id": "string",
-    "shape": "string",
-    "mode": "string",
-    "street": "string",
-    "house": "string",
-    "global_rules": "object",
+  "additionalProperties": false,
+  "properties": {
+    "job_id": { "type": "string", "minLength": 1 },
+    "shape": { "type": "string", "minLength": 1 },
+    "mode": { "type": "string", "const": "live" },
+    "street": { "type": "string", "const": "blog" },
+    "house": { "type": "string", "const": "cp:2" },
+    "global_rules": { "type": "object" },
+
     "collection_body": {
       "type": "object",
       "required": ["passes"],
+      "additionalProperties": false,
       "properties": {
         "passes": {
           "type": "array",
@@ -28,19 +34,22 @@
           "items": {
             "type": "object",
             "required": ["n", "dataset_id", "paragraph_1", "paragraph_2"],
+            "additionalProperties": false,
             "properties": {
-              "n": "number",
-              "dataset_id": "string",
-              "paragraph_1": "string",
-              "paragraph_2": "string"
+              "n": { "type": "integer", "minimum": 1 },
+              "dataset_id": { "type": "string", "minLength": 1 },
+              "paragraph_1": { "type": "string", "minLength": 1 },
+              "paragraph_2": { "type": "string", "minLength": 1 }
             }
           }
         }
       }
     },
+
     "places_body": {
       "type": "object",
       "required": ["passes"],
+      "additionalProperties": false,
       "properties": {
         "passes": {
           "type": "array",
@@ -56,23 +65,19 @@
               "locale_paragraph",
               "outro_paragraph"
             ],
+            "additionalProperties": false,
             "properties": {
-              "n": "number",
-              "dataset_id": "string",
-              "stay_paragraph": "string",
-              "dine_paragraph": "string",
-              "essentials_paragraph": "string",
-              "locale_paragraph": "string",
-              "outro_paragraph": "string"
+              "n": { "type": "integer", "minimum": 1 },
+              "dataset_id": { "type": "string", "minLength": 1 },
+              "stay_paragraph": { "type": "string", "minLength": 1 },
+              "dine_paragraph": { "type": "string", "minLength": 1 },
+              "essentials_paragraph": { "type": "string", "minLength": 1 },
+              "locale_paragraph": { "type": "string", "minLength": 1 },
+              "outro_paragraph": { "type": "string", "minLength": 1 }
             }
           }
         }
       }
     }
-  },
-  "constraints": {
-    "mode_must_equal": "live",
-    "street_must_equal": "blog",
-    "house_must_equal": "cp:2"
   }
 }
