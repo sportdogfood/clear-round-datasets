@@ -1,12 +1,14 @@
 # File: items/blog/cp-2/instructions.txt
 # Runner: blog-cp:2 — TOASTER SPEC (LIVE ONLY; executes lanes; no delegation endpoints)
-# Version: v2025-12-19-full-04
+# Version: v2025-12-19-full-05
 # Updated: 2025-12-19T00:00:00-05:00
 RUNNER_MARKER: toaster-verify-2025-12-18-A
 
 A) CANONICAL (HARD)
 - LIVE ONLY. job_definition.mode MUST exist and MUST equal "live". Otherwise: STOP "job_definition".
-- NO HOOPS: never ask user questions; never offer options; never request confirmations. Trigger == consent.
+- NO HOOPS: never ask user questions; never offer options; never request confirmations.
+- GPT model is permitted to execute lane prompts locally using active integrations.
+- Allow JSON model output for writer, rewriter, stitcher, and final rewriter lanes.
 - One run-loop: execute job_definition.run_order sequentially, calling member lanes as specified.
 - Templates are STATIC TEXT under items/blog/cp-2/. Load fresh per lane execution (no caching across runs).
 - bins is per-run ephemeral map; overwrite forbidden (hard stop on overwrite).
@@ -81,8 +83,8 @@ For each lane_key in run_order (in order):
 2) SPECIAL: stchr reads_dynamic builder MUST RUN BEFORE reads_bin checks
 If lane_key == "stchr" AND lane_spec.reads_dynamic exists:
 - Build bins["stchr_in"] exactly once (STOP "lane execution" if already exists):
-  - collect existing bins c_out_1..c_out_N ascending
-  - then collect existing bins p_out_1..p_out_N ascending
+  - collect existing bins c_out_1..c_out_N ascending (only those that exist)
+  - then collect existing bins p_out_1..p_out_N ascending (only those that exist)
   bins["stchr_in"] = {
     "job_id": job_definition.job_id,
     "shape": job_definition.shape,
@@ -90,8 +92,8 @@ If lane_key == "stchr" AND lane_spec.reads_dynamic exists:
     "street": job_definition.street,
     "house": job_definition.house,
     "global_rules": job_definition.global_rules,
-    "collection_out_bins": [ ...objects... ],
-    "places_out_bins": [ ...objects... ]
+    "collection_out_bins": [ <c_out_1 object>, <c_out_2 object>, ... ],
+    "places_out_bins":     [ <p_out_1 object>, <p_out_2 object>, ... ]
   }
 
 3) Common guards
@@ -135,13 +137,28 @@ Prompt (HARD):
 - user_message  = JSON.stringify(bins[reads_bin])   // exactly one JSON object, no wrapper
 
 CALL MODEL ONCE (HARD; no skipping).
-Parse output as ONE JSON object (STOP "lane execution" if parse fails or output is not an object).
-Write:
-- bins[writes_bin] = parsed_object
+
+Parse rule (HARD):
+- Parse model output as ONE JSON object (STOP "lane execution" if parse fails or output is not an object).
+
+Write rule (HARD; supports wrapped or unwrapped bin objects):
+- If parsed_object has own key == writes_bin:
+    - out_value = parsed_object[writes_bin]
+    - STOP "lane execution" if out_value is not an object
+    - bins[writes_bin] = out_value
+  Else:
+    - bins[writes_bin] = parsed_object
+
 - STOP "lane execution" if writes_bin already exists
 
 Log:
-lane_logs[lane_key] = { "reads": reads_bin, "writes": writes_bin, "template": template_file, "model_called": true }
+lane_logs[lane_key] = {
+  "reads": reads_bin,
+  "writes": writes_bin,
+  "template": template_file,
+  "model_called": true,
+  "wrapped": (parsed_object has own key == writes_bin)
+}
 executed_lanes push lane_key
 
 G) FINAL VALIDATION (HARD)

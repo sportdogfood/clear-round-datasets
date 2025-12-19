@@ -1,6 +1,6 @@
 {
   "file": "commit-spec.json",
-  "version": "v2025-12-19-commit-05",
+  "version": "v2025-12-19-commit-06",
   "street": "blog",
   "house": "cp:2",
   "purpose": [
@@ -164,11 +164,6 @@
           "content_base64": "BASE64_UTF8(JSON.stringify(final_out_bin))"
         },
         {
-          "path": "{final_html_path}",
-          "content_type": "text/html",
-          "content_base64": "BASE64_UTF8(final_html)"
-        },
-        {
           "path": "{run_log_path}",
           "content_type": "application/json",
           "content_base64": "BASE64_UTF8(JSON.stringify(run_log_json))"
@@ -177,12 +172,16 @@
     },
     "optional_files": [
       {
-        "path_token": "final_html_path",
         "include_when": {
           "job_definition_output_format_in": [
             "html",
             "json+html"
           ]
+        },
+        "file": {
+          "path": "{final_html_path}",
+          "content_type": "text/html",
+          "content_base64": "BASE64_UTF8(final_html)"
         }
       }
     ]
@@ -192,13 +191,20 @@
     "require_commit_sha_regex": "^[a-f0-9]{40}$",
     "require_committed_paths_contains_all_expected": true,
     "expected_paths_rule": {
-      "expected_committed_paths": [
+      "expected_committed_paths_always": [
         "{final_json_path}",
         "{run_log_path}"
       ],
-      "include_html_path_when_output_format_in": [
-        "html",
-        "json+html"
+      "expected_committed_paths_when_output_format_in": [
+        {
+          "output_format_in": [
+            "html",
+            "json+html"
+          ],
+          "expected_committed_paths_add": [
+            "{final_html_path}"
+          ]
+        }
       ]
     },
     "on_fail": {

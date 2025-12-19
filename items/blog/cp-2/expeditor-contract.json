@@ -10,9 +10,9 @@
     "on_fail": { "action": "halt", "error_code": "EXP_JOB_MODE_NOT_LIVE" }
   },
   "purpose": [
-    "Deterministically normalize and hand out dataset rows as lane input bins (NO prose, NO inference).",
+    "Deterministically hand out dataset rows as lane input bins (NO prose, NO inference).",
     "Produce ONLY c_in_{n} and p_in_{n} bins required by job_definition.run_order.",
-    "Bind numbered passes to datasets by role_key prefix matching (cdata/pdata) and original job_definition.datasets order."
+    "Bind numbered passes to datasets using role_key_prefix (cdata/pdata)."
   ],
   "inputs": {
     "job_definition": {
@@ -71,8 +71,8 @@
     "binding_mode": "role_key_prefix",
     "c_prefix": "cdata",
     "p_prefix": "pdata",
-    "c_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with c_prefix",
-    "p_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with p_prefix",
+    "c_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with c_prefix (in job_definition.datasets order)",
+    "p_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with p_prefix (in job_definition.datasets order)",
     "on_missing_dataset_for_required_pass": {
       "action": "halt",
       "error_code": "EXP_MISSING_DATASET_FOR_PASS"
@@ -107,18 +107,19 @@
   "algorithm": [
     "0) Hard-stop if job_definition.mode != \"live\".",
     "1) Parse required pass numbers from job_definition.run_order using pass_extraction.regex and family prefixes.",
-    "2) Build ordered list C_datasets by filtering job_definition.datasets where role_key startsWith dataset_family_binding.c_prefix (preserve order).",
-    "3) Build ordered list P_datasets by filtering job_definition.datasets where role_key startsWith dataset_family_binding.p_prefix (preserve order).",
-    "4) For each required C pass n: select C_datasets[n-1]; resolve datasets_by_role[role_key]; emit c_in_{n} bin object.",
-    "5) For each required P pass n: select P_datasets[n-1]; resolve datasets_by_role[role_key]; emit p_in_{n} bin object.",
-    "6) Emit ONLY those bins; emit no downstream bins; do not rewrite dataset rows."
+    "2) Build ordered dataset role_key lists from job_definition.datasets:",
+    "   - C_list = datasets where role_key starts with c_prefix, preserving original order.",
+    "   - P_list = datasets where role_key starts with p_prefix, preserving original order.",
+    "3) For each required C pass n: select role_key = C_list[n-1].role_key; resolve datasets_by_role[role_key]; emit c_in_{n}.",
+    "4) For each required P pass n: select role_key = P_list[n-1].role_key; resolve datasets_by_role[role_key]; emit p_in_{n}.",
+    "5) Emit ONLY those bins; emit no downstream bins; do not rewrite dataset rows."
   ],
   "failures": {
     "on_missing_required_input": { "action": "halt", "error_code": "EXP_INPUT_MISSING" },
     "on_job_definition_mode_not_live": { "action": "halt", "error_code": "EXP_JOB_MODE_NOT_LIVE" },
     "on_unknown_run_order_key": { "action": "halt", "error_code": "EXP_RUN_ORDER_INVALID" },
-    "on_dataset_role_key_missing_in_map": { "action": "halt", "error_code": "EXP_DATASET_ROLE_MISSING" },
     "on_missing_dataset_for_required_pass": { "action": "halt", "error_code": "EXP_MISSING_DATASET_FOR_PASS" },
+    "on_dataset_role_key_missing_in_map": { "action": "halt", "error_code": "EXP_DATASET_ROLE_MISSING" },
     "on_bin_already_exists": { "action": "halt", "error_code": "EXP_BIN_OVERWRITE_FORBIDDEN" }
   }
 }
