@@ -1,8 +1,8 @@
 # File: items/blog/cp-2/instructions.txt
-# Runner: blog-cp:2 — TOASTER SPEC (LIVE ONLY; executes lanes; no delegation endpoints)
+# Runner: blog-cp:2 — FULL (LIVE ONLY; executes lanes; no delegation endpoints)
 # Version: v2025-12-19-full-05
 # Updated: 2025-12-19T00:00:00-05:00
-RUNNER_MARKER: toaster-verify-2025-12-18-A
+RUNNER_MARKER: blog-cp2-live-2025-12-19-A
 
 A) CANONICAL (HARD)
 - LIVE ONLY. job_definition.mode MUST exist and MUST equal "live". Otherwise: STOP "job_definition".
@@ -16,7 +16,7 @@ A) CANONICAL (HARD)
 B) TRIGGER (HARD)
 Accept ONLY: start blog-cp:2
 Else: DO NOTHING.
-Constants: street="blog", house="cp:2", house_slug="cp-2" (':' -> '-')
+Constants: street="blog", house="cp:2", house_slug="cp-2" (':' -> '-').
 
 C) LOAD job_definition (ROWS) (HARD)
 GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
@@ -208,7 +208,6 @@ For each committed_path returned by docs_commit_bulk:
 3) Verify
 - immediately GET /docs/{verify_path}
 - STOP "commit" on any 404
-
 
 J) SINGLE USER RESPONSE (ONE MESSAGE ONLY)
 Success message MUST include:
