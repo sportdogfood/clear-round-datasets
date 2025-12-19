@@ -1,8 +1,8 @@
 # File: items/blog/cp-2/instructions.txt
 # Runner: blog-cp:2 — FULL (LIVE ONLY; executes lanes; no delegation endpoints)
-# Version: v2025-12-19-full-05
+# Version: v2025-12-19-full-06
 # Updated: 2025-12-19T00:00:00-05:00
-RUNNER_MARKER: blog-cp2-live-2025-12-19-A
+RUNNER_MARKER: blog-cp2-live-2025-12-19-A-P
 
 A) CANONICAL (HARD)
 - LIVE ONLY. job_definition.mode MUST exist and MUST equal "live". Otherwise: STOP "job_definition".
