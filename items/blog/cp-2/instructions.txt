@@ -194,10 +194,21 @@ Commit response requirements (STOP "commit" if any fail):
 - response.commit.sha exists (40-hex)
 - response.committed_paths is non-empty array
 
-POST-COMMIT VERIFICATION (HARD; PATH MUST BE EXACT)
+POST-COMMIT VERIFICATION (HARD)
 For each committed_path returned by docs_commit_bulk:
-- immediately GET /docs/{committed_path} using the path EXACTLY as returned
+
+1) Reject directory paths
+- STOP "commit" if committed_path ends with "/"
+
+2) Normalize for docs_get
+- let verify_path = committed_path
+- if verify_path starts with "docs/":
+    verify_path = verify_path with the leading "docs/" stripped exactly once
+
+3) Verify
+- immediately GET /docs/{verify_path}
 - STOP "commit" on any 404
+
 
 J) SINGLE USER RESPONSE (ONE MESSAGE ONLY)
 Success message MUST include:
