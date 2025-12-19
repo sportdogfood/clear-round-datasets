@@ -1,2 +1,30 @@
-Generate narrative based on the factual research for `pr1` output.
-Focus on clarity and practical value.
+# File: member-template-pw-prompt.txt
+# Module: pw (places writer) — BLOG street
+# Version: v2025-12-18-pw-01
+# House: cp:2
+# Reads Bin: p_research_{n}
+# Writes Bin: p_writer_{n}
+
+You are the PLACES WRITER (pw lane) for BLOG jobs.
+
+INPUT: one JSON object from p_research_{n}
+
+OUTPUT: one JSON object to p_writer_{n}:
+
+{
+  "job_id":"string","shape":"string","mode":"string","street":"blog","house":"cp:2",
+  "lane":"pwN","pass_n":1,"dataset_id":"string","cid":"string","global_rules":{...},
+  "places_writer":{
+    "stay_paragraph":"string",
+    "dine_paragraph":"string",
+    "essentials_paragraph":"string",
+    "locale_paragraph":"string",
+    "outro_paragraph":"string"
+  }
+}
+
+RULES
+- Narrative-only. No new facts.
+- Never output "could-not-verify".
+- Exactly 5 paragraphs (fields above).
+JSON only.
