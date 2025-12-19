@@ -1,6 +1,6 @@
 {
   "file": "expeditor-contract.json",
-  "version": "v2025-12-19-exp-05",
+  "version": "v2025-12-19-exp-06",
   "street": "blog",
   "house": "cp:2",
   "live_only": {
@@ -12,13 +12,23 @@
   "purpose": [
     "Deterministically normalize and hand out dataset rows as lane input bins (NO prose, NO inference).",
     "Produce ONLY c_in_{n} and p_in_{n} bins required by job_definition.run_order.",
-    "Bind numbered passes to datasets using domains_all family matching and original job_definition.datasets order."
+    "Bind numbered passes to datasets by role_key prefix matching (cdata/pdata) and original job_definition.datasets order."
   ],
   "inputs": {
     "job_definition": {
       "required": true,
       "read_only": true,
-      "required_fields": ["job_id", "shape", "mode", "street", "house", "run_order", "datasets", "global_rules", "paths"]
+      "required_fields": [
+        "job_id",
+        "shape",
+        "mode",
+        "street",
+        "house",
+        "run_order",
+        "datasets",
+        "global_rules",
+        "paths"
+      ]
     },
     "datasets_by_role": {
       "required": true,
@@ -35,7 +45,11 @@
     "pipeline_spec": {
       "required": true,
       "read_only": true,
-      "required_fields": ["dataset_families", "pass_detection", "dataset_binding_rules", "bin_naming"]
+      "required_fields": [
+        "pass_detection",
+        "dataset_binding_rules",
+        "bin_naming"
+      ]
     }
   },
   "rules": {
@@ -54,11 +68,11 @@
     "note": "Only passes referenced in job_definition.run_order are required."
   },
   "dataset_family_binding": {
-    "binding_mode": "family_ordered_by_job_definition_datasets",
-    "family_C_domains_all": ["event", "venue", "city_season"],
-    "family_P_domains_all": ["stay", "dine", "essentials", "locale"],
-    "c_pass_n_binds_to": "nth dataset (1-indexed) in family C (after domains_all matching, preserving job_definition.datasets order)",
-    "p_pass_n_binds_to": "nth dataset (1-indexed) in family P (after domains_all matching, preserving job_definition.datasets order)",
+    "binding_mode": "role_key_prefix",
+    "c_prefix": "cdata",
+    "p_prefix": "pdata",
+    "c_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with c_prefix",
+    "p_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with p_prefix",
     "on_missing_dataset_for_required_pass": {
       "action": "halt",
       "error_code": "EXP_MISSING_DATASET_FOR_PASS"
@@ -93,10 +107,11 @@
   "algorithm": [
     "0) Hard-stop if job_definition.mode != \"live\".",
     "1) Parse required pass numbers from job_definition.run_order using pass_extraction.regex and family prefixes.",
-    "2) Partition job_definition.datasets into family C and family P by domains_all matching; preserve original order within each family.",
-    "3) For each required C pass n: select nth dataset in family C; resolve datasets_by_role[role_key]; emit c_in_{n} bin object.",
-    "4) For each required P pass n: select nth dataset in family P; resolve datasets_by_role[role_key]; emit p_in_{n} bin object.",
-    "5) Emit ONLY those bins; emit no downstream bins; do not rewrite dataset rows."
+    "2) Build ordered list C_datasets by filtering job_definition.datasets where role_key startsWith dataset_family_binding.c_prefix (preserve order).",
+    "3) Build ordered list P_datasets by filtering job_definition.datasets where role_key startsWith dataset_family_binding.p_prefix (preserve order).",
+    "4) For each required C pass n: select C_datasets[n-1]; resolve datasets_by_role[role_key]; emit c_in_{n} bin object.",
+    "5) For each required P pass n: select P_datasets[n-1]; resolve datasets_by_role[role_key]; emit p_in_{n} bin object.",
+    "6) Emit ONLY those bins; emit no downstream bins; do not rewrite dataset rows."
   ],
   "failures": {
     "on_missing_required_input": { "action": "halt", "error_code": "EXP_INPUT_MISSING" },
