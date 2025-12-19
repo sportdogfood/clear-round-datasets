@@ -1,141 +1,109 @@
 {
   "file": "expeditor-contract.json",
-  "version": "v2025-12-18-expeditor-05",
+  "version": "v2025-12-19-exp-05",
   "street": "blog",
   "house": "cp:2",
-  "envelope": "member-template",
+  "live_only": {
+    "required": true,
+    "mode_literal": "live",
+    "halt_if_job_definition_mode_not_live": true,
+    "on_fail": { "action": "halt", "error_code": "EXP_JOB_MODE_NOT_LIVE" }
+  },
   "purpose": [
-    "EXP conforms to member-template lane inputs (CR/PR lanes read EXP bins)",
-    "Bind datasets to passes deterministically (C family -> c_in_{n}, P family -> p_in_{n})",
-    "Normalize null/empty to \"could-not-verify\" only inside EXP-produced bins"
+    "Deterministically normalize and hand out dataset rows as lane input bins (NO prose, NO inference).",
+    "Produce ONLY c_in_{n} and p_in_{n} bins required by job_definition.run_order.",
+    "Bind numbered passes to datasets using domains_all family matching and original job_definition.datasets order."
   ],
   "inputs": {
-    "job_definition": { "required": true, "read_only": true },
-    "datasets_by_role": { "required": true, "read_only": true }
+    "job_definition": {
+      "required": true,
+      "read_only": true,
+      "required_fields": ["job_id", "shape", "mode", "street", "house", "run_order", "datasets", "global_rules", "paths"]
+    },
+    "datasets_by_role": {
+      "required": true,
+      "read_only": true,
+      "expected_shape": {
+        "type": "object",
+        "additional_properties_shape": {
+          "role_key": "string",
+          "domains": "array[string]",
+          "items": "array"
+        }
+      }
+    },
+    "pipeline_spec": {
+      "required": true,
+      "read_only": true,
+      "required_fields": ["dataset_families", "pass_detection", "dataset_binding_rules", "bin_naming"]
+    }
   },
-  "determinism": {
+  "rules": {
+    "deterministic_only": true,
     "no_inference": true,
-    "no_prose": true,
-    "no_external_sources": true,
-    "no_schema_mutation": true
+    "no_external_calls": true,
+    "no_mutation_of_rows_items": true,
+    "produce_only_required_bins": true,
+    "one_write_per_bin": true,
+    "halt_on_any_error": true
   },
-  "normalization": {
-    "strings": {
-      "null_or_empty_or_whitespace": "could-not-verify"
+  "pass_extraction": {
+    "regex": "^[a-z]+(\\d+)$",
+    "collection_lane_prefixes": ["cr", "cw", "crwtr"],
+    "places_lane_prefixes": ["pr", "pw", "prwtr"],
+    "note": "Only passes referenced in job_definition.run_order are required."
+  },
+  "dataset_family_binding": {
+    "binding_mode": "family_ordered_by_job_definition_datasets",
+    "family_C_domains_all": ["event", "venue", "city_season"],
+    "family_P_domains_all": ["stay", "dine", "essentials", "locale"],
+    "c_pass_n_binds_to": "nth dataset (1-indexed) in family C (after domains_all matching, preserving job_definition.datasets order)",
+    "p_pass_n_binds_to": "nth dataset (1-indexed) in family P (after domains_all matching, preserving job_definition.datasets order)",
+    "on_missing_dataset_for_required_pass": {
+      "action": "halt",
+      "error_code": "EXP_MISSING_DATASET_FOR_PASS"
+    }
+  },
+  "output_bins": {
+    "c_in_pattern": "c_in_{n}",
+    "p_in_pattern": "p_in_{n}",
+    "bin_object_shape": {
+      "job_id": "string",
+      "shape": "string",
+      "mode": "string",
+      "street": "string",
+      "house": "string",
+      "lane_key": "string",
+      "pass_n": "number",
+      "role_key": "string",
+      "domains": "array[string]",
+      "items": "array"
     },
-    "numbers": {
-      "invalid": null
+    "constraints": {
+      "no_extra_keys": true,
+      "mode_must_equal": "live",
+      "pass_n_is_1_indexed": true,
+      "items_must_be_unmodified_rows_items": true
     }
   },
-  "pass_requirements": {
-    "collection_passes_from_run_order": {
-      "detect_by_regex": "^cr(\\d+)$",
-      "write_bins": "c_in_{n}"
-    },
-    "places_passes_from_run_order": {
-      "detect_by_regex": "^pr(\\d+)$",
-      "write_bins": "p_in_{n}"
-    }
+  "bin_construction": {
+    "c_in_n": { "lane_key_format": "cr{n}" },
+    "p_in_n": { "lane_key_format": "pr{n}" }
   },
-  "dataset_binding": {
-    "family_ordered_by_job_definition_datasets": true,
-    "C_family_match": { "domains_all": ["event", "venue", "city_season"] },
-    "P_family_match": { "domains_all": ["stay", "dine", "essentials", "locale"] },
-    "c_pass_n_binds_to": "nth dataset (1-indexed) in family C",
-    "p_pass_n_binds_to": "nth dataset (1-indexed) in family P",
-    "on_missing_dataset_for_required_pass": { "action": "halt", "error_code": "EXP_MISSING_DATASET_FOR_PASS" }
-  },
-  "rows_items_shape": {
-    "expected": "Array([key,value]) pairs from A2:B999",
-    "key_index": 0,
-    "value_index": 1
-  },
-  "c_in_envelope": {
-    "must_match": "member-template-cr-prompt.txt input logical shape",
-    "top_level": ["job_id", "shape", "mode", "street", "house", "lane", "dataset_id", "cid", "global_rules", "event_identity", "maps_anchor", "collection_input", "source_log"],
-    "build": {
-      "job_id": "job_definition.job_id",
-      "shape": "job_definition.shape",
-      "mode": "job_definition.mode_or_default_live",
-      "street": "job_definition.street",
-      "house": "job_definition.house",
-      "lane": "cr{n}",
-      "dataset_id": "bound_dataset.role_key",
-      "cid": "job_definition.cid_or_could_not_verify",
-      "global_rules": "job_definition.global_rules",
-      "event_identity": {
-        "event_leg_key": "kv.event_leg_key",
-        "event_name": "kv.event_name",
-        "event_acronym": "kv.event_acronym",
-        "venue_name": "kv.venue_name",
-        "city": "kv.city",
-        "state": "kv.state",
-        "season_label": "kv.season_label",
-        "rating_string": "kv.rating_string",
-        "rider_caliber": "kv.rider_caliber"
-      },
-      "maps_anchor": {
-        "place_id": "kv.place_id",
-        "lat": "kv.lat_number_or_null",
-        "lng": "kv.lng_number_or_null"
-      },
-      "collection_input": {
-        "event_notes": "kv.event_notes",
-        "venue_notes": "kv.venue_notes",
-        "city_season_notes": "kv.city_season_notes"
-      },
-      "source_log": []
-    }
-  },
-  "p_in_envelope": {
-    "must_match": "member-template-pr-prompt.txt input logical shape (places family)",
-    "top_level": ["job_id", "shape", "mode", "street", "house", "lane", "dataset_id", "cid", "global_rules", "event_identity", "maps_anchor", "places_input", "source_log"],
-    "build": {
-      "job_id": "job_definition.job_id",
-      "shape": "job_definition.shape",
-      "mode": "job_definition.mode_or_default_live",
-      "street": "job_definition.street",
-      "house": "job_definition.house",
-      "lane": "pr{n}",
-      "dataset_id": "bound_dataset.role_key",
-      "cid": "job_definition.cid_or_could_not_verify",
-      "global_rules": "job_definition.global_rules",
-      "event_identity": {
-        "event_name": "kv.event_name",
-        "event_acronym": "kv.event_acronym",
-        "venue_name": "kv.venue_name",
-        "city": "kv.city",
-        "state": "kv.state",
-        "season_label": "kv.season_label",
-        "rating_string": "kv.rating_string",
-        "rider_caliber": "kv.rider_caliber"
-      },
-      "maps_anchor": {
-        "place_id": "kv.place_id",
-        "lat": "kv.lat_number_or_null",
-        "lng": "kv.lng_number_or_null"
-      },
-      "places_input": {
-        "stay": "kv.stay_rows_or_could_not_verify",
-        "dine": "kv.dine_rows_or_could_not_verify",
-        "essentials": "kv.essentials_rows_or_could_not_verify",
-        "locale": "kv.locale_rows_or_could_not_verify"
-      },
-      "source_log": []
-    }
-  },
-  "outputs": {
-    "only_bins_allowed": ["c_in_{n}", "p_in_{n}"],
-    "forbidden_bins": [
-      "c_research_{n}",
-      "c_writer_{n}",
-      "c_out_{n}",
-      "p_research_{n}",
-      "p_writer_{n}",
-      "p_out_{n}",
-      "stchr_in",
-      "stitched_out",
-      "final_out"
-    ]
+  "algorithm": [
+    "0) Hard-stop if job_definition.mode != \"live\".",
+    "1) Parse required pass numbers from job_definition.run_order using pass_extraction.regex and family prefixes.",
+    "2) Partition job_definition.datasets into family C and family P by domains_all matching; preserve original order within each family.",
+    "3) For each required C pass n: select nth dataset in family C; resolve datasets_by_role[role_key]; emit c_in_{n} bin object.",
+    "4) For each required P pass n: select nth dataset in family P; resolve datasets_by_role[role_key]; emit p_in_{n} bin object.",
+    "5) Emit ONLY those bins; emit no downstream bins; do not rewrite dataset rows."
+  ],
+  "failures": {
+    "on_missing_required_input": { "action": "halt", "error_code": "EXP_INPUT_MISSING" },
+    "on_job_definition_mode_not_live": { "action": "halt", "error_code": "EXP_JOB_MODE_NOT_LIVE" },
+    "on_unknown_run_order_key": { "action": "halt", "error_code": "EXP_RUN_ORDER_INVALID" },
+    "on_dataset_role_key_missing_in_map": { "action": "halt", "error_code": "EXP_DATASET_ROLE_MISSING" },
+    "on_missing_dataset_for_required_pass": { "action": "halt", "error_code": "EXP_MISSING_DATASET_FOR_PASS" },
+    "on_bin_already_exists": { "action": "halt", "error_code": "EXP_BIN_OVERWRITE_FORBIDDEN" }
   }
 }
