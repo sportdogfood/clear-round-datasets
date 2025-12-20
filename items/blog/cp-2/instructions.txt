@@ -54,6 +54,7 @@ From items/blog/cp-2/ require (STOP "house load" if missing):
 E) FETCH DATASETS (ROWS)
 Purpose:
   Retrieve all dataset payloads by role_key, ignoring domains for lookup.
+  Ensure both cdata and pdata roles are fetched and stored, even if empty.
 
 For each dataset in job_definition.datasets (in order):
   - role_key = dataset.role_key
@@ -61,23 +62,32 @@ For each dataset in job_definition.datasets (in order):
   - table_id = dataset.table_id
   - range = dataset.range
   - Call:
-      api_rows_com__jit_plugin.getRowsValues({
+      res = api_rows_com__jit_plugin.getRowsValues({
         "sheet_id": sheet_id,
         "table_id": table_id,
         "range": range
       })
-  - On success:
+  - If res exists and res.items is non-empty:
       datasets_by_role[role_key] = {
         "role_key": role_key,
         "domains": dataset.domains,
-        "items": <Rows response.items or []>
+        "items": res.items
       }
-  - On failure:
-      if ignore_failures: continue; else STOP "dataset fetch"
+  - Else:
+      log "⚠️ Empty or missing dataset for " + role_key
+      datasets_by_role[role_key] = {
+        "role_key": role_key,
+        "domains": dataset.domains,
+        "items": []
+      }
+
+  - Continue to next dataset regardless of prior success/failure.
 
 Notes:
-- Lookup is strictly by role_key (e.g. "cdata1-4434456", "pdata1-4434456").
+- Lookup is strictly by role_key (e.g., "cdata1-4434456", "pdata1-4434456").
 - Domains are metadata for later binding by the expeditor, not for lookup.
+- This step guarantees both datasets are present in datasets_by_role, even if one is empty.
+
 
 F) EXECUTE job_definition.run_order (HARD)
 Load pipeline_spec from pipeline-spec.json.
