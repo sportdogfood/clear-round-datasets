@@ -133,23 +133,36 @@ For each lane_key in run_order (in order):
        - executed_lanes push "exp"
        - continue
 
-  5) MEMBER LANES (researcher, writer, rewriter, stitcher)
-     If lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
-       - template_file = pipeline_spec.templates[lane_spec.template_ref]
-       - load template_text from items/blog/cp-2/{template_file}
-       - system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
-       - user_message = JSON.stringify(bins[reads_bin] or {})
-       - Call GPT model once
-       - Parse output as JSON
-       - If parsed_object has key == writes_bin → bins[writes_bin] = parsed_object[writes_bin]
-         Else → bins[writes_bin] = parsed_object
-       - lane_logs[lane_key] = {
-           "reads": reads_bin,
-           "writes": writes_bin,
-           "template": template_file,
-           "model_called": true
-         }
-       - executed_lanes push lane_key
+5) MEMBER LANES (researcher, writer, rewriter, stitcher)
+If lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
+
+  - template_file = pipeline_spec.templates[lane_spec.template_ref]
+  - load template_text from items/blog/cp-2/{template_file}
+
+  - system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+  - user_message  = JSON.stringify(bins[reads_bin] or {})
+
+  - Call GPT model once with system_prompt and user_message
+  - STOP "lane execution" if model output is empty or missing
+
+  - Parse model output as JSON → parsed_object
+  - STOP "lane execution" if parse fails or parsed_object is not an object
+
+  - If parsed_object has own key == writes_bin:
+        bins[writes_bin] = parsed_object[writes_bin]
+    Else:
+        bins[writes_bin] = parsed_object
+    STOP "lane execution" if writes_bin already exists
+
+  - lane_logs[lane_key] = {
+      "reads": reads_bin,
+      "writes": writes_bin,
+      "template": template_file,
+      "model_called": true
+    }
+
+  - executed_lanes push lane_key
+
 
 G) FINAL VALIDATION
 Precondition:
