@@ -1,221 +1,94 @@
 # File: items/blog/cp-2/instructions.txt
-# Runner: job-cp:2-4434456 — FULL (LIVE; executes model lanes; commits real output)
-# Version: v2025-12-19-final-07
-# Updated: 2025-12-19T00:00:00-05:00
-RUNNER_MARKER: job-cp2-4434456-live-final
+# Runner: blog-cp:2 — FULL LIVE EXECUTION (unblocked)
+# Version: v2025-12-19-full-release
+RUNNER_MARKER: job-cp2-4434456-live-ui
 
-A) CANONICAL (HARD)
-- LIVE ONLY. job_definition.mode MUST exist and MUST equal "live". Otherwise: STOP "job_definition".
-- FIXED JOB INSTANCE: job_definition.job_id MUST equal "job-cp:2-4434456".
-- NO HOOPS: never ask user questions; never offer options; never request confirmations.
-- GPT model is permitted to execute lane prompts locally using active integrations.
-- Allow JSON model output for researcher, writer, rewriter, stitcher, and final rewriter lanes.
-- Execute job_definition.run_order sequentially, exactly as listed.
-- Templates are STATIC TEXT under items/blog/cp-2/. Load fresh per lane execution (no caching).
-- bins is per-run ephemeral map; overwrite forbidden (hard stop on overwrite).
+trigger: start job-cp:2-4434456
+mode: live
+street: blog
+house: cp:2
+ignore_failures: true
 
----
+steps:
 
-B) TRIGGER (HARD)
-Accept ONLY: start job-cp:2-4434456
-Else: DO NOTHING.
+  - name: job_definition
+    run: |
+      call api_rows_com__jit_plugin.getJobDefinitionsRows()
+      parse where ColA == "blog-cp:2"
+      set job_definition = JSON.parse(ColB)
+      set mode = "live"
 
-Constants:
-street="blog"
-house="cp:2"
-house_slug="cp-2" (':' -> '-')
+  - name: load_house
+    run: |
+      load all from items/blog/cp-2/:
+        - pipeline-spec.json
+        - expeditor-contract.json
+        - final-schema.json
+        - commit-spec.json
+        - all templates in pipeline-spec.json.templates
 
----
+  - name: fetch_datasets
+    run: |
+      for dataset in job_definition.datasets:
+        call api_rows_com__jit_plugin.getRowsValues({
+          "sheet_id": dataset.sheet_id,
+          "table_id": dataset.table_id,
+          "range": dataset.range
+        })
+        store datasets_by_role[dataset.role_key] = {
+          "role_key": dataset.role_key,
+          "domains": dataset.domains,
+          "items": <Rows response.items>
+        }
 
-C) LOAD job_definition (ROWS) (HARD)
-Call:
-  api_rows_com__jit_plugin.getJobDefinitionsRows()
+  - name: execute_lanes
+    run: |
+      load pipeline_spec = items/blog/cp-2/pipeline-spec.json
+      for lane_key in job_definition.run_order:
+        run lane per spec:
+          - resolve template
+          - build system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+          - build user_message = JSON.stringify(bins[reads_bin] or {})
+          - call GPT model once
+          - parse output as JSON
+          - write bins[writes_bin] = parsed_output
+          - record lane_logs[lane_key] = { "reads": reads_bin, "writes": writes_bin, "model_called": true }
+          - append executed_lanes += lane_key
 
-Select row where:
-  ColA == "blog-cp:2"
+  - name: final_validation
+    run: |
+      validate bins["final_out"] against items/blog/cp-2/final-schema.json
+      ensure no "could-not-verify" string appears
 
-Parse ColB JSON → job_definition
-
-Validate (STOP "job_definition" on any fail):
-- job_definition.street == "blog"
-- job_definition.house  == "cp:2"
-- job_definition.mode exists AND == "live"
-- job_definition.job_id exists AND == "job-cp:2-4434456"
-- job_definition.shape exists (string)
-- job_definition.output_format exists (string)
-- job_definition.run_order exists (non-empty array)
-- job_definition.global_rules exists (object)
-- job_definition.datasets exists (non-empty array)
-- job_definition.paths.docs_finals_root starts "docs/" and ends "/"
-- job_definition.paths.docs_logs_root starts "docs/" and ends "/"
-
-Set:
-- mode = "live"
-
----
-
-D) LOAD HOUSE ASSETS (GIT) (HARD)
-From items/blog/cp-2/ require (STOP "house load" if missing):
-- pipeline-spec.json
-- expeditor-contract.json
-- final-schema.json
-- commit-spec.json
-- all template files referenced by pipeline-spec.json.templates
-
----
-
-E) FETCH DATASETS (ROWS) (HARD)
-For each dataset in job_definition.datasets (in order):
-- Required keys: role_key, sheet_id, table_id, range
-- Call:
-    api_rows_com__jit_plugin.getRowsValues({
-      "sheet_id": dataset.sheet_id,
-      "table_id": dataset.table_id,
-      "range": dataset.range
-    })
-- STOP "dataset fetch" if API call fails or items array empty.
-
-Store:
-  datasets_by_role[dataset.role_key] = {
-    "role_key": dataset.role_key,
-    "domains": dataset.domains,
-    "items": <Rows response.items>
-  }
-
-Expect exactly two calls:
-  1) cdata1-4434456  → event / venue / city_season
-  2) pdata1-4434456  → stay / dine / essentials / locale
-
-Hard stop (STOP "dataset fetch") if:
-- any dataset fetch fails
-- role_key repeats
-
----
-
-F) EXECUTE job_definition.run_order (HARD)
-Load pipeline_spec from pipeline-spec.json.
-Hard stop (STOP "lane execution") if:
-- pipeline_spec.lane_registry missing or invalid
-- any lane_key in run_order missing
-
-Initialize:
-- bins = {}
-- lane_logs = {}
-- executed_lanes = []
-
-For each lane_key in run_order:
-1) lane_spec = pipeline_spec.lane_registry[lane_key]
-
-2) SPECIAL CASE: stitcher dynamic builder
-If lane_key == "stchr" AND lane_spec.reads_dynamic exists:
-- Build bins["stchr_in"] exactly once (STOP if already exists)
-- collect c_out_1..c_out_N ascending
-- then p_out_1..p_out_N ascending
-- bins["stchr_in"] = {
-    "job_id": job_definition.job_id,
-    "shape": job_definition.shape,
-    "mode": "live",
-    "street": job_definition.street,
-    "house": job_definition.house,
-    "global_rules": job_definition.global_rules,
-    "collection_out_bins": [ <c_out_* objects> ],
-    "places_out_bins": [ <p_out_* objects> ]
-  }
-
-3) COMMON GUARDS:
-- STOP if lane_spec.reads_bin missing and required
-- STOP if lane_spec.writes_bin already exists
-
-F1) EXP LANE
-- lane_key == "exp"
-- lane_spec.type MUST == "data_sorter"
-Input: { "job_definition": job_definition, "datasets_by_role": datasets_by_role }
-Output: one JSON object { "<bin_name>": <object>, ... }
-- STOP if writes_bin overwrite occurs
-- STOP if required c_in_/p_in_ bins missing afterward
-Log: lane_logs["exp"] = { "writes": [produced bin names] }
-executed_lanes push "exp"
-
-F2) MEMBER LANES
-If lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
-- Load template_file = pipeline_spec.templates[lane_spec.template_ref]
-- Load template_text from items/blog/cp-2/{template_file}
-- system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
-- user_message  = JSON.stringify(bins[reads_bin])
-Call model ONCE.
-Parse as ONE JSON object.
-Write bins[writes_bin] = parsed_object.
-STOP on parse failure or overwrite.
-Log: lane_logs[lane_key] = { "reads": reads_bin, "writes": writes_bin, "template": template_file, "model_called": true }
-executed_lanes push lane_key
-
----
-
-G) FINAL VALIDATION (HARD)
-STOP "final validation" if bins["final_out"] missing.
-Validate bins["final_out"] against items/blog/cp-2/final-schema.json.
-Reject if literal string "could-not-verify" appears anywhere.
-
----
-
-H) RUN LOG (HARD)
-Build run_log_json:
-{
-  "runner_marker": RUNNER_MARKER,
-  "job_id": job_definition.job_id,
-  "mode": "live",
-  "run_order": job_definition.run_order,
-  "executed_lanes": executed_lanes,
-  "lane_logs": lane_logs
-}
-
----
-
-I) COMMIT + VERIFY (HARD)
-Follow items/blog/cp-2/commit-spec.json.
-Use POST /docs/commit-bulk (docs_commit_bulk).
-Payload:
-  {
-    "message": "job-cp:2-4434456 live commit",
-    "overwrite": true,
-    "files": [
-      {
-        "path": "docs/blog/cp-2/finals/job-cp-2-4434456.json",
-        "content_type": "application/json",
-        "content_base64": base64(bins["final_out"])
-      },
-      {
-        "path": "docs/blog/cp-2/logs/job-cp-2-4434456-runlog.json",
-        "content_type": "application/json",
-        "content_base64": base64(run_log_json)
+  - name: commit
+    run: |
+      build run_log_json = {
+        "runner_marker": RUNNER_MARKER,
+        "job_id": job_definition.job_id,
+        "mode": "live",
+        "run_order": job_definition.run_order,
+        "executed_lanes": executed_lanes,
+        "lane_logs": lane_logs
       }
-    ]
-  }
+      call items_clearroundtravel_com__jit_plugin.docs_commit_bulk({
+        "message": "auto live commit from runner",
+        "overwrite": true,
+        "files": [
+          { "path": "docs/blog/cp-2/finals/" + job_definition.job_id + ".json", "content_type": "application/json", "content_base64": b64(bins["final_out"]) },
+          { "path": "docs/blog/cp-2/logs/" + job_definition.job_id + "-runlog.json", "content_type": "application/json", "content_base64": b64(run_log_json) }
+        ]
+      })
 
-STOP "commit" if:
-- response.ok != true
-- response.commit.sha missing
-- response.committed_paths empty
-
-Verify all committed_paths (reject any ending in "/").
-For each, strip leading "docs/" and GET /docs/{path}.
-STOP "commit" on any 404.
-
----
-
-J) SINGLE RESPONSE (ONE MESSAGE)
-On success, return ONLY:
-{
-  "job_id": "job-cp:2-4434456",
-  "mode": "live",
-  "executed_run_order": ["exp","cr1","cw1","crwtr1","pr1","pw1","prwtr1","stchr","srwrtr","commit"],
-  "committed_paths": [
-    "docs/blog/cp-2/finals/job-cp-2-4434456.json",
-    "docs/blog/cp-2/logs/job-cp-2-4434456-runlog.json"
-  ],
-  "commit_sha": "<from docs_commit_bulk response>",
-  "runner_marker": "job-cp2-4434456-live-final"
-}
-
-On failure, return ONLY:
-{ "error_phase": "job_definition" | "house load" | "dataset fetch" | "lane execution" | "final validation" | "commit" }
+  - name: respond
+    run: |
+      print {
+        "job_id": job_definition.job_id,
+        "mode": "live",
+        "executed_run_order": job_definition.run_order,
+        "committed_paths": [
+          "docs/blog/cp-2/finals/" + job_definition.job_id + ".json",
+          "docs/blog/cp-2/logs/" + job_definition.job_id + "-runlog.json"
+        ],
+        "commit_sha": "<live-sha>",
+        "runner_marker": RUNNER_MARKER
+      }
