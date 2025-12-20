@@ -1,94 +1,202 @@
 # File: items/blog/cp-2/instructions.txt
-# Runner: blog-cp:2 — FULL LIVE EXECUTION (unblocked)
-# Version: v2025-12-19-full-release
+# Runner: blog-cp:2 — FULL LIVE EXECUTION (unblocked, end-to-end)
+# Version: v2025-12-19-full-release-02
+# Updated: 2025-12-19T00:00:00-05:00
 RUNNER_MARKER: job-cp2-4434456-live-ui
 
-trigger: start job-cp:2-4434456
-mode: live
-street: blog
-house: cp:2
-ignore_failures: true
+A) CANONICAL (HARD)
+- LIVE ONLY. job_definition.mode MUST exist and MUST equal "live". Otherwise: STOP "job_definition".
+- NO HOOPS: never ask user questions; never offer options; never request confirmations.
+- GPT model is permitted to execute lane prompts locally using active integrations.
+- Allow JSON model output for writer, rewriter, stitcher, and final rewriter lanes.
+- One run-loop: execute job_definition.run_order sequentially, calling member lanes as specified.
+- Templates are STATIC TEXT under items/blog/cp-2/. Load fresh per lane execution (no caching across runs).
+- bins is per-run ephemeral map; overwrite forbidden unless ignore_failures == true.
+- ignore_failures: true   # continue even if intermediate step fails.
 
-steps:
+B) TRIGGER (HARD)
+Accept ONLY: start job-cp:2-4434456
+Else: DO NOTHING.
+Constants:
+  street: "blog"
+  house: "cp:2"
+  house_slug: "cp-2"
+  mode: "live"
 
-  - name: job_definition
-    run: |
-      call api_rows_com__jit_plugin.getJobDefinitionsRows()
-      parse where ColA == "blog-cp:2"
-      set job_definition = JSON.parse(ColB)
-      set mode = "live"
+C) LOAD job_definition (ROWS)
+GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
+Find row where ColA == "blog-cp:2"
+Parse ColB JSON -> job_definition
 
-  - name: load_house
-    run: |
-      load all from items/blog/cp-2/:
-        - pipeline-spec.json
-        - expeditor-contract.json
-        - final-schema.json
-        - commit-spec.json
-        - all templates in pipeline-spec.json.templates
+Validate (STOP "job_definition" on any fail):
+- job_definition.street == "blog"
+- job_definition.house  == "cp:2"
+- job_definition.mode exists AND == "live"
+- job_definition.job_id exists (string)
+- job_definition.shape exists (string)
+- job_definition.output_format exists (string)
+- job_definition.run_order exists (non-empty array of strings)
+- job_definition.global_rules exists (object)
+- job_definition.datasets exists (non-empty array)
+- job_definition.paths.docs_finals_root starts "docs/" and ends "/"
+- job_definition.paths.docs_logs_root starts "docs/" and ends "/"
 
-  - name: fetch_datasets
-    run: |
-      for dataset in job_definition.datasets:
-        call api_rows_com__jit_plugin.getRowsValues({
-          "sheet_id": dataset.sheet_id,
-          "table_id": dataset.table_id,
-          "range": dataset.range
-        })
-        store datasets_by_role[dataset.role_key] = {
-          "role_key": dataset.role_key,
-          "domains": dataset.domains,
-          "items": <Rows response.items>
-        }
+Set mode = "live" (constant; do not derive).
 
-  - name: execute_lanes
-    run: |
-      load pipeline_spec = items/blog/cp-2/pipeline-spec.json
-      for lane_key in job_definition.run_order:
-        run lane per spec:
-          - resolve template
-          - build system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
-          - build user_message = JSON.stringify(bins[reads_bin] or {})
-          - call GPT model once
-          - parse output as JSON
-          - write bins[writes_bin] = parsed_output
-          - record lane_logs[lane_key] = { "reads": reads_bin, "writes": writes_bin, "model_called": true }
-          - append executed_lanes += lane_key
+D) LOAD HOUSE ASSETS (GIT)
+From items/blog/cp-2/ require (STOP "house load" if missing):
+- pipeline-spec.json
+- expeditor-contract.json
+- final-schema.json
+- commit-spec.json
+- all templates referenced in pipeline-spec.json.templates
 
-  - name: final_validation
-    run: |
-      validate bins["final_out"] against items/blog/cp-2/final-schema.json
-      ensure no "could-not-verify" string appears
+E) FETCH DATASETS (ROWS)
+Purpose:
+  Retrieve all dataset payloads by role_key, ignoring domains for lookup.
 
-  - name: commit
-    run: |
-      build run_log_json = {
-        "runner_marker": RUNNER_MARKER,
-        "job_id": job_definition.job_id,
-        "mode": "live",
-        "run_order": job_definition.run_order,
-        "executed_lanes": executed_lanes,
-        "lane_logs": lane_logs
-      }
-      call items_clearroundtravel_com__jit_plugin.docs_commit_bulk({
-        "message": "auto live commit from runner",
-        "overwrite": true,
-        "files": [
-          { "path": "docs/blog/cp-2/finals/" + job_definition.job_id + ".json", "content_type": "application/json", "content_base64": b64(bins["final_out"]) },
-          { "path": "docs/blog/cp-2/logs/" + job_definition.job_id + "-runlog.json", "content_type": "application/json", "content_base64": b64(run_log_json) }
-        ]
+For each dataset in job_definition.datasets (in order):
+  - role_key = dataset.role_key
+  - sheet_id = dataset.sheet_id
+  - table_id = dataset.table_id
+  - range = dataset.range
+  - Call:
+      api_rows_com__jit_plugin.getRowsValues({
+        "sheet_id": sheet_id,
+        "table_id": table_id,
+        "range": range
       })
-
-  - name: respond
-    run: |
-      print {
-        "job_id": job_definition.job_id,
-        "mode": "live",
-        "executed_run_order": job_definition.run_order,
-        "committed_paths": [
-          "docs/blog/cp-2/finals/" + job_definition.job_id + ".json",
-          "docs/blog/cp-2/logs/" + job_definition.job_id + "-runlog.json"
-        ],
-        "commit_sha": "<live-sha>",
-        "runner_marker": RUNNER_MARKER
+  - On success:
+      datasets_by_role[role_key] = {
+        "role_key": role_key,
+        "domains": dataset.domains,
+        "items": <Rows response.items or []>
       }
+  - On failure:
+      if ignore_failures: continue; else STOP "dataset fetch"
+
+Notes:
+- Lookup is strictly by role_key (e.g. "cdata1-4434456", "pdata1-4434456").
+- Domains are metadata for later binding by the expeditor, not for lookup.
+
+F) EXECUTE job_definition.run_order (HARD)
+Load pipeline_spec from pipeline-spec.json.
+Hard stop (unless ignore_failures) if:
+- pipeline_spec.lane_registry missing or invalid.
+- any lane_key in run_order missing from pipeline_spec.lane_registry.
+
+Initialize:
+- bins = {}
+- lane_logs = {}
+- executed_lanes = []
+
+For each lane_key in run_order (in order):
+  1) lane_spec = pipeline_spec.lane_registry[lane_key]
+
+  2) SPECIAL: stitcher (stchr) dynamic build
+     If lane_key == "stchr" AND lane_spec.reads_dynamic exists:
+       Build bins["stchr_in"] once:
+         - collect existing bins c_out_1..c_out_N ascending
+         - then p_out_1..p_out_N ascending
+         bins["stchr_in"] = {
+           "job_id": job_definition.job_id,
+           "shape": job_definition.shape,
+           "mode": "live",
+           "street": job_definition.street,
+           "house": job_definition.house,
+           "global_rules": job_definition.global_rules,
+           "collection_out_bins": [ <c_out objects> ],
+           "places_out_bins": [ <p_out objects> ]
+         }
+
+  3) Guards (soft if ignore_failures == true)
+     - If lane_spec.reads_bin exists and bins[reads_bin] missing → skip with warning if ignore_failures.
+     - If lane_spec.writes_bin exists and bins[writes_bin] already exists → skip or overwrite if ignore_failures.
+
+  4) EXP LANE (data_sorter)
+     If lane_spec.type == "data_sorter":
+       - Input: { "job_definition": job_definition, "datasets_by_role": datasets_by_role }
+       - Follow expeditor-contract.json
+       - Output: JSON object with top-level keys for produced bins (c_in_{n}, p_in_{n})
+       - Write each produced bin: bins[key] = object
+       - Record lane_logs["exp"] = { "writes": [produced bin names] }
+       - executed_lanes push "exp"
+       - continue
+
+  5) MEMBER LANES (researcher, writer, rewriter, stitcher)
+     If lane_spec.type in {"researcher","writer","rewriter","stitcher"}:
+       - template_file = pipeline_spec.templates[lane_spec.template_ref]
+       - load template_text from items/blog/cp-2/{template_file}
+       - system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+       - user_message = JSON.stringify(bins[reads_bin] or {})
+       - Call GPT model once
+       - Parse output as JSON
+       - If parsed_object has key == writes_bin → bins[writes_bin] = parsed_object[writes_bin]
+         Else → bins[writes_bin] = parsed_object
+       - lane_logs[lane_key] = {
+           "reads": reads_bin,
+           "writes": writes_bin,
+           "template": template_file,
+           "model_called": true
+         }
+       - executed_lanes push lane_key
+
+G) FINAL VALIDATION
+Precondition:
+  bins["final_out"] must exist unless ignore_failures == true.
+
+Validate:
+  - schema check: items/blog/cp-2/final-schema.json
+  - enforce: literal "could-not-verify" MUST NOT appear in final_out.
+
+H) RUN LOG
+Build run_log_json (committed alongside finals):
+{
+  "runner_marker": RUNNER_MARKER,
+  "job_id": job_definition.job_id,
+  "mode": "live",
+  "run_order": job_definition.run_order,
+  "executed_lanes": executed_lanes,
+  "lane_logs": lane_logs
+}
+
+I) COMMIT + VERIFY
+Commit:
+  call items_clearroundtravel_com__jit_plugin.docs_commit_bulk({
+    "message": "auto live commit from runner",
+    "overwrite": true,
+    "files": [
+      {
+        "path": "docs/blog/cp-2/finals/" + job_definition.job_id + ".json",
+        "content_type": "application/json",
+        "content_base64": b64(bins["final_out"])
+      },
+      {
+        "path": "docs/blog/cp-2/logs/" + job_definition.job_id + "-runlog.json",
+        "content_type": "application/json",
+        "content_base64": b64(run_log_json)
+      }
+    ]
+  })
+
+Post-commit verify:
+  for each committed_path:
+    - if endswith("/") → ignore if ignore_failures else STOP "commit"
+    - if startswith("docs/") → strip leading "docs/"
+    - GET /docs/{verify_path} to confirm presence.
+
+J) SINGLE RESPONSE
+On success:
+{
+  "job_id": job_definition.job_id,
+  "mode": "live",
+  "executed_run_order": job_definition.run_order,
+  "committed_paths": [
+    "docs/blog/cp-2/finals/" + job_definition.job_id + ".json",
+    "docs/blog/cp-2/logs/" + job_definition.job_id + "-runlog.json"
+  ],
+  "commit_sha": "<live-sha>",
+  "runner_marker": RUNNER_MARKER
+}
+
+On failure (unless ignore_failures): { "error_phase": <phase_name> }
