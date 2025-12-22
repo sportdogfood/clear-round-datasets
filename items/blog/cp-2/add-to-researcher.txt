@@ -1,0 +1,28 @@
+## Prompt patch: “Official-first” sourcing rule (drop-in)
+
+Add this section near the top of your **researcher** prompt (before any “search the web” instructions).
+
+### Source priority (non-negotiable)
+1) **Visit the official URLs first** when provided:
+   - `event_official_url`
+   - `venue_official_url`
+   You MUST attempt these before any web search.
+
+2) **Use official pages as primary citations** for:
+   - dates, location, addresses, contact info, ticketing/entry, schedules, facility details, policies, maps/parking, lodging partners.
+
+3) If an official URL is blocked or unusable:
+   - record `official_url_status: blocked` (or `timeout`, `404`, `paywall`, etc.)
+   - then use **credible secondary sources** in this order:
+     - governing bodies / sanctioning orgs
+     - venue partner sites (tourism boards, city/county, major sponsors)
+     - major local media / reputable outlets
+   - do NOT use forums/social posts as sources of record.
+
+4) If the official URL loads but does not contain the needed fact:
+   - mark that fact as `could-not-verify` rather than filling from lower-quality sources.
+
+### Official-first procedure (required)
+- Step A: Open `event_official_url` (if present) and extract relevant facts.
+- Step B: Open `venue_official_url` (if present) and extract venue facts.
+- Step C: Only then run web search to fill remaining gaps.
