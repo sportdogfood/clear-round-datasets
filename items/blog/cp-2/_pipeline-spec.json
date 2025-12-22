@@ -1,0 +1,185 @@
+{
+  "file": "pipeline-spec.json",
+  "version": "v2025-12-19-pipeline-04",
+  "street": "blog",
+  "house": "cp:2",
+  "live_only": {
+    "required": true,
+    "mode_literal": "live",
+    "halt_if_job_definition_mode_not_live": true,
+    "on_fail": { "action": "halt", "error_code": "JOB_MODE_NOT_LIVE" }
+  },
+  "purpose": [
+    "Declare allowed lane keys for this house.",
+    "Declare deterministic reads_bin -> writes_bin routing per lane key.",
+    "Declare how numbered C/P passes bind to datasets (by domains).",
+    "Enable runner to execute job_definition.run_order directly, sequentially, in live mode."
+  ],
+  "filesystem_normalization": {
+    "house_slug_rule": { "replace_chars": { ":": "-" } }
+  },
+  "dataset_families": {
+    "C": {
+      "description": "Collection datasets (event / venue / city_season).",
+      "match": { "domains_all": ["event", "venue", "city_season"] }
+    },
+    "P": {
+      "description": "Places datasets (stay / dine / essentials / locale).",
+      "match": { "domains_all": ["stay", "dine", "essentials", "locale"] }
+    }
+  },
+  "pass_detection": {
+    "collection_lane_prefixes": ["cr", "cw", "crwtr"],
+    "places_lane_prefixes": ["pr", "pw", "prwtr"],
+    "pass_number_regex": "^[a-z]+(\\d+)$",
+    "required_pass_count_rule": "max pass index present in run_order per family must be <= available datasets for that family"
+  },
+  "dataset_binding_rules": {
+    "binding_mode": "family_ordered_by_job_definition_datasets",
+    "c_pass_n_binds_to": "nth dataset (1-indexed) in family C",
+    "p_pass_n_binds_to": "nth dataset (1-indexed) in family P",
+    "on_missing_dataset_for_required_pass": {
+      "action": "halt",
+      "error_code": "PIPE_MISSING_DATASET_FOR_PASS"
+    }
+  },
+  "bin_naming": {
+    "c_input_bin": "c_in_{n}",
+    "c_research_bin": "c_research_{n}",
+    "c_writer_bin": "c_writer_{n}",
+    "c_output_bin": "c_out_{n}",
+    "p_input_bin": "p_in_{n}",
+    "p_research_bin": "p_research_{n}",
+    "p_writer_bin": "p_writer_{n}",
+    "p_output_bin": "p_out_{n}",
+    "stitcher_input_bin": "stchr_in",
+    "stitched_bin": "stitched_out",
+    "final_bin": "final_out"
+  },
+  "templates": {
+    "exp": "expeditor-contract.json",
+    "cr": "member-template-cr-prompt.txt",
+    "cw": "member-template-cw-prompt.txt",
+    "crwtr": "member-template-crwtr-prompt.txt",
+    "pr": "member-template-pr-prompt.txt",
+    "pw": "member-template-pw-prompt.txt",
+    "prwtr": "member-template-prwtr-prompt.txt",
+    "stchr": "member-template-stchr-prompt.txt",
+    "srwrtr": "member-template-srwrtr-prompt.txt",
+    "commit": "commit-spec.json"
+  },
+  "execution_rules": {
+    "disallow_validate_only": true,
+    "reads_bin_required_when_declared": true,
+    "writes_bin_required_when_declared": true,
+    "hard_stop_on_missing_reads_bin": true,
+    "hard_stop_on_bin_overwrite": true,
+    "hard_stop_on_missing_template_file": true,
+    "member_lanes_must_call_model": true,
+    "model_output_must_parse_as_json_object": true
+  },
+  "lane_type_rules": {
+    "model_required_for_lane_types": ["researcher", "writer", "rewriter", "stitcher"],
+    "model_forbidden_for_lane_types": ["data_sorter", "commit"]
+  },
+  "lane_logging_requirements": {
+    "required": true,
+    "one_entry_per_lane_in_run_order": true,
+    "required_fields_each_lane_log": [
+      "lane_key",
+      "type",
+      "reads_bin",
+      "writes_bin",
+      "template_ref",
+      "template_file",
+      "model_called"
+    ],
+    "model_called_must_be_true_for_types": ["researcher", "writer", "rewriter", "stitcher"],
+    "model_called_must_be_false_for_types": ["data_sorter", "commit"]
+  },
+  "dynamic_bin_builders": {
+    "stchr_in": {
+      "enabled": true,
+      "target_bin": "stchr_in",
+      "build_when_lane_key": "stchr",
+      "source_bins_rule": {
+        "collection_bins_prefix": "c_out_",
+        "places_bins_prefix": "p_out_",
+        "collect_in_numeric_order": true,
+        "only_include_bins_that_exist": true
+      },
+      "built_object_shape": {
+        "job_id": "job_definition.job_id",
+        "shape": "job_definition.shape",
+        "mode": "live",
+        "street": "job_definition.street",
+        "house": "job_definition.house",
+        "global_rules": "job_definition.global_rules",
+        "collection_out_bins": "ARRAY(of existing c_out_{n} bins, ascending n)",
+        "places_out_bins": "ARRAY(of existing p_out_{n} bins, ascending n)"
+      },
+      "hard_stop_if_target_bin_already_exists": true
+    }
+  },
+  "lane_registry": {
+    "exp": {
+      "type": "data_sorter",
+      "template_ref": "exp",
+      "reads": ["job_definition", "datasets_by_role", "pipeline_spec"],
+      "writes_dynamic": {
+        "description": "Produce only the numbered input bins required by job_definition.run_order.",
+        "c_inputs": "c_in_{n}",
+        "p_inputs": "p_in_{n}"
+      }
+    },
+
+    "cr1": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_1", "writes_bin": "c_research_1" },
+    "cw1": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_1", "writes_bin": "c_writer_1" },
+    "crwtr1": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_1", "writes_bin": "c_out_1" },
+
+    "cr2": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_2", "writes_bin": "c_research_2" },
+    "cw2": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_2", "writes_bin": "c_writer_2" },
+    "crwtr2": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_2", "writes_bin": "c_out_2" },
+
+    "cr3": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_3", "writes_bin": "c_research_3" },
+    "cw3": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_3", "writes_bin": "c_writer_3" },
+    "crwtr3": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_3", "writes_bin": "c_out_3" },
+
+    "pr1": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_1", "writes_bin": "p_research_1" },
+    "pw1": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_1", "writes_bin": "p_writer_1" },
+    "prwtr1": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_1", "writes_bin": "p_out_1" },
+
+    "pr2": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_2", "writes_bin": "p_research_2" },
+    "pw2": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_2", "writes_bin": "p_writer_2" },
+    "prwtr2": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_2", "writes_bin": "p_out_2" },
+
+    "pr3": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_3", "writes_bin": "p_research_3" },
+    "pw3": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_3", "writes_bin": "p_writer_3" },
+    "prwtr3": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_3", "writes_bin": "p_out_3" },
+
+    "stchr": {
+      "type": "stitcher",
+      "template_ref": "stchr",
+      "reads_bin": "stchr_in",
+      "reads_dynamic": {
+        "enabled": true,
+        "builder_key": "stchr_in"
+      },
+      "writes_bin": "stitched_out"
+    },
+
+    "srwrtr": {
+      "type": "rewriter",
+      "template_ref": "srwrtr",
+      "reads_bin": "stitched_out",
+      "writes_bin": "final_out"
+    },
+
+    "commit": {
+      "type": "commit",
+      "template_ref": "commit",
+      "reads_bin": "final_out",
+      "writes_artifacts": ["docs_finals", "docs_logs"]
+    }
+  }
+}
