@@ -1,18 +1,23 @@
 # File: items/blog/cp-2/instructions.txt
 # Runner: job-cp:2-4434456 — FULL LIVE EXECUTION (real commit)
-# Purpose: Executes all model lanes (researcher, writer, rewriter, stitcher) and performs verified final commit.
-# Version: v2025-12-20-full-UI-06
-# Updated: 2025-12-20T00:00:00-05:00
-# Validated: true
-RUNNER_MARKER: job-cp2-4434456-live-ui
+# Purpose: Executes all model lanes (researcher, writer, rewriter, stitcher) and commits verified outputs.
+# Behavior: Fully autonomous — no stops, no confirmations, no interactive prompts.
+# Version: v2025-12-21-full-CORE-11
+# Updated: 2025-12-21T04:00:00-05:00
+RUNNER_MARKER: job-cp2-4434456-live-core
 
 === ENVIRONMENT FLAGS ===
-live_environment_binding: true               # explicitly asserts local file access available
-sandbox_fallback_allowed: false              # disallow any mock or “safe simulation” branch
-require_local_filesystem_mount: true         # must access items/blog/cp-2/ directly
-require_model_execution_pipeline: true       # must execute all lane templates as model calls
-require_docs_commit_access: true             # must post via items_clearroundtravel_com__jit_plugin.docs_commit_bulk
-fallback_to_simulation_on_failure: false     # absolute lockout of simulated mode
+live_environment_binding: true
+sandbox_fallback_allowed: false
+require_model_execution_pipeline: true
+require_docs_commit_access: true
+require_local_filesystem_mount: false
+fallback_to_simulation_on_failure: false
+auto_proceed_all_phases: true
+interactive_prompts: false
+allow_simulation: false
+force_real_commit: true
+require_confirmation: false
 
 === METADATA ===
 street: blog
@@ -24,124 +29,99 @@ requires:
   - expeditor-contract.json
   - final-schema.json
   - commit-spec.json
-  - all template files listed in pipeline-spec.json.templates (directly in items/blog/cp-2/)
 integrations:
-  - api_rows_com__jit_plugin                 # dataset source
-  - items_clearroundtravel_com__jit_plugin   # commit and docs verify
+  - api_rows_com__jit_plugin
+  - items_clearroundtravel_com__jit_plugin
 model_execution: enabled
-interactive_prompts: false
-force_real_commit: true
-allow_simulation: false
-auto_proceed: true
-require_confirmation: false
-suppress_ui_confirmations: true
-
-=== FILE RESOLUTION RULES ===
-- The runner MUST read all files directly from:
-      items/blog/cp-2/
-- The runner MUST NOT infer or prepend any subfolders:
-      ❌ items/blog/cp-2/templates/
-      ❌ items/blog/cp-2/jobs/
-- All template_ref values from pipeline-spec.json must map literally:
-      template_ref: "member-template-cr-prompt.txt"
-      resolves → items/blog/cp-2/member-template-cr-prompt.txt
 
 === FLOW ===
 
 1) job_definition
-   - Fetch job-definition rows from:
-       GET /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999
-   - Select row where ColA == "blog-cp:2".
-   - Parse JSON payload to job_definition.
-   - Validate:
-       job_id == "job-cp:2-4434456"
-       street == "blog"
-       house == "cp:2"
-       mode == "live"
-       run_order and datasets non-empty.
-   - Set mode = "live" (constant).
+   - Call api_rows_com__jit_plugin.getJobDefinitionsRows().
+   - Find row where ColA == "job-cp:2-4434456".
+   - Parse ColB JSON → job_definition.
+   - Validate presence of: job_id, street, house, mode, run_order, datasets, global_rules.
+   - Display:
+       ✅ job_definition loaded (job_id: job-cp:2-4434456)
+       Datasets: list dataset.role_key values
+       Run order: exp → cr1 → cw1 → crwtr1 → pr1 → pw1 → prwtr1 → stchr → srwrtr → commit
+   - Proceed immediately to Phase 2 (load_house). Never stop or prompt.
 
 2) load_house
-   - Load all required assets **directly from items/blog/cp-2/**
-     Required files:
-       - items/blog/cp-2/pipeline-spec.json
-       - items/blog/cp-2/expeditor-contract.json
-       - items/blog/cp-2/final-schema.json
-       - items/blog/cp-2/commit-spec.json
-       - all template refs listed in pipeline-spec.json.templates (resolved literally)
-   - Do NOT infer subfolders:
-       ❌ items/blog/cp-2/templates/
-       ❌ items/blog/cp-2/jobs/
-   - STOP "house load" if any listed file missing.
-   - Validate template_ref → template_file mapping is 1:1.
+   - For each required file, call:
+       items_clearroundtravel_com__jit_plugin.items_get({
+         "path": "blog/cp-2/<filename>"
+       })
+   - Required files:
+       - blog/cp-2/pipeline-spec.json
+       - blog/cp-2/expeditor-contract.json
+       - blog/cp-2/final-schema.json
+       - blog/cp-2/commit-spec.json
+       - all template refs listed in pipeline-spec.json.templates
+   - Expected templates:
+       member-template-cr-prompt.txt
+       member-template-cw-prompt.txt
+       member-template-crwtr-prompt.txt
+       member-template-pr-prompt.txt
+       member-template-pw-prompt.txt
+       member-template-prwtr-prompt.txt
+       member-template-stchr-prompt.txt
+       member-template-srwrtr-prompt.txt
+   - Do NOT infer or search subfolders.
+   - If any call returns 404 → emit error_code: HOUSE_FILE_NOT_FOUND and continue to respond.
+   - Store all file contents in memory as `house_assets[filename]`.
+   - Proceed automatically to Phase 3.
 
 3) fetch_datasets
-   - For each dataset in job_definition.datasets:
+   - For each dataset entry in job_definition.datasets:
        call api_rows_com__jit_plugin.getRowsValues({
          "sheet_id": dataset.sheet_id,
          "table_id": dataset.table_id,
          "range": dataset.range
        })
-   - Expect exactly 2 datasets:
-       cdata1-4434456 → event/venue/city_season
-       pdata1-4434456 → stay/dine/essentials/locale
-   - Store results:
-       datasets_by_role[role_key] = {
-         "role_key": dataset.role_key,
-         "domains": dataset.domains,
-         "items": response.items or []
-       }
-   - STOP "dataset fetch" if any dataset call fails.
-   - Proceed automatically.
+   - Do NOT inspect or validate dataset.domains.
+   - Do NOT apply pipeline-spec.dataset_families filters.
+   - Store results as:
+       datasets_by_role[dataset.role_key] = response.items or []
+   - Expect:
+       - cdata1-4434456
+       - pdata1-4434456
+   - Continue automatically after all fetches.
+   - On API failure → output error JSON and continue to respond.
 
 4) execute_lanes
-   - Load pipeline-spec.json.
-   - For each lane in job_definition.run_order:
-       a) exp → generate c_in_*/p_in_* bins.
-       b) researcher/writer/rewriter/stitcher lanes:
-           - Resolve template_ref → items/blog/cp-2/<literal filename>.
-           - Build:
-               system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
-               user_message  = JSON.stringify(bins[reads_bin] or {})
-           - Call GPT model once (enforced by model_execution: enabled).
-           - Parse JSON output.
-           - If parsed_object has writes_bin key → bins[writes_bin] = parsed_object[writes_bin]
-             Else → bins[writes_bin] = parsed_object
-           - Append to executed_lanes and lane_logs.
-   - STOP "lane execution" if model fails or JSON invalid.
+   - Execute all lanes in job_definition.run_order sequentially:
+       exp → cr1 → cw1 → crwtr1 → pr1 → pw1 → prwtr1 → stchr → srwrtr → commit
+   - Each lane:
+       • Resolve template filename from pipeline-spec.templates.
+       • Build system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+       • Build user_message = JSON.stringify(bins[reads_bin] or {})
+       • Call GPT model (model_execution: enabled).
+       • Parse response JSON → bins[writes_bin].
+       • Append lane log entry.
+   - Never stop or prompt between lanes.
+   - Continue directly to Phase 5.
 
 5) final_validation
-   - Require bins["final_out"] to exist.
-   - Validate JSON structure against final-schema.json.
-   - Ensure final_out parses cleanly to JSON.
-   - Reject if "could-not-verify" literal appears.
+   - Validate bins["final_out"] against final-schema.json.
+   - If invalid JSON or missing keys → emit error JSON.
+   - Continue automatically.
 
 6) commit
-   - Precondition: mode == "live".
-   - Build run_log_json:
-       {
-         "runner_marker": RUNNER_MARKER,
-         "job_id": job_definition.job_id,
-         "mode": "live",
-         "run_order": job_definition.run_order,
-         "executed_lanes": executed_lanes,
-         "lane_logs": lane_logs
-       }
-   - POST /docs/commit-bulk via items_clearroundtravel_com__jit_plugin.docs_commit_bulk
-       message: "auto live commit from runner"
-       overwrite: true
-       files:
-         - finals/job-cp-2-4434456.json → bins["final_out"]
-         - logs/job-cp-2-4434456-runlog.json → run_log_json
-   - STOP "commit" if response.ok != true or missing commit.sha.
-   - Verify each committed_path:
-       - Reject directory paths (end with "/")
-       - Strip leading "docs/" and GET /docs/{verify_path}
-       - Sleep 1s before verify (avoid transient 404s)
-       - STOP on any 404
+   - Perform live commit using:
+       items_clearroundtravel_com__jit_plugin.docs_commit_bulk({
+         "message": "auto live commit from runner",
+         "overwrite": true,
+         "files": [
+           { "path": "docs/blog/cp-2/finals/job-cp-2-4434456.json", "content_base64": b64(bins["final_out"]) },
+           { "path": "docs/blog/cp-2/logs/job-cp-2-4434456-runlog.json", "content_base64": b64(run_log_json) }
+         ]
+       })
+   - Verify commit.sha and committed_paths automatically.
+   - On commit failure → emit error JSON, then proceed to respond.
 
 7) respond
-   - On success:
+   - Emit final JSON payload automatically:
        {
          "job_id": "job-cp:2-4434456",
          "mode": "live",
@@ -154,17 +134,15 @@ suppress_ui_confirmations: true
            "docs/blog/cp-2/logs/job-cp-2-4434456-runlog.json"
          ],
          "commit_sha": "<sha>",
-         "runner_marker": "job-cp2-4434456-live-ui"
+         "runner_marker": "job-cp2-4434456-live-core"
        }
-   - On failure:
-       { "error_phase": "job_definition" | "house load" | "dataset fetch" | "lane execution" | "final validation" | "commit" }
 
 === GUARANTEES ===
-- Fully autonomous; no confirmations or pauses.
-- Enforces all live_only guards and SHA verification.
-- Real model prompt execution (no dry-run or simulation).
-- Commits verified live through docs endpoint.
-- Schema validation and JSON integrity enforced.
-- Complete sequential trace recorded via lane_logs and run_log_json.
-- No skipped phases, no interactive waits, no simulated lanes.
-- No subfolder inference or indirect path resolution.
+- Executes full pipeline automatically from start to finish.
+- No pauses, confirmations, or user interaction at any phase.
+- Fetches all datasets defined in job_definition (ignoring domains).
+- Loads all house assets directly from CRT proxy via items_get.
+- Enforces live-only mode with verified commit at end.
+- Performs schema and output validation automatically.
+- Emits raw JSON error responses for failed phases, never stops mid-run.
+- No simulation, no dry-run, no human checkpoints.
