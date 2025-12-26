@@ -6,6 +6,14 @@
 # Validated: true
 RUNNER_MARKER: job-cp2-4434456-live-ui
 
+=== ENVIRONMENT FLAGS ===
+live_environment_binding: true               # explicitly asserts local file access available
+sandbox_fallback_allowed: false              # disallow any mock or “safe simulation” branch
+require_local_filesystem_mount: true         # must access items/blog/cp-2/ directly
+require_model_execution_pipeline: true       # must execute all lane templates as model calls
+require_docs_commit_access: true             # must post via items_clearroundtravel_com__jit_plugin.docs_commit_bulk
+fallback_to_simulation_on_failure: false     # absolute lockout of simulated mode
+
 === METADATA ===
 street: blog
 house: cp:2
