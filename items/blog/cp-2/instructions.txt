@@ -1,7 +1,7 @@
 # File: items/blog/cp-2/instructions.txt
 # Runner: job-cp:2-4434456 — FULL LIVE EXECUTION (real commit)
 # Purpose: Executes all model lanes (researcher, writer, rewriter, stitcher) and performs verified final commit.
-# Version: v2025-12-20-full-UI-04
+# Version: v2025-12-20-full-UI-06
 # Updated: 2025-12-20T00:00:00-05:00
 # Validated: true
 RUNNER_MARKER: job-cp2-4434456-live-ui
@@ -16,16 +16,27 @@ requires:
   - expeditor-contract.json
   - final-schema.json
   - commit-spec.json
+  - all template files listed in pipeline-spec.json.templates (directly in items/blog/cp-2/)
 integrations:
   - api_rows_com__jit_plugin                 # dataset source
   - items_clearroundtravel_com__jit_plugin   # commit and docs verify
 model_execution: enabled
-interactive_prompts: false                  # completely silent run
+interactive_prompts: false
 force_real_commit: true
 allow_simulation: false
-auto_proceed: true                          # no “Would you like to continue?”
-require_confirmation: false                 # skip confirmation logic
-suppress_ui_confirmations: true             # suppress any UI pause
+auto_proceed: true
+require_confirmation: false
+suppress_ui_confirmations: true
+
+=== FILE RESOLUTION RULES ===
+- The runner MUST read all files directly from:
+      items/blog/cp-2/
+- The runner MUST NOT infer or prepend any subfolders:
+      ❌ items/blog/cp-2/templates/
+      ❌ items/blog/cp-2/jobs/
+- All template_ref values from pipeline-spec.json must map literally:
+      template_ref: "member-template-cr-prompt.txt"
+      resolves → items/blog/cp-2/member-template-cr-prompt.txt
 
 === FLOW ===
 
@@ -43,14 +54,18 @@ suppress_ui_confirmations: true             # suppress any UI pause
    - Set mode = "live" (constant).
 
 2) load_house
-   - Load all required assets from items/blog/cp-2/:
-       pipeline-spec.json
-       expeditor-contract.json
-       final-schema.json
-       commit-spec.json
-       all referenced templates from pipeline-spec.json.templates
-   - STOP "house load" if any missing.
-   - Validate template refs resolve correctly.
+   - Load all required assets **directly from items/blog/cp-2/**
+     Required files:
+       - items/blog/cp-2/pipeline-spec.json
+       - items/blog/cp-2/expeditor-contract.json
+       - items/blog/cp-2/final-schema.json
+       - items/blog/cp-2/commit-spec.json
+       - all template refs listed in pipeline-spec.json.templates (resolved literally)
+   - Do NOT infer subfolders:
+       ❌ items/blog/cp-2/templates/
+       ❌ items/blog/cp-2/jobs/
+   - STOP "house load" if any listed file missing.
+   - Validate template_ref → template_file mapping is 1:1.
 
 3) fetch_datasets
    - For each dataset in job_definition.datasets:
@@ -76,7 +91,7 @@ suppress_ui_confirmations: true             # suppress any UI pause
    - For each lane in job_definition.run_order:
        a) exp → generate c_in_*/p_in_* bins.
        b) researcher/writer/rewriter/stitcher lanes:
-           - Resolve template.
+           - Resolve template_ref → items/blog/cp-2/<literal filename>.
            - Build:
                system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
                user_message  = JSON.stringify(bins[reads_bin] or {})
@@ -84,8 +99,8 @@ suppress_ui_confirmations: true             # suppress any UI pause
            - Parse JSON output.
            - If parsed_object has writes_bin key → bins[writes_bin] = parsed_object[writes_bin]
              Else → bins[writes_bin] = parsed_object
-           - Append to executed_lanes.
-   - Log reads/writes and model_called=true per lane in lane_logs.
+           - Append to executed_lanes and lane_logs.
+   - STOP "lane execution" if model fails or JSON invalid.
 
 5) final_validation
    - Require bins["final_out"] to exist.
@@ -94,7 +109,7 @@ suppress_ui_confirmations: true             # suppress any UI pause
    - Reject if "could-not-verify" literal appears.
 
 6) commit
-   - Precondition: mode == "live" (STOP otherwise).
+   - Precondition: mode == "live".
    - Build run_log_json:
        {
          "runner_marker": RUNNER_MARKER,
@@ -139,8 +154,9 @@ suppress_ui_confirmations: true             # suppress any UI pause
 === GUARANTEES ===
 - Fully autonomous; no confirmations or pauses.
 - Enforces all live_only guards and SHA verification.
-- Enforces real model prompt execution (no dry-run or simulation).
+- Real model prompt execution (no dry-run or simulation).
 - Commits verified live through docs endpoint.
 - Schema validation and JSON integrity enforced.
 - Complete sequential trace recorded via lane_logs and run_log_json.
 - No skipped phases, no interactive waits, no simulated lanes.
+- No subfolder inference or indirect path resolution.
