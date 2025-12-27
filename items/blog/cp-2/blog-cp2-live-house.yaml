@@ -1,126 +1,40 @@
-# blog-cp2-live-house.yaml
-# Clear Round Travel (CRT)
-# House Definition Manifest for blog/cp:2
-# Version: v2025-12-20-live-08
-# Registers a binless, deterministic, end-to-end runner for cp:2 jobs.
-# Supports multiple dynamic jobs (job-cp:2-XXXXXX) using shared house assets.
-
-house:
-  id: "blog/cp:2"
-  slug: "blog-cp-2"
-  mode: "live"
-  version: "v2025-12-20-live-08"
-  live_only: true
+system_prompt:
+  id: blog-cp2-live-runner
+  version: v2025-12-20
+  title: "LIVE CRT Runner — blog/cp:2"
   description: >
-    Live deterministic runner for the cp:2 house (blog branch).
-    Supports multiple dynamic jobs (job-cp:2-*), each with its own datasets and outputs.
-    Executes phases 1–7 automatically: job_definition → load_house → fetch_datasets →
-    execute_lanes → final_validation → commit → respond.
-
-execution:
-  trigger_pattern: "^start job-cp:2-[0-9]+$"
-  trigger_example: "start job-cp:2-4434456"
-  integration_scope: "gpt"
-  integration_tools:
-    - api_rows_com__jit_plugin
-    - items_clearroundtravel_com__jit_plugin
-  mode: "live"
-  skip_confirmations: true
-  simulate: false
-  auto_proceed: true
-  no_pauses: true
-  no_bins: true
-  defer_to_instructions_txt: true
-  disable_default_house_manifest: true
-  never_autoload_house_json: true
-
-instructions:
-  source_path: "items/blog/cp-2/instructions.txt"
-  authoritative: true
-  description: >
-    Defines the exact live pipeline flow for cp:2 jobs.
-    Handles dynamic job_ids, dataset looping, and sequential lane execution.
-  expected_phases:
-    - job_definition
-    - load_house
-    - fetch_datasets
-    - execute_lanes
-    - final_validation
-    - commit
-    - respond
-
-assets:
-  base_path: "items/blog/cp-2/"
-  required_files:
-    - pipeline-spec.json
-    - expeditor-contract.json
-    - final-schema.json
-    - commit-spec.json
-  template_files_from_pipeline_spec: true
-  reload_each_run: true
-  halt_on_404: true
-
-validation:
-  schema_path: "items/blog/cp-2/final-schema.json"
-  require_final_keys:
-    - collection_body
-    - places_body
-    - summary_paragraph
-  enforce_mode_live: true
-  halt_on_invalid: true
-
-commit:
-  spec_path: "items/blog/cp-2/commit-spec.json"
-  root_finals: "docs/blog/cp-2/finals/"
-  root_logs: "docs/blog/cp-2/logs/"
-  commit_via_plugin: "items_clearroundtravel_com__jit_plugin.docs_commit_bulk"
-  post_verify: true
-  require_sha: true
-  overwrite: true
-  on_fail_halt: true
-
-datasets:
-  fetch_via_plugin: "api_rows_com__jit_plugin.getRowsValues"
-  loop_through: "job_definition.datasets"
-  lookup_mode: "role_key_only"
-  ignore_domains: true
-  required_families:
-    - prefix: "cdata"
-      description: "Collection datasets"
-    - prefix: "pdata"
-      description: "Places datasets"
-
-logging:
-  enabled: true
-  live_trace: true
-  output_paths:
-    - "docs/blog/cp-2/logs/{job_id}-runlog.json"
-  include:
-    - phase_name
-    - dataset_count
-    - lane_keys
-    - commit_sha
-  redact_sensitive: true
-
-response:
-  output_mode: "summary_json"
-  include_fields:
-    - job_id
-    - mode
-    - executed_run_order
-    - committed_paths
-    - commit_sha
-  omit_traces: true
-  success_message: "✅ LIVE job completed successfully for {job_id}"
-
-deployment:
-  managed_by: "clearroundtravel.com"
-  environment: "production"
-  last_verified: "2025-12-20T00:00:00Z"
-  safe_to_commit: true
-  next_steps: >
-    Push this file along with updated house assets (instructions.txt,
-    pipeline-spec.json, expeditor-contract.json, final-schema.json,
-    commit-spec.json) to your Git repo under items/blog/cp-2/.
-    Once published, trigger jobs dynamically via:
-        start job-cp:2-<unique_id>
+    System-level execution configuration for the Clear Round Travel
+    live blog/cp:2 pipeline. Executes every job end-to-end using the
+    canonical instructions at /items/blog/cp-2/instructions.txt.
+    No pauses, no simulation, no house.json autoloading.
+  author: "Clear Round Travel Automation"
+  environment: live
+  mode: live
+  scope: global
+  behavior:
+    simulate: false
+    confirm: false
+    cache: false
+    autoload_house: false
+    dataset_domain_filter: false
+  entrypoint:
+    trigger_pattern: "^start job-cp:2-[0-9]+$"
+    example_trigger: "start job-cp:2-4434456"
+  source:
+    instructions_path: "/items/blog/cp-2/instructions.txt"
+  integrations:
+    rows_api: "./specs/api-rows-openapi.yaml"
+    proxy_api: "./specs/api-proxy-openapi.yaml"
+  outputs:
+    expected_final:
+      - "docs/blog/cp-2/finals/<job_id>.json"
+      - "docs/blog/cp-2/logs/<job_id>-runlog.json"
+  guarantees:
+    - "Runs once per trigger with no user input."
+    - "Performs all GPT calls live; no dry-run or local inference."
+    - "Validates final JSON against final-schema.json."
+    - "Commits verified outputs via docs_commit_bulk."
+    - "Produces deterministic SHA-confirmed commits."
+  contact:
+    owner: "Clear Round Travel — Automation Systems"
+    email: "automation@clearroundtravel.com"
