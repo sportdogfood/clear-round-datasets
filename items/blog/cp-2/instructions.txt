@@ -68,6 +68,8 @@ display_progress: true
    - Require that both "cdata1-4434456" and "pdata1-4434456" appear.
    - Never stop to confirm partial success; continue automatically.
    - Proceed immediately to execute_lanes.
+
+🔸 Print: "=== ENTERING PHASE 4: EXECUTE_LANES ==="
 4) execute_lanes
    - For each lane_key in job_definition.run_order sequentially:
        lane_spec = pipeline_spec.lane_registry[lane_key]
