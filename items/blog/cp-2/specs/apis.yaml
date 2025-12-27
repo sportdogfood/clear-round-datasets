@@ -1,0 +1,63 @@
+openapi: 3.1.0
+info:
+  title: CRT-APIs — Unified Runner Interfaces
+  version: "1.0.0"
+  description: |
+    Master OpenAPI bundle for all CRT Runner integrations.
+    Combines:
+      - CRT Rows API (job definitions + datasets)
+      - CRT Proxy API (items/docs I/O + commits)
+
+    This file allows GPT or deployment systems to treat both APIs
+    as one coherent interface group for live blog/cp:2 execution.
+
+servers:
+  - url: https://api.rows.com/v1
+    description: Rows — Job & Dataset Data Source
+  - url: https://items.clearroundtravel.com
+    description: CRT Proxy — Items, Docs, and Commits
+
+tags:
+  - name: Rows
+    description: Job-definition and dataset reader
+  - name: Proxy
+    description: House file reads, commits, and verifications
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    GPTProxyKey:
+      type: apiKey
+      in: header
+      name: x-gpt-proxy-key
+
+x-apis:
+  - id: crt-rows
+    name: CRT Rows API
+    version: 1.0.0
+    file: ./api-rows-openapi.yaml
+    description: |
+      Reads job definitions and datasets from Rows.
+      Implements operations getJobDefinitionsRows() and getRowsValues().
+    security: [bearerAuth]
+
+  - id: crt-proxy
+    name: CRT Runner Proxy API
+    version: 1.3.1
+    file: ./api-proxy-openapi.yaml
+    description: |
+      Provides Items read, Docs commit, and health endpoints via CRT Proxy.
+      Implements operations items_get(), docs_get(), docs_commit_bulk(), http_get(), and health().
+    security: [GPTProxyKey]
+
+x-registration:
+  owner: "Clear Round Travel Automation"
+  contact: "automation@clearroundtravel.com"
+  environment: "live"
+  linked_house: "blog/cp:2"
+  registration_notes: |
+    This registration binds both upstream and downstream APIs
+    for the blog/cp:2 runner. All job executions rely exclusively
+    on these two specs.

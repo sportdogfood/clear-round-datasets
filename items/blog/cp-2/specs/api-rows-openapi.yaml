@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: CRT Rows — Job & Dataset Rows
+  version: "1.0.0"
+  description: >
+    Read CRT job-definition rows and dataset payload rows from Rows.
+    Each response returns a 2D "items" array.
+
+servers:
+  - url: https://api.rows.com/v1
+
+paths:
+  # Hardcoded route for initial trigger -> job-definitions sheet
+  /spreadsheets/GqOwXTcrQ9u14dbdcTxWa/tables/a2300cab-6557-4c6a-8e48-129b169bcc68/values/A2:B999:
+    get:
+      operationId: getJobDefinitionsRows
+      summary: Get job-definition rows
+      description: >
+        Returns non-empty rows from the CRT job-definitions sheet.
+        Each row is [job_id, job_payload_json_string].
+        Column A = job_id. Column B = job_payload JSON string.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RowsValuesResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "5XX":
+          description: Server error
+
+  # Generic dynamic route used after the job payload tells us sheet_id/table_id/range
+  /spreadsheets/{sheet_id}/tables/{table_id}/values/{range}:
+    get:
+      operationId: getRowsValues
+      summary: Get rows from a CRT sheet/table range
+      description: >
+        Generic reader. Caller supplies sheet_id, table_id, and range
+        (e.g. "A2:B999"). Each row is usually
+        [key (job_id or creation_id), payload_json_string].
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sheet_id
+          in: path
+          required: true
+          description: Rows spreadsheet ID.
+          schema:
+            type: string
+        - name: table_id
+          in: path
+          required: true
+          description: Rows table ID inside the spreadsheet.
+          schema:
+            type: string
+        - name: range
+          in: path
+          required: true
+          description: A1-style range for the values endpoint (e.g. "A2:B999").
+          schema:
+            type: string
+            example: A2:B999
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RowsValuesResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "5XX":
+          description: Server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    RowsValuesResponse:
+      type: object
+      description: >
+        Direct mapping of the Rows /values response for the requested range.
+        Note: Rows returns "items", not "values".
+      properties:
+        range:
+          type: string
+          description: Optional range string returned by Rows.
+          example: "A2:B999"
+        items:
+          type: array
+          description: >
+            2D array of rows. Each inner array is
+            [key (job_id or creation_id), payload_json_string].
+          items:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: "null"
+      required:
+        - items
+
+security:
+  - bearerAuth: []

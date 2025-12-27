@@ -1,0 +1,190 @@
+openapi: 3.1.0
+info:
+  title: CRT Runner Proxy API
+  version: "1.3.1"
+  description: |
+    Live Clear Round Travel Runner Proxy API.
+    Used by CRT top/bottom/blog runners for real commits and data reads.
+    All requests go through https://items.clearroundtravel.com (your proxy)
+    which signs and forwards them to GitHub.
+
+servers:
+  - url: "https://items.clearroundtravel.com"
+    description: CRT Proxy (Live Commit Endpoint)
+
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Proxy health check
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+  /items/{path}:
+    get:
+      operationId: items_get
+      summary: Read a file from Items
+      description: Reads a file from the upstream `items/` directory (JSON, text, etc.)
+      parameters:
+        - in: path
+          name: path
+          required: true
+          description: Path relative to `items/`
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File contents
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Not found
+        "500":
+          description: Server error
+
+  /docs/{path}:
+    get:
+      operationId: docs_get
+      summary: Read a file from Docs
+      description: Reads a published output under `docs/`.
+      parameters:
+        - in: path
+          name: path
+          required: true
+          description: Path relative to `docs/`
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File contents
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Not found
+        "500":
+          description: Server error
+
+  /docs/commit-bulk:
+    post:
+      operationId: docs_commit_bulk
+      summary: Commit multiple files to Docs
+      description: >
+        Creates a single Git commit containing one or more files under `docs/`.
+        CRT top/bottom/blog runners use this for logs and final outputs.
+        The proxy signs the request and pushes to GitHub.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCommitRequest"
+      responses:
+        "200":
+          description: Commit successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommitResponse"
+        "400":
+          description: Invalid input
+        "500":
+          description: Server or GitHub error
+
+  /http-get:
+    get:
+      operationId: http_get
+      summary: Fetch external URL content
+      description: >
+        Fetches external page content for research (e.g., event/venue sites).
+        Returns the raw response body as text.
+      parameters:
+        - in: query
+          name: url
+          required: true
+          description: Full URL (https://example.com)
+          schema:
+            type: string
+            format: uri
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "400":
+          description: Bad request or invalid URL
+        "500":
+          description: Server or upstream error
+
+components:
+  schemas:
+    FileItem:
+      type: object
+      required: [path, content_base64]
+      properties:
+        path:
+          type: string
+          description: Destination path (must start with `docs/`)
+          pattern: "^docs/.+$"
+        content_type:
+          type: string
+          enum:
+            - text/html
+            - application/json
+            - application/xml
+        content_base64:
+          type: string
+          description: Base64-encoded file content
+    BulkCommitRequest:
+      type: object
+      required: [files]
+      properties:
+        message:
+          type: string
+          description: Commit message
+          example: "CRT top-runner final commit for creator-abc"
+        overwrite:
+          type: boolean
+          default: true
+        files:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/FileItem"
+    CommitResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        commit:
+          type: object
+          properties:
+            sha:
+              type: string
+              description: Git commit SHA
+            url:
+              type: string
+              description: GitHub URL of the commit
+        committed_paths:
+          type: array
+          items:
+            type: string
+
+securitySchemes:
+  GPTProxyKey:
+    type: apiKey
+    in: header
+    name: x-gpt-proxy-key
+security:
+  - GPTProxyKey: []
