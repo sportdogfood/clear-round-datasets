@@ -56,6 +56,7 @@ display_progress: true
    - Never read from local filesystem.
    - Continue automatically to Phase 3 after all responses received.
 
+🔸 Print: "✅ PHASE 2 COMPLETE — all house files loaded. Proceeding automatically to fetch_datasets."
 
 3) fetch_datasets
    - For each dataset in job_definition.datasets (loop all, ignore domains):
