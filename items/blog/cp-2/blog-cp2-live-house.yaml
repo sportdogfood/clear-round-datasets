@@ -1,57 +1,126 @@
 # blog-cp2-live-house.yaml
-# Production Deployment Manifest for house blog/cp:2
-# Version: v2025-12-20-final
-# Purpose: Register all canonical house assets for end-to-end live execution.
+# Clear Round Travel (CRT)
+# House Definition Manifest for blog/cp:2
+# Version: v2025-12-20-live-08
+# Registers a binless, deterministic, end-to-end runner for cp:2 jobs.
+# Supports multiple dynamic jobs (job-cp:2-XXXXXX) using shared house assets.
 
 house:
-  street: blog
-  house: cp:2
-  shape: cp:2
-  version: v2025-12-20
-  mode: live
+  id: "blog/cp:2"
+  slug: "blog-cp-2"
+  mode: "live"
+  version: "v2025-12-20-live-08"
+  live_only: true
+  description: >
+    Live deterministic runner for the cp:2 house (blog branch).
+    Supports multiple dynamic jobs (job-cp:2-*), each with its own datasets and outputs.
+    Executes phases 1–7 automatically: job_definition → load_house → fetch_datasets →
+    execute_lanes → final_validation → commit → respond.
+
+execution:
+  trigger_pattern: "^start job-cp:2-[0-9]+$"
+  trigger_example: "start job-cp:2-4434456"
+  integration_scope: "gpt"
+  integration_tools:
+    - api_rows_com__jit_plugin
+    - items_clearroundtravel_com__jit_plugin
+  mode: "live"
+  skip_confirmations: true
+  simulate: false
+  auto_proceed: true
+  no_pauses: true
+  no_bins: true
+  defer_to_instructions_txt: true
   disable_default_house_manifest: true
   never_autoload_house_json: true
-  always_defer_to_instructions_txt: true
 
-authoritative_source: /items/blog/cp-2/
-instructions_file: instructions.txt
+instructions:
+  source_path: "items/blog/cp-2/instructions.txt"
+  authoritative: true
+  description: >
+    Defines the exact live pipeline flow for cp:2 jobs.
+    Handles dynamic job_ids, dataset looping, and sequential lane execution.
+  expected_phases:
+    - job_definition
+    - load_house
+    - fetch_datasets
+    - execute_lanes
+    - final_validation
+    - commit
+    - respond
 
-artifacts:
-  - file: pipeline-spec.json
-    version: v2025-12-20-pipeline-07
-    description: Deterministic binless pipeline, flat lane registry, sequential run_order.
+assets:
+  base_path: "items/blog/cp-2/"
+  required_files:
+    - pipeline-spec.json
+    - expeditor-contract.json
+    - final-schema.json
+    - commit-spec.json
+  template_files_from_pipeline_spec: true
+  reload_each_run: true
+  halt_on_404: true
 
-  - file: expeditor-contract.json
-    version: v2025-12-20-exp-08
-    description: Declarative dataset-to-lane mapping; no bins, no algorithms.
+validation:
+  schema_path: "items/blog/cp-2/final-schema.json"
+  require_final_keys:
+    - collection_body
+    - places_body
+    - summary_paragraph
+  enforce_mode_live: true
+  halt_on_invalid: true
 
-  - file: commit-spec.json
-    version: v2025-12-20-commit-07
-    description: Final commit logic; validates SHA, commits JSON/HTML/logs.
+commit:
+  spec_path: "items/blog/cp-2/commit-spec.json"
+  root_finals: "docs/blog/cp-2/finals/"
+  root_logs: "docs/blog/cp-2/logs/"
+  commit_via_plugin: "items_clearroundtravel_com__jit_plugin.docs_commit_bulk"
+  post_verify: true
+  require_sha: true
+  overwrite: true
+  on_fail_halt: true
 
-  - file: final-schema.json
-    version: v2025-12-19-final-03
-    description: Validation schema for final_output JSON.
+datasets:
+  fetch_via_plugin: "api_rows_com__jit_plugin.getRowsValues"
+  loop_through: "job_definition.datasets"
+  lookup_mode: "role_key_only"
+  ignore_domains: true
+  required_families:
+    - prefix: "cdata"
+      description: "Collection datasets"
+    - prefix: "pdata"
+      description: "Places datasets"
 
-  - file: instructions.txt
-    version: v2025-12-20
-    description: Live GPT runner orchestration plan.
+logging:
+  enabled: true
+  live_trace: true
+  output_paths:
+    - "docs/blog/cp-2/logs/{job_id}-runlog.json"
+  include:
+    - phase_name
+    - dataset_count
+    - lane_keys
+    - commit_sha
+  redact_sensitive: true
+
+response:
+  output_mode: "summary_json"
+  include_fields:
+    - job_id
+    - mode
+    - executed_run_order
+    - committed_paths
+    - commit_sha
+  omit_traces: true
+  success_message: "✅ LIVE job completed successfully for {job_id}"
 
 deployment:
-  runtime: GPT-Live
-  integrations:
-    - api.rows.com
-    - items.clearroundtravel.com
-  commit_root: docs/blog/cp-2/
-  logs_root: docs/blog/cp-2/logs/
-  finals_root: docs/blog/cp-2/finals/
-  output_format: json+html
-  auto_proceed: true
-  suppress_ui_confirmations: true
-  dry_run: false
-
-verification:
-  require_all_http_200: true
-  require_commit_sha_40chars: true
-  validate_final_output_schema: true
-  halt_on_missing_template: true
+  managed_by: "clearroundtravel.com"
+  environment: "production"
+  last_verified: "2025-12-20T00:00:00Z"
+  safe_to_commit: true
+  next_steps: >
+    Push this file along with updated house assets (instructions.txt,
+    pipeline-spec.json, expeditor-contract.json, final-schema.json,
+    commit-spec.json) to your Git repo under items/blog/cp-2/.
+    Once published, trigger jobs dynamically via:
+        start job-cp:2-<unique_id>
