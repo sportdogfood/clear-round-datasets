@@ -34,23 +34,28 @@ display_progress: true
 
 
 2) load_house
-   - All house assets must be loaded using the proxy integration:
-       items_clearroundtravel_com__jit_plugin.items_get
-   - For each required file, call:
-       items_clearroundtravel_com__jit_plugin.items_get({
-         "path": "blog/cp-2/<filename>"
-       })
-   - Required files (load in this exact order):
-       1. blog/cp-2/pipeline-spec.json
-       2. blog/cp-2/expeditor-contract.json
-       3. blog/cp-2/final-schema.json
-       4. blog/cp-2/commit-spec.json
-       5. All template files referenced by pipeline-spec.json.templates
-          (resolve literally: blog/cp-2/member-template-*.txt)
-   - Do NOT attempt any local read from /items/ or subfolders.
-   - STOP "house load" only if items_get returns 404 or API error.
-   - On success, store each file’s contents in memory under house_assets[filename].
-   - Continue automatically to phase 3 (fetch_datasets).
+   - For every required file, call items_clearroundtravel_com__jit_plugin.items_get.
+   - Required files (in this order):
+       1. "blog/cp-2/pipeline-spec.json"
+       2. "blog/cp-2/expeditor-contract.json"
+       3. "blog/cp-2/final-schema.json"
+       4. "blog/cp-2/commit-spec.json"
+   - For each required path:
+         items_clearroundtravel_com__jit_plugin.items_get({
+           "path": path
+         })
+         ✅ Expect status_code == 200
+         ❌ If status_code != 200 → HALT with "HOUSE_FILE_NOT_FOUND"
+   - After pipeline-spec.json loads:
+         Parse JSON → read .templates entries
+         For each template filename:
+             items_clearroundtravel_com__jit_plugin.items_get({
+               "path": "blog/cp-2/" + filename
+             })
+             ✅ Expect 200; stop only if 404 or invalid.
+   - Never read from local filesystem.
+   - Continue automatically to Phase 3 after all responses received.
+
 
 3) fetch_datasets
    - For each dataset in job_definition.datasets (loop all, ignore domains):
