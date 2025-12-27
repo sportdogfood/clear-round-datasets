@@ -32,21 +32,25 @@ display_progress: true
    - Log datasets (role_key) and run_order sequence.
    - Immediately continue to Phase 2 (no confirmation).
 
+
 2) load_house
-   - Load pipeline-spec.json to get template list.
-   - Files to load (always in items/blog/cp-2/):
-       pipeline-spec.json
-       expeditor-contract.json
-       final-schema.json
-       commit-spec.json
-   - For templates: read all pipeline-spec.json.templates entries sequentially
-       → for each (key, filename): 
-            items_clearroundtravel_com__jit_plugin.items_get({
-              "path": "blog/cp-2/" + filename
-            })
-   - Never batch, never pause — load all in one pass.
-   - Stop only if 404 or file unreadable.
-   - Proceed automatically to Phase 3.
+   - All house assets must be loaded using the proxy integration:
+       items_clearroundtravel_com__jit_plugin.items_get
+   - For each required file, call:
+       items_clearroundtravel_com__jit_plugin.items_get({
+         "path": "blog/cp-2/<filename>"
+       })
+   - Required files (load in this exact order):
+       1. blog/cp-2/pipeline-spec.json
+       2. blog/cp-2/expeditor-contract.json
+       3. blog/cp-2/final-schema.json
+       4. blog/cp-2/commit-spec.json
+       5. All template files referenced by pipeline-spec.json.templates
+          (resolve literally: blog/cp-2/member-template-*.txt)
+   - Do NOT attempt any local read from /items/ or subfolders.
+   - STOP "house load" only if items_get returns 404 or API error.
+   - On success, store each file’s contents in memory under house_assets[filename].
+   - Continue automatically to phase 3 (fetch_datasets).
 
 3) fetch_datasets
    - For each dataset in job_definition.datasets (loop all, ignore domains):
