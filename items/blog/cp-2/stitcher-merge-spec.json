@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clearroundtravel.com/specs/blog/cp-2/stitcher-merge-spec.json",
+  "file": "stitcher-merge-spec.json",
+  "version": "v2025-12-27-stchr-02",
+  "street": "blog",
+  "house": "cp:2",
+
+  "purpose": [
+    "Define deterministic merge behavior for multi-dataset collection families.",
+    "Support both cp:2 (collection + places merge) and ccc:3 (multi-collection aggregate merge).",
+    "Guarantee schema-safe aggregation into stitched_output for final rewriting.",
+    "Preserve dataset lineage and merge order across reruns for audit reproducibility."
+  ],
+
+  "merge_modes": {
+    "cp:2": {
+      "description": "Combine collection_output and places_output into one stitched object.",
+      "inputs_required": ["collection_output", "places_output"],
+      "merge_strategy": "two_way",
+      "rules": {
+        "preserve_top_keys": ["collection_output", "places_output"],
+        "flatten_under": "stitched_output",
+        "order_fields": ["collection_output", "places_output"],
+        "attach_house_marker": true
+      }
+    },
+    "ccc:3": {
+      "description": "Combine multiple collection_output objects (cdata1..N) into a single merged tree.",
+      "inputs_required": ["collection_output.*"],
+      "merge_strategy": "multi_concat",
+      "rules": {
+        "sort_by_dataset_index": true,
+        "preserve_dataset_id": true,
+        "wrap_each_section": true,
+        "wrap_key": "collection_segments",
+        "output_root": "stitched_output",
+        "merge_fields": [
+          "event",
+          "venue",
+          "city_season",
+          "notes",
+          "compiled_text"
+        ],
+        "deduplicate_by_field": "collection_uid",
+        "attach_merge_seed": true,
+        "seed_source": "job_definition.job_id"
+      }
+    }
+  },
+
+  "merge_ruleset_extensions": {
+    "cp:3": {
+      "description": "Future extension example: add tertiary dataset family (xdata).",
+      "inputs_required": ["collection_output", "places_output", "xdata_output"],
+      "merge_strategy": "three_way",
+      "rules": {
+        "preserve_top_keys": ["collection_output", "places_output", "xdata_output"],
+        "flatten_under": "stitched_output",
+        "order_fields": ["collection_output", "places_output", "xdata_output"]
+      }
+    }
+  },
+
+  "validation": {
+    "on_missing_input": {
+      "action": "halt",
+      "error_code": "STCHR_MISSING_INPUT",
+      "message": "One or more required inputs were not found in lane payload."
+    },
+    "on_merge_conflict": {
+      "action": "halt",
+      "error_code": "STCHR_CONFLICT",
+      "message": "Conflicting keys or overlapping content detected during merge."
+    },
+    "on_invalid_house_pattern": {
+      "action": "halt",
+      "error_code": "STCHR_INVALID_HOUSE_PATTERN",
+      "message": "House pattern did not match any defined merge mode."
+    },
+    "on_schema_mismatch": {
+      "action": "halt",
+      "error_code": "STCHR_SCHEMA_INVALID",
+      "message": "Merged output does not conform to required stitched_output schema."
+    }
+  },
+
+  "behavior": {
+    "mutation_allowed": false,
+    "external_calls_allowed": false,
+    "emit_deterministic_order": true,
+    "log_each_merge": true,
+    "log_fields": [
+      "dataset_id",
+      "segment_index",
+      "records_merged",
+      "timestamp",
+      "merge_seed"
+    ],
+    "audit_trail": {
+      "record_origin_ids": true,
+      "record_house_type": true,
+      "record_merge_strategy": true
+    }
+  },
+
+  "debug": {
+    "enable_debug_mode": false,
+    "emit_intermediate_merges": false,
+    "intermediate_output_path": "docs/blog/cp-2/logs/intermediate/",
+    "keep_individual_segments": true,
+    "max_debug_segments": 25
+  },
+
+  "output_shape": {
+    "stitched_output": {
+      "type": "object",
+      "required": ["collection_segments"],
+      "properties": {
+        "collection_segments": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["dataset_id", "merged_content"],
+            "properties": {
+              "dataset_id": { "type": "string" },
+              "merged_content": {
+                "type": "object",
+                "properties": {
+                  "event": { "type": ["string", "null"] },
+                  "venue": { "type": ["string", "null"] },
+                  "city_season": { "type": ["string", "null"] },
+                  "notes": { "type": ["string", "null"] },
+                  "compiled_text": { "type": ["string", "null"] },
+                  "merge_index": { "type": ["integer", "null"] },
+                  "merge_seed": { "type": ["string", "null"] }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "handoff": {
+    "next_lane": "srwrtr",
+    "output_field": "stitched_output",
+    "description": "Provides unified stitched content ready for rewrite and final polish."
+  }
+}

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clearroundtravel.com/specs/blog/cp-2/pipeline-spec.json",
   "file": "pipeline-spec.json",
-  "version": "v2025-12-20-pipeline-07",
+  "version": "v2025-12-27-pipeline-09",
   "street": "blog",
   "house": "cp:2",
 
@@ -14,9 +14,9 @@
   },
 
   "purpose": [
-    "Define the deterministic sequence of lanes for blog/cp:2 jobs.",
-    "Each lane reads directly from prior output or datasets (no bins).",
-    "Allow a single run-order to fully execute end-to-end in live mode."
+    "Define deterministic live-mode lane execution for cp and ccc houses.",
+    "Lanes read/write directly via injected datasets.",
+    "Support iteration over multiple cdataN-* datasets when house=ccc:3."
   ],
 
   "structure_rules": {
@@ -30,7 +30,7 @@
   "dataset_families": {
     "collection": {
       "prefix": "cdata",
-      "description": "Event, venue, and city/season datasets."
+      "description": "Event, venue, and city/season datasets (may include multiple cdataN-* when house=ccc:3)."
     },
     "places": {
       "prefix": "pdata",
@@ -68,7 +68,7 @@
     "exp": {
       "type": "expeditor",
       "template_ref": "exp",
-      "description": "Partition datasets into collection_input and places_input.",
+      "description": "Partition and register dataset roles (handled by runner).",
       "reads": ["job_definition", "datasets_by_role"],
       "writes": ["collection_input", "places_input"],
       "model_called": false
@@ -79,21 +79,29 @@
       "template_ref": "cr",
       "reads": ["collection_input"],
       "writes": ["collection_research"],
-      "model_called": true
+      "model_called": true,
+      "loop_policy": {
+        "iterate_if_family": "collection",
+        "path_pattern": "datasets_by_role.collection_input.*"
+      }
     },
+
     "cw": {
       "type": "writer",
       "template_ref": "cw",
       "reads": ["collection_research"],
       "writes": ["collection_written"],
-      "model_called": true
+      "model_called": true,
+      "loop_policy": { "inherit_from": "cr" }
     },
+
     "crwtr": {
       "type": "rewriter",
       "template_ref": "crwtr",
       "reads": ["collection_written"],
       "writes": ["collection_output"],
-      "model_called": true
+      "model_called": true,
+      "loop_policy": { "inherit_from": "cr" }
     },
 
     "pr": {
@@ -123,7 +131,12 @@
       "template_ref": "stchr",
       "reads": ["collection_output", "places_output"],
       "writes": ["stitched_output"],
-      "model_called": true
+      "model_called": true,
+      "merge_policy": {
+        "spec_file": "stitcher-merge-spec.json",
+        "combine_all_collection_outputs": true,
+        "combine_all_place_outputs": true
+      }
     },
 
     "srwrtr": {
@@ -138,7 +151,10 @@
       "type": "commit",
       "template_ref": "commit",
       "reads": ["final_output"],
-      "writes": ["docs/blog/cp-2/finals/", "docs/blog/cp-2/logs/"],
+      "writes": [
+        "docs/blog/cp-2/finals/",
+        "docs/blog/cp-2/logs/"
+      ],
       "model_called": false
     }
   },
@@ -148,8 +164,16 @@
     "halt_on_missing_template": true,
     "halt_on_read_failure": true,
     "halt_on_write_conflict": true,
-    "require_model_for": ["researcher", "writer", "rewriter", "stitcher"],
-    "forbid_model_for": ["expeditor", "commit"],
+    "require_model_for": [
+      "researcher",
+      "writer",
+      "rewriter",
+      "stitcher"
+    ],
+    "forbid_model_for": [
+      "expeditor",
+      "commit"
+    ],
     "validate_output_shape_after_each_lane": true,
     "stop_if_invalid_json": true
   },

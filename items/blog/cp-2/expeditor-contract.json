@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clearroundtravel.com/specs/blog/cp-2/expeditor-contract.json",
   "file": "expeditor-contract.json",
-  "version": "v2025-12-20-exp-08",
+  "version": "v2025-12-27-exp-09",
   "street": "blog",
   "house": "cp:2",
 
@@ -17,9 +17,9 @@
   },
 
   "purpose": [
-    "Identify the datasets that feed the 'collection' and 'places' lanes.",
-    "Map each dataset directly to the matching lane input (no intermediate bins).",
-    "Perform no computation, inference, or mutation."
+    "Serve as the dataset gatekeeper for cp:2 and ccc:3 houses.",
+    "Bind all relevant datasets to their lane-ready payloads without inference.",
+    "Guarantee deterministic, read-only handoff into downstream lanes."
   ],
 
   "inputs": {
@@ -45,7 +45,7 @@
           "required": ["role_key", "items"],
           "properties": {
             "role_key": { "type": "string" },
-            "items": { "type": "array" }
+            "items": { "type": ["array", "object"] }
           }
         }
       }
@@ -53,11 +53,24 @@
   },
 
   "dataset_binding": {
-    "collection_prefix": "cdata",
-    "places_prefix": "pdata",
-    "binding_rule": "Select exactly one dataset whose role_key starts with each prefix. Pass these unmodified into the collection and places lanes.",
-    "fail_if_multiple": true,
-    "fail_if_missing": true
+    "binding_modes": {
+      "cp:2": {
+        "collection_prefix": "cdata",
+        "places_prefix": "pdata",
+        "binding_rule": "Expect one dataset for each prefix (cdata*, pdata*). Relay unmodified payloads.",
+        "fail_if_multiple": true,
+        "fail_if_missing": true
+      },
+      "ccc:3": {
+        "collection_prefix": "cdata",
+        "binding_rule": "Expect multiple cdataN-* datasets. Aggregate all into a single collection_input family.",
+        "fail_if_missing": true,
+        "fail_if_multiple": false,
+        "aggregate_multiple": true
+      }
+    },
+    "determine_mode_from_house": true,
+    "inherit_from_runner_dataset_linkage_rule": true
   },
 
   "behavior": {
@@ -65,7 +78,10 @@
     "inference_allowed": false,
     "external_calls_allowed": false,
     "emit_only_direct_dataset_payloads": true,
-    "no_virtual_bins": true
+    "no_virtual_bins": true,
+    "aggregate_mode_behavior": {
+      "if_aggregate_multiple": "Merge all cdataN-* arrays into datasets_by_role.collection_input"
+    }
   },
 
   "validation": {
@@ -80,18 +96,25 @@
     "on_mode_not_live": {
       "action": "halt",
       "error_code": "EXP_JOB_MODE_NOT_LIVE"
+    },
+    "on_invalid_house_pattern": {
+      "action": "halt",
+      "error_code": "EXP_INVALID_HOUSE_PATTERN"
     }
   },
 
   "handoff": {
     "collection_input": {
-      "source": "datasets_by_role[role_key starting with cdata].items",
-      "description": "All collection dataset rows (event, venue, city_season)."
+      "source": {
+        "cp:2": "datasets_by_role[role_key starting with cdata].items",
+        "ccc:3": "datasets_by_role[role_keys starting with cdataN-*].items (aggregated)"
+      },
+      "description": "All collection dataset rows (event, venue, city/season). Aggregated if multiple."
     },
     "places_input": {
       "source": "datasets_by_role[role_key starting with pdata].items",
-      "description": "All places dataset rows (stay, dine, essentials, locale)."
+      "description": "All places dataset rows (stay, dine, essentials, locale). Present only for cp:2."
     },
-    "note": "The expeditor simply relays both datasets for use in their respective lanes."
+    "note": "Expeditor simply validates, binds, and relays datasets. No mutation or inference."
   }
 }
