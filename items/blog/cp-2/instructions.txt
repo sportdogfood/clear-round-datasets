@@ -61,16 +61,57 @@ display_progress: true
 - 🔸 Print: "Proceeding automatically to Phase 3 (fetch_datasets)."
 
 3) fetch_datasets
-   - For each dataset in job_definition.datasets (loop all, ignore domains):
-         result = api_rows_com__jit_plugin.getRowsValues({
-           "sheet_id": dataset.sheet_id,
-           "table_id": dataset.table_id,
-           "range": dataset.range
-         })
-         datasets_by_role[dataset.role_key] = result.items or []
-   - Require that both "cdata1-4434456" and "pdata1-4434456" appear.
-   - Never stop to confirm partial success; continue automatically.
-   - Proceed immediately to execute_lanes.
+   - Purpose:
+       Retrieve *all* datasets defined in job_definition.datasets sequentially.
+       Ignore domains completely — use role_key only.
+       Must load both cdata1-4434456 and pdata1-4434456.
+
+   - Initialize:
+       datasets_by_role = {}
+
+   - For each dataset in job_definition.datasets (in declared order):
+       role_key = dataset.role_key
+       sheet_id = dataset.sheet_id
+       table_id = dataset.table_id
+       range    = dataset.range
+
+       🔹 Print: "📡 Fetching dataset → " + role_key
+
+       call_result = api_rows_com__jit_plugin.getRowsValues({
+         "sheet_id": sheet_id,
+         "table_id": table_id,
+         "range": range
+       })
+
+       # Verify call success
+       If call_result is None:
+           Print: "❌ API call failed for " + role_key
+           STOP "dataset fetch"
+
+       If not call_result.items or len(call_result.items) == 0:
+           Print: "⚠️ Dataset " + role_key + " returned 0 rows."
+           datasets_by_role[role_key] = {
+             "role_key": role_key,
+             "items": []
+           }
+       Else:
+           Print: "✅ Dataset " + role_key + " loaded: " + str(len(call_result.items)) + " rows."
+           datasets_by_role[role_key] = {
+             "role_key": role_key,
+             "items": call_result.items
+           }
+
+   - After loop:
+       If "cdata1-4434456" not in datasets_by_role:
+           Print: "❌ Missing cdata1-4434456 dataset after loop."
+           STOP "dataset fetch"
+       If "pdata1-4434456" not in datasets_by_role:
+           Print: "❌ Missing pdata1-4434456 dataset after loop."
+           STOP "dataset fetch"
+
+       Print: "✅ All datasets fetched successfully: " + ", ".join(list(datasets_by_role.keys()))
+       Proceed automatically to Phase 4 (execute_lanes).
+
 
 🔸 Print: "=== ENTERING PHASE 4: EXECUTE_LANES ==="
 4) execute_lanes
