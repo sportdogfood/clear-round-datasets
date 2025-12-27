@@ -18,7 +18,7 @@ SYSTEM EXECUTION RULES
 ============================================================
 PHASE 1: job_definition
 ============================================================
-1. Call api_rows_com__jit_plugin.getJobDefinitionsRows().
+1. Call api_rows_com.getJobDefinitionsRows().
 2. Locate the row where column A == <triggered job_id>.
 3. Parse column B JSON → job_definition.
 4. Validate required keys:
@@ -36,14 +36,15 @@ PHASE 2: load_house
    - final-schema.json
    - commit-spec.json
    - all templates listed in pipeline-spec.json.templates
-2. Expect HTTP 200 for all. Halt only if any 404.
-3. Continue automatically to Phase 3.
+2. Expect HTTP 200 for all using items_clearroundtravel_com.items_get().
+3. Halt only if any 404.
+4. Continue automatically to Phase 3.
 
 ============================================================
 PHASE 3: fetch_datasets
 ============================================================
 1. For each dataset in job_definition.datasets:
-     call api_rows_com__jit_plugin.getRowsValues(sheet_id, table_id, range).
+     call api_rows_com.getRowsValues(sheet_id, table_id, range).
 2. Store result as datasets_by_role[role_key].
 3. Ignore all domain fields — fetch strictly by role_key.
 4. Proceed automatically to Phase 4.
@@ -55,7 +56,7 @@ PHASE 4: execute_lanes
      exp → cr → cw → crwtr → pr → pw → prwtr → stchr → srwrtr → commit
 2. For each lane:
    a. Identify lane_spec from pipeline-spec.json.lane_registry.
-   b. Load corresponding template file from /items/blog/cp-2/.
+   b. Load corresponding template file from /items/blog/cp-2/ using items_clearroundtravel_com.items_get().
    c. Read required inputs (if missing, re-fetch automatically).
    d. If lane.type requires a model (researcher, writer, rewriter, stitcher),
       perform a live GPT call using the loaded template.
@@ -67,7 +68,7 @@ PHASE 4: execute_lanes
 ============================================================
 PHASE 5: final_validation
 ============================================================
-1. Validate final_output against /items/blog/cp-2/final-schema.json.
+1. Validate final_output against /items/blog/cp-2/final-schema.json (already loaded).
 2. Require:
    - collection_body
    - places_body
@@ -81,9 +82,9 @@ PHASE 6: commit
 2. Commit final_output and runlog to:
    - docs/blog/cp-2/finals/
    - docs/blog/cp-2/logs/
-3. Call items_clearroundtravel_com__jit_plugin.docs_commit_bulk().
+3. Call items_clearroundtravel_com.docs_commit_bulk().
 4. Require commit.ok == true and valid 40-character SHA.
-5. Verify committed paths via docs_get().
+5. Verify committed paths via items_clearroundtravel_com.docs_get().
 6. Continue automatically to Phase 7.
 
 ============================================================
