@@ -1,13 +1,17 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clearroundtravel.com/specs/blog/cp-2/commit-spec.json",
   "file": "commit-spec.json",
-  "version": "v2025-12-19-commit-06",
+  "version": "v2025-12-20-commit-07",
   "street": "blog",
   "house": "cp:2",
+
   "purpose": [
-    "Commit final artifacts exactly as produced (no mutation of final JSON).",
-    "Derive filesystem-safe filenames from job_id (normalize ':' -> '-').",
-    "Commit via docs_commit_bulk and require real SHA + deterministic post-commit verification."
+    "Commit final artifacts exactly as produced by srwrtr (no mutation).",
+    "Normalize job_id for filesystem-safe paths (':' → '-').",
+    "Commit via docs_commit_bulk with full SHA and deterministic post-commit verification."
   ],
+
   "live_only": {
     "required": true,
     "mode_literal": "live",
@@ -17,6 +21,7 @@
       "error_code": "JOB_MODE_NOT_LIVE"
     }
   },
+
   "inputs": {
     "job_definition": {
       "required": true,
@@ -41,15 +46,11 @@
       "read_only": true,
       "must_be_json_object": true
     },
-    "final_html_optional": {
+    "final_html": {
       "required_when": {
-        "job_definition_output_format_in": [
-          "html",
-          "json+html"
-        ]
+        "job_definition_output_format_in": ["html", "json+html"]
       },
-      "read_only": true,
-      "value_name": "final_html"
+      "read_only": true
     },
     "lane_logs": {
       "required": true,
@@ -62,12 +63,11 @@
       "read_only": true
     }
   },
+
   "normalization": {
     "job_id_fs": {
       "source": "job_definition.job_id",
-      "replace_chars": {
-        ":": "-"
-      },
+      "replace_chars": { ":": "-" },
       "validation": {
         "allowed_chars_regex": "^[A-Za-z0-9._-]+$",
         "on_fail": {
@@ -77,6 +77,7 @@
       }
     }
   },
+
   "path_derivation": {
     "finals_root": {
       "source": "job_definition.paths.docs_finals_root",
@@ -98,10 +99,12 @@
       "pattern": "{logs_root}{job_id_fs}-runlog.json"
     }
   },
-  "final_serialization": {
-    "json_stringify_rule": "JSON.stringify(final_out_bin) using insertion order; no key sorting; no added/removed keys",
+
+  "serialization": {
+    "json_stringify": "Preserve insertion order; UTF-8; no mutations.",
     "encoding": "utf-8"
   },
+
   "run_log_json_builder": {
     "mode_literal": "live",
     "required_top_level_shape": {
@@ -117,11 +120,10 @@
       "commit_plan": "object"
     },
     "datasets_summary_rule": {
-      "by_role_key": "for each datasets_by_role[role_key], include role_key, domains, row_count",
-      "row_count_source": "datasets_by_role[role_key].items.length"
+      "by_role_key": "Summarize all datasets_by_role[*].items.length"
     },
     "lane_execution_rule": {
-      "one_entry_per_lane_in_run_order": true,
+      "one_entry_per_lane": true,
       "required_fields_each": [
         "lane_key",
         "type",
@@ -130,16 +132,6 @@
         "template_ref",
         "template_file",
         "model_called"
-      ],
-      "model_called_must_be_true_for_types": [
-        "researcher",
-        "writer",
-        "rewriter",
-        "stitcher"
-      ],
-      "model_called_must_be_false_for_types": [
-        "data_sorter",
-        "commit"
       ]
     },
     "commit_plan_rule": {
@@ -152,10 +144,11 @@
       "include_overwrite": true
     }
   },
+
   "bulk_commit_request_mapping": {
     "operationId": "docs_commit_bulk",
     "request_shape": {
-      "message": "Final commit for {job_definition.job_id}",
+      "message": "Auto live commit for {job_definition.job_id}",
       "overwrite": true,
       "files": [
         {
@@ -173,10 +166,7 @@
     "optional_files": [
       {
         "include_when": {
-          "job_definition_output_format_in": [
-            "html",
-            "json+html"
-          ]
+          "job_definition_output_format_in": ["html", "json+html"]
         },
         "file": {
           "path": "{final_html_path}",
@@ -186,24 +176,20 @@
       }
     ]
   },
+
   "commit_response_validation": {
     "require_ok_true": true,
     "require_commit_sha_regex": "^[a-f0-9]{40}$",
     "require_committed_paths_contains_all_expected": true,
     "expected_paths_rule": {
-      "expected_committed_paths_always": [
+      "always": [
         "{final_json_path}",
         "{run_log_path}"
       ],
-      "expected_committed_paths_when_output_format_in": [
+      "when_output_format_in": [
         {
-          "output_format_in": [
-            "html",
-            "json+html"
-          ],
-          "expected_committed_paths_add": [
-            "{final_html_path}"
-          ]
+          "output_format_in": ["html", "json+html"],
+          "add": ["{final_html_path}"]
         }
       ]
     },
@@ -212,30 +198,24 @@
       "error_code": "COMMIT_RESPONSE_INVALID"
     }
   },
+
   "post_commit_verification": {
-    "required": true,
-    "verify_each_committed_path_returned_by_commit": true,
-    "docs_get_path_normalization": {
-      "rule": "If committed_path starts with 'docs/', strip the leading 'docs/' exactly once before calling docs_get (/docs/{path}). Otherwise, use committed_path as-is.",
-      "examples": [
-        {
-          "committed_path": "docs/blog/cp-2/finals/job-cp-2-4434456.json",
-          "docs_get_path": "blog/cp-2/finals/job-cp-2-4434456.json"
-        }
-      ]
-    },
+    "enabled": true,
+    "verify_each_committed_path": true,
+    "normalize_docs_path": "Strip leading 'docs/' if present before calling docs_get.",
     "halt_on_404": true,
     "on_fail": {
       "action": "halt",
       "error_code": "COMMIT_VERIFY_404"
     }
   },
+
   "failure_behavior": {
-    "on_missing_required_input": {
+    "on_missing_input": {
       "action": "halt",
       "error_code": "COMMIT_INPUT_MISSING"
     },
-    "on_path_validation_fail": {
+    "on_path_fail": {
       "action": "halt",
       "error_code": "COMMIT_PATH_INVALID"
     },

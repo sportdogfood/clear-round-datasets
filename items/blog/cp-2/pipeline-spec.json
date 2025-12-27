@@ -1,61 +1,43 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clearroundtravel.com/specs/blog/cp-2/pipeline-spec.json",
   "file": "pipeline-spec.json",
-  "version": "v2025-12-19-pipeline-04",
+  "version": "v2025-12-20-pipeline-07",
   "street": "blog",
   "house": "cp:2",
+
   "live_only": {
     "required": true,
     "mode_literal": "live",
     "halt_if_job_definition_mode_not_live": true,
-    "on_fail": { "action": "halt", "error_code": "JOB_MODE_NOT_LIVE" }
+    "on_fail": { "action": "halt", "error_code": "PIPE_JOB_MODE_NOT_LIVE" }
   },
+
   "purpose": [
-    "Declare allowed lane keys for this house.",
-    "Declare deterministic reads_bin -> writes_bin routing per lane key.",
-    "Declare how numbered C/P passes bind to datasets (by domains).",
-    "Enable runner to execute job_definition.run_order directly, sequentially, in live mode."
+    "Define the deterministic sequence of lanes for blog/cp:2 jobs.",
+    "Each lane reads directly from prior output or datasets (no bins).",
+    "Allow a single run-order to fully execute end-to-end in live mode."
   ],
-  "filesystem_normalization": {
-    "house_slug_rule": { "replace_chars": { ":": "-" } }
+
+  "structure_rules": {
+    "no_virtual_bins": true,
+    "no_pass_numbers": true,
+    "flat_registry": true,
+    "no_dynamic_builders": true,
+    "templates_load_directly": true
   },
+
   "dataset_families": {
-    "C": {
-      "description": "Collection datasets (event / venue / city_season).",
-      "match": { "domains_all": ["event", "venue", "city_season"] }
+    "collection": {
+      "prefix": "cdata",
+      "description": "Event, venue, and city/season datasets."
     },
-    "P": {
-      "description": "Places datasets (stay / dine / essentials / locale).",
-      "match": { "domains_all": ["stay", "dine", "essentials", "locale"] }
+    "places": {
+      "prefix": "pdata",
+      "description": "Stay, dine, essentials, and locale datasets."
     }
   },
-  "pass_detection": {
-    "collection_lane_prefixes": ["cr", "cw", "crwtr"],
-    "places_lane_prefixes": ["pr", "pw", "prwtr"],
-    "pass_number_regex": "^[a-z]+(\\d+)$",
-    "required_pass_count_rule": "max pass index present in run_order per family must be <= available datasets for that family"
-  },
-  "dataset_binding_rules": {
-    "binding_mode": "family_ordered_by_job_definition_datasets",
-    "c_pass_n_binds_to": "nth dataset (1-indexed) in family C",
-    "p_pass_n_binds_to": "nth dataset (1-indexed) in family P",
-    "on_missing_dataset_for_required_pass": {
-      "action": "halt",
-      "error_code": "PIPE_MISSING_DATASET_FOR_PASS"
-    }
-  },
-  "bin_naming": {
-    "c_input_bin": "c_in_{n}",
-    "c_research_bin": "c_research_{n}",
-    "c_writer_bin": "c_writer_{n}",
-    "c_output_bin": "c_out_{n}",
-    "p_input_bin": "p_in_{n}",
-    "p_research_bin": "p_research_{n}",
-    "p_writer_bin": "p_writer_{n}",
-    "p_output_bin": "p_out_{n}",
-    "stitcher_input_bin": "stchr_in",
-    "stitched_bin": "stitched_out",
-    "final_bin": "final_out"
-  },
+
   "templates": {
     "exp": "expeditor-contract.json",
     "cr": "member-template-cr-prompt.txt",
@@ -68,118 +50,121 @@
     "srwrtr": "member-template-srwrtr-prompt.txt",
     "commit": "commit-spec.json"
   },
-  "execution_rules": {
-    "disallow_validate_only": true,
-    "reads_bin_required_when_declared": true,
-    "writes_bin_required_when_declared": true,
-    "hard_stop_on_missing_reads_bin": true,
-    "hard_stop_on_bin_overwrite": true,
-    "hard_stop_on_missing_template_file": true,
-    "member_lanes_must_call_model": true,
-    "model_output_must_parse_as_json_object": true
-  },
-  "lane_type_rules": {
-    "model_required_for_lane_types": ["researcher", "writer", "rewriter", "stitcher"],
-    "model_forbidden_for_lane_types": ["data_sorter", "commit"]
-  },
-  "lane_logging_requirements": {
-    "required": true,
-    "one_entry_per_lane_in_run_order": true,
-    "required_fields_each_lane_log": [
-      "lane_key",
-      "type",
-      "reads_bin",
-      "writes_bin",
-      "template_ref",
-      "template_file",
-      "model_called"
-    ],
-    "model_called_must_be_true_for_types": ["researcher", "writer", "rewriter", "stitcher"],
-    "model_called_must_be_false_for_types": ["data_sorter", "commit"]
-  },
-  "dynamic_bin_builders": {
-    "stchr_in": {
-      "enabled": true,
-      "target_bin": "stchr_in",
-      "build_when_lane_key": "stchr",
-      "source_bins_rule": {
-        "collection_bins_prefix": "c_out_",
-        "places_bins_prefix": "p_out_",
-        "collect_in_numeric_order": true,
-        "only_include_bins_that_exist": true
-      },
-      "built_object_shape": {
-        "job_id": "job_definition.job_id",
-        "shape": "job_definition.shape",
-        "mode": "live",
-        "street": "job_definition.street",
-        "house": "job_definition.house",
-        "global_rules": "job_definition.global_rules",
-        "collection_out_bins": "ARRAY(of existing c_out_{n} bins, ascending n)",
-        "places_out_bins": "ARRAY(of existing p_out_{n} bins, ascending n)"
-      },
-      "hard_stop_if_target_bin_already_exists": true
-    }
-  },
+
+  "execution_sequence": [
+    "exp",
+    "cr",
+    "cw",
+    "crwtr",
+    "pr",
+    "pw",
+    "prwtr",
+    "stchr",
+    "srwrtr",
+    "commit"
+  ],
+
   "lane_registry": {
     "exp": {
-      "type": "data_sorter",
+      "type": "expeditor",
       "template_ref": "exp",
-      "reads": ["job_definition", "datasets_by_role", "pipeline_spec"],
-      "writes_dynamic": {
-        "description": "Produce only the numbered input bins required by job_definition.run_order.",
-        "c_inputs": "c_in_{n}",
-        "p_inputs": "p_in_{n}"
-      }
+      "description": "Partition datasets into collection_input and places_input.",
+      "reads": ["job_definition", "datasets_by_role"],
+      "writes": ["collection_input", "places_input"],
+      "model_called": false
     },
 
-    "cr1": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_1", "writes_bin": "c_research_1" },
-    "cw1": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_1", "writes_bin": "c_writer_1" },
-    "crwtr1": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_1", "writes_bin": "c_out_1" },
+    "cr": {
+      "type": "researcher",
+      "template_ref": "cr",
+      "reads": ["collection_input"],
+      "writes": ["collection_research"],
+      "model_called": true
+    },
+    "cw": {
+      "type": "writer",
+      "template_ref": "cw",
+      "reads": ["collection_research"],
+      "writes": ["collection_written"],
+      "model_called": true
+    },
+    "crwtr": {
+      "type": "rewriter",
+      "template_ref": "crwtr",
+      "reads": ["collection_written"],
+      "writes": ["collection_output"],
+      "model_called": true
+    },
 
-    "cr2": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_2", "writes_bin": "c_research_2" },
-    "cw2": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_2", "writes_bin": "c_writer_2" },
-    "crwtr2": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_2", "writes_bin": "c_out_2" },
-
-    "cr3": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_3", "writes_bin": "c_research_3" },
-    "cw3": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_3", "writes_bin": "c_writer_3" },
-    "crwtr3": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_3", "writes_bin": "c_out_3" },
-
-    "pr1": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_1", "writes_bin": "p_research_1" },
-    "pw1": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_1", "writes_bin": "p_writer_1" },
-    "prwtr1": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_1", "writes_bin": "p_out_1" },
-
-    "pr2": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_2", "writes_bin": "p_research_2" },
-    "pw2": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_2", "writes_bin": "p_writer_2" },
-    "prwtr2": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_2", "writes_bin": "p_out_2" },
-
-    "pr3": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_3", "writes_bin": "p_research_3" },
-    "pw3": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_3", "writes_bin": "p_writer_3" },
-    "prwtr3": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_3", "writes_bin": "p_out_3" },
+    "pr": {
+      "type": "researcher",
+      "template_ref": "pr",
+      "reads": ["places_input"],
+      "writes": ["places_research"],
+      "model_called": true
+    },
+    "pw": {
+      "type": "writer",
+      "template_ref": "pw",
+      "reads": ["places_research"],
+      "writes": ["places_written"],
+      "model_called": true
+    },
+    "prwtr": {
+      "type": "rewriter",
+      "template_ref": "prwtr",
+      "reads": ["places_written"],
+      "writes": ["places_output"],
+      "model_called": true
+    },
 
     "stchr": {
       "type": "stitcher",
       "template_ref": "stchr",
-      "reads_bin": "stchr_in",
-      "reads_dynamic": {
-        "enabled": true,
-        "builder_key": "stchr_in"
-      },
-      "writes_bin": "stitched_out"
+      "reads": ["collection_output", "places_output"],
+      "writes": ["stitched_output"],
+      "model_called": true
     },
 
     "srwrtr": {
       "type": "rewriter",
       "template_ref": "srwrtr",
-      "reads_bin": "stitched_out",
-      "writes_bin": "final_out"
+      "reads": ["stitched_output"],
+      "writes": ["final_output"],
+      "model_called": true
     },
 
     "commit": {
       "type": "commit",
       "template_ref": "commit",
-      "reads_bin": "final_out",
-      "writes_artifacts": ["docs_finals", "docs_logs"]
+      "reads": ["final_output"],
+      "writes": ["docs/blog/cp-2/finals/", "docs/blog/cp-2/logs/"],
+      "model_called": false
     }
+  },
+
+  "execution_rules": {
+    "strict_sequential_order": true,
+    "halt_on_missing_template": true,
+    "halt_on_read_failure": true,
+    "halt_on_write_conflict": true,
+    "require_model_for": ["researcher", "writer", "rewriter", "stitcher"],
+    "forbid_model_for": ["expeditor", "commit"],
+    "validate_output_shape_after_each_lane": true,
+    "stop_if_invalid_json": true
+  },
+
+  "logging": {
+    "enable_lane_logging": true,
+    "log_fields": [
+      "lane_key",
+      "type",
+      "template_ref",
+      "reads",
+      "writes",
+      "model_called"
+    ],
+    "ensure_one_entry_per_lane": true,
+    "require_model_called_consistency": true
   }
 }

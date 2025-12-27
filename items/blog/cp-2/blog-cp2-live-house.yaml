@@ -1,0 +1,57 @@
+# blog-cp2-live-house.yaml
+# Production Deployment Manifest for house blog/cp:2
+# Version: v2025-12-20-final
+# Purpose: Register all canonical house assets for end-to-end live execution.
+
+house:
+  street: blog
+  house: cp:2
+  shape: cp:2
+  version: v2025-12-20
+  mode: live
+  disable_default_house_manifest: true
+  never_autoload_house_json: true
+  always_defer_to_instructions_txt: true
+
+authoritative_source: /items/blog/cp-2/
+instructions_file: instructions.txt
+
+artifacts:
+  - file: pipeline-spec.json
+    version: v2025-12-20-pipeline-07
+    description: Deterministic binless pipeline, flat lane registry, sequential run_order.
+
+  - file: expeditor-contract.json
+    version: v2025-12-20-exp-08
+    description: Declarative dataset-to-lane mapping; no bins, no algorithms.
+
+  - file: commit-spec.json
+    version: v2025-12-20-commit-07
+    description: Final commit logic; validates SHA, commits JSON/HTML/logs.
+
+  - file: final-schema.json
+    version: v2025-12-19-final-03
+    description: Validation schema for final_output JSON.
+
+  - file: instructions.txt
+    version: v2025-12-20
+    description: Live GPT runner orchestration plan.
+
+deployment:
+  runtime: GPT-Live
+  integrations:
+    - api.rows.com
+    - items.clearroundtravel.com
+  commit_root: docs/blog/cp-2/
+  logs_root: docs/blog/cp-2/logs/
+  finals_root: docs/blog/cp-2/finals/
+  output_format: json+html
+  auto_proceed: true
+  suppress_ui_confirmations: true
+  dry_run: false
+
+verification:
+  require_all_http_200: true
+  require_commit_sha_40chars: true
+  validate_final_output_schema: true
+  halt_on_missing_template: true

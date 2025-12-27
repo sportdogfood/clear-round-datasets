@@ -1,125 +1,97 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clearroundtravel.com/specs/blog/cp-2/expeditor-contract.json",
   "file": "expeditor-contract.json",
-  "version": "v2025-12-19-exp-06",
+  "version": "v2025-12-20-exp-08",
   "street": "blog",
   "house": "cp:2",
+
   "live_only": {
     "required": true,
     "mode_literal": "live",
     "halt_if_job_definition_mode_not_live": true,
-    "on_fail": { "action": "halt", "error_code": "EXP_JOB_MODE_NOT_LIVE" }
+    "on_fail": {
+      "action": "halt",
+      "error_code": "EXP_JOB_MODE_NOT_LIVE"
+    }
   },
+
   "purpose": [
-    "Deterministically hand out dataset rows as lane input bins (NO prose, NO inference).",
-    "Produce ONLY c_in_{n} and p_in_{n} bins required by job_definition.run_order.",
-    "Bind numbered passes to datasets using role_key_prefix (cdata/pdata)."
+    "Identify the datasets that feed the 'collection' and 'places' lanes.",
+    "Map each dataset directly to the matching lane input (no intermediate bins).",
+    "Perform no computation, inference, or mutation."
   ],
+
   "inputs": {
     "job_definition": {
       "required": true,
       "read_only": true,
       "required_fields": [
         "job_id",
-        "shape",
         "mode",
         "street",
         "house",
-        "run_order",
         "datasets",
-        "global_rules",
-        "paths"
+        "run_order"
       ]
     },
     "datasets_by_role": {
       "required": true,
       "read_only": true,
-      "expected_shape": {
+      "shape": {
         "type": "object",
-        "additional_properties_shape": {
-          "role_key": "string",
-          "domains": "array[string]",
-          "items": "array"
+        "additionalProperties": {
+          "type": "object",
+          "required": ["role_key", "items"],
+          "properties": {
+            "role_key": { "type": "string" },
+            "items": { "type": "array" }
+          }
         }
       }
-    },
-    "pipeline_spec": {
-      "required": true,
-      "read_only": true,
-      "required_fields": [
-        "pass_detection",
-        "dataset_binding_rules",
-        "bin_naming"
-      ]
     }
   },
-  "rules": {
-    "deterministic_only": true,
-    "no_inference": true,
-    "no_external_calls": true,
-    "no_mutation_of_rows_items": true,
-    "produce_only_required_bins": true,
-    "one_write_per_bin": true,
-    "halt_on_any_error": true
+
+  "dataset_binding": {
+    "collection_prefix": "cdata",
+    "places_prefix": "pdata",
+    "binding_rule": "Select exactly one dataset whose role_key starts with each prefix. Pass these unmodified into the collection and places lanes.",
+    "fail_if_multiple": true,
+    "fail_if_missing": true
   },
-  "pass_extraction": {
-    "regex": "^[a-z]+(\\d+)$",
-    "collection_lane_prefixes": ["cr", "cw", "crwtr"],
-    "places_lane_prefixes": ["pr", "pw", "prwtr"],
-    "note": "Only passes referenced in job_definition.run_order are required."
+
+  "behavior": {
+    "mutation_allowed": false,
+    "inference_allowed": false,
+    "external_calls_allowed": false,
+    "emit_only_direct_dataset_payloads": true,
+    "no_virtual_bins": true
   },
-  "dataset_family_binding": {
-    "binding_mode": "role_key_prefix",
-    "c_prefix": "cdata",
-    "p_prefix": "pdata",
-    "c_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with c_prefix (in job_definition.datasets order)",
-    "p_pass_n_binds_to": "nth dataset (1-indexed) whose role_key starts with p_prefix (in job_definition.datasets order)",
-    "on_missing_dataset_for_required_pass": {
+
+  "validation": {
+    "on_missing_dataset": {
       "action": "halt",
-      "error_code": "EXP_MISSING_DATASET_FOR_PASS"
-    }
-  },
-  "output_bins": {
-    "c_in_pattern": "c_in_{n}",
-    "p_in_pattern": "p_in_{n}",
-    "bin_object_shape": {
-      "job_id": "string",
-      "shape": "string",
-      "mode": "string",
-      "street": "string",
-      "house": "string",
-      "lane_key": "string",
-      "pass_n": "number",
-      "role_key": "string",
-      "domains": "array[string]",
-      "items": "array"
+      "error_code": "EXP_DATASET_MISSING"
     },
-    "constraints": {
-      "no_extra_keys": true,
-      "mode_must_equal": "live",
-      "pass_n_is_1_indexed": true,
-      "items_must_be_unmodified_rows_items": true
+    "on_multiple_matching_prefixes": {
+      "action": "halt",
+      "error_code": "EXP_DATASET_AMBIGUOUS"
+    },
+    "on_mode_not_live": {
+      "action": "halt",
+      "error_code": "EXP_JOB_MODE_NOT_LIVE"
     }
   },
-  "bin_construction": {
-    "c_in_n": { "lane_key_format": "cr{n}" },
-    "p_in_n": { "lane_key_format": "pr{n}" }
-  },
-  "algorithm": [
-    "0) Hard-stop if job_definition.mode != \"live\".",
-    "1) Parse required pass numbers from job_definition.run_order using pass_extraction.regex and family prefixes.",
-    "2) Build ordered dataset role_key lists from job_definition.datasets:",
-    "   - C_list = datasets where role_key starts with c_prefix, preserving original order.",
-    "   - P_list = datasets where role_key starts with p_prefix, preserving original order.",
-    "3) For each required C pass n: select role_key = C_list[n-1].role_key; resolve datasets_by_role[role_key]; emit c_in_{n}.",
-    "4) For each required P pass n: select role_key = P_list[n-1].role_key; resolve datasets_by_role[role_key]; emit p_in_{n}.",
-    "5) Emit ONLY those bins; emit no downstream bins; do not rewrite dataset rows."
-  ],
-  "failures": {
-    "on_missing_required_input": { "action": "halt", "error_code": "EXP_INPUT_MISSING" },
-    "on_job_definition_mode_not_live": { "action": "halt", "error_code": "EXP_JOB_MODE_NOT_LIVE" },
-    "on_unknown_run_order_key": { "action": "halt", "error_code": "EXP_RUN_ORDER_INVALID" },
-    "on_missing_dataset_for_required_pass": { "action": "halt", "error_code": "EXP_MISSING_DATASET_FOR_PASS" },
-    "on_dataset_role_key_missing_in_map": { "action": "halt", "error_code": "EXP_DATASET_ROLE_MISSING" },
-    "on_bin_already_exists": { "action": "halt", "error_code": "EXP_BIN_OVERWRITE_FORBIDDEN" }
+
+  "handoff": {
+    "collection_input": {
+      "source": "datasets_by_role[role_key starting with cdata].items",
+      "description": "All collection dataset rows (event, venue, city_season)."
+    },
+    "places_input": {
+      "source": "datasets_by_role[role_key starting with pdata].items",
+      "description": "All places dataset rows (stay, dine, essentials, locale)."
+    },
+    "note": "The expeditor simply relays both datasets for use in their respective lanes."
   }
 }
