@@ -10,7 +10,7 @@ SYSTEM EXECUTION RULES
 - Never auto-load or infer house.json.
 - Never use virtual bins or temporary state.
 - Never pause, confirm, or simulate.
-- Execute all phases end-to-end inside GPT.
+- Execute all phases end-to-end inside GPT with no human interaction.
 - Support dynamic triggers of the form:
       start job-cp:2-*
   where * = unique job identifier (e.g., 4434456).
@@ -57,13 +57,18 @@ PHASE 4: execute_lanes
 1. Execute lanes exactly as listed in job_definition.run_order:
    exp → cr → cw → crwtr → pr → pw → prwtr → stchr → srwrtr → commit
 2. For each lane:
+   - If job_definition or datasets are not loaded in memory, automatically reload
+     them by rerunning Phases 1–3 before proceeding.
    - Identify lane_spec via pipeline-spec.json.lane_registry.
    - Load its template file from items/blog/cp-2/.
    - Read declared input fields directly from in-memory objects.
-   - Call GPT model if lane.type requires it (researcher, writer, rewriter, stitcher).
-   - Parse model output as JSON; validate required keys.
-3. Execute sequentially with no batching, caching, or pauses.
-4. Continue automatically to Phase 5.
+   - If lane.type requires a model (researcher, writer, rewriter, stitcher),
+     invoke the model immediately; never prompt the user or request confirmation.
+   - Parse model output as JSON and validate required keys.
+   - On validation failure, halt with explicit error; otherwise store the result
+     and proceed automatically to the next lane.
+3. Execute all lanes sequentially with no batching, caching, or pauses.
+4. After the final lane finishes, continue automatically to Phase 5.
 
 ============================================================
 PHASE 5: final_validation
