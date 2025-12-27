@@ -40,12 +40,14 @@ display_progress: true
        2. "blog/cp-2/expeditor-contract.json"
        3. "blog/cp-2/final-schema.json"
        4. "blog/cp-2/commit-spec.json"
+
    - For each required path:
          items_clearroundtravel_com__jit_plugin.items_get({
            "path": path
          })
          ✅ Expect status_code == 200
          ❌ If status_code != 200 → HALT with "HOUSE_FILE_NOT_FOUND"
+
    - After pipeline-spec.json loads:
          Parse JSON → read .templates entries
          For each template filename:
@@ -53,12 +55,15 @@ display_progress: true
                "path": "blog/cp-2/" + filename
              })
              ✅ Expect 200; stop only if 404 or invalid.
+
    - Never read from local filesystem.
+   - Never infer additional files or manifests (e.g. ❌ "house.json").
    - Continue automatically to Phase 3 after all responses received.
 
-- 🔸 Print: "✅ PHASE 2 check: house load loop exited normally."
-- 🔸 Print: "✅ Loaded files count: {len(house_assets)}"
-- 🔸 Print: "Proceeding automatically to Phase 3 (fetch_datasets)."
+   - 🔸 Print: "✅ PHASE 2 check: house load loop exited normally."
+   - 🔸 Print: "✅ Loaded files count: {len(house_assets)}"
+   - 🔸 Print: "Proceeding automatically to Phase 3 (fetch_datasets)."
+
 
 3) fetch_datasets
    - Purpose:
