@@ -69,24 +69,43 @@ display_progress: true
    - Never stop to confirm partial success; continue automatically.
    - Proceed immediately to execute_lanes.
 4) execute_lanes
-   - Execute all lanes from job_definition.run_order sequentially.
-   - Before each lane execution, print:
-       🔹 "Loading template: " + template_filename
-   - Then call:
-       items_clearroundtravel_com__jit_plugin.items_get({
-         "path": "blog/cp-2/" + template_filename
+   - For each lane_key in job_definition.run_order sequentially:
+       lane_spec = pipeline_spec.lane_registry[lane_key]
+       template_file = pipeline_spec.templates[lane_spec.template_ref]
+       🔹 Print: "Loading template → " + template_file
+       res = items_clearroundtravel_com__jit_plugin.items_get({
+         "path": "blog/cp-2/" + template_file
        })
-   - If status != 200 → STOP "lane execution".
-   - After successful load:
-       🔹 "Executing model for lane: " + lane_key
-   - Build system_prompt = global_rules + template_text
-   - Build user_message = bins[reads_bin] or {}
-   - Call model (no simulation).
-   - Parse and validate JSON output.
-   - Append to executed_lanes[].
-   - After success:
-       🔹 "✅ Completed lane: " + lane_key
-   - Proceed automatically until all lanes finished.
+       if res.status_code != 200:
+           HALT "TEMPLATE_NOT_FOUND"
+       template_text = res.response_data or res.file or res.text or ""
+       🔹 Print: "Executing lane → " + lane_key + " (" + lane_spec.type + ")"
+       if lane_spec.type == "data_sorter":
+           # Expeditor builds input bins
+           bins["c_in_1"], bins["p_in_1"] = build_inputs_from_datasets(datasets_by_role)
+           🔹 Print: "✅ exp completed (c_in_1, p_in_1)"
+           continue
+       elif lane_spec.type in ["researcher","writer","rewriter","stitcher"]:
+           reads_bin  = lane_spec.reads_bin
+           writes_bin = lane_spec.writes_bin
+           system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+           user_message  = JSON.stringify(bins[reads_bin] or {})
+           model_output  = call GPT model once
+           parsed = parse model_output as JSON
+           bins[writes_bin] = parsed
+           lane_logs[lane_key] = {
+             "reads": reads_bin,
+             "writes": writes_bin,
+             "template": template_file,
+             "model_called": true
+           }
+           🔹 Print: "✅ Completed lane: " + lane_key
+           continue
+       elif lane_spec.type == "commit":
+           continue  # handled in Phase 6
+   - Never wait or confirm; run through all lanes automatically.
+   - After all lanes execute, proceed immediately to Phase 5 (final_validation).
+
 
 
 5) final_validation
