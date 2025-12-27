@@ -1,6 +1,5 @@
-# instructions.txt
-# blog/cp:2 — LIVE Runner (v2025-12-20)
-# Deterministic binless pipeline, no manifests, no pauses, no local reads.
+# blog/cp:2 — LIVE Runner (v2025-12-27)
+# Continuous, binless, deterministic runner — no pauses, no confirmations, no local reads.
 
 ============================================================
 SYSTEM EXECUTION RULES
@@ -10,7 +9,8 @@ SYSTEM EXECUTION RULES
 - Never auto-load or infer house.json.
 - Never use virtual bins or temporary state.
 - Never pause, confirm, or simulate.
-- Execute all phases end-to-end inside GPT with no human interaction.
+- Execute all phases end-to-end in one continuous pass.
+- If any dataset or lane input is missing, re-fetch it automatically from its source before continuing.
 - Support dynamic triggers of the form:
       start job-cp:2-*
   where * = unique job identifier (e.g., 4434456).
@@ -19,88 +19,86 @@ SYSTEM EXECUTION RULES
 PHASE 1: job_definition
 ============================================================
 1. Call api_rows_com__jit_plugin.getJobDefinitionsRows().
-2. Find row where column A == <triggered job_id> (e.g., "job-cp:2-4434456").
-3. Parse column B JSON payload → job_definition.
-4. Validate presence of:
-   - job_id, street, house, mode, run_order, datasets, global_rules
+2. Locate the row where column A == <triggered job_id>.
+3. Parse column B JSON → job_definition.
+4. Validate required keys:
+     job_id, street, house, mode, run_order, datasets, global_rules
 5. Verify mode == "live".
 6. Log run_order and dataset role_keys.
-7. Continue automatically to Phase 2.
+7. Proceed immediately to Phase 2.
 
 ============================================================
 PHASE 2: load_house
 ============================================================
-1. Load the following from items/blog/cp-2/:
+1. Load from /items/blog/cp-2/:
    - pipeline-spec.json
    - expeditor-contract.json
    - final-schema.json
    - commit-spec.json
-2. Parse pipeline-spec.json.templates list and load each file sequentially.
-3. Expect HTTP 200 for all. On any 404 → HALT ("HOUSE_FILE_NOT_FOUND").
-4. Never read local files. Never skip templates.
-5. Continue automatically to Phase 3.
+   - all templates listed in pipeline-spec.json.templates
+2. Expect HTTP 200 for all. Halt only if any 404.
+3. Continue automatically to Phase 3.
 
 ============================================================
 PHASE 3: fetch_datasets
 ============================================================
-1. For each dataset entry in job_definition.datasets:
-   - Read dataset.role_key, sheet_id, table_id, range.
-   - Call api_rows_com__jit_plugin.getRowsValues() for each entry.
-   - Store result as datasets_by_role[role_key].
-2. Fetch strictly by role_key (ignore domains).
-3. Expect both cdata* and pdata* datasets.
-4. Continue automatically to Phase 4.
+1. For each dataset in job_definition.datasets:
+     call api_rows_com__jit_plugin.getRowsValues(sheet_id, table_id, range).
+2. Store result as datasets_by_role[role_key].
+3. Ignore all domain fields — fetch strictly by role_key.
+4. Proceed automatically to Phase 4.
 
 ============================================================
 PHASE 4: execute_lanes
 ============================================================
-1. Execute lanes exactly as listed in job_definition.run_order:
-   exp → cr → cw → crwtr → pr → pw → prwtr → stchr → srwrtr → commit
+1. Execute lanes exactly in declared run_order:
+     exp → cr → cw → crwtr → pr → pw → prwtr → stchr → srwrtr → commit
 2. For each lane:
-   - If job_definition or datasets are not loaded in memory, automatically reload
-     them by rerunning Phases 1–3 before proceeding.
-   - Identify lane_spec via pipeline-spec.json.lane_registry.
-   - Load its template file from items/blog/cp-2/.
-   - Read declared input fields directly from in-memory objects.
-   - If lane.type requires a model (researcher, writer, rewriter, stitcher),
-     invoke the model immediately; never prompt the user or request confirmation.
-   - Parse model output as JSON and validate required keys.
-   - On validation failure, halt with explicit error; otherwise store the result
-     and proceed automatically to the next lane.
-3. Execute all lanes sequentially with no batching, caching, or pauses.
-4. After the final lane finishes, continue automatically to Phase 5.
+   a. Identify lane_spec from pipeline-spec.json.lane_registry.
+   b. Load corresponding template file from /items/blog/cp-2/.
+   c. Read required inputs (if missing, re-fetch automatically).
+   d. If lane.type requires a model (researcher, writer, rewriter, stitcher),
+      perform a live GPT call using the loaded template.
+   e. Validate model output as well-formed JSON.
+   f. Store lane output in memory for next lane.
+3. Continue sequentially until all lanes are executed.
+4. Never wait for external input. Proceed automatically to Phase 5.
 
 ============================================================
 PHASE 5: final_validation
 ============================================================
-1. Validate final_output JSON against final-schema.json.
-2. Confirm presence of:
+1. Validate final_output against /items/blog/cp-2/final-schema.json.
+2. Require:
    - collection_body
    - places_body
    - summary_paragraph
-3. Halt if invalid; otherwise continue automatically to Phase 6.
+3. Halt only if validation fails. Otherwise continue immediately.
 
 ============================================================
 PHASE 6: commit
 ============================================================
-1. Use commit-spec.json rules to derive commit paths.
+1. Use commit-spec.json to derive commit paths.
 2. Commit final_output and runlog to:
    - docs/blog/cp-2/finals/
    - docs/blog/cp-2/logs/
-3. Require commit.ok == true and valid SHA.
-4. Verify each committed path via docs_get.
-5. Continue automatically to Phase 7.
+3. Call items_clearroundtravel_com__jit_plugin.docs_commit_bulk().
+4. Require commit.ok == true and valid 40-character SHA.
+5. Verify committed paths via docs_get().
+6. Continue automatically to Phase 7.
 
 ============================================================
 PHASE 7: respond
 ============================================================
-1. Print only the summarized final JSON result:
+1. Output only the summarized final JSON result:
+
    {
-     "job_id": "...",
+     "job_id": "<id>",
      "mode": "live",
      "executed_run_order": [...],
      "committed_paths": [...],
-     "commit_sha": "..."
+     "commit_sha": "<sha>",
+     "runner_marker": "job-cp2-live"
    }
-2. No additional commentary, traces, or simulation logs.
-3. End execution.
+
+2. No commentary, no dry-run text, no manual prompts.
+3. End execution cleanly.
