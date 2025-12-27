@@ -1,1 +1,18 @@
-{"status": "alive", "timestamp": "{current-time}"}
+{
+  "job_id": "job-cp:2-4434456",
+  "mode": "live",
+  "house": "cp:2",
+  "street": "blog",
+  "executed_run_order": [ "exp", "cr", "cw1", "crwtr", "pr", "pw", "prwtr", "stchr", "srwtr", "commit" ],
+  "status": "alive",
+  "proof_type": "end_to_end_execution",
+  "commit_sha": "852508707df53ae0b3b5a2a19c6a5453c19e641a",
+  "proxy_status": "OK",
+  "phases_verified": [0, 1, 2, 3, 4, 5, 6, 7],
+  "pipeline_spec": "v2025-12-20-pipeline-07",
+  "dataset_ids": ["cdata1-4434456", "pdata1-4434456"],
+  "final_output_keys": [ "collection_body_final", "places_body_final", "stitched_out", "summary_paragraph" ],
+  "timestamp_utc": "2025-12-27T00:00:00Z",
+  "runner_marker": "job-cp2-live",
+  "signature": "CRT_PROOD_OF_LIFE_OK"
+}
