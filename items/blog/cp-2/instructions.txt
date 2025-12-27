@@ -1,168 +1,153 @@
 # blog/cp:2 — LIVE Runner (v2025-12-27)
-# Continuous, binless, deterministic runner — no pauses, no confirmations, no local reads.
+# Deterministic, non-interactive execution script.
 
-============================================================
-SYSTEM EXECUTION RULES
-============================================================
-- You are the LIVE CRT Runner for house blog/cp:2.
-- Use /items/blog/cp-2/ as the sole authoritative source.
-- Never auto-load or infer house.json.
-- Never use virtual bins or temporary state.
-- Never pause, confirm, or simulate.
-- Execute all phases end-to-end in one continuous pass.
-- If any dataset or lane input is missing, re-fetch it automatically from its source before continuing.
-- Support dynamic triggers of the form:
-      start job-cp:2-*
-  where * = unique job identifier (e.g., 4434456).
-============================================================
-🔹 PRE-FLIGHT: Proof-of-Life Check
-============================================================
-1️⃣ Immediately call /health via items_clearroundtravel_com__jit_plugin.health().
-    - If HTTP 200 and response == "OK" → continue.
-    - Else → halt with error_code "NO_PROXY_CONNECTION".
+system_rules:
+  mode: live
+  house: blog/cp:2
+  allow_pauses: false
+  allow_confirmations: false
+  allow_simulation: false
+  source_root: /items/blog/cp-2/
 
-2️⃣ Perform a tiny commit-verification ping.
-    - Call items_clearroundtravel_com__jit_plugin.docs_commit_bulk() with:
-        message: "CRT Runner health check ping"
-        overwrite: true
-        files: [
-          {
-            "path": "docs/test/runner-proof.json",
-            "content_type": "application/json",
-            "content_base64": "eyJzdGF0dXMiOiAiYWxpdmUiLCAidGltZXN0YW1wIjogIntjdXJyZW50LXRpbWV9In0="
-          }
-        ]
-    - Require commit.ok == true AND commit.sha matches ^[a-f0-9]{40}$.
-    - If either fails → halt with error_code "PROOF_OF_LIFE_FAIL".
+phases:
 
-3️⃣ Log silently:
-      [proof-of-life] proxy OK ✔  commit SHA <sha>
-    and continue directly to Phase 1.
+  - name: preflight
+    steps:
+      - op: items_clearroundtravel_com__jit_plugin.health
+        expect_status: 200
+        expect_body: OK
+      - op: items_clearroundtravel_com__jit_plugin.docs_commit_bulk
+        args:
+          message: "CRT Runner health check ping"
+          overwrite: true
+          files:
+            - path: docs/test/runner-proof.json
+              content_type: application/json
+              content_base64: eyJzdGF0dXMiOiAiYWxpdmUiLCAidGltZXN0YW1wIjogIntjdXJyZW50LXRpbWV9In0=
+        expect:
+          ok: true
+          commit.sha_regex: "^[a-f0-9]{40}$"
+      - log: "[proof-of-life] proxy OK ✔ commit verified"
+      - continue: job_definition
 
-============================================================
-PHASE 1: job_definition
-============================================================
-1. Call api_rows_com.getJobDefinitionsRows().
-2. Locate the row where column A == <triggered job_id>.
-3. Parse column B JSON → job_definition.
-4. Validate required keys:
-     job_id, street, house, mode, run_order, datasets, global_rules
-5. Verify mode == "live".
-6. Log run_order and dataset role_keys.
-7. Proceed immediately to Phase 2.
+  - name: job_definition
+    steps:
+      - op: api_rows_com__jit_plugin.getJobDefinitionsRows
+        store_as: job_rows
+      - op: select_json_row
+        from: job_rows.items
+        match_column_a: "${job_id}"
+        store_as: job_definition
+      - validate_fields:
+          in: job_definition
+          required: [job_id, street, house, mode, run_order, datasets, global_rules]
+      - assert_equals:
+          left: "${job_definition.mode}"
+          right: "live"
+      - continue: load_house
 
-============================================================
-PHASE 2: load_house
-============================================================
-1. Load from /items/blog/cp-2/:
-   - pipeline-spec.json
-   - expeditor-contract.json
-   - final-schema.json
-   - commit-spec.json
-   - all templates listed in pipeline-spec.json.templates
-2. Expect HTTP 200 for all using items_clearroundtravel_com.items_get().
-3. Halt only if any 404.
-4. Continue automatically to Phase 3.
+  - name: load_house
+    steps:
+      - for_each:
+          files:
+            - pipeline-spec.json
+            - expeditor-contract.json
+            - final-schema.json
+            - commit-spec.json
+          do:
+            - op: items_clearroundtravel_com__jit_plugin.items_get
+              args: { path: "blog/cp-2/${item}" }
+              expect_status: 200
+      - op: load_templates_from_pipeline_spec
+      - continue: fetch_datasets
 
-============================================================
-PHASE 3: fetch_datasets
-============================================================
+  - name: fetch_datasets
+    steps:
+      - op: extract_family_id
+        from: "${job_definition.job_id}"
+        regex: "cp:(\\d+)-"
+        store_as: family_id
+      - set:
+          expected_role_keys:
+            - "cdata${family_id}-${job_numeric_id}"
+            - "pdata${family_id}-${job_numeric_id}"
+      - for_each:
+          list: "${expected_role_keys}"
+          do:
+            - op: find_in_array
+              array: "${job_definition.datasets}"
+              where:
+                role_key: "${item}"
+              store_as: dataset_def
+            - op: api_rows_com__jit_plugin.getRowsValues
+              args:
+                sheet_id: "${dataset_def.sheet_id}"
+                table_id: "${dataset_def.table_id}"
+                range: "${dataset_def.range}"
+              expect_has_items: true
+              store_as: "datasets_by_role.${item}"
+      - assert_length:
+          object: datasets_by_role
+          equals: 2
+      - continue: execute_lanes
 
-Purpose:
-Fetch exactly two live datasets for each job — one collection dataset (prefix cdata)
-and one places dataset (prefix pdata). Use only the explicit role_keys declared in
-job_definition.datasets. Ignore any domain fields (e.g. event, stay, locale, etc.).
+  - name: execute_lanes
+    steps:
+      - load: pipeline_spec
+      - for_each:
+          list: "${job_definition.run_order}"
+          do:
+            - set: { lane_key: "${item}" }
+            - op: get_lane_spec
+              from: pipeline_spec
+              key: "${lane_key}"
+              store_as: lane_spec
+            - op: items_clearroundtravel_com__jit_plugin.items_get
+              args: { path: "blog/cp-2/${lane_spec.template_ref}.txt" }
+              expect_status: 200
+              store_as: template
+            - op: execute_lane
+              args:
+                lane_spec: "${lane_spec}"
+                template: "${template}"
+                inputs: "${required_inputs}"
+                datasets_by_role: "${datasets_by_role}"
+              store_output: "${lane_spec.writes}"
+      - continue: final_validation
 
-Sequence:
+  - name: final_validation
+    steps:
+      - op: validate_json_schema
+        schema: final-schema.json
+        data: final_output
+        required_fields: [collection_body, places_body, summary_paragraph]
+      - continue: commit
 
-1️⃣ Initialize dataset store
-    Create an empty object: datasets_by_role = {}
+  - name: commit
+    steps:
+      - op: build_commit_request
+        spec: commit-spec.json
+        inputs:
+          final_out_bin: final_output
+          run_log_json: lane_execution_log
+        store_as: commit_request
+      - op: items_clearroundtravel_com__jit_plugin.docs_commit_bulk
+        args: "${commit_request}"
+        expect:
+          ok: true
+          commit.sha_regex: "^[a-f0-9]{40}$"
+        store_as: commit_response
+      - op: items_clearroundtravel_com__jit_plugin.docs_get
+        args: { path: "${commit_response.committed_paths[0]}" }
+        expect_status: 200
+      - continue: respond
 
-2️⃣ For each dataset entry in job_definition.datasets[]:
-    - Read:
-        role_key = dataset.role_key
-        sheet_id = dataset.sheet_id
-        table_id = dataset.table_id
-        range    = dataset.range
-    - Ignore all domain fields or descriptions.
-    - Log silently: "Fetching dataset for {role_key}"
-
-3️⃣ Perform the live fetch:
-    Call:
-        api_rows_com__jit_plugin.getRowsValues({
-            "sheet_id": sheet_id,
-            "table_id": table_id,
-            "range": range
-        })
-    Expect a response with a non-empty `items` array.
-
-4️⃣ Store results:
-    datasets_by_role[role_key] = result
-    where result.items.length > 0 is required.
-
-5️⃣ Postconditions:
-    - datasets_by_role must contain exactly 2 keys:
-        one starting with "cdata" (collection family)
-        one starting with "pdata" (places family)
-    - Each must contain a non-empty items array.
-    - Log silently:
-        "✅ Datasets fetched: {Object.keys(datasets_by_role)}"
-
-6️⃣ Continue automatically to Phase 4 (execute_lanes)
-    No pauses, no confirmations, no reliance on domain names.
-
-
-============================================================
-PHASE 4: execute_lanes
-============================================================
-1. Execute lanes exactly in declared run_order:
-     exp → cr → cw → crwtr → pr → pw → prwtr → stchr → srwrtr → commit
-2. For each lane:
-   a. Identify lane_spec from pipeline-spec.json.lane_registry.
-   b. Load corresponding template file from /items/blog/cp-2/ using items_clearroundtravel_com.items_get().
-   c. Read required inputs (if missing, re-fetch automatically).
-   d. If lane.type requires a model (researcher, writer, rewriter, stitcher),
-      perform a live GPT call using the loaded template.
-   e. Validate model output as well-formed JSON.
-   f. Store lane output in memory for next lane.
-3. Continue sequentially until all lanes are executed.
-4. Never wait for external input. Proceed automatically to Phase 5.
-
-============================================================
-PHASE 5: final_validation
-============================================================
-1. Validate final_output against /items/blog/cp-2/final-schema.json (already loaded).
-2. Require:
-   - collection_body
-   - places_body
-   - summary_paragraph
-3. Halt only if validation fails. Otherwise continue immediately.
-
-============================================================
-PHASE 6: commit
-============================================================
-1. Use commit-spec.json to derive commit paths.
-2. Commit final_output and runlog to:
-   - docs/blog/cp-2/finals/
-   - docs/blog/cp-2/logs/
-3. Call items_clearroundtravel_com.docs_commit_bulk().
-4. Require commit.ok == true and valid 40-character SHA.
-5. Verify committed paths via items_clearroundtravel_com.docs_get().
-6. Continue automatically to Phase 7.
-
-============================================================
-PHASE 7: respond
-============================================================
-1. Output only the summarized final JSON result:
-
-   {
-     "job_id": "<id>",
-     "mode": "live",
-     "executed_run_order": [...],
-     "committed_paths": [...],
-     "commit_sha": "<sha>",
-     "runner_marker": "job-cp2-live"
-   }
-
-2. No commentary, no dry-run text, no manual prompts.
-3. End execution cleanly.
+  - name: respond
+    steps:
+      - output_json:
+          job_id: "${job_definition.job_id}"
+          mode: live
+          executed_run_order: "${job_definition.run_order}"
+          committed_paths: "${commit_response.committed_paths}"
+          commit_sha: "${commit_response.commit.sha}"
+          runner_marker: job-cp2-live
