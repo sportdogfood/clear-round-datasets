@@ -68,35 +68,26 @@ display_progress: true
    - Require that both "cdata1-4434456" and "pdata1-4434456" appear.
    - Never stop to confirm partial success; continue automatically.
    - Proceed immediately to execute_lanes.
-
 4) execute_lanes
-   - For each lane_key in job_definition.run_order sequentially:
-       lane_spec = pipeline_spec.lane_registry[lane_key]
-       template_file = pipeline_spec.templates[lane_spec.template_ref]
-       template_text = house_assets[template_file]
-       if lane_spec.type == "data_sorter":
-           # Expeditor
-           build bins["c_in_1"], bins["p_in_1"]
-           continue
-       elif lane_spec.type in ["researcher","writer","rewriter","stitcher"]:
-           reads_bin  = lane_spec.reads_bin
-           writes_bin = lane_spec.writes_bin
-           system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
-           user_message  = JSON.stringify(bins[reads_bin] or {})
-           model_output  = call GPT model once
-           parsed = parse model_output as JSON
-           bins[writes_bin] = parsed
-           lane_logs[lane_key] = {
-             "reads": reads_bin,
-             "writes": writes_bin,
-             "template": template_file,
-             "model_called": true
-           }
-           continue
-       elif lane_spec.type == "commit":
-           continue # handled in Phase 6
-   - No waiting, no confirmation, no skipping.
-   - After all lanes executed, continue to Phase 5.
+   - Execute all lanes from job_definition.run_order sequentially.
+   - Before each lane execution, print:
+       🔹 "Loading template: " + template_filename
+   - Then call:
+       items_clearroundtravel_com__jit_plugin.items_get({
+         "path": "blog/cp-2/" + template_filename
+       })
+   - If status != 200 → STOP "lane execution".
+   - After successful load:
+       🔹 "Executing model for lane: " + lane_key
+   - Build system_prompt = global_rules + template_text
+   - Build user_message = bins[reads_bin] or {}
+   - Call model (no simulation).
+   - Parse and validate JSON output.
+   - Append to executed_lanes[].
+   - After success:
+       🔹 "✅ Completed lane: " + lane_key
+   - Proceed automatically until all lanes finished.
+
 
 5) final_validation
    - Validate bins["final_out"] against items/blog/cp-2/final-schema.json.
