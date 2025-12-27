@@ -67,11 +67,50 @@ PHASE 2: load_house
 ============================================================
 PHASE 3: fetch_datasets
 ============================================================
-1. For each dataset in job_definition.datasets:
-     call api_rows_com.getRowsValues(sheet_id, table_id, range).
-2. Store result as datasets_by_role[role_key].
-3. Ignore all domain fields — fetch strictly by role_key.
-4. Proceed automatically to Phase 4.
+
+Purpose:
+Fetch exactly two live datasets for each job — one collection dataset (prefix cdata)
+and one places dataset (prefix pdata). Use only the explicit role_keys declared in
+job_definition.datasets. Ignore any domain fields (e.g. event, stay, locale, etc.).
+
+Sequence:
+
+1️⃣ Initialize dataset store
+    Create an empty object: datasets_by_role = {}
+
+2️⃣ For each dataset entry in job_definition.datasets[]:
+    - Read:
+        role_key = dataset.role_key
+        sheet_id = dataset.sheet_id
+        table_id = dataset.table_id
+        range    = dataset.range
+    - Ignore all domain fields or descriptions.
+    - Log silently: "Fetching dataset for {role_key}"
+
+3️⃣ Perform the live fetch:
+    Call:
+        api_rows_com__jit_plugin.getRowsValues({
+            "sheet_id": sheet_id,
+            "table_id": table_id,
+            "range": range
+        })
+    Expect a response with a non-empty `items` array.
+
+4️⃣ Store results:
+    datasets_by_role[role_key] = result
+    where result.items.length > 0 is required.
+
+5️⃣ Postconditions:
+    - datasets_by_role must contain exactly 2 keys:
+        one starting with "cdata" (collection family)
+        one starting with "pdata" (places family)
+    - Each must contain a non-empty items array.
+    - Log silently:
+        "✅ Datasets fetched: {Object.keys(datasets_by_role)}"
+
+6️⃣ Continue automatically to Phase 4 (execute_lanes)
+    No pauses, no confirmations, no reliance on domain names.
+
 
 ============================================================
 PHASE 4: execute_lanes
