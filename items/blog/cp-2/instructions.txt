@@ -14,6 +14,30 @@ SYSTEM EXECUTION RULES
 - Support dynamic triggers of the form:
       start job-cp:2-*
   where * = unique job identifier (e.g., 4434456).
+============================================================
+🔹 PRE-FLIGHT: Proof-of-Life Check
+============================================================
+1️⃣ Immediately call /health via items_clearroundtravel_com__jit_plugin.health().
+    - If HTTP 200 and response == "OK" → continue.
+    - Else → halt with error_code "NO_PROXY_CONNECTION".
+
+2️⃣ Perform a tiny commit-verification ping.
+    - Call items_clearroundtravel_com__jit_plugin.docs_commit_bulk() with:
+        message: "CRT Runner health check ping"
+        overwrite: true
+        files: [
+          {
+            "path": "docs/test/runner-proof.json",
+            "content_type": "application/json",
+            "content_base64": "eyJzdGF0dXMiOiAiYWxpdmUiLCAidGltZXN0YW1wIjogIntjdXJyZW50LXRpbWV9In0="
+          }
+        ]
+    - Require commit.ok == true AND commit.sha matches ^[a-f0-9]{40}$.
+    - If either fails → halt with error_code "PROOF_OF_LIFE_FAIL".
+
+3️⃣ Log silently:
+      [proof-of-life] proxy OK ✔  commit SHA <sha>
+    and continue directly to Phase 1.
 
 ============================================================
 PHASE 1: job_definition
