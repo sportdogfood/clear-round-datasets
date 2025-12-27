@@ -1,6 +1,6 @@
 {
   "file": "expeditor-contract.json",
-  "version": "v2025-12-20-exp-07",
+  "version": "v2025-12-19-exp-06",
   "street": "blog",
   "house": "cp:2",
   "live_only": {
@@ -12,8 +12,7 @@
   "purpose": [
     "Deterministically hand out dataset rows as lane input bins (NO prose, NO inference).",
     "Produce ONLY c_in_{n} and p_in_{n} bins required by job_definition.run_order.",
-    "Bind numbered passes to datasets using role_key_prefix (cdata/pdata).",
-    "Ensure live-only mode enforcement for all expeditor actions."
+    "Bind numbered passes to datasets using role_key_prefix (cdata/pdata)."
   ],
   "inputs": {
     "job_definition": {
@@ -92,8 +91,7 @@
       "pass_n": "number",
       "role_key": "string",
       "domains": "array[string]",
-      "items": "array",
-      "global_rules": "object"
+      "items": "array"
     },
     "constraints": {
       "no_extra_keys": true,
@@ -107,7 +105,7 @@
     "p_in_n": { "lane_key_format": "pr{n}" }
   },
   "algorithm": [
-    "0) Hard-stop if job_definition.mode != 'live'.",
+    "0) Hard-stop if job_definition.mode != \"live\".",
     "1) Parse required pass numbers from job_definition.run_order using pass_extraction.regex and family prefixes.",
     "2) Build ordered dataset role_key lists from job_definition.datasets:",
     "   - C_list = datasets where role_key starts with c_prefix, preserving original order.",

@@ -1,12 +1,13 @@
 {
   "file": "commit-spec.json",
-  "version": "v2025-12-19-commit-06",
+  "version": "v2025-12-20-commit-07",
   "street": "blog",
   "house": "cp:2",
   "purpose": [
     "Commit final artifacts exactly as produced (no mutation of final JSON).",
     "Derive filesystem-safe filenames from job_id (normalize ':' -> '-').",
-    "Commit via docs_commit_bulk and require real SHA + deterministic post-commit verification."
+    "Commit via docs_commit_bulk and require real SHA + deterministic post-commit verification.",
+    "Final gatekeeper ensuring stable, verified content prior to publication."
   ],
   "live_only": {
     "required": true,
@@ -118,7 +119,8 @@
     },
     "datasets_summary_rule": {
       "by_role_key": "for each datasets_by_role[role_key], include role_key, domains, row_count",
-      "row_count_source": "datasets_by_role[role_key].items.length"
+      "row_count_source": "datasets_by_role[role_key].items.length",
+      "total_datasets_count": "job_definition.datasets.length"
     },
     "lane_execution_rule": {
       "one_entry_per_lane_in_run_order": true,
@@ -214,6 +216,7 @@
   },
   "post_commit_verification": {
     "required": true,
+    "sleep_seconds_before_verify": 1,
     "verify_each_committed_path_returned_by_commit": true,
     "docs_get_path_normalization": {
       "rule": "If committed_path starts with 'docs/', strip the leading 'docs/' exactly once before calling docs_get (/docs/{path}). Otherwise, use committed_path as-is.",

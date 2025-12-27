@@ -1,6 +1,6 @@
 {
   "file": "pipeline-spec.json",
-  "version": "v2025-12-19-pipeline-04",
+  "version": "v2025-12-20-pipeline-05",
   "street": "blog",
   "house": "cp:2",
   "live_only": {
@@ -10,13 +10,18 @@
     "on_fail": { "action": "halt", "error_code": "JOB_MODE_NOT_LIVE" }
   },
   "purpose": [
-    "Declare allowed lane keys for this house.",
-    "Declare deterministic reads_bin -> writes_bin routing per lane key.",
-    "Declare how numbered C/P passes bind to datasets (by domains).",
-    "Enable runner to execute job_definition.run_order directly, sequentially, in live mode."
+    "Define allowed lane keys and input/output routing.",
+    "Map each lane to a fixed template file in items/blog/cp-2/ (no subfolders).",
+    "Bind dataset passes (C/P) by order in job_definition.datasets.",
+    "Enable deterministic live execution for all lanes."
   ],
   "filesystem_normalization": {
-    "house_slug_rule": { "replace_chars": { ":": "-" } }
+    "house_slug_rule": { "replace_chars": { ":": "-" } },
+    "template_path_rule": {
+      "root": "items/blog/cp-2/",
+      "allow_subfolders": false,
+      "note": "All templates are loaded directly from this directory with literal filenames."
+    }
   },
   "dataset_families": {
     "C": {
@@ -76,7 +81,9 @@
     "hard_stop_on_bin_overwrite": true,
     "hard_stop_on_missing_template_file": true,
     "member_lanes_must_call_model": true,
-    "model_output_must_parse_as_json_object": true
+    "model_output_must_parse_as_json_object": true,
+    "template_path_resolution": "direct_only",
+    "template_search_root": "items/blog/cp-2/"
   },
   "lane_type_rules": {
     "model_required_for_lane_types": ["researcher", "writer", "rewriter", "stitcher"],
@@ -137,34 +144,15 @@
     "cw1": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_1", "writes_bin": "c_writer_1" },
     "crwtr1": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_1", "writes_bin": "c_out_1" },
 
-    "cr2": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_2", "writes_bin": "c_research_2" },
-    "cw2": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_2", "writes_bin": "c_writer_2" },
-    "crwtr2": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_2", "writes_bin": "c_out_2" },
-
-    "cr3": { "type": "researcher", "template_ref": "cr", "reads_bin": "c_in_3", "writes_bin": "c_research_3" },
-    "cw3": { "type": "writer", "template_ref": "cw", "reads_bin": "c_research_3", "writes_bin": "c_writer_3" },
-    "crwtr3": { "type": "rewriter", "template_ref": "crwtr", "reads_bin": "c_writer_3", "writes_bin": "c_out_3" },
-
     "pr1": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_1", "writes_bin": "p_research_1" },
     "pw1": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_1", "writes_bin": "p_writer_1" },
     "prwtr1": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_1", "writes_bin": "p_out_1" },
-
-    "pr2": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_2", "writes_bin": "p_research_2" },
-    "pw2": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_2", "writes_bin": "p_writer_2" },
-    "prwtr2": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_2", "writes_bin": "p_out_2" },
-
-    "pr3": { "type": "researcher", "template_ref": "pr", "reads_bin": "p_in_3", "writes_bin": "p_research_3" },
-    "pw3": { "type": "writer", "template_ref": "pw", "reads_bin": "p_research_3", "writes_bin": "p_writer_3" },
-    "prwtr3": { "type": "rewriter", "template_ref": "prwtr", "reads_bin": "p_writer_3", "writes_bin": "p_out_3" },
 
     "stchr": {
       "type": "stitcher",
       "template_ref": "stchr",
       "reads_bin": "stchr_in",
-      "reads_dynamic": {
-        "enabled": true,
-        "builder_key": "stchr_in"
-      },
+      "reads_dynamic": { "enabled": true, "builder_key": "stchr_in" },
       "writes_bin": "stitched_out"
     },
 

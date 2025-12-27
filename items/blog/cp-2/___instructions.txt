@@ -1,0 +1,212 @@
+# File: items/blog/cp-2/instructions.txt
+# Runner: job-cp:2-4434456 — FULL LIVE EXECUTION (non-interactive)
+# Version: v2025-12-21-hotfix-02
+# Purpose:
+#   - Run entire pipeline automatically (no confirmations)
+#   - Fetch both datasets by role_key (ignore domains)
+#   - Load all templates sequentially in one pass
+#   - Execute all lanes without pausing
+#   - Perform real commit and respond
+
+RUNNER_MARKER: job-cp2-4434456-live
+
+=== GLOBAL FLAGS ===
+live_environment_binding: true
+require_local_filesystem_mount: true
+require_model_execution_pipeline: true
+require_docs_commit_access: true
+allow_simulation: false
+force_real_commit: true
+auto_proceed: true
+require_confirmation: false
+suppress_ui_confirmations: true
+display_progress: true
+
+=== FLOW ===
+
+1) job_definition
+   - Call api_rows_com__jit_plugin.getJobDefinitionsRows().
+   - Find row where first column == "job-cp:2-4434456".
+   - Parse JSON payload → job_definition.
+   - Validate presence of job_id, street, house, mode, run_order, datasets, global_rules.
+   - Log datasets (role_key) and run_order sequence.
+   - Immediately continue to Phase 2 (no confirmation).
+
+
+2) load_house
+   - For every required file, call items_clearroundtravel_com__jit_plugin.items_get.
+   - Required files (in this order):
+       1. "blog/cp-2/pipeline-spec.json"
+       2. "blog/cp-2/expeditor-contract.json"
+       3. "blog/cp-2/final-schema.json"
+       4. "blog/cp-2/commit-spec.json"
+
+   - For each required path:
+         items_clearroundtravel_com__jit_plugin.items_get({
+           "path": path
+         })
+         ✅ Expect status_code == 200
+         ❌ If status_code != 200 → HALT with "HOUSE_FILE_NOT_FOUND"
+
+   - After pipeline-spec.json loads:
+         Parse JSON → read .templates entries
+         For each template filename:
+             items_clearroundtravel_com__jit_plugin.items_get({
+               "path": "blog/cp-2/" + filename
+             })
+             ✅ Expect 200; stop only if 404 or invalid.
+
+   - Never read from local filesystem.
+   - Never infer additional files or manifests (e.g. ❌ "house.json").
+   - Continue automatically to Phase 3 after all responses received.
+
+   - 🔸 Print: "✅ PHASE 2 check: house load loop exited normally."
+   - 🔸 Print: "✅ Loaded files count: {len(house_assets)}"
+   - 🔸 Print: "Proceeding automatically to Phase 3 (fetch_datasets)."
+
+
+3) fetch_datasets
+   - Purpose:
+       Retrieve *all* datasets defined in job_definition.datasets sequentially.
+       Ignore domains completely — use role_key only.
+       Must load both cdata1-4434456 and pdata1-4434456.
+
+   - Initialize:
+       datasets_by_role = {}
+
+   - For each dataset in job_definition.datasets (in declared order):
+       role_key = dataset.role_key
+       sheet_id = dataset.sheet_id
+       table_id = dataset.table_id
+       range    = dataset.range
+
+       🔹 Print: "📡 Fetching dataset → " + role_key
+
+       call_result = api_rows_com__jit_plugin.getRowsValues({
+         "sheet_id": sheet_id,
+         "table_id": table_id,
+         "range": range
+       })
+
+       # Verify call success
+       If call_result is None:
+           Print: "❌ API call failed for " + role_key
+           STOP "dataset fetch"
+
+       If not call_result.items or len(call_result.items) == 0:
+           Print: "⚠️ Dataset " + role_key + " returned 0 rows."
+           datasets_by_role[role_key] = {
+             "role_key": role_key,
+             "items": []
+           }
+       Else:
+           Print: "✅ Dataset " + role_key + " loaded: " + str(len(call_result.items)) + " rows."
+           datasets_by_role[role_key] = {
+             "role_key": role_key,
+             "items": call_result.items
+           }
+
+   - After loop:
+       If "cdata1-4434456" not in datasets_by_role:
+           Print: "❌ Missing cdata1-4434456 dataset after loop."
+           STOP "dataset fetch"
+       If "pdata1-4434456" not in datasets_by_role:
+           Print: "❌ Missing pdata1-4434456 dataset after loop."
+           STOP "dataset fetch"
+
+       Print: "✅ All datasets fetched successfully: " + ", ".join(list(datasets_by_role.keys()))
+       Proceed automatically to Phase 4 (execute_lanes).
+
+
+🔸 Print: "=== ENTERING PHASE 4: EXECUTE_LANES ==="
+4) execute_lanes
+   - For each lane_key in job_definition.run_order sequentially:
+       lane_spec = pipeline_spec.lane_registry[lane_key]
+       template_file = pipeline_spec.templates[lane_spec.template_ref]
+       🔹 Print: "Loading template → " + template_file
+       res = items_clearroundtravel_com__jit_plugin.items_get({
+         "path": "blog/cp-2/" + template_file
+       })
+       if res.status_code != 200:
+           HALT "TEMPLATE_NOT_FOUND"
+       template_text = res.response_data or res.file or res.text or ""
+       🔹 Print: "Executing lane → " + lane_key + " (" + lane_spec.type + ")"
+       if lane_spec.type == "data_sorter":
+           # Expeditor builds input bins
+           bins["c_in_1"], bins["p_in_1"] = build_inputs_from_datasets(datasets_by_role)
+           🔹 Print: "✅ exp completed (c_in_1, p_in_1)"
+           continue
+       elif lane_spec.type in ["researcher","writer","rewriter","stitcher"]:
+           reads_bin  = lane_spec.reads_bin
+           writes_bin = lane_spec.writes_bin
+           system_prompt = JSON.stringify(job_definition.global_rules) + "\n\n" + template_text
+           user_message  = JSON.stringify(bins[reads_bin] or {})
+           model_output  = call GPT model once
+           parsed = parse model_output as JSON
+           bins[writes_bin] = parsed
+           lane_logs[lane_key] = {
+             "reads": reads_bin,
+             "writes": writes_bin,
+             "template": template_file,
+             "model_called": true
+           }
+           🔹 Print: "✅ Completed lane: " + lane_key
+           continue
+       elif lane_spec.type == "commit":
+           continue  # handled in Phase 6
+   - Never wait or confirm; run through all lanes automatically.
+   - After all lanes execute, proceed immediately to Phase 5 (final_validation).
+
+
+
+5) final_validation
+   - Validate bins["final_out"] against items/blog/cp-2/final-schema.json.
+   - Auto-fail if invalid or contains literal "could-not-verify".
+   - Proceed to commit automatically.
+
+6) commit
+   - Build run_log_json and prepare final commit payload.
+   - Call items_clearroundtravel_com__jit_plugin.docs_commit_bulk({
+       "message": "auto live commit from runner",
+       "overwrite": true,
+       "files": [
+         {
+           "path": "docs/blog/cp-2/finals/job-cp-2-4434456.json",
+           "content_type": "application/json",
+           "content_base64": b64(JSON.stringify(bins["final_out"]))
+         },
+         {
+           "path": "docs/blog/cp-2/logs/job-cp-2-4434456-runlog.json",
+           "content_type": "application/json",
+           "content_base64": b64(run_log_json)
+         }
+       ]
+     })
+   - Verify commit.sha and each committed path via docs_get.
+   - Auto-fail if any missing verification.
+   - Proceed to respond.
+
+7) respond
+   - Emit JSON summary:
+       {
+         "job_id": "job-cp:2-4434456",
+         "mode": "live",
+         "executed_run_order": [
+           "exp","cr1","cw1","crwtr1",
+           "pr1","pw1","prwtr1","stchr","srwrtr","commit"
+         ],
+         "committed_paths": [
+           "docs/blog/cp-2/finals/job-cp-2-4434456.json",
+           "docs/blog/cp-2/logs/job-cp-2-4434456-runlog.json"
+         ],
+         "commit_sha": "<sha>",
+         "runner_marker": "job-cp2-4434456-live"
+       }
+
+=== GUARANTEES ===
+- Zero UI pauses or confirmations.
+- Datasets fetched by role_key only (no domains).
+- Templates loaded sequentially in one pass.
+- Every lane executes automatically.
+- Real model calls only (no simulation).
+- Full commit and response at end.
