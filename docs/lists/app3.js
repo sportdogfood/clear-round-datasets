@@ -3,10 +3,6 @@
 // Session persists in localStorage (survives tab close / refresh).
 // Session expires 12 hours after last save (sliding TTL).
 // Only New session and Restart session force a fresh session.
-//
-// Lists are now data-driven via: /data/lists.json
-//   - state list: { key:"state", type:"state" } maps to horse.state
-//   - list lists:  { key:"list1", type:"list" } maps to horse.lists[listKey]
 
 (function () {
   'use strict';
@@ -18,12 +14,8 @@
   // docs/lists/data/horses.json
   const HORSES_DATA_URL = './data/horses.json';
 
-  // docs/lists/data/lists.json
-  const LISTS_DATA_URL = './data/lists.json';
-
   const STORAGE_KEY_SESSION = 'tacklists_session_v1';
   const STORAGE_KEY_CATALOG = 'tacklists_horses_catalog_v1';
-  const STORAGE_KEY_LISTS = 'tacklists_lists_catalog_v1';
 
   // 12-hour TTL
   const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 43200000
@@ -31,7 +23,7 @@
   const SESSION_COOKIE_MAX_AGE = 12 * 60 * 60; // 43200 seconds
 
   // ---------------------------------------------------------------------------
-  // Fallback (hardcoded) lists + horses — kept as backup
+  // Fallback (hardcoded) list — kept as backup
   // ---------------------------------------------------------------------------
 
   const HORSE_NAMES = [
@@ -41,18 +33,22 @@
     "Munster","Bernie","Hurricane","Winnie","Caymus","BB"
   ];
 
-  // Fallback lists (used only if lists.json is missing/unavailable)
-  const FALLBACK_LISTS = [
-    { key: 'state', label: 'Active Horses', type: 'state', inNav: true, inSummary: true, inShare: true },
-    { key: 'list1', label: 'Schooling Bridles', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list2', label: 'Show Bridles', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list3', label: 'Schooling Girths', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list4', label: 'Show Girths', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list5', label: 'Saddles', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list6', label: 'Trunks', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list7', label: 'Supplements', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list8', label: 'Sheets', type: 'list', inNav: true, inSummary: true, inShare: true }
+  const LIST_NAMES = [
+    'Active Horses',     // state
+    'Schooling Bridles', // list1
+    'Show Bridles',      // list2
+    'Schooling Girths',  // list3
+    'Show Girths',       // list4
+    'Saddles',           // list5
+    'Trunks',            // list6
+    'Supplements'        // list7
   ];
+
+  const LIST_KEYS = ['state', 'list1', 'list2', 'list3', 'list4', 'list5', 'list6', 'list7'];
+
+  const LIST_LABELS = Object.fromEntries(
+    LIST_KEYS.map((key, i) => [key, LIST_NAMES[i]])
+  );
 
   // ---------------------------------------------------------------------------
   // App state
@@ -67,10 +63,6 @@
     // Catalog used ONLY when creating a new session (or restarting)
     catalog: null,
     catalogStatus: 'loading', // 'loading' | 'ready' | 'fallback'
-
-    // Lists config (drives list screens, labels, counts)
-    listsConfig: null,
-    listsStatus: 'loading', // 'loading' | 'ready' | 'fallback'
 
     // storage health (for start-screen note)
     storageOk: true
@@ -155,232 +147,7 @@
         storageSet(STORAGE_KEY_CATALOG, legacyCatalog);
       }
       if (legacyCatalog) sessionStorage.removeItem(STORAGE_KEY_CATALOG);
-
-      const legacyLists = sessionStorage.getItem(STORAGE_KEY_LISTS);
-      if (legacyLists && !storageGet(STORAGE_KEY_LISTS)) {
-        storageSet(STORAGE_KEY_LISTS, legacyLists);
-      }
-      if (legacyLists) sessionStorage.removeItem(STORAGE_KEY_LISTS);
     } catch (_) {}
-  }
-
-  // ---------------------------------------------------------------------------
-  // Lists config (lists.json)
-  // ---------------------------------------------------------------------------
-
-  function buildFallbackLists() {
-    return FALLBACK_LISTS.slice();
-  }
-
-  function normalizeListsStrict(raw) {
-    if (!Array.isArray(raw)) return [];
-
-    const out = [];
-    for (const row of raw) {
-      if (!row || typeof row !== 'object') continue;
-
-      const key = String(row.key || '').trim();
-      const label = String(row.label || '').trim();
-      if (!key || !label) continue;
-
-      const type = row.type === 'state' ? 'state' : 'list';
-
-      out.push({
-        key,
-        label,
-        type,
-        inNav: row.inNav !== false,
-        inSummary: row.inSummary !== false,
-        inShare: row.inShare !== false
-      });
-    }
-
-    // Ensure we always have a state definition (minimum)
-    const hasState = out.some((d) => d.key === 'state' || d.type === 'state');
-    if (!hasState) {
-      out.unshift({
-        key: 'state',
-        label: 'Active Horses',
-        type: 'state',
-        inNav: true,
-        inSummary: true,
-        inShare: true
-      });
-    }
-
-    return out;
-  }
-
-  function loadListsFromStorage() {
-    const raw = storageGet(STORAGE_KEY_LISTS);
-    if (!raw) return null;
-
-    const parsed = safeJSONParse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-    if (!Array.isArray(parsed.items)) return null;
-
-    const items = normalizeListsStrict(parsed.items);
-    return items.length ? items : null;
-  }
-
-  function saveListsToStorage(items) {
-    if (!Array.isArray(items) || !items.length) return;
-    storageSet(
-      STORAGE_KEY_LISTS,
-      JSON.stringify({ savedAt: new Date().toISOString(), items })
-    );
-  }
-
-  function getListsConfig() {
-    if (Array.isArray(state.listsConfig) && state.listsConfig.length) return state.listsConfig;
-    return buildFallbackLists();
-  }
-
-  function getStateDef(cfg) {
-    return cfg.find((d) => d.type === 'state' || d.key === 'state') || {
-      key: 'state',
-      label: 'Active Horses',
-      type: 'state',
-      inNav: true,
-      inSummary: true,
-      inShare: true
-    };
-  }
-
-  function getListDefs(cfg) {
-    // "list" type only; preserve config order
-    return cfg.filter((d) => d && d.type === 'list' && String(d.key || '').startsWith('list'));
-  }
-
-  function getListKeys(cfg) {
-    return getListDefs(cfg).map((d) => d.key);
-  }
-
-  function getLabelMap(cfg) {
-    const map = {};
-    for (const d of cfg) {
-      if (d && d.key) map[d.key] = d.label;
-    }
-    return map;
-  }
-
-  function labelForKey(key) {
-    const k = String(key || '');
-    if (k === 'start') return 'Start';
-    if (k === 'summary') return 'Summary';
-    if (k === 'share') return 'Share';
-
-    const cfg = getListsConfig();
-    const map = getLabelMap(cfg);
-    return map[k] || '';
-  }
-
-  function parseListScreen(scr) {
-    const s = String(scr || '');
-    if (!s.startsWith('list')) return null;
-    const isDetail = s.endsWith('Detail');
-    const key = isDetail ? s.slice(0, -6) : s; // remove "Detail"
-    return { key, isDetail };
-  }
-
-  function isKnownListKey(key) {
-    const cfg = getListsConfig();
-    const keys = getListKeys(cfg);
-    return keys.includes(String(key || ''));
-  }
-
-  function firstListKey() {
-    const cfg = getListsConfig();
-    const keys = getListKeys(cfg);
-    return keys.length ? keys[0] : null;
-  }
-
-  function normalizeSessionListsToConfig() {
-    if (!state.session || !Array.isArray(state.session.horses)) return;
-
-    const cfg = getListsConfig();
-    const listKeys = getListKeys(cfg);
-
-    let changed = false;
-
-    for (const h of state.session.horses) {
-      if (!h || typeof h !== 'object') continue;
-
-      if (!h.lists || typeof h.lists !== 'object') {
-        h.lists = {};
-        changed = true;
-      }
-
-      for (const k of listKeys) {
-        const before = !!h.lists[k];
-        if (!(k in h.lists)) {
-          h.lists[k] = false;
-          changed = true;
-        } else {
-          h.lists[k] = before;
-        }
-      }
-    }
-
-    if (changed) {
-      // Save without modifying lastUpdated
-      saveSessionToStorage();
-    }
-  }
-
-  async function loadListsConfig() {
-    const cached = loadListsFromStorage();
-    if (cached && cached.length) {
-      state.listsConfig = cached;
-      state.listsStatus = 'ready';
-      normalizeSessionListsToConfig();
-      render();
-
-      // silent background refresh
-      try {
-        const res = await fetch(LISTS_DATA_URL, { cache: 'no-store' });
-        if (res && res.ok) {
-          const raw = await res.json();
-          const fresh = normalizeListsStrict(raw);
-          if (fresh.length) {
-            state.listsConfig = fresh;
-            state.listsStatus = 'ready';
-            saveListsToStorage(fresh);
-            normalizeSessionListsToConfig();
-
-            // if user is on a now-missing list screen, send to summary
-            const p = parseListScreen(state.currentScreen);
-            if (p && !isKnownListKey(p.key)) state.currentScreen = 'summary';
-
-            render();
-          }
-        }
-      } catch (_) {}
-      return;
-    }
-
-    try {
-      const res = await fetch(LISTS_DATA_URL, { cache: 'no-store' });
-      if (!res.ok) throw new Error('bad status');
-      const raw = await res.json();
-      const items = normalizeListsStrict(raw);
-
-      if (items.length) {
-        state.listsConfig = items;
-        state.listsStatus = 'ready';
-        saveListsToStorage(items);
-        normalizeSessionListsToConfig();
-        render();
-        return;
-      }
-      throw new Error('empty');
-    } catch (_) {
-      state.listsConfig = buildFallbackLists();
-      state.listsStatus = 'fallback';
-      saveListsToStorage(state.listsConfig);
-      normalizeSessionListsToConfig();
-      render();
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -402,25 +169,23 @@
       return null;
     }
 
-    const cfg = getListsConfig();
-    const listKeys = getListKeys(cfg);
-
     const horses = parsed.horses
       .filter((h) => h && typeof h === 'object')
-      .map((h) => {
-        const lists = {};
-        for (const k of listKeys) {
-          lists[k] = !!(h.lists && h.lists[k]);
+      .map((h) => ({
+        horseId: String(h.horseId || ''),
+        horseName: String(h.horseName || '').trim(),
+        barnActive: !!h.barnActive,
+        state: !!h.state,
+        lists: {
+          list1: !!(h.lists && h.lists.list1),
+          list2: !!(h.lists && h.lists.list2),
+          list3: !!(h.lists && h.lists.list3),
+          list4: !!(h.lists && h.lists.list4),
+          list5: !!(h.lists && h.lists.list5),
+          list6: !!(h.lists && h.lists.list6),
+          list7: !!(h.lists && h.lists.list7)
         }
-
-        return {
-          horseId: String(h.horseId || ''),
-          horseName: String(h.horseName || '').trim(),
-          barnActive: !!h.barnActive,
-          state: !!h.state,
-          lists
-        };
-      })
+      }))
       .filter((h) => h.horseId && h.horseName);
 
     if (!horses.length) return null;
@@ -562,21 +327,22 @@
 
   function createNewSession() {
     const catalog = getCatalog();
-    const cfg = getListsConfig();
-    const listKeys = getListKeys(cfg);
 
-    const horses = catalog.map((item, index) => {
-      const lists = {};
-      for (const k of listKeys) lists[k] = false;
-
-      return {
-        horseId: `h${index + 1}`,
-        horseName: item.horseName,
-        barnActive: !!item.barnActive, // indicator only
-        state: false,                  // manual selection only
-        lists
-      };
-    });
+    const horses = catalog.map((item, index) => ({
+      horseId: `h${index + 1}`,
+      horseName: item.horseName,
+      barnActive: !!item.barnActive, // indicator only
+      state: false,                  // manual selection only
+      lists: {
+        list1: false,
+        list2: false,
+        list3: false,
+        list4: false,
+        list5: false,
+        list6: false, // Trunks
+        list7: false  // Supplements
+      }
+    }));
 
     state.session = {
       sessionId: nowMs().toString(),
@@ -591,7 +357,6 @@
 
   function ensureSession() {
     if (!state.session) createNewSession();
-    normalizeSessionListsToConfig();
   }
 
   function updateLastUpdated() {
@@ -650,37 +415,33 @@
   }
 
   function handleListPrevNext(direction) {
-    const p = parseListScreen(state.currentScreen);
-    if (!p) return;
+    const scr = state.currentScreen;
+    const match = scr.match(/^list([1-7])(Detail)?$/);
+    if (!match) return;
 
-    const cfg = getListsConfig();
-    const listKeys = getListKeys(cfg);
-    const idx = listKeys.indexOf(p.key);
-    if (idx === -1) return;
+    const idx = Number(match[1]);
 
-    if (direction === 'prev' && idx > 0) {
-      setScreen(listKeys[idx - 1]);
+    if (direction === 'prev' && idx > 1) {
+      setScreen(`list${idx - 1}`);
     } else if (direction === 'next') {
-      if (idx < listKeys.length - 1) setScreen(listKeys[idx + 1]);
+      if (idx < 7) setScreen(`list${idx + 1}`);
       else setScreen('summary');
     }
   }
 
   function titleForScreen(scr) {
-    const s = String(scr || '');
-    if (s === 'start') return 'Start';
-    if (s === 'summary') return 'Summary';
-    if (s === 'share') return 'Share';
+    if (scr === 'start') return 'Start';
+    if (scr === 'state') return LIST_LABELS.state;
+    if (scr === 'summary') return 'Summary';
+    if (scr === 'share') return 'Share';
 
-    // state label from config
-    if (s === 'state') return labelForKey('state');
-
-    const p = parseListScreen(s);
-    if (p && isKnownListKey(p.key)) {
-      const base = labelForKey(p.key) || p.key;
-      return p.isDetail ? `${base} Detail` : base;
+    const listMatch = scr.match(/^list([1-7])(Detail)?$/);
+    if (listMatch) {
+      const n = listMatch[1];
+      const base = LIST_LABELS[`list${n}`] || `List ${n}`;
+      if (listMatch[2]) return `${base} Detail`;
+      return base;
     }
-
     return '';
   }
 
@@ -695,8 +456,7 @@
     const hideBack = state.history.length === 0 && scr === 'start';
     headerBack.style.visibility = hideBack ? 'hidden' : 'visible';
 
-    const p = parseListScreen(scr);
-    const isListScreen = !!(p && isKnownListKey(p.key));
+    const isListScreen = /^list[1-7](Detail)?$/.test(scr);
 
     if (scr === 'summary') {
       headerAction.hidden = false;
@@ -726,8 +486,8 @@
     } else if (scr === 'share') {
       activeKey = 'summary';
     } else {
-      const p = parseListScreen(scr);
-      if (p) activeKey = p.key;
+      const m = scr.match(/^list([1-7])(Detail)?$/);
+      if (m) activeKey = `list${m[1]}`;
     }
 
     const buttons = navRow ? navRow.querySelectorAll('.nav-btn') : [];
@@ -748,14 +508,11 @@
     const activeHorses = horses.filter((h) => h.state);
     const activeCount = activeHorses.length;
 
-    const cfg = getListsConfig();
-    const listDefs = getListDefs(cfg);
+    const listCounts = { list1: 0, list2: 0, list3: 0, list4: 0, list5: 0, list6: 0, list7: 0 };
 
-    const listCounts = {};
-    for (const d of listDefs) {
-      const k = d.key;
-      listCounts[k] = horses.filter((h) => h.state && h.lists && h.lists[k]).length;
-    }
+    ['list1','list2','list3','list4','list5','list6','list7'].forEach((listId) => {
+      listCounts[listId] = horses.filter((h) => h.state && h.lists[listId]).length;
+    });
 
     function setAgg(key, value) {
       const el = navRow.querySelector(`[data-nav-agg="${key}"]`);
@@ -767,16 +524,15 @@
     }
 
     setAgg('state', activeCount);
+    setAgg('list1', listCounts.list1);
+    setAgg('list2', listCounts.list2);
+    setAgg('list3', listCounts.list3);
+    setAgg('list4', listCounts.list4);
+    setAgg('list5', listCounts.list5);
+    setAgg('list6', listCounts.list6);
+    setAgg('list7', listCounts.list7);
 
-    for (const d of listDefs) {
-      setAgg(d.key, listCounts[d.key] || 0);
-    }
-
-    const summaryListDefs = listDefs.filter((d) => d.inSummary !== false);
-    const listsWithAny = summaryListDefs
-      .map((d) => listCounts[d.key] || 0)
-      .filter((c) => c > 0).length;
-
+    const listsWithAny = Object.values(listCounts).filter((c) => c > 0).length;
     setAgg('summary', listsWithAny);
   }
 
@@ -914,10 +670,7 @@
     if (!horse.state) {
       horse.state = true;
     } else {
-      const inAnyList = horse.lists && typeof horse.lists === 'object'
-        ? Object.values(horse.lists).some(Boolean)
-        : false;
-
+      const inAnyList = Object.values(horse.lists).some(Boolean);
       if (inAnyList) {
         const ok = window.confirm(
           'Removing this horse from Active Horses will also remove it from all lists. Continue?'
@@ -925,9 +678,13 @@
         if (!ok) return;
 
         horse.state = false;
-        if (horse.lists && typeof horse.lists === 'object') {
-          Object.keys(horse.lists).forEach((k) => { horse.lists[k] = false; });
-        }
+        horse.lists.list1 = false;
+        horse.lists.list2 = false;
+        horse.lists.list3 = false;
+        horse.lists.list4 = false;
+        horse.lists.list5 = false;
+        horse.lists.list6 = false;
+        horse.lists.list7 = false;
       } else {
         horse.state = false;
       }
@@ -1011,19 +768,17 @@
     }
   }
 
-  function toggleListMembership(listKey, horseId) {
+  function toggleListMembership(listId, horseId) {
     const horse = findHorse(horseId);
     if (!horse) return;
     if (!horse.state) return;
 
-    if (!horse.lists || typeof horse.lists !== 'object') horse.lists = {};
-    horse.lists[listKey] = !horse.lists[listKey];
-
+    horse.lists[listId] = !horse.lists[listId];
     updateLastUpdated();
     render();
   }
 
-  function renderListGrouped(listKey) {
+  function renderListGrouped(listId) {
     ensureSession();
     screenRoot.innerHTML = '';
 
@@ -1036,8 +791,8 @@
       return;
     }
 
-    const packed = activeStateHorses.filter((h) => h.lists && h.lists[listKey]);
-    const notPacked = activeStateHorses.filter((h) => !(h.lists && h.lists[listKey]));
+    const packed = activeStateHorses.filter((h) => h.lists[listId]);
+    const notPacked = activeStateHorses.filter((h) => !h.lists[listId]);
 
     if (packed.length) {
       const label = document.createElement('div');
@@ -1050,7 +805,7 @@
           active: true,
           tagVariant: 'boolean',
           tagPositive: true,
-          onClick: () => toggleListMembership(listKey, horse.horseId)
+          onClick: () => toggleListMembership(listId, horse.horseId)
         });
       });
     }
@@ -1071,18 +826,18 @@
         createRow(horseLabel(horse), {
           tagVariant: 'boolean',
           tagPositive: false,
-          onClick: () => toggleListMembership(listKey, horse.horseId)
+          onClick: () => toggleListMembership(listId, horse.horseId)
         });
       });
     }
   }
 
-  function renderListScreen(listKey) {
-    renderListGrouped(listKey);
+  function renderListScreen(listId) {
+    renderListGrouped(listId);
   }
 
-  function renderListDetailScreen(listKey) {
-    renderListGrouped(listKey);
+  function renderListDetailScreen(listId) {
+    renderListGrouped(listId);
   }
 
   function renderSummaryScreen() {
@@ -1092,22 +847,18 @@
     const horses = state.session.horses;
     const activeCount = horses.filter((h) => h.state).length;
 
-    // State row (label driven by config)
-    createRow(labelForKey('state') || 'Active Horses', {
+    createRow(LIST_LABELS.state, {
       tagText: String(activeCount),
       tagVariant: 'count',
       tagPositive: activeCount > 0,
       onClick: () => setScreen('state')
     });
 
-    const cfg = getListsConfig();
-    const listDefs = getListDefs(cfg).filter((d) => d.inSummary !== false);
+    for (let i = 1; i <= 7; i++) {
+      const listId = `list${i}`;
+      const label = LIST_LABELS[listId] || `List ${i}`;
 
-    for (const d of listDefs) {
-      const listKey = d.key;
-      const label = d.label || listKey;
-
-      const members = horses.filter((h) => h.state && h.lists && h.lists[listKey]);
+      const members = horses.filter((h) => h.state && h.lists[listId]);
       const listCount = members.length;
 
       const isFull = activeCount > 0 && listCount === activeCount;
@@ -1118,7 +869,7 @@
         tagText: displayCount,
         tagVariant: 'count',
         tagPositive: listCount > 0,
-        onClick: () => setScreen(`${listKey}Detail`)
+        onClick: () => setScreen(`list${i}Detail`)
       });
     }
   }
@@ -1144,16 +895,13 @@
     if (!activeHorses.length) lines.push('[none]');
     else activeHorses.forEach((h) => lines.push(h.horseName));
 
-    const cfg = getListsConfig();
-    const listDefs = getListDefs(cfg).filter((d) => d.inShare !== false);
-
-    for (const d of listDefs) {
-      const listKey = d.key;
-      const label = d.label || listKey;
+    for (let i = 1; i <= 7; i++) {
+      const listId = `list${i}`;
+      const label = LIST_LABELS[listId] || listId;
 
       const members = mode === 'notPacked'
-        ? activeHorses.filter((h) => !(h.lists && h.lists[listKey]))
-        : activeHorses.filter((h) => !!(h.lists && h.lists[listKey]));
+        ? activeHorses.filter((h) => !h.lists[listId])
+        : activeHorses.filter((h) => !!h.lists[listId]);
 
       const count = members.length;
 
@@ -1209,10 +957,11 @@
     if (scr === 'summary') return renderSummaryScreen();
     if (scr === 'share') return renderShareScreen();
 
-    const p = parseListScreen(scr);
-    if (p && isKnownListKey(p.key)) {
-      if (p.isDetail) return renderListDetailScreen(p.key);
-      return renderListScreen(p.key);
+    const listMatch = scr.match(/^list([1-7])(Detail)?$/);
+    if (listMatch) {
+      const listId = `list${listMatch[1]}`;
+      if (listMatch[2]) return renderListDetailScreen(listId);
+      return renderListScreen(listId);
     }
 
     renderStartScreen();
@@ -1237,9 +986,7 @@
 
     if (action === 'go-first-list') {
       ensureSession();
-      const first = firstListKey();
-      if (first) setScreen(first);
-      else setScreen('summary');
+      setScreen('list1');
       return;
     }
 
@@ -1256,30 +1003,37 @@
       const key = btn.dataset.screen;
       if (!key) return;
 
-      if (key === 'start') {
-        setScreen('start');
-        return;
-      }
+      switch (key) {
+        case 'start':
+          setScreen('start');
+          break;
 
-      if (key === 'state') {
-        ensureSession();
-        setScreen('state');
-        return;
-      }
+        case 'state':
+          ensureSession();
+          setScreen('state');
+          break;
 
-      if (key === 'summary') {
-        ensureSession();
-        setScreen('summary');
-        return;
-      }
+        case 'summary':
+          ensureSession();
+          setScreen('summary');
+          break;
 
-      if (String(key).startsWith('list')) {
-        ensureSession();
-        const hasActive = state.session.horses.some((h) => h.state);
-        if (!hasActive) setScreen('state');
-        else if (isKnownListKey(key)) setScreen(key);
-        else setScreen('summary');
-        return;
+        case 'list1':
+        case 'list2':
+        case 'list3':
+        case 'list4':
+        case 'list5':
+        case 'list6':
+        case 'list7': {
+          ensureSession();
+          const hasActive = state.session.horses.some((h) => h.state);
+          if (!hasActive) setScreen('state');
+          else setScreen(key);
+          break;
+        }
+
+        default:
+          break;
       }
     });
   }
@@ -1301,22 +1055,14 @@
 
   migrateLegacySessionStorage();
 
-  // Seed lists config synchronously so session load can normalize list keys
-  state.listsConfig = loadListsFromStorage() || buildFallbackLists();
-  state.listsStatus = (Array.isArray(state.listsConfig) && state.listsConfig.length) ? 'ready' : 'fallback';
-
   state.session = loadSessionFromStorage();
 
   // If we resumed a valid session, extend TTL for another 12 hours (no lastUpdated change)
   if (state.session) {
-    normalizeSessionListsToConfig();
     touchSessionExpiry();
     saveSessionToStorage();
   }
 
   render();
-
-  // background loads
-  loadListsConfig();
   loadCatalog(); // background (used for New/Restart)
 })();
