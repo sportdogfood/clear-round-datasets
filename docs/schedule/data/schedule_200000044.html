@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Schedule 200000044</title>
+<style>
+  :root {
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    --text: #111;
+    --muted: #444;
+    --line: #222;
+    --tab-bg: #f2f2f2;
+    --tab-active-bg: #111;
+    --tab-active-text: #fff;
+    --print-cols: 2;
+  }
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 12px; }
+  .topbar { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .title { font-weight: 800; font-size: 18px; }
+  .subtitle { color: var(--muted); font-size: 12px; }
+  .tabs { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab {
+    border: 1px solid #ddd;
+    background: var(--tab-bg);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--tab-active-bg);
+    color: var(--tab-active-text);
+    border-color: var(--tab-active-bg);
+  }
+
+  /* Content layout (screen) */
+  #content { margin-top: 10px; }
+  .ring-block {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 0 0 10px 0;
+  }
+  .ring-header {
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    font-size: 14px;
+    margin: 0 0 8px 0;
+  }
+
+  .group { margin: 0 0 10px 0; }
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .group-left {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+  }
+  .start {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .gname {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rollup {
+    font-weight: 600;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .sep {
+    height: 0;
+    border-top: 2px solid var(--line);
+    margin: 6px 0 6px 0;
+  }
+  .classes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .cls {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 2px 0;
+  }
+  .cnum {
+    width: 52px;
+    flex: 0 0 52px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+  }
+  .cname { flex: 1 1 auto; }
+
+  .error {
+    padding: 10px;
+    border: 1px solid #f99;
+    background: #fee;
+    border-radius: 8px;
+    color: #900;
+    font-size: 12px;
+  }
+
+  @media print {
+    @page { size: Letter; margin: 0.35in; }
+    .wrap { max-width: none; padding: 0; }
+    .tabs { display: none !important; }
+    .subtitle { display: none !important; }
+    .title { font-size: 14px; }
+    #content {
+      column-count: var(--print-cols);
+      column-gap: 0.25in;
+    }
+    .ring-block {
+      display: inline-block;
+      width: 100%;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      margin: 0 0 8px 0;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .ring-header { font-size: 12px; margin-bottom: 6px; }
+    .group-head { font-size: 10px; }
+    .sep { border-top-width: 2px; margin: 5px 0; }
+    .cls { font-size: 10px; padding: 1px 0; }
+    .cnum { width: 44px; flex-basis: 44px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title" id="pageTitle">Schedule</div>
+      <div class="subtitle" id="pageSubtitle"></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div id="content"></div>
+  </div>
+
+<script>
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  function normalizeDateKey(showDate){
+    if (!showDate) return "";
+    const s = String(showDate).trim();
+    // YYYY-MM-DD
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return m[1] + m[2] + m[3];
+    // MM/DD/YYYY or M/D/YYYY
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m){
+      const mm = String(m[1]).padStart(2,'0');
+      const dd = String(m[2]).padStart(2,'0');
+      return m[3] + mm + dd;
+    }
+    // YYYY/MM/DD
+    m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (m){
+      const mm = String(m[2]).padStart(2,'0');
+      const dd = String(m[3]).padStart(2,'0');
+      return m[1] + mm + dd;
+    }
+    return "";
+  }
+
+  function parseTimeToMinutes(t){
+    if (!t) return null;
+    const s = String(t).trim();
+    let m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (m){
+      let hh = Number(m[1]);
+      const mm = Number(m[2]);
+      const ap = m[3].toUpperCase();
+      if (ap === 'AM'){ if (hh === 12) hh = 0; }
+      else { if (hh !== 12) hh += 12; }
+      return hh*60 + mm;
+    }
+    m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (m){
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      return hh*60 + mm;
+    }
+    return null;
+  }
+
+  function safeText(v){
+    return (v === null || v === undefined) ? "" : String(v);
+  }
+
+  function getShowIdFromFilename(){
+    try {
+      const p = window.location.pathname || "";
+      const m = p.match(/schedule_(\d+)\.html$/i);
+      return m ? m[1] : "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function fetchFirstJson(urls){
+    for (const u of urls){
+      try {
+        const res = await fetch(u, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const txt = await res.text();
+        const j = JSON.parse(txt);
+        return { url: u, json: j };
+      } catch {
+        // try next
+      }
+    }
+    return null;
+  }
+
+  function uniqTokensFromGroupDisplays(values){
+    const tokens = [];
+    const seen = new Set();
+    for (const v of values){
+      if (!v) continue;
+      const parts = String(v).split(',').map(x => x.trim()).filter(Boolean);
+      for (const p of parts){
+        const key = p.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        tokens.push(p);
+      }
+    }
+    // sort by numeric in parens if present
+    const withNum = tokens.map(t => {
+      const m = t.match(/\((\d+)\)\s*$/);
+      return { t, n: m ? Number(m[1]) : null };
+    });
+    withNum.sort((a,b) => {
+      if (a.n === null && b.n === null) return 0;
+      if (a.n === null) return 1;
+      if (b.n === null) return -1;
+      return a.n - b.n;
+    });
+    return withNum.map(x => x.t);
+  }
+
+  function groupRowsForDay(rows, dayKey){
+    const dayRows = rows.filter(r => normalizeDateKey(r.show_date) === dayKey);
+
+    // ringKey = ring_number|ring_nickname (sort by ring_number)
+    const ringMap = new Map();
+    for (const r of dayRows){
+      const ringNum = (r.ring_number !== undefined && r.ring_number !== null) ? Number(r.ring_number) : null;
+      const ringNick = safeText(r.ring_nickname);
+      const ringKey = String(ringNum ?? "") + "|" + ringNick;
+
+      if (!ringMap.has(ringKey)){
+        ringMap.set(ringKey, {
+          ring_number: ringNum,
+          ring_nickname: ringNick,
+          groups: new Map()
+        });
+      }
+      const ring = ringMap.get(ringKey);
+
+      const gid = safeText(r.class_group_id);
+      if (!gid) continue;
+
+      if (!ring.groups.has(gid)){
+        ring.groups.set(gid, {
+          class_group_id: gid,
+          class_group_sequence: (r.class_group_sequence !== undefined && r.class_group_sequence !== null) ? Number(r.class_group_sequence) : null,
+          group_name: safeText(r.group_name),
+          start_display_list: [],
+          group_display_list: [],
+          classes: []
+        });
+      }
+      const g = ring.groups.get(gid);
+
+      if (r.class_group_sequence !== undefined && r.class_group_sequence !== null && g.class_group_sequence === null){
+        g.class_group_sequence = Number(r.class_group_sequence);
+      }
+      if (!g.group_name && r.group_name) g.group_name = safeText(r.group_name);
+
+      if (r.start_display) g.start_display_list.push(safeText(r.start_display));
+      if (r.group_display) g.group_display_list.push(safeText(r.group_display));
+
+      g.classes.push({
+        class_number: (r.class_number !== undefined && r.class_number !== null) ? Number(r.class_number) : null,
+        class_name: safeText(r.class_name)
+      });
+    }
+
+    // finalize: rings sorted by ring_number asc
+    const rings = Array.from(ringMap.values()).sort((a,b) => {
+      const an = (a.ring_number === null || Number.isNaN(a.ring_number)) ? 999999 : a.ring_number;
+      const bn = (b.ring_number === null || Number.isNaN(b.ring_number)) ? 999999 : b.ring_number;
+      return an - bn;
+    });
+
+    for (const ring of rings){
+      const groups = Array.from(ring.groups.values());
+
+      for (const g of groups){
+        // start_display (earliest)
+        let best = "";
+        let bestMin = null;
+        for (const sd of g.start_display_list){
+          const m = parseTimeToMinutes(sd);
+          if (m === null) continue;
+          if (bestMin === null || m < bestMin){
+            bestMin = m;
+            best = sd;
+          }
+        }
+        g.start_display = best;
+
+        // rollup at group-level
+        const roll = uniqTokensFromGroupDisplays(g.group_display_list);
+        g.group_display = roll.length ? roll.join(", ") : "";
+
+        // classes: sort by class_number, de-dupe
+        g.classes.sort((x,y) => {
+          const xn = (x.class_number === null || Number.isNaN(x.class_number)) ? 999999 : x.class_number;
+          const yn = (y.class_number === null || Number.isNaN(y.class_number)) ? 999999 : y.class_number;
+          if (xn !== yn) return xn - yn;
+          return x.class_name.localeCompare(y.class_name);
+        });
+        const seen = new Set();
+        const dedup = [];
+        for (const c of g.classes){
+          const k = String(c.class_number ?? "") + "|" + c.class_name;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          dedup.push(c);
+        }
+        g.classes = dedup;
+
+        delete g.start_display_list;
+        delete g.group_display_list;
+      }
+
+      // groups sort by sequence
+      groups.sort((a,b) => {
+        const as = (a.class_group_sequence === null || Number.isNaN(a.class_group_sequence)) ? 999999 : a.class_group_sequence;
+        const bs = (b.class_group_sequence === null || Number.isNaN(b.class_group_sequence)) ? 999999 : b.class_group_sequence;
+        if (as !== bs) return as - bs;
+
+        const am = parseTimeToMinutes(a.start_display) ?? 999999;
+        const bm = parseTimeToMinutes(b.start_display) ?? 999999;
+        if (am !== bm) return am - bm;
+
+        return a.group_name.localeCompare(b.group_name);
+      });
+
+      ring.groups = groups;
+    }
+
+    return rings;
+  }
+
+  function renderTabs(dayList, activeDayKey, dayKeyToLabel){
+    const tabs = byId('tabs');
+    tabs.innerHTML = "";
+    for (const dk of dayList){
+      const el = document.createElement('div');
+      el.className = 'tab' + (dk === activeDayKey ? ' active' : '');
+      el.textContent = dayKeyToLabel.get(dk) || dk;
+      el.onclick = () => { window.location.hash = dk; };
+      tabs.appendChild(el);
+    }
+  }
+
+  function renderDay(rings){
+    const content = byId('content');
+    content.innerHTML = "";
+
+    for (const ring of rings){
+      const rb = document.createElement('div');
+      rb.className = 'ring-block';
+
+      const h = document.createElement('div');
+      h.className = 'ring-header';
+      h.textContent = ring.ring_nickname || ('Ring ' + (ring.ring_number ?? ''));
+      rb.appendChild(h);
+
+      for (const g of ring.groups){
+        const gd = document.createElement('div');
+        gd.className = 'group';
+
+        const head = document.createElement('div');
+        head.className = 'group-head';
+
+        const left = document.createElement('div');
+        left.className = 'group-left';
+
+        const start = document.createElement('div');
+        start.className = 'start';
+        start.textContent = g.start_display || '';
+        left.appendChild(start);
+
+        const name = document.createElement('div');
+        name.className = 'gname';
+        name.textContent = g.group_name || '';
+        left.appendChild(name);
+
+        const roll = document.createElement('div');
+        roll.className = 'rollup';
+        roll.textContent = g.group_display || '';
+
+        head.appendChild(left);
+        head.appendChild(roll);
+
+        gd.appendChild(head);
+
+        const sep = document.createElement('div');
+        sep.className = 'sep';
+        gd.appendChild(sep);
+
+        const ul = document.createElement('ul');
+        ul.className = 'classes';
+
+        for (const c of g.classes){
+          const li = document.createElement('li');
+          li.className = 'cls';
+
+          const cn = document.createElement('div');
+          cn.className = 'cnum';
+          cn.textContent = (c.class_number !== null && c.class_number !== undefined && !Number.isNaN(c.class_number))
+            ? String(c.class_number)
+            : '';
+          li.appendChild(cn);
+
+          const nm = document.createElement('div');
+          nm.className = 'cname';
+          nm.textContent = c.class_name || '';
+          li.appendChild(nm);
+
+          ul.appendChild(li);
+        }
+
+        gd.appendChild(ul);
+        rb.appendChild(gd);
+      }
+
+      content.appendChild(rb);
+    }
+  }
+
+  function showError(msg){
+    const content = byId('content');
+    content.innerHTML = "";
+    const e = document.createElement('div');
+    e.className = 'error';
+    e.textContent = msg;
+    content.appendChild(e);
+  }
+
+  async function main(){
+    let showId = getShowIdFromFilename();
+
+    const candidates = [];
+    if (showId) candidates.push('schedule_' + showId + '.json');
+    candidates.push('schedule.json');
+    candidates.push('schedule2.json');
+
+    const fetched = await fetchFirstJson(candidates);
+    if (!fetched || !Array.isArray(fetched.json)){
+      showError('Could not load schedule JSON. Tried: ' + candidates.join(', '));
+      return;
+    }
+
+    let rows = fetched.json;
+
+    if (showId){
+      rows = rows.filter(r => String(r.show_id) === String(showId));
+    } else {
+      showId = rows.length ? String(rows[0].show_id) : '';
+    }
+
+    if (!rows.length){
+      showError('No rows found for show_id=' + showId + ' in ' + fetched.url);
+      return;
+    }
+
+    const dayKeyToLabel = new Map();
+    for (const r of rows){
+      const dk = normalizeDateKey(r.show_date);
+      if (!dk) continue;
+      if (!dayKeyToLabel.has(dk)) dayKeyToLabel.set(dk, safeText(r.show_date));
+    }
+    const days = Array.from(dayKeyToLabel.keys()).sort();
+
+    const hash = (window.location.hash || '').replace('#','').trim();
+    const activeDayKey = (hash && dayKeyToLabel.has(hash)) ? hash : (days[0] || '');
+
+    byId('pageTitle').textContent = 'Schedule ' + showId;
+    byId('pageSubtitle').textContent = 'Active day: ' + (dayKeyToLabel.get(activeDayKey) || activeDayKey);
+
+    renderTabs(days, activeDayKey, dayKeyToLabel);
+
+    const rings = groupRowsForDay(rows, activeDayKey);
+    renderDay(rings);
+  }
+
+  window.addEventListener('hashchange', () => main());
+  main();
+})();
+</script>
+</body>
+</html>
