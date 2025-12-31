@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schedule One Page</title>
+  <style>
+    :root{
+      --page-w: 8.5in;
+      --page-h: 11in;
+      --page-pad: 0.25in;
+      --col-gap: 0.18in;
+      --header-h: 0.38in;
+      --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+
+    /* Screen */
+    body{ margin:0; background:#111; font-family:var(--font); }
+    #viewport{ display:flex; justify-content:center; padding:18px; }
+    #scaleWrap{ transform-origin: top left; }
+
+    /* Page */
+    #paper{
+      width:var(--page-w);
+      height:var(--page-h);
+      box-sizing:border-box;
+      padding:var(--page-pad);
+      background:#fff;
+      color:#000;
+      overflow:hidden; /* never spill to a 2nd page */
+    }
+
+    #header{
+      height:var(--header-h);
+      box-sizing:border-box;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      border-bottom:1px solid #000;
+      padding-bottom:6px;
+      margin-bottom:6px;
+    }
+    #header .left{ font-size:12pt; font-weight:700; line-height:1.1; }
+    #header .right{ font-size:10pt; font-weight:600; line-height:1.1; text-align:right; }
+
+    #cols{
+      height: calc(100% - var(--header-h) - 12px);
+      display:flex;
+      gap: var(--col-gap);
+    }
+    .col{
+      flex:1;
+      overflow:hidden;
+      box-sizing:border-box;
+    }
+
+    /* Blocks */
+    .ring{
+      border:1px solid #000;
+      margin:0 0 8px 0;
+      break-inside:avoid;
+    }
+    .ring-h{
+      padding:4px 6px;
+      font-weight:800;
+      font-size:10pt;
+      border-bottom:1px solid #000;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .ring-h .rn{ font-weight:700; font-size:9pt; }
+    .groups{ padding:6px; }
+
+    .group{
+      padding:4px 0 6px 0;
+      border-bottom:1px solid #000; /* solid line between groups */
+    }
+    .group:last-child{ border-bottom:none; padding-bottom:0; }
+
+    .group-top{
+      display:flex;
+      gap:8px;
+      align-items:baseline;
+      font-size:9pt;
+      line-height:1.15;
+    }
+    .time{
+      font-weight:800;
+      min-width:58px;
+      white-space:nowrap;
+    }
+    .gname{
+      font-weight:800;
+      flex:1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .rollup{
+      margin:2px 0 3px 66px; /* indent under time */
+      font-size:8.5pt;
+      line-height:1.15;
+      font-weight:600;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .classes{
+      margin-left:66px;
+      font-size:8.5pt;
+      line-height:1.2;
+    }
+    .class-row{
+      display:flex;
+      gap:8px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .cnum{
+      font-weight:800;
+      min-width:46px;
+      text-align:right;
+    }
+    .cname{
+      flex:1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Print: exact 1-page letter, 2 columns, no responsiveness */
+    @page { size: Letter; margin: 0; }
+    @media print{
+      body{ background:#fff; }
+      #viewport{ padding:0; }
+      #paper{ box-shadow:none; }
+    }
+
+    /* Helpers */
+    #error{
+      font-family:var(--font);
+      color:#fff;
+      max-width:980px;
+      margin:18px auto;
+      padding:0 18px;
+      line-height:1.3;
+      font-size:14px;
+    }
+    #staging{
+      position:absolute; left:-10000px; top:-10000px;
+      width: 0; height:0; overflow:hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="viewport">
+    <div id="scaleWrap">
+      <div id="paper">
+        <div id="header">
+          <div class="left" id="hdrTitle">Schedule</div>
+          <div class="right" id="hdrMeta"></div>
+        </div>
+        <div id="cols">
+          <div class="col" id="colL"></div>
+          <div class="col" id="colR"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="staging"></div>
+  <div id="error" style="display:none;"></div>
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+
+  function showError(msg){
+    $("error").style.display = "block";
+    $("error").textContent = msg;
+  }
+
+  function parseHash(){
+    const h = (location.hash || "").replace(/^#/, "").trim();
+    // expected: 200000044-20251231
+    if(!h) return null;
+    if(!/^\d+-\d{8}$/.test(h)) return null;
+    return h;
+  }
+
+  function toMinutes(t){
+    // "8:05 AM"
+    if(!t || typeof t !== "string") return null;
+    const s = t.trim();
+    const m = s.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+    if(!m) return null;
+    let hh = Number(m[1]);
+    const mm = Number(m[2]);
+    const ap = (m[3] || "").toUpperCase();
+    if(!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+    if(ap === "AM"){
+      if(hh === 12) hh = 0;
+    } else {
+      if(hh !== 12) hh += 12;
+    }
+    return hh*60 + mm;
+  }
+
+  function norm(v){ return (v === null || v === undefined) ? "" : String(v).trim(); }
+
+  function groupData(rows){
+    // rows: array of class rows (schedule2 shape)
+    // output: rings[] each ring { ring_number, ring_nickname, groups[] }
+    const ringMap = new Map();
+
+    for(const r of rows){
+      const ring_number = Number(r.ring_number);
+      const ring_nickname = norm(r.ring_nickname) || ("Ring " + ring_number);
+      const ringKey = String(ring_number) + "|" + ring_nickname;
+
+      if(!ringMap.has(ringKey)){
+        ringMap.set(ringKey, { ring_number, ring_nickname, groupsMap: new Map() });
+      }
+      const ring = ringMap.get(ringKey);
+
+      const class_group_id = norm(r.class_group_id);
+      const class_group_sequence = Number(r.class_group_sequence || 0);
+      const group_name = norm(r.group_name);
+      const groupKey = class_group_id + "|" + class_group_sequence + "|" + group_name;
+
+      if(!ring.groupsMap.has(groupKey)){
+        ring.groupsMap.set(groupKey, {
+          class_group_id,
+          class_group_sequence,
+          group_name,
+          // earliest time (minutes) + display
+          start_display: null,
+          start_min: null,
+          // first non-empty rollup
+          group_display: null,
+          classes: []
+        });
+      }
+      const g = ring.groupsMap.get(groupKey);
+
+      const sd = norm(r.start_display);
+      const sm = toMinutes(sd);
+      if(sd){
+        if(g.start_min === null || (sm !== null && sm < g.start_min)){
+          g.start_min = sm;
+          g.start_display = sd;
+        }
+      }
+
+      const gd = norm(r.group_display);
+      if(gd && !g.group_display) g.group_display = gd;
+
+      g.classes.push({
+        class_number: Number(r.class_number),
+        class_name: norm(r.class_name)
+      });
+    }
+
+    const rings = Array.from(ringMap.values())
+      .sort((a,b) => (a.ring_number||0) - (b.ring_number||0))
+      .map(r => {
+        const groups = Array.from(r.groupsMap.values())
+          .sort((a,b) => (a.class_group_sequence||0) - (b.class_group_sequence||0) || (a.start_min||0) - (b.start_min||0));
+        for(const g of groups){
+          g.classes.sort((a,b) => (a.class_number||0) - (b.class_number||0));
+        }
+        return { ring_number:r.ring_number, ring_nickname:r.ring_nickname, groups };
+      });
+
+    return rings;
+  }
+
+  function buildRingBlock(ring){
+    const ringEl = document.createElement("div");
+    ringEl.className = "ring";
+
+    const h = document.createElement("div");
+    h.className = "ring-h";
+    h.innerHTML = '<div>' + escapeHtml(ring.ring_nickname) + '</div>' +
+                  '<div class="rn">Ring ' + escapeHtml(String(ring.ring_number)) + '</div>';
+    ringEl.appendChild(h);
+
+    const groups = document.createElement("div");
+    groups.className = "groups";
+
+    for(const g of ring.groups){
+      const ge = document.createElement("div");
+      ge.className = "group";
+
+      const top = document.createElement("div");
+      top.className = "group-top";
+      top.innerHTML =
+        '<div class="time">' + escapeHtml(g.start_display || "") + '</div>' +
+        '<div class="gname">' + escapeHtml(g.group_name || "") + '</div>';
+      ge.appendChild(top);
+
+      if(g.group_display){
+        const roll = document.createElement("div");
+        roll.className = "rollup";
+        roll.textContent = g.group_display;
+        ge.appendChild(roll);
+      }
+
+      const cl = document.createElement("div");
+      cl.className = "classes";
+      for(const c of g.classes){
+        const cr = document.createElement("div");
+        cr.className = "class-row";
+        cr.innerHTML =
+          '<div class="cnum">' + escapeHtml(String(c.class_number || "")) + '</div>' +
+          '<div class="cname">' + escapeHtml(c.class_name || "") + '</div>';
+        cl.appendChild(cr);
+      }
+      ge.appendChild(cl);
+
+      groups.appendChild(ge);
+    }
+
+    ringEl.appendChild(groups);
+    return ringEl;
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function packIntoColumns(ringBlocks){
+    const colL = $("colL");
+    const colR = $("colR");
+    colL.innerHTML = "";
+    colR.innerHTML = "";
+
+    // stage for measurement at correct column width
+    const staging = $("staging");
+    staging.innerHTML = "";
+    const measureCol = document.createElement("div");
+    measureCol.style.width = colL.getBoundingClientRect().width + "px";
+    measureCol.style.boxSizing = "border-box";
+    staging.appendChild(measureCol);
+
+    const maxH = colL.clientHeight;
+
+    let curCol = colL;
+    let curH = 0;
+
+    for(const blk of ringBlocks){
+      // measure
+      measureCol.appendChild(blk);
+      const h = blk.getBoundingClientRect().height;
+      measureCol.removeChild(blk);
+
+      // decide placement
+      if(curCol === colL && (curH + h) > maxH){
+        curCol = colR;
+        curH = 0;
+      }
+
+      curCol.appendChild(blk);
+      curH += h + 8; // include margin
+    }
+
+    // scale to fit if right column overflows
+    const overflowH = Math.max(colL.scrollHeight, colR.scrollHeight);
+    if(overflowH > maxH){
+      const scale = maxH / overflowH;
+      // hard floor to keep readable; still prefer fit-on-one-page
+      const clamped = Math.max(0.70, Math.min(1, scale));
+      $("scaleWrap").style.transform = "scale(" + clamped.toFixed(4) + ")";
+    } else {
+      $("scaleWrap").style.transform = "scale(1)";
+    }
+  }
+
+  async function main(){
+    const key = parseHash();
+    if(!key){
+      showError("Missing/invalid hash. Use: schedule_onepage.html#<show_id>-<yyyymmdd>  (example: #200000044-20251231)");
+      return;
+    }
+
+    const jsonFile = key + ".json";
+    const res = await fetch(jsonFile, { cache: "no-store" });
+    if(!res.ok){
+      showError("Could not load " + jsonFile + " (HTTP " + res.status + "). Put the JSON in the same folder as schedule_onepage.html.");
+      return;
+    }
+    const rows = await res.json();
+    if(!Array.isArray(rows) || rows.length === 0){
+      showError("No rows in " + jsonFile);
+      return;
+    }
+
+    const show_id = rows[0].show_id;
+    const show_date = rows[0].show_date;
+
+    $("hdrTitle").textContent = "Show " + show_id;
+    $("hdrMeta").textContent = "Date: " + show_date;
+
+    const rings = groupData(rows);
+    const blocks = rings.map(buildRingBlock);
+
+    // wait one frame to ensure column heights are final
+    requestAnimationFrame(() => {
+      packIntoColumns(blocks);
+    });
+  }
+
+  window.addEventListener("hashchange", () => location.reload());
+  window.addEventListener("load", main);
+})();
+</script>
+</body>
+</html>
