@@ -121,6 +121,7 @@
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
+    display:none; /* per spec: gname is hidden (display none) */
   }
 
   .solid{border-top:1px solid var(--line); margin:0;}
@@ -264,10 +265,29 @@
     const R = document.getElementById("colR");
     L.innerHTML = "";
     R.innerHTML = "";
-    for(const el of ringEls){
-      const hL = L.scrollHeight;
-      const hR = R.scrollHeight;
-      (hL <= hR ? L : R).appendChild(el);
+
+    // IMPORTANT: preserve ring order (sorted by ring_number).
+    // Strategy:
+    // 1) Append all rings to LEFT to measure heights.
+    // 2) Split into 2 columns near half the total height.
+    for(const el of ringEls) L.appendChild(el);
+
+    const heights = ringEls.map(el=> Math.ceil(el.getBoundingClientRect().height || 0));
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
+
+    let bestSplit = ringEls.length; // number of rings in LEFT
+    let bestDiff = Infinity;
+    let cum = 0;
+    for(let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
+    }
+
+    // Move the remainder to RIGHT (keeps overall order: left column then right column).
+    for(let i=bestSplit;i<ringEls.length;i++){
+      R.appendChild(ringEls[i]);
     }
   }
 
@@ -321,10 +341,16 @@
   function buildRingElements(rows){
     const first = rows[0] || {};
     const showId = first.show_id ?? first.showId ?? "";
+    // REQUIRED: header must come from show_days_* fields.
     const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
     const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
     document.getElementById("title").textContent = reportTitle;
-    document.getElementById("subtitle").textContent = displayDate ? String(displayDate) : (showId ? `show_id ${showId}` : "");
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
+    if(showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
 
     const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
       .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
@@ -339,7 +365,7 @@
       const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
         .map(([gid, items]) => {
           const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
-          const gname = items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
           const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
           return { gid, seq, gname, gdisplay: gd, items };
         })
