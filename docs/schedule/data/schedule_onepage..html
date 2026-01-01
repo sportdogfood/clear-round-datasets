@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRT Schedule (One Page Print)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+    --group:#f1f1f1;
+    --page-margin:0.25in;
+    --page-w:8.5in;
+    --page-h:11in;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--fg); background:#eee;}
+  /* Screen preview: fixed "paper" */
+  .page{
+    width: var(--page-w);
+    height: var(--page-h);
+    background:#fff;
+    margin: 12px auto;
+    padding: var(--page-margin);
+    overflow:hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,.18);
+  }
+  .topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:0 0 6px 0; border-bottom:1px solid var(--border);}
+  .title{font-weight:800; font-size:16px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:12px; margin-top:2px;}
+  .controls{display:flex; align-items:center; gap:8px;}
+  .btn{border:1px solid var(--border); background:#fff; padding:4px 10px; font-size:12px; border-radius:6px; cursor:pointer;}
+  .wrap{padding:8px 0 0 0;}
+  .cols{
+    column-count:2;
+    column-gap:10px;
+    column-fill:auto;
+    height: calc(var(--page-h) - (2 * var(--page-margin)) - 44px); /* JS will refine */
+    overflow:hidden;
+  }
+
+  .ring{break-inside:avoid; border:1px solid var(--border); margin:0 0 10px 0;}
+  .ring-head{background:var(--ring); color:#fff; padding:6px 8px; font-weight:800; font-size:12px; letter-spacing:.02em;}
+  .group{padding:0; border-top:1px solid var(--border);}
+  .group-head{background:var(--group); padding:5px 8px;}
+  /* Group layout: group_display ABOVE group_name */
+  .gdisplay{font-size:12px; font-weight:900; line-height:1.1; text-align:right; color:#0b5d47;}
+  .gname{font-weight:900; font-size:12px; line-height:1.12; text-align:left; margin-top:2px;}
+  .solid{border-top:2px solid var(--line); margin:0;}
+  .class-list{padding:5px 8px 6px 8px;}
+  .c{display:flex; gap:6px; line-height:1.18; padding:1px 0;}
+  .t{width:58px; flex:0 0 58px; font-weight:800; font-size:11px;}
+  .n{flex:1 1 auto; font-size:11px;}
+  .muted{color:var(--muted);}
+  .err{padding:10px; color:#b00020; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px;}
+
+  @media print{
+    @page{ size: Letter; margin: 0.25in; }
+    body{background:#fff;}
+    .page{
+      width:auto; height:auto; margin:0; padding:0;
+      box-shadow:none;
+      overflow:hidden;
+    }
+    .controls{display:none !important;}
+    .title{font-size:14px;}
+    .subtitle{font-size:10px;}
+    .wrap{padding:0;}
+    .cols{
+      column-count:2;         /* REQUIRED: 2 columns in print */
+      column-gap:10px;
+    }
+    body{font-size:9px;}
+    .ring{margin-bottom:8px;}
+    .ring-head{padding:5px 6px; font-size:11px;}
+    .group-head{padding:4px 6px;}
+    .gdisplay{font-size:11px;}
+    .gname{font-size:11px;}
+    .class-list{padding:4px 6px 5px 6px;}
+    .t{width:52px; flex-basis:52px; font-size:10px;}
+    .n{font-size:10px;}
+  }
+</style>
+</head>
+<body>
+  <div class="page" id="page">
+    <div class="topbar" id="topbar">
+      <div>
+        <div class="title" id="title">Schedule</div>
+        <div class="subtitle" id="subtitle"></div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="cols" id="out"></div>
+    </div>
+  </div>
+
+<script>
+  // URL contract:
+  //   schedule_onepage.html#200000044-20251231  -> loads ./200000044-20251231.json
+  // Optional:
+  //   ?k=200000044-20251231  (overrides hash)
+  //   ?data=../path/to/file.json (overrides default data path)
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const qs = new URLSearchParams(location.search);
+
+  function keyFromUrl(){
+    const qk = (qs.get("k") || "").trim();
+    if(qk) return qk;
+    const hk = (location.hash || "").replace(/^#/,"").trim();
+    return hk;
+  }
+
+  function dataUrlForKey(k){
+    const explicit = (qs.get("data") || "").trim();
+    if(explicit) return explicit;
+    return `${k}.json`;
+  }
+
+  function isNum(v){ return Number.isFinite(Number(v)); }
+  function toInt(v){ return isNum(v) ? Number(v) : null; }
+
+  function pickFirst(...vals){
+    for(const v of vals){
+      if(v !== undefined && v !== null && String(v).trim() !== "") return v;
+    }
+    return "";
+  }
+
+  function parseShowDateYYYYMMDD(v){
+    // supports "YYYY-MM-DD" or "MM/DD/YYYY"
+    const s = String(v||"").trim();
+    if(!s) return "";
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s.replaceAll("-","");
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m){
+      const mm = m[1].padStart(2,"0");
+      const dd = m[2].padStart(2,"0");
+      return `${m[3]}${mm}${dd}`;
+    }
+    return "";
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function uniqSorted(nums){
+    const set = new Set();
+    for(const n of nums){
+      const i = toInt(n);
+      if(i !== null) set.add(i);
+    }
+    return Array.from(set.values()).sort((a,b)=>a-b);
+  }
+
+  function buildRingsFromRows(rows){
+    // rows: flat class_schedule rows
+    const ringKey = (r)=> String(pickFirst(r.ring_number, r.ringNumber, r.ring, "9999"));
+    const byRing = groupBy(rows, ringKey);
+
+    const rings = [];
+    for(const [rk, rrows] of byRing.entries()){
+      const ring_number = toInt(rk) ?? 9999;
+
+      const ring_title = pickFirst(
+        rrows[0].ring_name,
+        rrows[0].ringName,
+        rrows[0].ring_nickname,
+        rrows[0].ringNickname
+      ) || (ring_number !== 9999 ? `Ring ${ring_number}` : "Ring");
+
+      const groupKey = (r)=> String(pickFirst(r.class_group_id, r.classGroupId, r.class_group_sequence, r.group_group_name, "group"));
+      const byGroup = groupBy(rrows, groupKey);
+
+      const groups = [];
+      for(const [gk, grows] of byGroup.entries()){
+        const class_group_id = pickFirst(grows[0].class_group_id, grows[0].classGroupId, "");
+        const class_group_sequence = toInt(pickFirst(grows[0].class_group_sequence, grows[0].classGroupSequence, grows[0].group_sequence, "")) ?? 9999;
+        const group_name = pickFirst(grows[0].group_group_name, grows[0].group_name, grows[0].groupName, "Group");
+        const group_display = pickFirst(grows[0].group_display, grows[0].groupDisplay, "");
+
+        const classNums = uniqSorted(grows.map(x=>x.class_number ?? x.classNumber));
+        const groupLabel = (classNums.length > 1)
+          ? `${group_name} [${classNums.join(",")}]`
+          : group_name;
+
+        // classes sorted by class_number
+        const classes = grows.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        }).map(x=>({
+          start_display: String(pickFirst(x.start_display, x.estimated_start_12, x.estimated_start_time, "")).trim(),
+          class_number: pickFirst(x.class_number, x.classNumber, ""),
+          class_name: pickFirst(x.class_name, x.className, x.name, ""),
+        }));
+
+        groups.push({ class_group_id, class_group_sequence, group_display, group_label: groupLabel, classes });
+      }
+
+      groups.sort((a,b)=> a.class_group_sequence - b.class_group_sequence);
+      rings.push({ ring_number, ring_title, groups });
+    }
+
+    rings.sort((a,b)=> a.ring_number - b.ring_number);
+    return rings;
+  }
+
+  function render(rings){
+    let html = "";
+    for(const ring of rings){
+      let ringBody = "";
+      for(const grp of ring.groups){
+        const gd = grp.group_display ? `<div class="gdisplay">${esc(grp.group_display)}</div>` : "";
+        const gn = `<div class="gname">${esc(grp.group_label)}</div>`;
+
+        let lastTime = null;
+        let cl = "";
+        for(const c of grp.classes){
+          const time = c.start_display || "";
+          const tcell = (time && time !== lastTime) ? time : "";
+          if(time) lastTime = time;
+
+          const num = String(c.class_number ?? "").trim();
+          const name = String(c.class_name ?? "").trim();
+          const label = (num && num !== "0") ? `${num} - ${name}` : name;
+
+          cl += `<div class="c"><div class="t">${esc(tcell)}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        ringBody += `
+          <div class="group">
+            <div class="group-head">${gd}${gn}</div>
+            <div class="solid"></div>
+            <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+          </div>
+        `;
+      }
+
+      html += `
+        <section class="ring">
+          <div class="ring-head">${esc(ring.ring_title)}</div>
+          ${ringBody || `<div class="group"><div class="group-head"><div class="muted">No groups.</div></div></div>`}
+        </section>
+      `;
+    }
+    return html;
+  }
+
+  function setHeader(sampleRow, key){
+    const showTitle = pickFirst(sampleRow?.show_days_report_title, sampleRow?.showDaysReportTitle, sampleRow?.shows, "Schedule");
+    const showDate = pickFirst(sampleRow?.show_days_display_date, sampleRow?.showDaysDisplayDate, sampleRow?.show_date, sampleRow?.showDate, "");
+    const showId = pickFirst(sampleRow?.show_id, sampleRow?.showId, "");
+    document.getElementById("title").textContent = String(showTitle);
+    const subParts = [];
+    if(showDate) subParts.push(String(showDate));
+    if(showId) subParts.push(`show_id ${showId}`);
+    if(key) subParts.push(key);
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function setContentHeight(){
+    // Reserve remaining page height for the 2-column content region (screen preview + print).
+    const page = document.getElementById("page");
+    const topbar = document.getElementById("topbar");
+    const out = document.getElementById("out");
+    const pageH = page.clientHeight;
+    const padTop = parseFloat(getComputedStyle(page).paddingTop) || 0;
+    const padBot = parseFloat(getComputedStyle(page).paddingBottom) || 0;
+    const tbH = topbar.getBoundingClientRect().height;
+    const wrapTop = 8; // matches .wrap padding-top
+    const target = Math.max(0, pageH - padTop - padBot - tbH - wrapTop - 2);
+    out.style.height = target + "px";
+  }
+
+  function fitToOnePage(){
+    // Shrink (zoom) until:
+    // - No extra columns beyond 2 (horizontal overflow)
+    // - Page content fits within page box (vertical overflow)
+    const page = document.getElementById("page");
+    const out = document.getElementById("out");
+
+    page.style.zoom = 1;
+    setContentHeight();
+
+    let z = 1;
+    for(let i=0;i<24;i++){
+      const overX = out.scrollWidth > out.clientWidth + 1;
+      const overY = page.scrollHeight > page.clientHeight + 1;
+      if(!overX && !overY) break;
+      z *= 0.965; // shrink ~3.5% each pass
+      if(z < 0.62) break;
+      page.style.zoom = z;
+      setContentHeight();
+    }
+  }
+
+  window.addEventListener("beforeprint", ()=>{ fitToOnePage(); });
+  window.addEventListener("resize", ()=>{ fitToOnePage(); });
+
+  (async function main(){
+    const k = keyFromUrl();
+    if(!k){
+      document.getElementById("out").innerHTML = `<div class="err">Missing key. Use: schedule_onepage.html#SHOWID-YYYYMMDD</div>`;
+      return;
+    }
+    const url = dataUrlForKey(k);
+    const raw = await fetchJson(url);
+    const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : []);
+    if(!rows.length){
+      document.getElementById("out").innerHTML = `<div class="err">No rows in ${esc(url)}</div>`;
+      return;
+    }
+
+    setHeader(rows[0], k);
+    const rings = buildRingsFromRows(rows);
+    document.getElementById("out").innerHTML = render(rings);
+
+    // enforce one-page fit in screen preview and print
+    fitToOnePage();
+  })().catch(err=>{
+    document.getElementById("out").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+</body>
+</html>

@@ -1,452 +1,320 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Schedule One Page</title>
-  <style>
-    :root{
-      --page-w: 8.5in;
-      --page-h: 11in;
-      --page-pad: 0.25in;
-      /* tighter gap to maximize usable width */
-      --col-gap: 0.12in;
-      --header-h: 0.38in;
-      --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    }
+<meta charset="utf-8" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Schedule One-Page</title>
+<style>
+  /* ===== PRINT CONTRACT ===== */
+  @page { size: Letter; margin: 0.25in; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: #fff;
+    color: #111;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 
-    /* Screen */
-    body{ margin:0; background:#111; font-family:var(--font); }
-    #viewport{ display:flex; justify-content:center; padding:18px; }
-    #scaleWrap{ transform-origin: top left; }
+  /* Page canvas sized exactly to printable area */
+  .page {
+    width: calc(8.5in - 0.5in);
+    height: calc(11in - 0.5in);
+    margin: 0.25in auto;
+    box-sizing: border-box;
+    position: relative;
+    transform-origin: top left;
+  }
 
-    /* Page */
-    #paper{
-      width:var(--page-w);
-      height:var(--page-h);
-      box-sizing:border-box;
-      padding:var(--page-pad);
-      background:#fff;
-      color:#000;
-      overflow:hidden; /* never spill to a 2nd page */
-    }
+  /* Header */
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 0 0.10in 0;
+    border-bottom: 2px solid #111;
+    margin-bottom: 0.10in;
+  }
+  .report-title {
+    font-size: 16pt;
+    font-weight: 800;
+    line-height: 1.05;
+  }
+  .report-sub {
+    font-size: 10pt;
+    font-weight: 700;
+    white-space: nowrap;
+  }
 
-    #header{
-      height:var(--header-h);
-      box-sizing:border-box;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      border-bottom:1px solid #000;
-      padding-bottom:6px;
-      margin-bottom:6px;
-    }
-    #header .left{ font-size:12pt; font-weight:700; line-height:1.1; }
-    #header .right{ font-size:10pt; font-weight:600; line-height:1.1; text-align:right; }
+  /* Two columns */
+  .cols {
+    display: flex;
+    gap: 0.18in;
+    height: calc(11in - 0.5in - 0.55in); /* page height minus header block */
+    box-sizing: border-box;
+  }
+  .col {
+    flex: 1 1 0;
+    height: 100%;
+    overflow: hidden;
+  }
 
-    #cols{
-      height: calc(100% - var(--header-h) - 12px);
-      display:flex;
-      gap: var(--col-gap);
-    }
-    .col{
-      flex:1;
-      overflow:hidden;
-      box-sizing:border-box;
-    }
+  /* Ring block */
+  .ring {
+    border: 1px solid #111;
+    margin-bottom: 0.12in;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .ring-head {
+    background: #111;
+    color: #fff;
+    padding: 0.06in 0.08in;
+    font-size: 12pt;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+  }
 
-    /* Blocks */
-    .ring{
-      border:1px solid #000;
-      margin:0 0 8px 0;
-      break-inside:avoid;
-    }
-    .ring-h{
-      padding:4px 6px;
-      font-weight:800;
-      font-size:12px;
-      border-bottom:1px solid #000;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      background: var(--ring-bg);
-      color: var(--ring-text);
-    }
-    .ring-h .rn{ display:none; }
-    .groups{ padding:6px; }
+  /* Groups */
+  .group {
+    border-top: 1px solid #111;
+    padding: 0.06in 0.08in 0.07in 0.08in;
+  }
+  .group:first-of-type { border-top: none; }
 
-    .group{
-      padding:4px 0 6px 0;
-      border-bottom:1px solid #000; /* solid line between groups */
-    }
-    .group:last-child{ border-bottom:none; padding-bottom:0; }
+  /* group_display over group_name */
+  .group-display {
+    text-align: right;
+    font-size: 11pt;
+    font-weight: 900;
+    line-height: 1.05;
+    margin-bottom: 0.02in;
+    color: #111;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .group-name {
+    font-size: 11pt;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 0.04in;
+  }
 
-    /* Group row: rollup above group name (no group time) */
-    .group-head{
-      display:block;
-      font-size:11px;
-      line-height:1.12;
-    }
-    .group-display{
-      font-weight:800;
-      font-size:12px;
-      text-align:right;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .group-name{
-      margin-top:1px;
-      font-weight:800;
-      font-size:11px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
+  /* Classes */
+  .class-row {
+    display: grid;
+    grid-template-columns: 0.75in 1fr;
+    column-gap: 0.08in;
+    align-items: baseline;
+    padding: 0.01in 0;
+    font-size: 9.5pt;
+    line-height: 1.15;
+  }
+  .class-time {
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .class-text {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-    /* Class rows: time shown only when it changes */
-    .classes{
-      margin-left:0;
-      margin-top:3px;
-      font-size:10px;
-      line-height:1.15;
-    }
-    .class-row{
-      display:grid;
-      grid-template-columns: 56px 46px 1fr;
-      gap:6px;
-      align-items:baseline;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .ctime{
-      font-weight:800;
-      text-align:right;
-      color:#222;
-      white-space:nowrap;
-    }
-    .cnum{
-      font-weight:800;
-      text-align:right;
-      white-space:nowrap;
-    }
-    .cname{
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
+  .muted { color: #444; font-weight: 600; }
 
-    /* Print: exact 1-page letter, 2 columns, no responsiveness */
-    @page { size: Letter; margin: 0.25in; }
-    @media print{
-      body{ background:#fff; }
-      #viewport{ padding:0; }
-      #paper{ box-shadow:none; }
-    }
-
-    /* Helpers */
-    #error{
-      font-family:var(--font);
-      color:#fff;
-      max-width:980px;
-      margin:18px auto;
-      padding:0 18px;
-      line-height:1.3;
-      font-size:14px;
-    }
-    #staging{
-      position:absolute; left:-10000px; top:-10000px;
-      width: 0; height:0; overflow:hidden;
-    }
-  </style>
+  /* Screen preview */
+  @media screen {
+    body { padding: 16px 0; }
+    .page { box-shadow: 0 0 0 1px #bbb; }
+  }
+</style>
 </head>
-
 <body>
-  <div id="viewport">
-    <div id="scaleWrap">
-      <div id="paper">
-        <div id="header">
-          <div class="left" id="hdrTitle">Schedule</div>
-          <div class="right" id="hdrMeta"></div>
-        </div>
-        <div id="cols">
-          <div class="col" id="colL"></div>
-          <div class="col" id="colR"></div>
-        </div>
-      </div>
+  <div class="page" id="page">
+    <div class="report-header">
+      <div class="report-title" id="title">Schedule</div>
+      <div class="report-sub" id="sub"> </div>
+    </div>
+    <div class="cols" id="cols">
+      <div class="col" id="col1"></div>
+      <div class="col" id="col2"></div>
     </div>
   </div>
 
-  <div id="staging"></div>
-  <div id="error" style="display:none;"></div>
-
 <script>
 (function(){
+  const DEFAULT_DAY_KEY = "200000044-20251231"; // change if needed
+
   function $(id){ return document.getElementById(id); }
 
-  function showError(msg){
-    $("error").style.display = "block";
-    $("error").textContent = msg;
-  }
-
-  function parseHash(){
+  function getDayKey(){
     const h = (location.hash || "").replace(/^#/, "").trim();
-    // expected: 200000044-20251231
-    if(!h) return null;
-    if(!/^\d+-\d{8}$/.test(h)) return null;
-    return h;
+    return h || DEFAULT_DAY_KEY;
   }
 
-  function toMinutes(t){
-    // "8:05 AM"
-    if(!t || typeof t !== "string") return null;
-    const s = t.trim();
-    const m = s.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
-    if(!m) return null;
-    let hh = Number(m[1]);
-    const mm = Number(m[2]);
-    const ap = (m[3] || "").toUpperCase();
-    if(!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-    if(ap === "AM"){
-      if(hh === 12) hh = 0;
-    } else {
-      if(hh !== 12) hh += 12;
-    }
-    return hh*60 + mm;
-  }
-
-  function norm(v){ return (v === null || v === undefined) ? "" : String(v).trim(); }
-
-  function groupData(rows){
-    // rows: array of class rows (schedule2 shape)
-    // output: rings[] each ring { ring_number, ring_name, groups[] }
-    const ringMap = new Map();
-
-    for(const r of rows){
-      const ring_number = Number(r.ring_number);
-      const ring_name = norm(r.ring_name) || norm(r.ring_nickname) || ("Ring " + ring_number);
-      const ringKey = String(ring_number) + "|" + ring_name;
-
-      if(!ringMap.has(ringKey)){
-        ringMap.set(ringKey, { ring_number, ring_name, groupsMap: new Map() });
-      }
-      const ring = ringMap.get(ringKey);
-
-      const class_group_id = norm(r.class_group_id);
-      const class_group_sequence = Number(r.class_group_sequence || 0);
-      const group_name = norm(r.group_name);
-      const groupKey = class_group_id + "|" + class_group_sequence + "|" + group_name;
-
-      if(!ring.groupsMap.has(groupKey)){
-        ring.groupsMap.set(groupKey, {
-          class_group_id,
-          class_group_sequence,
-          group_name,
-          // earliest time (minutes) for ordering
-          start_min: null,
-          // group-level rollup is aggregated from class rows
-          rollupSet: new Set(),
-          group_display: null,
-          classes: []
-        });
-      }
-      const g = ring.groupsMap.get(groupKey);
-
-      const sd = norm(r.start_display);
-      const sm = toMinutes(sd);
-      if(sd){
-        if(g.start_min === null || (sm !== null && sm < g.start_min)){
-          g.start_min = sm;
-        }
-      }
-
-      const gd = norm(r.group_display);
-      if(gd){
-        for(const token of gd.split(",")){
-          const t = token.trim();
-          if(t) g.rollupSet.add(t);
-        }
-      }
-
-      g.classes.push({
-        class_number: Number(r.class_number),
-        class_name: norm(r.class_name),
-        start_display: sd
-      });
-    }
-
-    const rings = Array.from(ringMap.values())
-      .sort((a,b) => (a.ring_number||0) - (b.ring_number||0))
-      .map(r => {
-        const groups = Array.from(r.groupsMap.values())
-          .sort((a,b) => (a.class_group_sequence||0) - (b.class_group_sequence||0) || (a.start_min||0) - (b.start_min||0));
-        for(const g of groups){
-          const roll = Array.from(g.rollupSet);
-          g.group_display = roll.length ? roll.join(", ") : null;
-          delete g.rollupSet;
-          g.classes.sort((a,b) => (a.class_number||0) - (b.class_number||0));
-        }
-        return { ring_number:r.ring_number, ring_name:r.ring_name, groups };
-      });
-
-    return rings;
-  }
-
-  function buildRingBlock(ring){
-    const ringEl = document.createElement("div");
-    ringEl.className = "ring";
-
-    const h = document.createElement("div");
-    h.className = "ring-h";
-    // ring_name only (fallback to nickname)
-    h.innerHTML = '<div>' + escapeHtml(ring.ring_name || ring.ring_nickname || "") + '</div>';
-    ringEl.appendChild(h);
-
-    const groups = document.createElement("div");
-    groups.className = "groups";
-
-    for(const g of ring.groups){
-      const ge = document.createElement("div");
-      ge.className = "group";
-
-      const head = document.createElement("div");
-      head.className = "group-head";
-      if(g.group_display){
-        const roll = document.createElement("div");
-        roll.className = "group-display";
-        roll.textContent = g.group_display;
-        head.appendChild(roll);
-      }
-      const name = document.createElement("div");
-      name.className = "group-name";
-      name.textContent = stripBracketList(g.group_name || "");
-      head.appendChild(name);
-      ge.appendChild(head);
-
-      const cl = document.createElement("div");
-      cl.className = "classes";
-      let lastTime = null;
-      for(const c of g.classes){
-        const cr = document.createElement("div");
-        cr.className = "class-row";
-        const t = (c.start_display || "").trim();
-        const showTime = (t && t !== lastTime) ? t : "";
-        if(t) lastTime = t;
-        cr.innerHTML =
-          '<div class="ctime">' + escapeHtml(showTime) + '</div>' +
-          '<div class="cnum">' + escapeHtml(String(c.class_number || "")) + '</div>' +
-          '<div class="cname">- ' + escapeHtml(c.class_name || "") + '</div>';
-        cl.appendChild(cr);
-      }
-      ge.appendChild(cl);
-
-      groups.appendChild(ge);
-    }
-
-    ringEl.appendChild(groups);
-    return ringEl;
-  }
-
-  function escapeHtml(s){
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  function stripBracketList(s){
-    // e.g. "$630 Green Conformation Hunter [2403,2404]" -> "$630 Green Conformation Hunter"
-    return String(s || "")
-      .replace(/\s*\[[^\]]*\]\s*$/g, "")
-      .trim();
-  }
-
-  function packIntoColumns(ringBlocks){
-    const colL = $("colL");
-    const colR = $("colR");
-    colL.innerHTML = "";
-    colR.innerHTML = "";
-
-    // stage for measurement at correct column width
-    const staging = $("staging");
-    staging.innerHTML = "";
-    const measureCol = document.createElement("div");
-    measureCol.style.width = colL.getBoundingClientRect().width + "px";
-    measureCol.style.boxSizing = "border-box";
-    staging.appendChild(measureCol);
-
-    const maxH = colL.clientHeight;
-
-    let curCol = colL;
-    let curH = 0;
-
-    for(const blk of ringBlocks){
-      // measure
-      measureCol.appendChild(blk);
-      const h = blk.getBoundingClientRect().height;
-      measureCol.removeChild(blk);
-
-      // decide placement
-      if(curCol === colL && (curH + h) > maxH){
-        curCol = colR;
-        curH = 0;
-      }
-
-      curCol.appendChild(blk);
-      curH += h + 8; // include margin
-    }
-
-    // scale to fit if right column overflows
-    const overflowH = Math.max(colL.scrollHeight, colR.scrollHeight);
-    if(overflowH > maxH){
-      const scale = maxH / overflowH;
-      // hard floor to keep readable; still prefer fit-on-one-page
-      const clamped = Math.max(0.70, Math.min(1, scale));
-      $("scaleWrap").style.transform = "scale(" + clamped.toFixed(4) + ")";
-    } else {
-      $("scaleWrap").style.transform = "scale(1)";
-    }
-  }
-
-  async function main(){
-    const key = parseHash();
-    if(!key){
-      showError("Missing/invalid hash. Use: schedule_onepage.html#<show_id>-<yyyymmdd>  (example: #200000044-20251231)");
-      return;
-    }
-
-    const jsonFile = key + ".json";
-    const res = await fetch(jsonFile, { cache: "no-store" });
+  async function loadJson(dayKey){
+    const url = `${dayKey}.json`;
+    const res = await fetch(url, { cache: "no-store" });
     if(!res.ok){
-      showError("Could not load " + jsonFile + " (HTTP " + res.status + "). Put the JSON in the same folder as schedule_onepage.html.");
-      return;
+      const txt = await res.text().catch(()=> "");
+      throw new Error(`Failed to load ${url} (${res.status}) ${txt.slice(0,200)}`);
     }
-    const rows = await res.json();
-    if(!Array.isArray(rows) || rows.length === 0){
-      showError("No rows in " + jsonFile);
-      return;
-    }
-
-    const show_id = rows[0].show_id;
-    const show_date = rows[0].show_date;
-    const show_title = rows[0].show_title || rows[0].show_name || rows[0].showTitle || "";
-
-    $("hdrTitle").textContent = show_title ? String(show_title) : ("Show " + show_id);
-    $("hdrMeta").textContent = "Date: " + show_date;
-
-    const rings = groupData(rows);
-    const blocks = rings.map(buildRingBlock);
-
-    // wait one frame to ensure column heights are final
-    requestAnimationFrame(() => {
-      packIntoColumns(blocks);
-    });
+    return await res.json();
   }
 
-  window.addEventListener("hashchange", () => location.reload());
-  window.addEventListener("load", main);
+  function clearColumns(){
+    $("col1").innerHTML = "";
+    $("col2").innerHTML = "";
+    $("page").style.transform = "scale(1)";
+  }
+
+  function el(tag, cls, text){
+    const n = document.createElement(tag);
+    if(cls) n.className = cls;
+    if(text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+
+  function render(schedule){
+    const meta = schedule && schedule.meta ? schedule.meta : {};
+    const rings = Array.isArray(schedule && schedule.rings) ? schedule.rings : [];
+
+    const showId = meta.show_id ?? "";
+    const showDate = meta.show_date ?? "";
+    const showTitle = (meta.show_title || "").trim();
+
+    $("title").textContent = showTitle ? showTitle : `Show ${showId}`;
+    $("sub").textContent = showDate ? `Date: ${showDate}` : "";
+
+    const ringNodes = [];
+
+    for(const ring of rings){
+      const ringName = (ring.ring_name || ring.ring_nickname || "").trim();
+      if(!ringName) continue;
+
+      const ringBox = el("div", "ring");
+      ringBox.appendChild(el("div", "ring-head", ringName));
+
+      const groups = Array.isArray(ring.groups) ? ring.groups : [];
+      for(const g of groups){
+        const group = el("div", "group");
+
+        const gd = (g.group_display || "").trim();
+        if(gd){
+          group.appendChild(el("div", "group-display", gd));
+        } else {
+          // maintain vertical rhythm even when empty
+          group.appendChild(el("div", "group-display muted", ""));
+        }
+
+        const glabel = (g.group_label || g.group_name || "").trim();
+        group.appendChild(el("div", "group-name", glabel));
+
+        const classes = Array.isArray(g.classes) ? g.classes : [];
+        let lastTime = "";
+        for(const c of classes){
+          const t = (c.start_display || "").trim();
+          const showTime = (t && t !== lastTime) ? t : "";
+          if(t) lastTime = t;
+
+          const row = el("div", "class-row");
+          row.appendChild(el("div", "class-time", showTime));
+
+          const cn = c.class_number ?? "";
+          const cname = (c.class_name || "").trim();
+          const text = (cn ? `${cn} - ` : "") + cname;
+          row.appendChild(el("div", "class-text", text));
+
+          group.appendChild(row);
+        }
+
+        ringBox.appendChild(group);
+      }
+
+      ringNodes.push(ringBox);
+    }
+
+    packIntoTwoColumns(ringNodes);
+    fitToOnePage();
+  }
+
+  function packIntoTwoColumns(nodes){
+    const c1 = $("col1");
+    const c2 = $("col2");
+    c1.innerHTML = "";
+    c2.innerHTML = "";
+
+    // measure available height
+    const cols = $("cols");
+    const maxH = cols.getBoundingClientRect().height;
+
+    let h1 = 0;
+    let h2 = 0;
+
+    // attach to a hidden measuring container (use col1 temporarily)
+    for(const n of nodes){
+      c1.appendChild(n);
+    }
+
+    // now rebuild into columns with measured heights
+    const measured = Array.from(c1.children).map(node => ({ node, h: node.getBoundingClientRect().height }));
+    c1.innerHTML = "";
+
+    for(const item of measured){
+      // place into the shorter column, but keep within page height when possible
+      const target = (h1 <= h2) ? c1 : c2;
+      const currH = (h1 <= h2) ? h1 : h2;
+
+      // if it doesn't fit in the chosen column but fits in the other, swap
+      if(currH + item.h > maxH){
+        const other = (target === c1) ? c2 : c1;
+        const otherH = (target === c1) ? h2 : h1;
+        if(otherH + item.h <= maxH){
+          other.appendChild(item.node);
+          if(other === c1) h1 += item.h; else h2 += item.h;
+          continue;
+        }
+      }
+
+      target.appendChild(item.node);
+      if(target === c1) h1 += item.h; else h2 += item.h;
+    }
+  }
+
+  function fitToOnePage(){
+    const page = $("page");
+    const rect = page.getBoundingClientRect();
+    const maxW = rect.width;
+    const maxH = rect.height;
+
+    // content height is header + cols; if cols overflow, scale down
+    const colsRect = $("cols").getBoundingClientRect();
+    const headerRect = page.querySelector(".report-header").getBoundingClientRect();
+
+    const usedH = (colsRect.bottom - headerRect.top);
+    const scaleH = usedH > maxH ? (maxH / usedH) : 1;
+
+    const scale = Math.min(1, scaleH);
+    page.style.transform = `scale(${scale})`;
+  }
+
+  async function run(){
+    clearColumns();
+    const dayKey = getDayKey();
+    try{
+      const sched = await loadJson(dayKey);
+      render(sched);
+    } catch(err){
+      $("title").textContent = "Schedule load error";
+      $("sub").textContent = String(err.message || err);
+    }
+  }
+
+  window.addEventListener("hashchange", run);
+  run();
 })();
 </script>
 </body>
