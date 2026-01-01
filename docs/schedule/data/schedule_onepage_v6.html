@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRT Schedule (One Page Print)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#cfcfcf;
+    --ring:#0b5d47;
+    --ringPrint:#000;
+    --groupTeam:#d9d9d9;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:#fff;
+  }
+
+  /* Letter printable canvas (content box = 8.0in x 10.5in when @page margin is 0.25in) */
+  .page{
+    width:8in;
+    height:10.5in;
+    margin:0 auto;
+    overflow:hidden;
+    --scale:1;
+  }
+  .sheet{
+    transform: scale(var(--scale));
+    transform-origin: top left;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+    padding:6px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  .title{font-weight:800; font-size:14px; line-height:1.05;}
+  .subtitle{color:var(--muted); font-size:10px; margin-top:2px; line-height:1.1;}
+  .controls{display:flex; align-items:center; gap:8px;}
+  .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    padding:3px 8px;
+    font-size:12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+
+  .wrap{padding:6px 6px 0 6px;}
+  .cols{
+    column-count:2;
+    column-gap:0.12in;
+    column-fill:auto;
+  }
+
+  .ring{
+    break-inside:avoid;
+    border:1px solid var(--border);
+    margin:0 0 6px 0;
+  }
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:3px 6px;
+    font-weight:800;
+    font-size:10px;
+    letter-spacing:.02em;
+  }
+
+  .group{padding:0; border-top:1px solid var(--border);}
+  .group-head{
+    padding:3px 6px 2px 6px;
+    background:#fff;
+  }
+  .group.has-team .group-head{background:var(--groupTeam);}
+
+  /* group_display over group_name */
+  .gdisplay{
+    font-size:10px;
+    font-weight:700;
+    font-style:italic;
+    text-decoration:underline;
+    text-align:right;
+    line-height:1.05;
+    margin:0 0 1px 0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .gname{
+    display:block !important;
+    font-weight:800;
+    font-size:11px;
+    line-height:1.06;
+    text-align:left;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .solid{border-top:1px solid var(--line); margin:0;}
+  .class-list{padding:2px 6px 3px 6px;}
+  .c{
+    display:grid;
+    grid-template-columns:46px 1fr;
+    column-gap:6px;
+    line-height:1.12;
+    padding:1px 0;
+  }
+  .t{font-weight:800; font-size:10px; white-space:nowrap;}
+  .n{
+    font-size:10px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .muted{color:var(--muted);}
+  .err{white-space:pre-wrap; color:#b00020; padding:10px; font-size:12px;}
+
+  @media print{
+    @page{ size: Letter; margin: 0.25in; }
+    html,body{height:auto}
+    body{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .controls{display:none !important;}
+    .page{margin:0; width:100%; height:auto; overflow:visible;}
+    /* Keep the fixed box in print too */
+    .page{ width:8in; height:10.5in; overflow:hidden; }
+    .ring-head{background:var(--ringPrint);}
+    /* tighten print a bit more */
+    .topbar{padding:4px 6px;}
+    .title{font-size:13px;}
+    .subtitle{font-size:9.5px;}
+    .wrap{padding:5px 5px 0 5px;}
+    .ring{margin-bottom:5px;}
+    .ring-head{padding:2px 5px; font-size:10px;}
+    .group-head{padding:2px 5px 2px 5px;}
+    .gdisplay{font-size:9.5px;}
+    .gname{font-size:10.5px;}
+    .class-list{padding:2px 5px 3px 5px;}
+    .c{grid-template-columns:42px 1fr; column-gap:5px;}
+    .t{font-size:9.5px;}
+    .n{font-size:9.5px;}
+  }
+</style>
+</head>
+<body>
+  <div class="page" id="page">
+    <div class="sheet" id="sheet">
+      <div class="topbar" id="topbar">
+        <div>
+          <div class="title" id="title">Schedule</div>
+          <div class="subtitle" id="subtitle"></div>
+        </div>
+        <div class="controls">
+          <button class="btn" onclick="window.print()">Print</button>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <div class="cols" id="out"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // URL contract:
+  //   schedule_onepage.html#SHOWID-YYYYMMDD  -> loads ./SHOWID-YYYYMMDD.json
+  // Optional:
+  //   ?k=SHOWID-YYYYMMDD  (overrides hash)
+  //   ?data=../path/to/file.json (overrides default data path)
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const qs = new URLSearchParams(location.search);
+
+  function keyFromUrl(){
+    const qk = (qs.get("k") || "").trim();
+    if(qk) return qk;
+    const hk = (location.hash || "").replace(/^#/,"").trim();
+    return hk;
+  }
+  function dataUrlForKey(k){
+    const explicit = (qs.get("data") || "").trim();
+    if(explicit) return explicit;
+    return `${k}.json`;
+  }
+
+  function isNum(v){ return Number.isFinite(Number(v)); }
+  function toInt(v){ return isNum(v) ? Number(v) : null; }
+
+  function pickFirst(...vals){
+    for(const v of vals){
+      if(v !== undefined && v !== null && String(v).trim() !== "") return v;
+    }
+    return "";
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function buildRingsFromRows(rows){
+    // rings sorted by ring_number (required)
+    const ringKey = (r)=> String(pickFirst(r.ring_number, r.ringNumber, r.ring, "9999"));
+    const byRing = groupBy(rows, ringKey);
+
+    const rings = [];
+    for(const [rk, rrows] of byRing.entries()){
+      const ring_number = toInt(rk) ?? 9999;
+
+      const ring_title = pickFirst(
+        rrows[0].ring_name,
+        rrows[0].ringName,
+        rrows[0].ring_nickname,
+        rrows[0].ringNickname
+      ) || (ring_number !== 9999 ? `Ring ${ring_number}` : "Ring");
+
+      const groupKey = (r)=> String(pickFirst(r.class_group_id, r.classGroupId, "group"));
+      const byGroup = groupBy(rrows, groupKey);
+
+      const groups = [];
+      for(const [gk, grows] of byGroup.entries()){
+        const class_group_sequence = toInt(pickFirst(grows[0].class_group_sequence, grows[0].classGroupSequence, grows[0].group_sequence, "")) ?? 9999;
+
+        const group_name = pickFirst(
+          grows[0].group_name,
+          grows[0].groupName,
+          grows[0].group_group_name
+        ) || "Group";
+
+        const group_display = pickFirst(grows[0].group_display, grows[0].groupDisplay, "");
+
+        // classes sorted by class_number
+        const classes = grows.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        }).map(x=>({
+          start_display: String(pickFirst(x.start_display, x.startDisplay, x.estimated_start_12, x.estimated_start_time, "")).trim(),
+          class_number: pickFirst(x.class_number, x.classNumber, ""),
+          class_name: pickFirst(x.class_name, x.className, x.name, ""),
+        }));
+
+        groups.push({ class_group_sequence, group_name, group_display, classes });
+      }
+
+      groups.sort((a,b)=> a.class_group_sequence - b.class_group_sequence);
+      rings.push({ ring_number, ring_title, groups });
+    }
+
+    rings.sort((a,b)=> a.ring_number - b.ring_number);
+    return rings;
+  }
+
+  function render(rings){
+    let html = "";
+    for(const ring of rings){
+      let ringBody = "";
+      for(const grp of ring.groups){
+        const hasTeam = !!String(grp.group_display || "").trim();
+        const gd = hasTeam ? `<div class="gdisplay">${esc(grp.group_display)}</div>` : "";
+        const gn = `<div class="gname">${esc(grp.group_name)}</div>`;
+
+        let lastTime = null;
+        let cl = "";
+        for(const c of grp.classes){
+          const time = c.start_display || "";
+          const tcell = (time && time !== lastTime) ? time : "";
+          if(time) lastTime = time;
+
+          const num = String(c.class_number ?? "").trim();
+          const name = String(c.class_name ?? "").trim();
+          const label = (num && num !== "0") ? `${num} - ${name}` : name;
+
+          cl += `<div class="c"><div class="t">${esc(tcell)}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        ringBody += `
+          <div class="group ${hasTeam ? "has-team" : ""}">
+            <div class="group-head">${gd}${gn}</div>
+            <div class="solid"></div>
+            <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+          </div>
+        `;
+      }
+
+      html += `
+        <section class="ring">
+          <div class="ring-head">${esc(ring.ring_title)}</div>
+          ${ringBody || `<div class="group"><div class="group-head"><div class="muted">No groups.</div></div></div>`}
+        </section>
+      `;
+    }
+    return html;
+  }
+
+  function setHeader(sampleRow, key){
+    const showTitle = pickFirst(
+      sampleRow?.show_days_report_title,
+      sampleRow?.showDaysReportTitle,
+      sampleRow?.show_report_title,
+      sampleRow?.showReportTitle,
+      "Schedule"
+    );
+    const showDate = pickFirst(
+      sampleRow?.show_days_display_date,
+      sampleRow?.showDaysDisplayDate,
+      sampleRow?.show_display_date,
+      sampleRow?.showDisplayDate,
+      sampleRow?.show_date,
+      sampleRow?.showDate,
+      ""
+    );
+    const showId = pickFirst(sampleRow?.show_id, sampleRow?.showId, "");
+    document.getElementById("title").textContent = String(showTitle);
+    const subParts = [];
+    if(showDate) subParts.push(String(showDate));
+    if(showId) subParts.push(`show_id ${showId}`);
+    if(key) subParts.push(key);
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function fitToOnePage(){
+    // Hard requirement: fit into 8.0in x 10.5in content box.
+    const page = document.getElementById("page");
+    const sheet = document.getElementById("sheet");
+    const out = document.getElementById("out");
+    const topbar = document.getElementById("topbar");
+    if(!page || !sheet || !out || !topbar) return;
+
+    // Reset scale
+    page.style.setProperty("--scale", "1");
+
+    // Reserve remaining height for multi-column region
+    const pageH = page.clientHeight;
+    const wrapPadTop = 6; // .wrap top padding
+    const wrapPadBot = 0; // .wrap bottom padding
+    const tbH = topbar.getBoundingClientRect().height;
+    const targetH = Math.max(0, pageH - tbH - wrapPadTop - wrapPadBot - 2);
+    out.style.height = targetH + "px";
+
+    // Measure unscaled content
+    const needW = sheet.scrollWidth;
+    const needH = sheet.scrollHeight;
+    const availW = page.clientWidth;
+    const availH = page.clientHeight;
+
+    let scale = 1;
+    if(needW > 0 && availW > 0) scale = Math.min(scale, availW / needW);
+    if(needH > 0 && availH > 0) scale = Math.min(scale, availH / needH);
+
+    // Safety padding + clamp (no exceptions)
+    scale = Math.max(0.25, Math.min(1, scale * 0.995));
+    page.style.setProperty("--scale", String(scale));
+  }
+
+  window.addEventListener("beforeprint", ()=>{ fitToOnePage(); });
+  window.addEventListener("afterprint", ()=>{ fitToOnePage(); });
+  window.addEventListener("resize", ()=>{ fitToOnePage(); });
+
+  (async function main(){
+    const k = keyFromUrl();
+    if(!k){
+      document.getElementById("out").innerHTML = `<div class="err">Missing key. Use: schedule_onepage.html#SHOWID-YYYYMMDD</div>`;
+      return;
+    }
+    const url = dataUrlForKey(k);
+    const raw = await fetchJson(url);
+    const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : []);
+    if(!rows.length){
+      document.getElementById("out").innerHTML = `<div class="err">No rows in ${esc(url)}</div>`;
+      return;
+    }
+
+    setHeader(rows[0], k);
+    const rings = buildRingsFromRows(rows);
+    document.getElementById("out").innerHTML = render(rings);
+
+    // Enforce one-page fit (screen preview + print)
+    requestAnimationFrame(()=>{ fitToOnePage(); });
+    setTimeout(fitToOnePage, 60);
+  })().catch(err=>{
+    document.getElementById("out").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+</body>
+</html>
