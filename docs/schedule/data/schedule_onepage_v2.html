@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Schedule (One Page)</title>
+  <style>
+    :root{
+      --fg:#111;
+      --muted:#666;
+      --line:#111;
+      --border:#d0d0d0;
+      --ring:#111;     /* monochrome */
+      --group:#f1f1f1;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--fg);
+      background:#fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Letter page preview */
+    .page{
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.25in;
+    }
+
+    .report-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      margin: 0 0 10px 0;
+      padding: 0 0 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .title{
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.05;
+      letter-spacing: .01em;
+      margin:0;
+    }
+    .subtitle{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.15;
+    }
+    .rightmeta{
+      text-align:right;
+      font-size: 12px;
+      color: var(--muted);
+      line-height:1.2;
+      white-space:nowrap;
+    }
+
+    /* Two fixed columns (screen + print) */
+    .cols{
+      column-count: 2;
+      column-gap: 0.18in;
+    }
+
+    .ring{
+      break-inside: avoid;
+      border: 1px solid var(--border);
+      margin: 0 0 10px 0;
+    }
+    .ring-head{
+      background: var(--ring);
+      color:#fff;
+      padding: 6px 8px;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .group{
+      border-top: 1px solid var(--border);
+    }
+
+    .group-head{
+      background: var(--group);
+      padding: 6px 8px 5px 8px;
+    }
+
+    /* group_display OVER group_name (right aligned, larger) */
+    .gdisp{
+      font-weight: 900;
+      font-size: 12px;
+      line-height: 1.05;
+      text-align: right;
+      margin: 0 0 4px 0;
+      min-height: 12px; /* keeps spacing consistent when empty */
+    }
+    .gname{
+      font-weight: 900;
+      font-size: 12px;
+      line-height: 1.1;
+      text-align: left;
+      margin: 0;
+    }
+
+    .solid{border-top: 2px solid var(--line); margin:0;}
+
+    .class-list{padding: 6px 8px 7px 8px;}
+    .c{
+      display:flex;
+      gap: 8px;
+      line-height: 1.18;
+      padding: 1px 0;
+    }
+    .t{
+      width: 62px;
+      flex: 0 0 62px;
+      font-weight: 900;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .n{flex:1 1 auto; font-size: 11px;}
+    .cn{font-weight: 900;}
+
+    .muted{color:var(--muted);}
+
+    .err{
+      border:1px solid #c00;
+      padding:10px;
+      margin:10px 0;
+      font-size:12px;
+      white-space:pre-wrap;
+    }
+
+    @media print{
+      @page{ size: Letter; margin: 0.25in; }
+      body{margin:0;}
+      .page{width:auto; min-height:auto; margin:0; padding:0;}
+      .report-head{margin:0 0 8px 0;}
+      .cols{column-count: 2; column-gap: 0.18in;}
+      .title{font-size: 14px;}
+      .subtitle,.rightmeta{font-size: 10px;}
+      .ring{margin-bottom: 8px;}
+      .ring-head{padding: 5px 6px; font-size: 11px;}
+      .group-head{padding: 5px 6px 4px 6px;}
+      .gdisp{font-size: 11px; margin-bottom: 3px;}
+      .gname{font-size: 11px;}
+      .class-list{padding: 5px 6px 6px 6px;}
+      .t{width: 56px; flex-basis:56px; font-size: 10px;}
+      .n{font-size: 10px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="report-head">
+      <div>
+        <h1 class="title" id="reportTitle">Schedule</h1>
+        <div class="subtitle" id="reportSubtitle"></div>
+      </div>
+      <div class="rightmeta" id="reportMeta"></div>
+    </header>
+
+    <main>
+      <div id="error" class="err" style="display:none;"></div>
+      <div id="cols" class="cols"></div>
+    </main>
+  </div>
+
+  <script>
+    // If there is no hash, this is used:
+    // Example: schedule_onepage.html#200000044-20260101  -> fetches ./200000044-20260101.json
+    const DEFAULT_DAY_ID = "200000044-20260101";
+
+    function h(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    function normalizeKey(v){
+      if (v === null || v === undefined) return "";
+      return String(v).trim();
+    }
+    function asNum(v){
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+    function pickFirst(...vals){
+      for (const v of vals){
+        if (v !== undefined && v !== null && v !== "") return v;
+      }
+      return undefined;
+    }
+    function get(row, ...keys){
+      for (const k of keys){
+        if (row && Object.prototype.hasOwnProperty.call(row, k) && row[k] !== undefined && row[k] !== null && row[k] !== "") return row[k];
+      }
+      return undefined;
+    }
+
+    function dayIdFromHash(){
+      let id = normalizeKey((location.hash || "").replace(/^#/, ""));
+      if (!id) return DEFAULT_DAY_ID;
+      if (id.toLowerCase().endsWith(".json")) id = id.slice(0, -5);
+      return id;
+    }
+
+    async function fetchJson(url){
+      const res = await fetch(url, { method: "GET" });
+      const txt = await res.text();
+      if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}\n${txt.slice(0, 600)}`);
+      try { return JSON.parse(txt); }
+      catch(e){ throw new Error(`Invalid JSON in ${url}\n${txt.slice(0, 600)}`); }
+    }
+
+    function buildModel(rows){
+      const rings = new Map();
+
+      for (const row of rows){
+        const showId = pickFirst(get(row, "show_id"), get(row, "show_days_show_id"));
+        const displayDate = pickFirst(get(row, "show_days_display_date"), get(row, "show_date"), get(row, "show_days_sql_date"));
+
+        const ringNumber = asNum(pickFirst(get(row, "ring_number"), get(row, "show_rings_ring_number")));
+        const ringName = pickFirst(get(row, "ring_name"), get(row, "show_rings_ring_name"));
+        const ringNickname = get(row, "ring_nickname");
+        const ringLabel = pickFirst(ringName, ringNickname);
+
+        const groupId = pickFirst(get(row, "class_group_id"), get(row, "group_class_group_id"));
+        const groupSeq = asNum(pickFirst(get(row, "class_group_sequence"), get(row, "group_class_group_sequence")));
+        const groupName = pickFirst(get(row, "group_name"), get(row, "group_group_name"));
+        const groupDisplay = get(row, "group_display");
+
+        const classNumber = asNum(get(row, "class_number"));
+        const className = get(row, "class_name");
+        const time = get(row, "start_display");
+
+        // Minimum requirements for a class line
+        if (ringNumber === null || !groupId || classNumber === null || !className) continue;
+
+        const ringKey = String(ringNumber);
+        if (!rings.has(ringKey)){
+          rings.set(ringKey, {
+            ring_number: ringNumber,
+            ring_label: ringLabel || "",   // user: do NOT show Ring 1/2 fallback unless no label exists
+            groups: new Map()
+          });
+        }
+        const ring = rings.get(ringKey);
+
+        const gKey = normalizeKey(groupId);
+        if (!ring.groups.has(gKey)){
+          ring.groups.set(gKey, {
+            class_group_id: groupId,
+            class_group_sequence: groupSeq,
+            group_name: groupName || "",
+            group_display: groupDisplay || "",
+            classes: []
+          });
+        }
+        const g = ring.groups.get(gKey);
+
+        // prefer first non-empty group_name / group_display
+        if (!g.group_name && groupName) g.group_name = groupName;
+        if (!g.group_display && groupDisplay) g.group_display = groupDisplay;
+        if (g.class_group_sequence === null || g.class_group_sequence === undefined) g.class_group_sequence = groupSeq;
+
+        g.classes.push({ time: time || "", class_number: classNumber, class_name: className });
+
+        // store show metadata on model root (first seen)
+        if (!buildModel._meta){
+          buildModel._meta = { showId, displayDate };
+        }
+      }
+
+      const ringList = Array.from(rings.values()).sort((a,b) => a.ring_number - b.ring_number);
+
+      for (const ring of ringList){
+        const groups = Array.from(ring.groups.values()).sort((a,b) => {
+          const as = (a.class_group_sequence ?? 999999);
+          const bs = (b.class_group_sequence ?? 999999);
+          if (as !== bs) return as - bs;
+          return String(a.group_name || "").localeCompare(String(b.group_name || ""));
+        });
+
+        for (const g of groups){
+          g.classes.sort((a,b) => (a.class_number - b.class_number));
+        }
+
+        ring.groups = groups;
+      }
+
+      const meta = buildModel._meta || {};
+      buildModel._meta = null;
+      return { meta, rings: ringList };
+    }
+
+    function render(model){
+      const titleEl = document.getElementById("reportTitle");
+      const subEl = document.getElementById("reportSubtitle");
+      const metaEl = document.getElementById("reportMeta");
+      const cols = document.getElementById("cols");
+
+      const rowsMeta = model.meta || {};
+      const showId = rowsMeta.showId || "";
+      const displayDate = rowsMeta.displayDate || "";
+
+      // Title from JSON (requested): show_days_report_title (first row)
+      // If missing, fallback:
+      titleEl.textContent = model._reportTitle || `Schedule${showId ? " — " + showId : ""}`;
+      subEl.textContent = displayDate ? String(displayDate) : "";
+
+      // right-side meta kept minimal
+      metaEl.innerHTML = showId ? `Show ID<br><strong>${h(showId)}</strong>` : "";
+
+      cols.innerHTML = "";
+
+      for (const ring of model.rings){
+        const ringDiv = document.createElement("section");
+        ringDiv.className = "ring";
+
+        const head = document.createElement("div");
+        head.className = "ring-head";
+        head.textContent = ring.ring_label || "";  // ring_name preferred; ring_nickname fallback
+        ringDiv.appendChild(head);
+
+        for (const g of ring.groups){
+          const gDiv = document.createElement("div");
+          gDiv.className = "group";
+
+          const gh = document.createElement("div");
+          gh.className = "group-head";
+
+          const disp = document.createElement("div");
+          disp.className = "gdisp";
+          disp.textContent = g.group_display ? g.group_display : "";
+          gh.appendChild(disp);
+
+          const name = document.createElement("div");
+          name.className = "gname";
+          name.textContent = g.group_name || "";
+          gh.appendChild(name);
+
+          gDiv.appendChild(gh);
+
+          const solid = document.createElement("div");
+          solid.className = "solid";
+          gDiv.appendChild(solid);
+
+          const list = document.createElement("div");
+          list.className = "class-list";
+
+          let lastTime = null;
+          for (const c of g.classes){
+            const row = document.createElement("div");
+            row.className = "c";
+
+            const t = document.createElement("div");
+            t.className = "t";
+
+            // time only when it changes (within group); do not repeat
+            const thisTime = (c.time || "").trim();
+            const showTime = thisTime && thisTime !== lastTime;
+            t.textContent = showTime ? thisTime : "";
+            if (showTime) lastTime = thisTime;
+
+            const n = document.createElement("div");
+            n.className = "n";
+            n.innerHTML = `<span class="cn">${h(c.class_number)}</span> — ${h(c.class_name)}`;
+
+            row.appendChild(t);
+            row.appendChild(n);
+            list.appendChild(row);
+          }
+
+          gDiv.appendChild(list);
+          ringDiv.appendChild(gDiv);
+        }
+
+        cols.appendChild(ringDiv);
+      }
+    }
+
+    async function main(){
+      const err = document.getElementById("error");
+      err.style.display = "none";
+      err.textContent = "";
+
+      const dayId = dayIdFromHash();
+      const url = `${dayId}.json`;
+
+      try{
+        const rows = await fetchJson(url);
+        if (!Array.isArray(rows) || rows.length === 0) throw new Error("JSON must be a non-empty array of rows.");
+
+        // pull report title from first row (requested)
+        const reportTitle = pickFirst(get(rows[0], "show_days_report_title"), get(rows[0], "report_title"));
+        const model = buildModel(rows);
+        model._reportTitle = reportTitle || "";
+
+        render(model);
+      }catch(e){
+        err.style.display = "block";
+        err.textContent = String(e && e.message ? e.message : e);
+      }
+    }
+
+    window.addEventListener("hashchange", main);
+    main();
+  </script>
+</body>
+</html>
