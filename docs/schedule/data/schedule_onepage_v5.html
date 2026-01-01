@@ -1,0 +1,806 @@
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRT Schedule (One Page Print)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+    --ringPrint:#000;
+    --groupTeam:#d9d9d9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--fg); background:#fff;}
+  .topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid var(--border);}
+  .title{font-weight:800; font-size:16px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:12px; margin-top:2px;}
+  .controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .btn{border:1px solid var(--border); background:#fff; padding:4px 10px; font-size:12px; border-radius:6px; cursor:pointer;}
+  .wrap{padding:10px 10px 14px; --scale:1;}
+  .cols{column-count:2; column-gap:10px;}
+  .ring{break-inside:avoid; border:1px solid var(--border); margin:0 0 10px 0;}
+  .ring-head{background:var(--ring); color:#fff; padding:6px 8px; font-weight:800; font-size:12px; letter-spacing:.02em;}
+  .group{padding:0; border-top:1px solid var(--border);}
+  .group-head{padding:5px 8px;}
+  .group.has-team .group-head{background:var(--groupTeam);}
+  .gdisplay{font-size:11px; font-weight:700; font-style:italic; text-decoration:underline; text-align:right; line-height:1.15; margin-bottom:2px;}
+  .gname{font-weight:800; font-size:12px; line-height:1.1; text-align:left;}
+  .solid{border-top:2px solid var(--line); margin:0;}
+  .class-list{padding:5px 8px 6px 8px;}
+  .c{display:grid; grid-template-columns:58px 1fr; column-gap:8px; line-height:1.18; padding:1px 0;}
+  .t{font-weight:800; font-size:11px;}
+  .n{font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .muted{color:var(--muted);}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
+  @media print{
+    @page{ size: Letter; margin: 0.25in; }
+    .controls{display:none !important;}
+    .topbar{padding:0 0 6px 0; border:0;}
+    .wrap{padding:0; transform: scale(var(--scale)); transform-origin: top left; width: calc(100% / var(--scale));}
+    .cols{column-count:2; column-gap:0.12in;}
+    body{font-size:9px; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    .title{font-size:14px;}
+    .subtitle{font-size:10px;}
+    .ring{margin-bottom:8px;}
+    .ring-head{background:var(--ringPrint); padding:5px 6px; font-size:11px;}
+    .group-head{padding:4px 6px;}
+    .gdisplay{font-size:10px;}
+    .gname{font-size:11px;}
+    .class-list{padding:4px 6px 5px 6px;}
+    .c{grid-template-columns:52px 1fr; column-gap:6px;}
+    .t{font-size:10px;}
+    .n{font-size:10px;}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="title" id="title">Castlewood Schedule</div>
+      <div class="subtitle" id="subtitle">Thursday, Jan 1, 2026</div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  <div class="wrap" id="wrap" style="--scale: 0.55;">
+    <div class="cols" id="out">
+        <section class="ring">
+          <div class="ring-head">Intl</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$6,150 1.40m Open Jumper II2b</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:30 AM</div><div class="n">1013 - $6,150 1.40m Open Jumper II2b</div></div></div>
+          </div>
+        
+          <div class="group-has-team">
+            <div class="group-head">
+              <div class="gdisplay">Cardozo (17)</div>
+              <div class="gname">$35,000 Adequan WEF Challenge Cup Premiere Round  II.2.a</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">11:30 AM</div><div class="n">100 - $35,000 Adequan WEF Challenge Cup Premiere Round  II.2.a</div></div></div>
+          </div>
+        
+          <div class="group-has-team">
+            <div class="group-head">
+              <div class="gdisplay">Ben (2), Hermes (15)</div>
+              <div class="gname">$8,200 1.45m Open Jumper II2b</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">1:15 PM</div><div class="n">1003 - $8,200 1.45m Open Jumper II2b</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Grand</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Green Conformation Hunter</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">2405 - $630 Green Conformation Hunter</div></div><div class="c"><div class="t"></div><div class="n">2406 - $850 Green Conformation Hunter Stake</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$250 Green Hunter 3'6" U/S</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:30 AM</div><div class="n">2101 - $250 Green Hunter 3'6" U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Green Hunter 3'6"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:45 AM</div><div class="n">2104 - $630 Green Hunter 3'6"</div></div><div class="c"><div class="t"></div><div class="n">2105 - $850 Green Hunter 3'6" Stake</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Green Hunter 3'9"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">12:00 PM</div><div class="n">2204 - $630 Green Hunter 3'9"</div></div><div class="c"><div class="t"></div><div class="n">2205 - $850 Green Hunter 3'9" Stake</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$250 High Performance Hunter U/S</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">12:45 PM</div><div class="n">2006 - $250 High Performance Hunter U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$900 High Performance Hunter</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">1:00 PM</div><div class="n">2009 - $900 High Performance Hunter</div></div><div class="c"><div class="t"></div><div class="n">2010 - $900 High Performance Hunter Stake</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Rost</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$210 Pre-Green Hunter 3 &amp; 4 Year Old U/S</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">2051 - $210 Pre-Green Hunter 3 &amp; 4 Year Old U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Pre-Green Hunter 3 &amp; 4 Year Old</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:10 AM</div><div class="n">2054 - $630 Pre-Green Hunter 3 &amp; 4 Year Old</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$250 Green Hunter 3' U/S</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:15 AM</div><div class="n">2001 - $250 Green Hunter 3' U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Green Hunter 3'</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:30 AM</div><div class="n">2004 - $630 Green Hunter 3'</div></div><div class="c"><div class="t"></div><div class="n">2005 - $850 Green Hunter 3' Stake</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Green Hunter 3'3"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">11:00 AM</div><div class="n">2024 - $630 Green Hunter 3'3"</div></div><div class="c"><div class="t"></div><div class="n">2025 - $850 Green Hunter 3'3"</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$250 Performance Hunter 3'6" U/S</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">12:20 PM</div><div class="n">2011 - $250 Performance Hunter 3'6" U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Performance Hunter 3'6"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">12:50 PM</div><div class="n">2014 - $630 Performance Hunter 3'6" CALI @ 38+</div></div><div class="c"><div class="t"></div><div class="n">2015 - $850 Performance Hunter 3'6" Stake CALI @ 38+</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Mogavero</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$200 1.20m Young Jumper II2d</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">1226 - $200 1.20m Young Jumper II2d</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$200 1.30m Young Jumper II2d (6 YO)</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:09 AM</div><div class="n">1231 - $200 1.30m Young Jumper II2d (6 YO)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$200 1.30m Young Jumper II2d (7 YO)</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:30 AM</div><div class="n">1236 - $200 1.30m Young Jumper II2d (7 YO)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$2,000 1.30m Open Jumper II2b</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">10:15 AM</div><div class="n">1010 - $2,000 1.30m Open Jumper II2b</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$2,500 1.40m Amateur Jumper II.1</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">12:00 PM</div><div class="n">1026 - $2,500 1.40m Amateur Jumper II.1</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Denemethy</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$2,600 1.35m Open Jumper II2b</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">1007 - $2,600 1.35m Open Jumper II2b</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">1.25m Schooling Jumper (Table II)</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:30 AM</div><div class="n">1096 - 1.25m Schooling Jumper (Table II)</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 6</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$250 Performance Hunter 3'3" U/S</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">2016 - $250 Performance Hunter 3'3" U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Performance Hunter 3'3"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:15 AM</div><div class="n">2019 - $630 Performance Hunter 3'3" CALI @ 38+</div></div><div class="c"><div class="t"></div><div class="n">2020 - $850 Performance Hunter 3'3" Stake CALI @ 38+</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 7</div>
+          
+          <div class="group-has-team">
+            <div class="group-head">
+              <div class="gdisplay">Dottie (19)</div>
+              <div class="gname">1.15m Schooling Jumper (Table II)</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">1099 - 1.15m Schooling Jumper (Table II)</div></div></div>
+          </div>
+        
+          <div class="group-has-team">
+            <div class="group-head">
+              <div class="gdisplay">Indy (36)</div>
+              <div class="gname">1.0m Training Jumper (Table II), Take2 TB Jumper (II.1), 1.0m Young Jumper (Tabl</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">10:40 AM</div><div class="n">1089 - Take2 Thoroughbred Jumper (1.0m) II.1</div></div><div class="c"><div class="t"></div><div class="n">1105 - 1.0m Training Jumper (Table II)</div></div><div class="c"><div class="t"></div><div class="n">1216 - 1.0m Young Jumper (Table II)</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 8</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$1,000 Green Hunter Incentive 3'</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">8:00 AM</div><div class="n">914 - $1,000 Green Hunter Incentive 3'</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$1,000 Green Hunter Incentive 3'3"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">8:18 AM</div><div class="n">915 - $1,000 Green Hunter Incentive 3'3"</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$1,000 Green Hunter Incentive 3'6"</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">8:24 AM</div><div class="n">916 - $1,000 Green Hunter Incentive 3'6"</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$1,000 Green Hunter Incentive 3'9"</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">917 - $1,000 Green Hunter Incentive 3'9"</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 9</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">1.10m Young Jumper (Table II)</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">1221 - 1.10m Young Jumper (Table II)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">1.10m Schooling Jumper (Table II)</div>
+            </div>
+            
+            <div class="class-list"><div class="c"><div class="t">9:03 AM</div><div class="n">1102 - 1.10m Schooling Jumper (Table II)</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 10</div>
+          
+          <div class="group has-team">
+            <div class="group-head">
+              <div class="gdisplay">Rimini (4)</div>
+              <div class="gname">.90m Training Jumper (Table II) &amp; Low Ad Training .90m 40+  II2d</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">1120 - Low Adult Amateur Training Jumper 40 &amp; Over .90m II2d</div></div><div class="c"><div class="t"></div><div class="n">1123 - .90m Training Jumper (Table II)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">.90m Young Jumper (Table II)</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">10:12 AM</div><div class="n">1211 - .90m Young Jumper (Table II)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">.90m Training Jumper (Table II) &amp; Low Ch/Ad Training .90m 39 &amp; Under II2d</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">10:18 AM</div><div class="n">1108 - .90m Training Jumper (Table II)</div></div><div class="c"><div class="t"></div><div class="n">1111 - Low Child/Adult Amateur Training Jumper 39 &amp; Under .90m II2d</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">.80m Training Jumper (Table II) &amp; Low Ch/Ad Training .80m II2d</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">11:45 AM</div><div class="n">1114 - .80m Training Jumper (Table II)</div></div><div class="c"><div class="t"></div><div class="n">1117 - Low Child/Adult Amateur Training Jumper .80m II2d</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 11</div>
+          
+          <div class="group has-team">
+            <div class="group-head">
+              <div class="gdisplay">Pedro</div>
+              <div class="gname">USHJA Hunter 2'6" &amp; Low Adult Hunter (Sec. A)</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">4019 - USHJA Hunter 2'6" CALI @ 30+</div></div><div class="c"><div class="t"></div><div class="n">4020 - USHJA Hunter 2'6" CALI @ 30+</div></div><div class="c"><div class="t"></div><div class="n">4062 - Low Adult Hunter (Sec. A)</div></div><div class="c"><div class="t"></div><div class="n">4063 - Low Adult Hunter (Sec. A)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">USHJA Hunter 2'3" U/S</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">12:00 PM</div><div class="n">2126 - USHJA Hunter 2'3" U/S</div></div></div>
+          </div>
+        
+          <div class="group has-team">
+            <div class="group-head">
+              <div class="gdisplay">Zen, Knox, Puppy</div>
+              <div class="gname">USHJA Hunter 2'3"</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">12:30 PM</div><div class="n">2129 - USHJA Hunter 2'3"</div></div><div class="c"><div class="t"></div><div class="n">2130 - USHJA Hunter 2'3"</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">USHJA Hunter 2' Junior/Amateur U/S</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">2:00 PM</div><div class="n">3102 - USHJA Hunter 2' Junior/Amateur U/S</div></div></div>
+          </div>
+        
+          <div class="group has-team">
+            <div class="group-head">
+              <div class="gdisplay">Knox, Zen, Puppy</div>
+              <div class="gname">USHJA Hunter 2' Junior/Amateur</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">2:15 PM</div><div class="n">3105 - USHJA Hunter 2' Junior/Amateur</div></div><div class="c"><div class="t"></div><div class="n">3106 - USHJA Hunter 2' Junior/Amateur</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">USHJA Hunter 2'</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">3:00 PM</div><div class="n">2124 - USHJA Hunter 2'</div></div><div class="c"><div class="t"></div><div class="n">2125 - USHJA Hunter 2'</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">Pleasure Horse U/S</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">3:45 PM</div><div class="n">630 - Pleasure Horse U/S</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">Ring 12</div>
+          
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">USHJA Hunter 3' U/S</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">4046 - USHJA Hunter 3' U/S</div></div></div>
+          </div>
+        
+          <div class="group has-team">
+            <div class="group-head">
+              <div class="gdisplay">Munster</div>
+              <div class="gname">USHJA Hunter 3'</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:15 AM</div><div class="n">4049 - USHJA Hunter 3' CALI @ 30+</div></div><div class="c"><div class="t"></div><div class="n">4050 - USHJA Hunter 3' CALI @ 30+</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">USHJA Hunter 2'9" U/S</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">12:00 PM</div><div class="n">4086 - USHJA Hunter 2'9" U/S</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">USHJA Hunter 2'9"/Adult Amateur 2'9"</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">12:15 PM</div><div class="n">2751 - Adult Amateur Hunter 2'9"</div></div><div class="c"><div class="t"></div><div class="n">2752 - Adult Amateur Hunter 2'9"</div></div><div class="c"><div class="t"></div><div class="n">4089 - USHJA Hunter 2'9"</div></div><div class="c"><div class="t"></div><div class="n">4090 - USHJA Hunter 2'9"</div></div></div>
+          </div>
+        
+        </section>
+      
+        <section class="ring">
+          <div class="ring-head">South Ring</div>
+          
+          <div class="group has-team">
+            <div class="group-head">
+              <div class="gdisplay">Dany (7)</div>
+              <div class="gname">THIS NHS Adult Medal</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:00 AM</div><div class="n">3082 - THIS NHS Adult Medal</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Adult Amateur Hunter 36 &amp; Over (Sec A)</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">9:45 AM</div><div class="n">2717 - $630 Adult Amateur Hunter 36 &amp; Over (Sec A)</div></div><div class="c"><div class="t"></div><div class="n">2718 - $630 Adult Amateur Hunter 36 &amp; Over (Sec A)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$630 Adult Amateur Hunter 18-35 (Sec A)</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">10:45 AM</div><div class="n">2702 - $630 Adult Amateur Hunter 18-35 (Sec A)</div></div><div class="c"><div class="t"></div><div class="n">2703 - $630 Adult Amateur Hunter 18-35 (Sec A)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$210 Young Hunter 3' (6 &amp; Under)</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">11:20 AM</div><div class="n">2112 - $210 Young Hunter 3' (6 &amp; Under)</div></div><div class="c"><div class="t"></div><div class="n">2113 - $210 Young Hunter 3' (6 &amp; Under)</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">ESP Hunter 3'3"</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">12:35 PM</div><div class="n">4074 - ESP Hunter 3'3"</div></div><div class="c"><div class="t"></div><div class="n">4075 - ESP Hunter 3'3"</div></div></div>
+          </div>
+        
+          <div class="group ">
+            <div class="group-head">
+              
+              <div class="gname">$210 Young Hunter 3'3" (7 &amp; Under)</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list"><div class="c"><div class="t">1:15 PM</div><div class="n">2117 - $210 Young Hunter 3'3" (7 &amp; Under)</div></div><div class="c"><div class="t"></div><div class="n">2118 - $210 Young Hunter 3'3" (7 &amp; Under)</div></div></div>
+          </div>
+        
+        </section>
+      </div>
+  </div>
+
+<script>
+  // Usage:
+  // schedule_onepage.html#200000044-20251231  -> fetches 200000044-20251231.json (same folder)
+  // Optional: ?data=somefile.json overrides hash.
+  const qs = new URLSearchParams(location.search);
+  const hashKey = (location.hash || "").replace(/^#/, "").trim();
+
+  function resolveDataUrl(){
+    const q = qs.get("data");
+    if(q) return q;
+    if(/^\d+\-\d{8}$/.test(hashKey)) return `${hashKey}.json`;
+    return "schedule.json"; // fallback
+  }
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function pxPerInch(){
+    const d = document.createElement("div");
+    d.style.width = "1in";
+    d.style.position = "absolute";
+    d.style.left = "-9999px";
+    d.style.top = "-9999px";
+    document.body.appendChild(d);
+    const ppi = d.offsetWidth || 96;
+    d.remove();
+    return ppi;
+  }
+
+  function fitToOnePage(){
+    // Best-effort: shrink content to fit 1 Letter page (minus margins).
+    const wrap = document.getElementById("wrap");
+    const topbar = document.querySelector(".topbar");
+    if(!wrap || !topbar) return;
+
+    // reset
+    wrap.style.setProperty("--scale", "1");
+
+    const ppi = pxPerInch();
+    const contentHeight = (11 - 0.5) * ppi; // Letter height minus 0.25in top+bottom margins
+    const avail = contentHeight - topbar.offsetHeight - 8;
+
+    // Use scrollHeight (after columns + print css apply) as best approximation.
+    const need = wrap.scrollHeight;
+    let scale = 1;
+    if(need > 0 && avail > 0 && need > avail) scale = avail / need;
+
+    // guardrails
+    scale = Math.max(0.55, Math.min(1, scale));
+    wrap.style.setProperty("--scale", String(scale));
+  }
+
+  function render(rows){
+    if(!Array.isArray(rows) || rows.length === 0) return "";
+
+    // Header sources
+    const first = rows[0];
+    const showId = first.show_id ?? first.showId ?? "";
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    document.getElementById("title").textContent = reportTitle;
+    document.getElementById("subtitle").textContent = displayDate ? String(displayDate) : (showId ? `show_id ${showId}` : "");
+
+    // Sort rings
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    let html = "";
+    for(const ring of rings){
+      const ringTitle = ring.items[0].ring_name ?? ring.items[0].ring_nickname ?? ring.items[0].ringNickname ?? "Ring";
+      const ringRows = ring.items.slice();
+
+      // groups (by class_group_id)
+      const groups = Array.from(groupBy(ringRows, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0].class_group_sequence ?? items[0].classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0].group_group_name ?? items[0].group_name ?? items[0].groupName ?? "Group";
+          // merge all non-empty group_display strings then de-dupe within string
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          return { gid, seq, gname, gdisplay: gd, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      let ringBody = "";
+      for(const g of groups){
+        // classes sorted by class_number
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTime = null;
+        for(const c of classes){
+          const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          lastTime = time || lastTime;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          cl += `<div class="c"><div class="t">${esc(showTime ? time : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        ringBody += `
+          <div class="group ${g.gdisplay ? "has-team" : ""}">
+            <div class="group-head">
+              ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+              <div class="gname">${esc(g.gname)}</div>
+            </div>
+            <div class="solid"></div>
+            <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+          </div>
+        `;
+      }
+
+      html += `
+        <section class="ring">
+          <div class="ring-head">${esc(ringTitle)}</div>
+          ${ringBody || `<div class="group"><div class="group-head"><div class="muted">No groups.</div></div></div>`}
+        </section>
+      `;
+    }
+
+    return html;
+  }
+
+  (async function main(){
+    const url = resolveDataUrl();
+    const rows = await fetchJson(url);
+    document.getElementById("out").innerHTML = render(rows);
+
+    // Fit immediately and right before printing.
+    fitToOnePage();
+    setTimeout(fitToOnePage, 50);
+
+    window.addEventListener("beforeprint", fitToOnePage);
+  })().catch(err=>{
+    document.getElementById("out").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+
+
+</body></html>
