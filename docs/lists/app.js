@@ -1136,16 +1136,17 @@
       .slice()
       .sort((a, b) => a.horseName.localeCompare(b.horseName));
 
-    const activeCount = activeHorses.length;
     const lines = [];
     const title = mode === 'notPacked' ? 'NOT PACKED' : 'PACKED';
+    const dateStr = new Date().toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-    lines.push(`Active Horses (${activeCount})`);
-    if (!activeHorses.length) lines.push('[none]');
-    else activeHorses.forEach((h) => lines.push(h.horseName));
+    // Styled header + date (ex: ** NOT PACKED ** Jan 8)
+    lines.push(`** ${title} ** ${dateStr}`);
 
     const cfg = getListsConfig();
     const listDefs = getListDefs(cfg).filter((d) => d.inShare !== false);
+
+    let firstSection = true;
 
     for (const d of listDefs) {
       const listKey = d.key;
@@ -1155,10 +1156,11 @@
         ? activeHorses.filter((h) => !(h.lists && h.lists[listKey]))
         : activeHorses.filter((h) => !!(h.lists && h.lists[listKey]));
 
-      const count = members.length;
+      if (!firstSection) lines.push('');
+      firstSection = false;
 
-      lines.push('');
-      lines.push(`${label} — ${title} (${count}/${activeCount})`);
+      // Styled section header (ex: - Schooling Bridles -)
+      lines.push(`- ${label} -`);
 
       if (!members.length) lines.push('[none]');
       else members.forEach((h) => lines.push(h.horseName));
@@ -1192,6 +1194,7 @@
       onClick: () => handleShareClick('notPacked')
     });
   }
+
 
   // ---------------------------------------------------------------------------
   // Render dispatcher
