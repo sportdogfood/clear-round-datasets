@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CRT Schedule (Mobile)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+
+    --topbar-h: 56px;
+    --bottom-nav-h: 64px;
+
+    --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:var(--bg);
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Sticky top header */
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(255,255,255,.96);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:10px 12px;
+    min-height:var(--topbar-h);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+  }
+  .title{font-weight:900; font-size:14px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* Main list */
+  main{
+    padding:10px 12px 18px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .ring{
+    border:1px solid #000;
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+    /* anchor offset for sticky topbar */
+    scroll-margin-top: calc(var(--topbar-h) + 10px);
+  }
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:10px 10px;
+    font-weight:900;
+    font-size:14px;
+    letter-spacing:.02em;
+  }
+
+  /* highlight groups that have a team (gdisplay present) */
+  .group.has-team{
+    background: rgb(204 204 204 / 43%);
+  }
+  .group.has-team .group-head{
+    padding-bottom: 4px;
+    padding-top: 10px;
+  }
+
+  .group-head{
+    padding:10px 10px 6px 10px;
+  }
+
+  /* group_display above group_name */
+  .gdisplay{
+    font-size:12px;
+    font-weight:700;
+    text-transform: uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin:0 0 6px 0;
+  }
+  .gname{
+    display:none; /* per spec: gname is hidden */
+  }
+
+  .class-list{
+    padding:0 10px 10px 10px;
+    border-top:1px solid var(--border);
+  }
+
+  .c{
+    display:grid;
+    grid-template-columns:62px 1fr;
+    column-gap:10px;
+    line-height:1.15;
+    padding:8px 0;
+    border-bottom:1px solid #eee;
+  }
+  .c:last-child{border-bottom:none;}
+  .t{font-weight:700; font-size:12px; white-space:nowrap;}
+  .n{
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .muted{color:var(--muted); font-size:12px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; border:1px solid #b00020; border-radius:10px;}
+
+  /* Bottom ring nav */
+  .bottom-nav{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:30;
+    background:rgba(255,255,255,.96);
+    backdrop-filter: blur(6px);
+    border-top:1px solid var(--border);
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+  }
+
+  .nav-scroller{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width:none;
+  }
+  .nav-scroller::-webkit-scrollbar{display:none;}
+
+  .nav-btn{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    padding:8px 10px;
+    font-size:12px;
+    font-weight:800;
+    border-radius:999px;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .nav-btn.active{
+    border-color:#000;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title" id="title">Schedule</div>
+  <div class="subtitle" id="subtitle"></div>
+</header>
+
+<main id="rings"></main>
+
+<nav class="bottom-nav" id="bottomNav">
+  <div class="nav-scroller" id="ringNav"></div>
+</nav>
+
+<script>
+  /**
+   * Mobile schedule template
+   *
+   * Data selection:
+   *   - Preferred: ?data=200000045-20260108.json
+   *   - Back-compat: #200000045-20260108  (auto-converted to ?data=... and hash cleared)
+   *
+   * Ring anchors:
+   *   - #ring-1, #ring-2, ... created automatically
+   */
+
+  const qs = new URLSearchParams(location.search);
+  const rawHash = (location.hash || "").replace(/^#/, "").trim();
+
+  function resolveDataUrl(){
+    const q = qs.get("data");
+    if(q) return q;
+
+    // back-compat: hashKey as date key
+    if(/^\d+\-\d{8}(\.json)?$/.test(rawHash)){
+      const file = rawHash.endsWith(".json") ? rawHash : (rawHash + ".json");
+      // convert to query param and clear hash so hash can be used for ring anchors
+      const next = new URL(location.href);
+      next.searchParams.set("data", file);
+      next.hash = "";
+      history.replaceState(null, "", next.toString());
+      return file;
+    }
+
+    return "schedule.json";
+  }
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function setHeader(rows){
+    const first = rows[0] || {};
+    const showId = first.show_id ?? first.showId ?? "";
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+
+    document.getElementById("title").textContent = reportTitle;
+
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
+    if(showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function buildRings(rows){
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringEls = [];
+    for(let i=0;i<rings.length;i++){
+      const ring = rings[i];
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
+
+      const ringId = (Number.isFinite(ring.ring_number) && ring.ring_number !== 9999)
+        ? `ring-${ring.ring_number}`
+        : `ring-x${i+1}`;
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          return { gid, seq, gname, gdisplay: gd, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+      sec.id = ringId;
+      sec.dataset.ringTitle = String(ringTitle);
+
+      sec.innerHTML = `<div class="ring-head ring-head">${esc(ringTitle)}</div>`;
+
+      for(const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTime = null;
+        for(const c of classes){
+          const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          if(time) lastTime = time;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          cl += `<div class="c"><div class="t">${esc(showTime ? time : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        const gDiv = document.createElement("div");
+        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+        sec.appendChild(gDiv);
+      }
+
+      ringEls.push(sec);
+    }
+
+    return ringEls;
+  }
+
+  function buildBottomNav(ringEls){
+    const nav = document.getElementById("ringNav");
+    nav.innerHTML = "";
+
+    for(const sec of ringEls){
+      const a = document.createElement("a");
+      a.className = "nav-btn";
+      a.href = `#${sec.id}`;
+      a.textContent = sec.dataset.ringTitle || "Ring";
+      nav.appendChild(a);
+    }
+  }
+
+  function syncBottomNavHeight(){
+    const bottom = document.getElementById("bottomNav");
+    const h = bottom ? bottom.getBoundingClientRect().height : 64;
+    document.documentElement.style.setProperty("--bottom-nav-h", Math.ceil(h) + "px");
+  }
+
+  function setupActiveRingObserver(){
+    const buttons = Array.from(document.querySelectorAll(".nav-btn"));
+    const sections = Array.from(document.querySelectorAll("section.ring"));
+
+    const btnById = new Map();
+    for(const b of buttons){
+      const id = (b.getAttribute("href") || "").replace(/^#/, "");
+      btnById.set(id, b);
+    }
+
+    const clearActive = ()=>buttons.forEach(b=>b.classList.remove("active"));
+
+    const io = new IntersectionObserver((entries)=>{
+      // pick the most-visible intersecting ring
+      const vis = entries
+        .filter(e=>e.isIntersecting)
+        .sort((a,b)=> (b.intersectionRatio - a.intersectionRatio));
+
+      if(!vis.length) return;
+
+      const id = vis[0].target.id;
+      clearActive();
+      const btn = btnById.get(id);
+      if(btn) btn.classList.add("active");
+    }, {
+      root: null,
+      // compensate for sticky topbar and bottom nav
+      rootMargin: `-${(document.querySelector(".topbar")?.getBoundingClientRect().height || 56) + 10}px 0px -${(document.getElementById("bottomNav")?.getBoundingClientRect().height || 64) + 10}px 0px`,
+      threshold: [0.2, 0.35, 0.5, 0.65]
+    });
+
+    sections.forEach(sec=>io.observe(sec));
+  }
+
+  (async function main(){
+    const url = resolveDataUrl();
+    const rows = await fetchJson(url);
+
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("rings").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      return;
+    }
+
+    setHeader(rows);
+
+    const ringEls = buildRings(rows);
+
+    const container = document.getElementById("rings");
+    container.innerHTML = "";
+    for(const el of ringEls) container.appendChild(el);
+
+    buildBottomNav(ringEls);
+    syncBottomNavHeight();
+    setupActiveRingObserver();
+
+    window.addEventListener("resize", ()=>{
+      syncBottomNavHeight();
+    });
+  })().catch(err=>{
+    document.getElementById("rings").innerHTML =
+      `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+</body>
+</html>
