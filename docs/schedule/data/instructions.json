@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "version": 1,
+    "generated_at_utc": "add_input",
+    "timezone": "America/New_York",
+    "show_id": 200000045,
+    "show_date": "2026-01-11",
+    "show_day_key": "200000045-20260111"
+  },
+  "cadence": {
+    "runner_every_minutes": 15,
+    "airtable_pull_every_minutes": 17,
+    "run_id_format": "YYYYMMDD-HHmmssZ"
+  },
+  "outputs": {
+    "base_dir": "docs/schedule/data/runs",
+    "write_history": true,
+    "files": {
+      "latest": "latest.json",
+      "diffs": "diffs.json",
+      "history_latest": "history/{run_id}.json",
+      "history_diffs": "history/diffs/{run_id}.json"
+    }
+  },
+  "streams": {
+    "schedule": {
+      "enabled": true,
+      "endpoint_url": "https://broad-tooth-b8ed.gombcg.workers.dev/schedule?date=2026-01-11&show_id=200000045&customer_id=15",
+      "stable_key": "class_groupxclasses_id",
+      "row_builder": "schedule_v1",
+      "row_fields_keep": [
+        "show_id",
+        "show_date",
+        "show_day_key",
+        "ring_number",
+        "ring_id",
+        "ring_name",
+        "class_group_id",
+        "class_group_sequence",
+        "group_name",
+        "class_id",
+        "class_number",
+        "class_name",
+        "class_groupxclasses_id"
+      ]
+    },
+    "entries1": {
+      "enabled": false,
+      "endpoint_url": "add_input",
+      "stable_key": "entryxclasses_uuid",
+      "row_builder": "entries_v1"
+    },
+    "entries2": {
+      "enabled": false,
+      "endpoint_url": "add_input",
+      "stable_key": "trip_id",
+      "row_builder": "trips_v1"
+    },
+    "live_groups": {
+      "enabled": false,
+      "endpoint_url": "add_input",
+      "stable_key": "class_group_id",
+      "row_builder": "live_groups_v1"
+    }
+  }
+}
