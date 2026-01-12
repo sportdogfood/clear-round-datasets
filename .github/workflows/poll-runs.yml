@@ -1,0 +1,38 @@
+name: Poll Runs
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: poll-runs
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  poll-runs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run poll script
+        run: node scripts/poll-runs.mjs
+
+      - name: Push changes
+        run: git push
