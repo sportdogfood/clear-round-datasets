@@ -102,7 +102,7 @@
 
   .c{
     display:grid;
-    grid-template-columns:62px 1fr auto; /* UPDATED: add status column */
+    grid-template-columns:62px 1fr auto; /* status column */
     column-gap:10px;
     align-items:center;
     line-height:1.15;
@@ -118,7 +118,7 @@
     white-space:nowrap;
   }
 
-  /* UPDATED: status pill */
+  /* Status pill */
   .s{
     font-size:10px;
     font-weight:900;
@@ -127,6 +127,16 @@
     border:1px solid #111;
     white-space:nowrap;
     line-height:1;
+  }
+
+  /* Highlight ONLY the time cell when start_display2 is used */
+  .c.time2 .t{
+    background: rgb(11 93 71 / 18%);
+    padding:2px 6px;
+    border-radius:6px;
+    font-weight:900;
+    justify-self:start;
+    width:max-content;
   }
 
   .muted{color:var(--muted); font-size:12px;}
@@ -151,18 +161,6 @@
     scrollbar-width:none;
   }
   .nav-scroller::-webkit-scrollbar{display:none;}
-/* highlight rows where start_display2 is being used (time override) */
-.c.time2{
-  background: rgb(11 93 71 / 8%);
-}
-.c.time2 .t{
-  background: rgb(11 93 71 / 18%);
-  padding:2px 6px;
-  border-radius:6px;
-  font-weight:900;
-  justify-self:start;   /* keeps it from stretching */
-  width:max-content;    /* pill wraps the text */
-}
 
   .nav-btn{
     flex:0 0 auto;
@@ -200,18 +198,11 @@
 <script>
   /**
    * Mobile schedule template
-   *
-   * Data selection:
-   *   - Preferred: ?data=200000045-20260108.json
-   *   - Back-compat: #200000045-20260108  (auto-converted to ?data=... and hash cleared)
-   *
-   * Ring anchors:
-   *   - #ring-1, #ring-2, ... created automatically
    */
 
-  // UPDATED: auto-refresh interval (milliseconds)
-  // If you only change the JSON every 30 minutes, set this to: 30 * 60 * 1000
-  const POLL_MS = 60 * 1000;
+  // Auto-refresh interval (milliseconds)
+  // 30 minutes:
+  const POLL_MS = 30 * 60 * 1000;
 
   const qs = new URLSearchParams(location.search);
   const rawHash = (location.hash || "").replace(/^#/, "").trim();
@@ -224,7 +215,7 @@
   let lastUpdatedText = "";
 
   function fmtTime(d){
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   }
 
   function resolveDataUrl(){
@@ -234,7 +225,6 @@
     // back-compat: hashKey as date key
     if(/^\d+\-\d{8}(\.json)?$/.test(rawHash)){
       const file = rawHash.endsWith(".json") ? rawHash : (rawHash + ".json");
-      // convert to query param and clear hash so hash can be used for ring anchors
       const next = new URL(location.href);
       next.searchParams.set("data", file);
       next.hash = "";
@@ -285,39 +275,36 @@
     return m;
   }
 
-function setHeader(rows){
-  const first = rows[0] || {};
-  const reportTitle =
-    first.show_days_report_title ??
-    first.show_report_title ??
-    (first.show_id ? `Show ${first.show_id}` : "Schedule");
+  function setHeader(rows){
+    const first = rows[0] || {};
+    const reportTitle =
+      first.show_days_report_title ??
+      first.show_report_title ??
+      (first.show_id ? `Show ${first.show_id}` : "Schedule");
 
-  const displayDate =
-    first.show_days_display_date ??
-    first.show_display_date ??
-    first.show_date ??
-    first.showDate ??
-    "";
+    const displayDate =
+      first.show_days_display_date ??
+      first.show_display_date ??
+      first.show_date ??
+      first.showDate ??
+      "";
 
-  const showDayKey =
-    first.show_day_key ??
-    first.showDayKey ??
-    first.show_days ??
-    first.showDays ??
-    "";
+    const showDayKey =
+      first.show_day_key ??
+      first.showDayKey ??
+      first.show_days ??
+      first.showDays ??
+      "";
 
-  document.getElementById("title").textContent = reportTitle;
+    document.getElementById("title").textContent = reportTitle;
 
-  // Subtitle spec:
-  // Date • last updated: HH:MM AM • show_day_key
-  const subParts = [];
-  if(displayDate) subParts.push(String(displayDate));
-  if(lastUpdatedText) subParts.push(`last updated: ${lastUpdatedText}`);
-  if(showDayKey) subParts.push(String(showDayKey));
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(lastUpdatedText) subParts.push(`last updated: ${lastUpdatedText}`);
+    if(showDayKey) subParts.push(String(showDayKey));
 
-  document.getElementById("subtitle").textContent = subParts.join("   •   ");
-}
-
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
 
   function buildRings(rows){
     const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
@@ -361,14 +348,16 @@ function setHeader(rows){
         let lastTime = null;
 
         for(const c of classes){
-          // UPDATED: choose display time based on start_display vs start_display2
-         const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
-         const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
+          const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
 
-        // use start_display2 only when it exists and differs (or sd1 missing)
-        const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+          // use start_display2 only when it exists and differs (or sd1 missing)
+          const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+          const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
 
-        const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
+          // IMPORTANT: showTime must be defined (you were missing this)
+          const showTime = (displayTime && displayTime !== lastTime);
+
           if(displayTime) lastTime = displayTime;
 
           const num = c.class_number ?? c.classNumber;
@@ -377,7 +366,6 @@ function setHeader(rows){
             ? `${num} - ${name}`.trim()
             : String(name).trim();
 
-          // UPDATED: render status2 pill (if present)
           const status2 = String(c.status2 ?? "").trim();
           const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
 
@@ -452,7 +440,6 @@ function setHeader(rows){
     const bottomH = (document.getElementById("bottomNav")?.getBoundingClientRect().height || 64);
 
     activeIO = new IntersectionObserver((entries)=>{
-      // pick the most-visible intersecting ring
       const vis = entries
         .filter(e=>e.isIntersecting)
         .sort((a,b)=> (b.intersectionRatio - a.intersectionRatio));
@@ -465,7 +452,6 @@ function setHeader(rows){
       if(btn) btn.classList.add("active");
     }, {
       root: null,
-      // compensate for sticky topbar and bottom nav
       rootMargin: `-${topH + 10}px 0px -${bottomH + 10}px 0px`,
       threshold: [0.2, 0.35, 0.5, 0.65]
     });
@@ -514,26 +500,21 @@ function setHeader(rows){
 
       // no change -> do nothing
       if(lastRaw !== null && txt === lastRaw){
-        isRefreshing = false;
         return;
       }
 
-      // changed -> re-render
       const rows = parseJsonText(txt, currentDataUrl);
 
       const scrollY = window.scrollY;
 
       lastRaw = txt;
       lastUpdatedText = fmtTime(new Date());
-
       renderRows(rows);
 
-      // restore scroll (best-effort)
       window.scrollTo(0, scrollY);
 
     }catch(e){
-      // silent fail: keep existing UI
-      // (you can surface error if desired)
+      // keep existing UI
     }finally{
       isRefreshing = false;
     }
@@ -542,11 +523,9 @@ function setHeader(rows){
   (async function main(){
     await initialLoad();
 
-    // UPDATED: auto-refresh loop
     setInterval(pollForUpdates, POLL_MS);
 
     window.addEventListener("resize", ()=>{
-      // keep height correct AND rebuild observer margins
       syncBottomNavHeight();
       setupActiveRingObserver();
     });
