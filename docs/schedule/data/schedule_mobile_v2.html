@@ -85,7 +85,7 @@
     text-transform: uppercase;
     white-space:nowrap;
     overflow:hidden;
-    margin-bottom:-6px;
+    margin-bottom:-1px;
     text-overflow:ellipsis;
     text-align:right;
     padding-right: 4px;
@@ -102,7 +102,7 @@
 
   .c{
     display:grid;
-    grid-template-columns:62px 1fr auto; /* status column */
+    grid-template-columns:62px 1fr auto; /* time | label | status */
     column-gap:10px;
     align-items:center;
     line-height:1.15;
@@ -118,7 +118,7 @@
     white-space:nowrap;
   }
 
-  /* Status pill */
+  /* status pill */
   .s{
     font-size:10px;
     font-weight:900;
@@ -126,10 +126,11 @@
     border-radius:999px;
     border:1px solid #111;
     white-space:nowrap;
+    background: white;
     line-height:1;
   }
 
-  /* Highlight ONLY the time cell when start_display2 is used */
+  /* ONLY the time highlights when start_display2 is being used */
   .c.time2 .t{
     background: rgb(11 93 71 / 18%);
     padding:2px 6px;
@@ -198,10 +199,16 @@
 <script>
   /**
    * Mobile schedule template
+   *
+   * Data selection:
+   *   - Preferred: ?data=200000045-20260108.json
+   *   - Back-compat: #200000045-20260108  (auto-converted to ?data=... and hash cleared)
+   *
+   * Auto-refresh:
+   *   - Polls the JSON and re-renders only if the file content changes
    */
 
-  // Auto-refresh interval (milliseconds)
-  // 30 minutes:
+  // Refresh interval (milliseconds) -> 30 minutes
   const POLL_MS = 30 * 60 * 1000;
 
   const qs = new URLSearchParams(location.search);
@@ -225,6 +232,7 @@
     // back-compat: hashKey as date key
     if(/^\d+\-\d{8}(\.json)?$/.test(rawHash)){
       const file = rawHash.endsWith(".json") ? rawHash : (rawHash + ".json");
+      // convert to query param and clear hash so hash can be used for ring anchors
       const next = new URL(location.href);
       next.searchParams.set("data", file);
       next.hash = "";
@@ -277,6 +285,7 @@
 
   function setHeader(rows){
     const first = rows[0] || {};
+
     const reportTitle =
       first.show_days_report_title ??
       first.show_report_title ??
@@ -298,6 +307,8 @@
 
     document.getElementById("title").textContent = reportTitle;
 
+    // Subtitle spec:
+    // Date • last updated: HH:MM AM • show_day_key
     const subParts = [];
     if(displayDate) subParts.push(String(displayDate));
     if(lastUpdatedText) subParts.push(`last updated: ${lastUpdatedText}`);
@@ -312,6 +323,7 @@
       .sort((a,b)=>a.ring_number - b.ring_number);
 
     const ringEls = [];
+
     for(let i=0;i<rings.length;i++){
       const ring = rings[i];
       const items0 = ring.items[0] || {};
@@ -347,40 +359,36 @@
         let cl = "";
         let lastTime = null;
 
-        for (const c of classes) {
-  // choose display time based on start_display vs start_display2
-  const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
-  const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
+        for(const c of classes){
+          const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
 
-  // use start_display2 only when it exists and differs (or sd1 missing)
-  const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
-  const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
+          // if start_display2 exists AND differs -> show start_display2
+          const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+          const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
 
-  // IMPORTANT: showTime must exist (prevents your ReferenceError)
-  const showTime = (displayTime && displayTime !== lastTime);
+          // FIX: showTime must be declared BEFORE using it
+          const showTime = (displayTime && displayTime !== lastTime);
 
-  // only update lastTime AFTER showTime is computed
-  if (displayTime) lastTime = displayTime;
+          if(showTime) lastTime = displayTime;
 
-  const num = c.class_number ?? c.classNumber;
-  const name = c.class_name ?? c.className ?? c.name ?? "";
-  const label =
-    (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
-      ? `${num} - ${name}`.trim()
-      : String(name).trim();
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
 
-  const status2 = String(c.status2 ?? "").trim();
-  const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
+          const status2 = String(c.status2 ?? "").trim();
+          const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
 
-  cl += `
-    <div class="c${usingTime2 ? " time2" : ""}">
-      <div class="t">${esc(showTime ? displayTime : "")}</div>
-      <div class="n">${esc(label)}</div>
-      ${statusHtml}
-    </div>
-  `;
-}
-
+          cl += `
+            <div class="c${usingTime2 ? " time2" : ""}">
+              <div class="t">${esc(showTime ? displayTime : "")}</div>
+              <div class="n">${esc(label)}</div>
+              ${statusHtml}
+            </div>
+          `;
+        }
 
         const gDiv = document.createElement("div");
         gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
@@ -391,6 +399,7 @@
           </div>
           <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
         `;
+
         sec.appendChild(gDiv);
       }
 
@@ -508,7 +517,6 @@
       }
 
       const rows = parseJsonText(txt, currentDataUrl);
-
       const scrollY = window.scrollY;
 
       lastRaw = txt;
@@ -527,6 +535,7 @@
   (async function main(){
     await initialLoad();
 
+    // auto-refresh loop
     setInterval(pollForUpdates, POLL_MS);
 
     window.addEventListener("resize", ()=>{
