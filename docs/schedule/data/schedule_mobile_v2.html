@@ -151,6 +151,18 @@
     scrollbar-width:none;
   }
   .nav-scroller::-webkit-scrollbar{display:none;}
+/* highlight rows where start_display2 is being used (time override) */
+.c.time2{
+  background: rgb(11 93 71 / 8%);
+}
+.c.time2 .t{
+  background: rgb(11 93 71 / 18%);
+  padding:2px 6px;
+  border-radius:6px;
+  font-weight:900;
+  justify-self:start;   /* keeps it from stretching */
+  width:max-content;    /* pill wraps the text */
+}
 
   .nav-btn{
     flex:0 0 auto;
@@ -208,6 +220,12 @@
   let lastRaw = null;
   let currentDataUrl = null;
   let isRefreshing = false;
+
+  let lastUpdatedText = "";
+
+  function fmtTime(d){
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  }
 
   function resolveDataUrl(){
     const q = qs.get("data");
@@ -267,21 +285,39 @@
     return m;
   }
 
-  function setHeader(rows){
-    const first = rows[0] || {};
-    const showId = first.show_id ?? first.showId ?? "";
-    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
-    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
-    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+function setHeader(rows){
+  const first = rows[0] || {};
+  const reportTitle =
+    first.show_days_report_title ??
+    first.show_report_title ??
+    (first.show_id ? `Show ${first.show_id}` : "Schedule");
 
-    document.getElementById("title").textContent = reportTitle;
+  const displayDate =
+    first.show_days_display_date ??
+    first.show_display_date ??
+    first.show_date ??
+    first.showDate ??
+    "";
 
-    const subParts = [];
-    if(displayDate) subParts.push(String(displayDate));
-    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
-    if(showDayKey) subParts.push(String(showDayKey));
-    document.getElementById("subtitle").textContent = subParts.join("   •   ");
-  }
+  const showDayKey =
+    first.show_day_key ??
+    first.showDayKey ??
+    first.show_days ??
+    first.showDays ??
+    "";
+
+  document.getElementById("title").textContent = reportTitle;
+
+  // Subtitle spec:
+  // Date • last updated: HH:MM AM • show_day_key
+  const subParts = [];
+  if(displayDate) subParts.push(String(displayDate));
+  if(lastUpdatedText) subParts.push(`last updated: ${lastUpdatedText}`);
+  if(showDayKey) subParts.push(String(showDayKey));
+
+  document.getElementById("subtitle").textContent = subParts.join("   •   ");
+}
+
 
   function buildRings(rows){
     const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
@@ -326,11 +362,13 @@
 
         for(const c of classes){
           // UPDATED: choose display time based on start_display vs start_display2
-          const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
-          const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
-          const displayTime = (sd2 && sd1 && sd2 !== sd1) ? sd2 : (sd2 || sd1);
+         const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
+         const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
 
-          const showTime = (displayTime && displayTime !== lastTime);
+        // use start_display2 only when it exists and differs (or sd1 missing)
+        const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+
+        const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
           if(displayTime) lastTime = displayTime;
 
           const num = c.class_number ?? c.classNumber;
@@ -344,7 +382,7 @@
           const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
 
           cl += `
-            <div class="c">
+            <div class="c${usingTime2 ? " time2" : ""}">
               <div class="t">${esc(showTime ? displayTime : "")}</div>
               <div class="n">${esc(label)}</div>
               ${statusHtml}
@@ -462,6 +500,7 @@
     lastRaw = txt;
 
     const rows = parseJsonText(txt, currentDataUrl);
+    lastUpdatedText = fmtTime(new Date());
     renderRows(rows);
   }
 
@@ -485,6 +524,8 @@
       const scrollY = window.scrollY;
 
       lastRaw = txt;
+      lastUpdatedText = fmtTime(new Date());
+
       renderRows(rows);
 
       // restore scroll (best-effort)
