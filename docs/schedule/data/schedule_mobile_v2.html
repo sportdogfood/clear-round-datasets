@@ -347,36 +347,40 @@
         let cl = "";
         let lastTime = null;
 
-        for(const c of classes){
-          const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
-          const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
+        for (const c of classes) {
+  // choose display time based on start_display vs start_display2
+  const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
+  const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
 
-          // use start_display2 only when it exists and differs (or sd1 missing)
-          const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
-          const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
+  // use start_display2 only when it exists and differs (or sd1 missing)
+  const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+  const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
 
-          // IMPORTANT: showTime must be defined (you were missing this)
-          const showTime = (displayTime && displayTime !== lastTime);
+  // IMPORTANT: showTime must exist (prevents your ReferenceError)
+  const showTime = (displayTime && displayTime !== lastTime);
 
-          if(displayTime) lastTime = displayTime;
+  // only update lastTime AFTER showTime is computed
+  if (displayTime) lastTime = displayTime;
 
-          const num = c.class_number ?? c.classNumber;
-          const name = c.class_name ?? c.className ?? c.name ?? "";
-          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
-            ? `${num} - ${name}`.trim()
-            : String(name).trim();
+  const num = c.class_number ?? c.classNumber;
+  const name = c.class_name ?? c.className ?? c.name ?? "";
+  const label =
+    (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+      ? `${num} - ${name}`.trim()
+      : String(name).trim();
 
-          const status2 = String(c.status2 ?? "").trim();
-          const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
+  const status2 = String(c.status2 ?? "").trim();
+  const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
 
-          cl += `
-            <div class="c${usingTime2 ? " time2" : ""}">
-              <div class="t">${esc(showTime ? displayTime : "")}</div>
-              <div class="n">${esc(label)}</div>
-              ${statusHtml}
-            </div>
-          `;
-        }
+  cl += `
+    <div class="c${usingTime2 ? " time2" : ""}">
+      <div class="t">${esc(showTime ? displayTime : "")}</div>
+      <div class="n">${esc(label)}</div>
+      ${statusHtml}
+    </div>
+  `;
+}
+
 
         const gDiv = document.createElement("div");
         gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
