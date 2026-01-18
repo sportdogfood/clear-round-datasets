@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Schedules</title>
+  <style>
+    :root{
+      --bg:#0f0f10;
+      --card:#161618;
+      --fg:#ffffff;
+      --muted:rgba(255,255,255,.72);
+      --muted2:rgba(255,255,255,.55);
+      --border:rgba(255,255,255,.14);
+      --accent:#22c55e;
+      --btn:#1f1f22;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      padding:16px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Mobile-only */
+    @media (min-width: 860px){
+      body{display:flex; align-items:center; justify-content:center;}
+      .wrap{max-width:520px}
+      .desktop-note{
+        display:block;
+        border:1px solid var(--border);
+        border-radius:14px;
+        padding:14px;
+        background:var(--card);
+        color:var(--muted);
+        text-align:center;
+      }
+      .app{display:none;}
+    }
+    @media (max-width: 859px){
+      .desktop-note{display:none;}
+      .app{display:block;}
+    }
+
+    .wrap{max-width:520px; margin:0 auto;}
+    .top{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius:16px;
+      padding:14px 14px 12px;
+      margin-bottom:12px;
+    }
+    .title{
+      font-weight:900;
+      letter-spacing:.01em;
+      font-size:16px;
+      line-height:1.15;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .meta{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.3;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .dotline{color:var(--muted2);}
+    .accent{color:var(--accent); font-weight:800;}
+
+    .grid{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .btn{
+      display:block;
+      text-decoration:none;
+      color:var(--fg);
+      background:var(--btn);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px 14px;
+      box-shadow: 0 10px 18px rgba(0,0,0,.22);
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn .label{
+      font-weight:900;
+      font-size:14px;
+      line-height:1.2;
+      margin-bottom:6px;
+    }
+    .btn .sub{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.25;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .btn .sub.empty{display:none;}
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      margin-top:10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="desktop-note">
+      Open <b>/schedules.html</b> on a phone for the mobile menu.
+    </div>
+
+    <div class="app">
+      <div class="top">
+        <div class="title">🛡️ CWF Schedule</div>
+        <div class="meta">
+          <div id="displayDate">—</div>
+          <div class="dotline">Time: <span class="accent" id="nowTime">—</span></div>
+        </div>
+        <div class="pill" id="filePill">File: <span id="fileName">—</span></div>
+      </div>
+
+      <div class="grid">
+        <a class="btn" id="btnPrinted" href="#">
+          <div class="label">Printed - Schedule</div>
+          <div class="sub" id="subPrinted"></div>
+        </a>
+
+        <a class="btn" id="btnMobile" href="#">
+          <div class="label">Mobile - Schedule</div>
+          <div class="sub" id="subMobile"></div>
+        </a>
+
+        <a class="btn" id="btnWatch" href="#">
+          <div class="label">Mobile - Watch</div>
+          <div class="sub" id="subWatch"></div>
+        </a>
+
+        <a class="btn" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
+          <div class="label">Tacklists</div>
+          <div class="sub empty" id="subTack"></div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /**
+   * /schedules.html
+   *
+   * Defaults:
+   * - show_id: 200000046
+   * - show_day: today in America/New_York (YYYYMMDD)
+   * - ring: 4
+   *
+   * Optional query params:
+   * - ?show_id=200000046&show_day=20260118&ring=4
+   * - OR provide the file directly: ?data=200000046-20260118M.json
+   */
+
+  const TIMEZONE = "America/New_York";
+  const PUBLISH_INTERVAL_MS = 30 * 60 * 1000;
+
+  const qs = new URLSearchParams(location.search);
+
+  const fmtDateLong = (ms)=> new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE,
+    weekday:"long",
+    month:"short",
+    day:"numeric",
+    year:"numeric"
+  }).format(new Date(ms));
+
+  const fmtTime = (ms)=> new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE,
+    hour:"numeric",
+    minute:"2-digit"
+  }).format(new Date(ms));
+
+  function pad2(n){ return String(n).padStart(2,"0"); }
+
+  function getTodayYYYYMMDD(){
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE,
+      year:"numeric", month:"2-digit", day:"2-digit"
+    }).formatToParts(new Date());
+
+    const y = parts.find(p=>p.type==="year")?.value || "";
+    const m = parts.find(p=>p.type==="month")?.value || "";
+    const d = parts.find(p=>p.type==="day")?.value || "";
+    return `${y}${m}${d}`;
+  }
+
+  function normalizeShowDay(v){
+    const s = String(v ?? "").trim();
+    if(!s) return "";
+    if(/^\d{8}$/.test(s)) return s;
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m) return `${m[1]}${m[2]}${m[3]}`;
+    return "";
+  }
+
+  function buildDataFile(showId, showDay){
+    return `${showId}-${showDay}M.json`;
+  }
+
+  function setSub(id, text){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = text || "";
+    if(!text) el.classList.add("empty");
+    else el.classList.remove("empty");
+  }
+
+  async function fetchLastModified(url){
+    // Prefer GET because some hosts/CDNs don't allow HEAD reliably
+    const res = await fetch(url, { cache:"no-store" });
+    if(!res.ok) throw new Error(`Fetch failed ${res.status}`);
+    const lastMod = res.headers.get("last-modified");
+    return lastMod ? Date.parse(lastMod) : null;
+  }
+
+  function setLinks(showId, showDay, ring, dataFile){
+    const printed = `https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html#${showId}-${showDay}`;
+    const mobile  = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v2.html?data=${encodeURIComponent(dataFile)}#ring-${ring}`;
+    const watch   = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v3.html?data=${encodeURIComponent(dataFile)}#ring-${ring}`;
+
+    document.getElementById("btnPrinted").href = printed;
+    document.getElementById("btnMobile").href = mobile;
+    document.getElementById("btnWatch").href = watch;
+  }
+
+  function startClock(){
+    const nowEl = document.getElementById("nowTime");
+    const dateEl = document.getElementById("displayDate");
+
+    const tick = ()=>{
+      const now = Date.now();
+      nowEl.textContent = fmtTime(now);
+      dateEl.textContent = fmtDateLong(now);
+    };
+    tick();
+    setInterval(tick, 1000 * 15);
+  }
+
+  async function setPublishedMeta(dataFile){
+    try{
+      const url = `https://blog.clearroundtravel.com/schedule/data/${dataFile}`;
+      const ms = await fetchLastModified(url);
+      if(!ms) return;
+
+      const published = `published: ${fmtTime(ms)}`;
+      const next = `next: ${fmtTime(ms + PUBLISH_INTERVAL_MS)}`;
+      const line = `${published} • ${next}`;
+
+      setSub("subPrinted", published);
+      setSub("subMobile", line);
+      setSub("subWatch", line);
+
+    }catch(e){
+      // If anything fails, keep it clean (no meta)
+      setSub("subPrinted", "");
+      setSub("subMobile", "");
+      setSub("subWatch", "");
+    }
+  }
+
+  (async function main(){
+    startClock();
+
+    const showId = (qs.get("show_id") || qs.get("showId") || "200000046").trim();
+    const ring = (qs.get("ring") || "4").trim();
+
+    const showDay =
+      normalizeShowDay(qs.get("show_day") || qs.get("showDay")) ||
+      normalizeShowDay(getTodayYYYYMMDD());
+
+    const dataFile = (qs.get("data") || "").trim() || buildDataFile(showId, showDay);
+
+    document.getElementById("fileName").textContent = dataFile;
+
+    setLinks(showId, showDay, ring, dataFile);
+    await setPublishedMeta(dataFile);
+  })();
+</script>
+</body>
+</html>
