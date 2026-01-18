@@ -163,7 +163,7 @@
       border-radius: 20px;
       background: rgba(15, 23, 42, 0.95);
       overflow: hidden;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
@@ -188,7 +188,6 @@
       color: #d1d5db;
       opacity: 0.9;
     }
-
 
     /* Long pills (rows) ----------------------------------------- */
 
@@ -289,7 +288,6 @@
       background: rgba(55, 65, 81, 0.9);
       margin: 10px 4px;
     }
-    /* make both side buttons the same fixed width */
 
     /* State search ---------------------------------------------- */
 
@@ -413,17 +411,13 @@
 <body>
   <div class="app">
     <!-- Header -->
-
-<header class="app-header">
-  <button class="header-back" id="header-back" type="button" style="visibility: hidden;">
-    <span>←</span>
-  </button>
-
-  <h1 class="header-title" id="header-title">Start</h1>
-
-  <!-- spacer (matches back button width) -->
-  <button class="header-back header-spacer" type="button" aria-hidden="true" tabindex="-1"></button>
-</header>
+    <header class="app-header">
+      <button class="header-back" id="header-back" type="button">
+        <span>&larr;</span>
+      </button>
+      <h1 class="header-title" id="header-title">Start</h1>
+      <button class="header-action" id="header-action" type="button" hidden></button>
+    </header>
 
     <!-- Main content -->
     <main class="app-main">
