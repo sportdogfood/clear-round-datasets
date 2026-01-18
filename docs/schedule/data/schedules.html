@@ -107,10 +107,13 @@
     .meta {
       margin: 6px 2px 14px;
       line-height: 1.25;
+      text-align: center;
     }
     .meta-title {
       font-size: 16px;
       font-weight: 700;
+      text-align: center;
+
       letter-spacing: 0.02em;
     }
     .meta-sub {
@@ -198,6 +201,7 @@
   </style>
 </head>
 
+
 <body>
   <div class="desktop-note">
     Open <b>/schedules.html</b> on a phone.
@@ -235,7 +239,7 @@
           <div class="row-tag" id="tagWatch">—</div>
         </a>
 
-        <a class="row" id="btnTack" href="#">
+        <a class="row" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
           <div class="row-title">TackLists</div>
           <div class="row-tag">Open</div>
         </a>
@@ -247,26 +251,25 @@
   /**
    * /schedules.html
    *
-   * You overwrite these two pointer files:
-   *   https://blog.clearroundtravel.com/latest/schedule.json  (v2 + v5)
-   *   https://blog.clearroundtravel.com/latest/team.json      (v3)
+   * Your latest files are HERE (1 deeper under /schedule/data/):
+   *   /schedule/data/latest/schedule.json  (use for v2 + v5)
+   *   /schedule/data/latest/team.json      (use for v3)
    *
-   * IMPORTANT:
-   * - Links pass the LATEST pointer PATH directly as:
-   *     ?data=/latest/schedule.json
-   *     ?data=/latest/team.json
-   * - No ring anchors.
+   * Because the viewers are also in /schedule/data/,
+   * we should use RELATIVE data paths:
+   *   data=latest/schedule.json
+   *   data=latest/team.json
    */
-
-  const SITE = "https://blog.clearroundtravel.com";
 
   const TIMEZONE = "America/New_York";
 
-  const LATEST_SCHEDULE_PATH = "/latest/schedule.json";
-  const LATEST_TEAM_PATH     = "/latest/team.json";
+  // Actual latest files (absolute URLs for fetch/display only)
+  const LATEST_SCHEDULE_URL = "https://blog.clearroundtravel.com/schedule/data/latest/schedule.json";
+  const LATEST_TEAM_URL     = "https://blog.clearroundtravel.com/schedule/data/latest/team.json";
 
-  const LATEST_SCHEDULE_URL = SITE + LATEST_SCHEDULE_PATH;
-  const LATEST_TEAM_URL     = SITE + LATEST_TEAM_PATH;
+  // Relative paths (used inside ?data= for the viewers)
+  const DATA_SCHEDULE_REL = "latest/schedule.json";
+  const DATA_TEAM_REL     = "latest/team.json";
 
   const fmtDateLong = (ms)=> new Intl.DateTimeFormat("en-US", {
     timeZone: TIMEZONE,
@@ -311,21 +314,15 @@
   }
 
   function setLinks(){
-    // v5 (printed) uses the SAME latest schedule pointer as v2
+    // ✅ EXACT WORKING LINK SHAPES
     document.getElementById("btnPrinted").href =
-      SITE + "/schedule/data/schedule_onepage_v5.html?data=" + LATEST_SCHEDULE_PATH;
+      "https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html?data=" + DATA_SCHEDULE_REL;
 
-    // v2 (mobile schedule)
     document.getElementById("btnMobile").href =
-      SITE + "/schedule/data/schedule_mobile_v2.html?data=" + LATEST_SCHEDULE_PATH;
+      "https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v2.html?data=" + DATA_SCHEDULE_REL;
 
-    // v3 (mobile watch/team)
     document.getElementById("btnWatch").href =
-      SITE + "/schedule/data/schedule_mobile_v3.html?data=" + LATEST_TEAM_PATH;
-
-    // TackLists
-    document.getElementById("btnTack").href =
-      SITE + "/lists/index.html";
+      "https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v3.html?data=" + DATA_TEAM_REL;
   }
 
   async function setPublishedTags(){
