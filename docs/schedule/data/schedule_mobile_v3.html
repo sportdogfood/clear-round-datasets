@@ -45,7 +45,8 @@
   .subtitle{color:var(--muted); font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   /* Topbar home button */
 .topbar-row{
-  display:flex;
+  display: flex;
+    justify-content: space-between;
   align-items:center;
   gap:10px;
 }
@@ -221,13 +222,14 @@
 
 <header class="topbar">
   <div class="topbar-row">
-    <a class="home-pill" href="https://blog.clearroundtravel.com/schedule/data/schedules.html">Home</a>
+    
 
 
     <div class="topbar-text">
       <div class="title" id="title">Schedule</div>
       <div class="subtitle" id="subtitle"></div>
     </div>
+    <a class="home-pill" href="https://blog.clearroundtravel.com/schedule/data/schedules.html">Home</a>
   </div>
 </header>
 

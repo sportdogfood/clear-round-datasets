@@ -62,16 +62,21 @@
 
     /* Header ----------------------------------------------------- */
 
-    .app-header {
-      height: var(--header-h);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      border-bottom: 1px solid rgba(31, 41, 55, 0.95);
-      background: #020617;
-      backdrop-filter: blur(10px);
-    }
+  .app-header{
+  height: var(--header-h);
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(31, 41, 55, 0.95);
+  background: #020617;
+  backdrop-filter: blur(10px);
+}
+.header-back{ justify-self: start; }
+.header-title{ justify-self: center; text-align: center; }
+.header-action{ justify-self: end; }
+
 
     .header-back,
     .header-action {
@@ -405,6 +410,12 @@
     button {
       font-family: inherit;
     }
+
+    .is-hidden{
+  visibility: hidden;
+  pointer-events: none;
+}
+
   </style>
 </head>
 
@@ -416,7 +427,8 @@
         <span>&larr;</span>
       </button>
       <h1 class="header-title" id="header-title">Start</h1>
-      <button class="header-action" id="header-action" type="button" hidden></button>
+     <button class="header-action" id="header-action" type="button" hidden></button>
+
     </header>
 
     <!-- Main content -->
