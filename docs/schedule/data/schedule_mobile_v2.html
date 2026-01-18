@@ -44,6 +44,39 @@
   .title{font-weight:900; font-size:14px; line-height:1.1;}
   .subtitle{color:var(--muted); font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
+.topbar-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.topbar-text{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.home-pill{
+  flex:0 0 auto;
+  height:34px;
+  padding:0 14px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#fff;
+  color:#111;
+  font-size:12px;
+  font-weight:900;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+
+.home-pill:active{
+  transform: translateY(1px) scale(0.99);
+}
   /* Main list */
   main{
     padding:4px 4px 4px 4px;
@@ -185,9 +218,17 @@
 </head>
 <body>
 
+
 <header class="topbar">
-  <div class="title" id="title">Schedule</div>
-  <div class="subtitle" id="subtitle"></div>
+  <div class="topbar-row">
+    <a class="home-pill" href="https://blog.clearroundtravel.com/schedule/data/schedules.html">Home</a>
+
+
+    <div class="topbar-text">
+      <div class="title" id="title">Schedule</div>
+      <div class="subtitle" id="subtitle"></div>
+    </div>
+  </div>
 </header>
 
 <main id="rings"></main>
