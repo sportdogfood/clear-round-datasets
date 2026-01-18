@@ -10,12 +10,10 @@
       --card:#161618;
       --fg:#ffffff;
       --muted:rgba(255,255,255,.72);
-      --muted2:rgba(255,255,255,.55);
       --border:rgba(255,255,255,.14);
       --accent:#22c55e;
       --btn:#1f1f22;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
@@ -59,9 +57,6 @@
       letter-spacing:.01em;
       font-size:16px;
       line-height:1.15;
-      display:flex;
-      align-items:center;
-      gap:8px;
     }
     .meta{
       margin-top:6px;
@@ -72,7 +67,6 @@
       flex-direction:column;
       gap:2px;
     }
-    .dotline{color:var(--muted2);}
     .accent{color:var(--accent); font-weight:800;}
 
     .grid{
@@ -107,20 +101,6 @@
       text-overflow:ellipsis;
     }
     .btn .sub.empty{display:none;}
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.04);
-      color:var(--muted);
-      font-size:12px;
-      font-weight:800;
-      margin-top:10px;
-    }
   </style>
 </head>
 <body>
@@ -134,9 +114,8 @@
         <div class="title">🛡️ CWF Schedule</div>
         <div class="meta">
           <div id="displayDate">—</div>
-          <div class="dotline">Time: <span class="accent" id="nowTime">—</span></div>
+          <div>Time: <span class="accent" id="nowTime">—</span></div>
         </div>
-        <div class="pill" id="filePill">File: <span id="fileName">—</span></div>
       </div>
 
       <div class="grid">
@@ -167,28 +146,20 @@
   /**
    * /schedules.html
    *
-   * Defaults:
-   * - show_id: 200000046
-   * - show_day: today in America/New_York (YYYYMMDD)
-   * - ring: 4
+   * Latest pointers (overwritten by you):
+   * - https://blog.clearroundtravel.com/latest/schedule.json  (for v2 + v5)
+   * - https://blog.clearroundtravel.com/latest/team.json      (for v3)
    *
-   * Optional query params:
-   * - ?show_id=200000046&show_day=20260118&ring=4
-   * - OR provide the file directly: ?data=200000046-20260118M.json
+   * Notes:
+   * - No ring anchor in links.
+   * - Published times come from Last-Modified headers of the latest files.
    */
 
   const TIMEZONE = "America/New_York";
   const PUBLISH_INTERVAL_MS = 30 * 60 * 1000;
 
-  const qs = new URLSearchParams(location.search);
-
-  const fmtDateLong = (ms)=> new Intl.DateTimeFormat("en-US", {
-    timeZone: TIMEZONE,
-    weekday:"long",
-    month:"short",
-    day:"numeric",
-    year:"numeric"
-  }).format(new Date(ms));
+  const LATEST_SCHEDULE_URL = "https://blog.clearroundtravel.com/latest/schedule.json";
+  const LATEST_TEAM_URL     = "https://blog.clearroundtravel.com/latest/team.json";
 
   const fmtTime = (ms)=> new Intl.DateTimeFormat("en-US", {
     timeZone: TIMEZONE,
@@ -196,31 +167,11 @@
     minute:"2-digit"
   }).format(new Date(ms));
 
-  function pad2(n){ return String(n).padStart(2,"0"); }
-
-  function getTodayYYYYMMDD(){
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: TIMEZONE,
-      year:"numeric", month:"2-digit", day:"2-digit"
-    }).formatToParts(new Date());
-
-    const y = parts.find(p=>p.type==="year")?.value || "";
-    const m = parts.find(p=>p.type==="month")?.value || "";
-    const d = parts.find(p=>p.type==="day")?.value || "";
-    return `${y}${m}${d}`;
-  }
-
-  function normalizeShowDay(v){
-    const s = String(v ?? "").trim();
-    if(!s) return "";
-    if(/^\d{8}$/.test(s)) return s;
+  function toYYYYMMDDFromISO(iso){
+    // "2026-01-18" -> "20260118"
+    const s = String(iso || "").trim();
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(m) return `${m[1]}${m[2]}${m[3]}`;
-    return "";
-  }
-
-  function buildDataFile(showId, showDay){
-    return `${showId}-${showDay}M.json`;
+    return m ? (m[1] + m[2] + m[3]) : "";
   }
 
   function setSub(id, text){
@@ -231,55 +182,74 @@
     else el.classList.remove("empty");
   }
 
-  async function fetchLastModified(url){
-    // Prefer GET because some hosts/CDNs don't allow HEAD reliably
+  async function fetchJsonAndLastModified(url){
     const res = await fetch(url, { cache:"no-store" });
-    if(!res.ok) throw new Error(`Fetch failed ${res.status}`);
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}`);
     const lastMod = res.headers.get("last-modified");
-    return lastMod ? Date.parse(lastMod) : null;
-  }
+    const ms = lastMod ? Date.parse(lastMod) : null;
 
-  function setLinks(showId, showDay, ring, dataFile){
-    const printed = `https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html#${showId}-${showDay}`;
-    const mobile  = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v2.html?data=${encodeURIComponent(dataFile)}#ring-${ring}`;
-    const watch   = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v3.html?data=${encodeURIComponent(dataFile)}#ring-${ring}`;
+    let json = null;
+    try { json = JSON.parse(txt); } catch(e) {}
 
-    document.getElementById("btnPrinted").href = printed;
-    document.getElementById("btnMobile").href = mobile;
-    document.getElementById("btnWatch").href = watch;
+    return { json, lastModifiedMs: (Number.isFinite(ms) ? ms : null) };
   }
 
   function startClock(){
     const nowEl = document.getElementById("nowTime");
-    const dateEl = document.getElementById("displayDate");
-
     const tick = ()=>{
-      const now = Date.now();
-      nowEl.textContent = fmtTime(now);
-      dateEl.textContent = fmtDateLong(now);
+      nowEl.textContent = fmtTime(Date.now());
     };
     tick();
     setInterval(tick, 1000 * 15);
   }
 
-  async function setPublishedMeta(dataFile){
-    try{
-      const url = `https://blog.clearroundtravel.com/schedule/data/${dataFile}`;
-      const ms = await fetchLastModified(url);
-      if(!ms) return;
+  function setHeaderDateFromRows(rows){
+    const el = document.getElementById("displayDate");
+    const first = (Array.isArray(rows) && rows.length) ? rows[0] : {};
+    const d =
+      first.show_days_display_date ??
+      first.show_display_date ??
+      first.show_date ??
+      first.showDate ??
+      "";
+    el.textContent = d ? String(d) : "—";
+  }
 
-      const published = `published: ${fmtTime(ms)}`;
-      const next = `next: ${fmtTime(ms + PUBLISH_INTERVAL_MS)}`;
-      const line = `${published} • ${next}`;
+  function setLinksFromSchedule(rows){
+    const first = (Array.isArray(rows) && rows.length) ? rows[0] : {};
+    const showId = String(first.show_id ?? first.showId ?? "").trim();
+    const showDateISO = String(first.show_date ?? first.showDate ?? "").trim();
+    const showDay = toYYYYMMDDFromISO(showDateISO);
 
-      setSub("subPrinted", published);
-      setSub("subMobile", line);
-      setSub("subWatch", line);
+    // v5 printed: keep your existing hash pattern if we can derive it
+    const printedHref = (showId && showDay)
+      ? `https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html#${showId}-${showDay}`
+      : `https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html`;
 
-    }catch(e){
-      // If anything fails, keep it clean (no meta)
+    // v2 + v3: always point at the latest JSON files directly
+    const mobileHref = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v2.html?data=${encodeURIComponent(LATEST_SCHEDULE_URL)}`;
+    const watchHref  = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v3.html?data=${encodeURIComponent(LATEST_TEAM_URL)}`;
+
+    document.getElementById("btnPrinted").href = printedHref;
+    document.getElementById("btnMobile").href = mobileHref;
+    document.getElementById("btnWatch").href = watchHref;
+  }
+
+  function setPublishedMeta(scheduleLastMs, teamLastMs){
+    // Printed - Schedule: published only (from schedule)
+    if(scheduleLastMs){
+      setSub("subPrinted", `published: ${fmtTime(scheduleLastMs)}`);
+      setSub("subMobile", `published: ${fmtTime(scheduleLastMs)} • next: ${fmtTime(scheduleLastMs + PUBLISH_INTERVAL_MS)}`);
+    }else{
       setSub("subPrinted", "");
       setSub("subMobile", "");
+    }
+
+    // Mobile - Watch: published + next (from team)
+    if(teamLastMs){
+      setSub("subWatch", `published: ${fmtTime(teamLastMs)} • next: ${fmtTime(teamLastMs + PUBLISH_INTERVAL_MS)}`);
+    }else{
       setSub("subWatch", "");
     }
   }
@@ -287,19 +257,30 @@
   (async function main(){
     startClock();
 
-    const showId = (qs.get("show_id") || qs.get("showId") || "200000046").trim();
-    const ring = (qs.get("ring") || "4").trim();
+    // Load latest schedule + published time
+    let scheduleRows = null;
+    let scheduleLastMs = null;
 
-    const showDay =
-      normalizeShowDay(qs.get("show_day") || qs.get("showDay")) ||
-      normalizeShowDay(getTodayYYYYMMDD());
+    try{
+      const r = await fetchJsonAndLastModified(LATEST_SCHEDULE_URL);
+      scheduleRows = r.json;
+      scheduleLastMs = r.lastModifiedMs;
+    }catch(e){
+      // keep going
+    }
 
-    const dataFile = (qs.get("data") || "").trim() || buildDataFile(showId, showDay);
+    // Load latest team + published time
+    let teamLastMs = null;
+    try{
+      const r2 = await fetchJsonAndLastModified(LATEST_TEAM_URL);
+      teamLastMs = r2.lastModifiedMs;
+    }catch(e){
+      // keep going
+    }
 
-    document.getElementById("fileName").textContent = dataFile;
-
-    setLinks(showId, showDay, ring, dataFile);
-    await setPublishedMeta(dataFile);
+    setHeaderDateFromRows(scheduleRows);
+    setLinksFromSchedule(scheduleRows);
+    setPublishedMeta(scheduleLastMs, teamLastMs);
   })();
 </script>
 </body>
