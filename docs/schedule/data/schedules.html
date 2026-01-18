@@ -11,8 +11,6 @@
       --bg-alt: #0b1120;
       --border: #374151;
       --border-soft: #4b5563;
-      --accent: #2563eb;
-      --accent-soft: #1d4ed8;
       --pill-radius: 999px;
       --header-h: 52px;
     }
@@ -75,62 +73,20 @@
       overflow: hidden;
     }
 
-    /* Header */
+    /* Header (title only) */
     .app-header {
       height: var(--header-h);
       flex-shrink: 0;
       display: flex;
       align-items: center;
+      justify-content: center;
       padding: 0 12px;
       border-bottom: 1px solid rgba(31, 41, 55, 0.95);
       background: #020617;
       backdrop-filter: blur(10px);
     }
 
-    .header-back,
-    .header-action {
-      min-width: 60px;
-      height: 34px;
-      padding: 0 16px;
-      border-radius: var(--pill-radius);
-      border: 1px solid var(--border-soft);
-      background: #020617;
-      color: #e5e7eb;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 1),
-        0 3px 10px rgba(0, 0, 0, 0.8);
-      transition:
-        background 0.12s ease-out,
-        border-color 0.12s ease-out,
-        transform 0.08s ease-out,
-        box-shadow 0.12s ease-out,
-        color 0.12s ease-out;
-      text-decoration:none;
-    }
-
-    .header-action {
-      border-color: rgba(59, 130, 246, 1);
-      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
-      color: #f9fafb;
-    }
-
-    .header-back:active,
-    .header-action:active {
-      transform: translateY(1px) scale(0.97);
-      box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 1),
-        0 2px 6px rgba(0, 0, 0, 0.9);
-    }
-
     .header-title {
-      flex: 1;
-      text-align: center;
       font-size: 16px;
       font-weight: 600;
       margin: 0;
@@ -144,60 +100,65 @@
     .app-main {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 12px 14px;
+      padding: 14px 14px 16px; /* more padding */
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
 
-    .start-logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      margin: 10px 0 14px;
+    .meta {
+      margin: 6px 2px 14px;
+      line-height: 1.25;
     }
-
-    .start-logo-mark {
-      width: 72px;
-      height: 72px;
-      border-radius: 20px;
-      background: rgba(15, 23, 42, 0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
-      font-size: 28px;
+    .meta-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
-
-    .start-logo-title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-align: center;
-    }
-
-    .start-logo-subtitle {
+    .meta-sub {
+      margin-top: 6px;
       font-size: 12px;
-      color: #d1d5db;
-      opacity: 0.9;
-      text-align:center;
-      line-height:1.25;
+      color: rgba(229, 231, 235, 0.85);
+    }
+    .meta-sub span {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #f9fafb;
     }
 
     /* Long pills as buttons */
+    .list-column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+
     .row {
       width: 100%;
-      min-height: 46px;
-      padding: 10px 16px;
+      min-height: 58px;                 /* taller */
+      padding: 16px 18px;               /* MORE padding */
       border-radius: var(--pill-radius);
       border: 1px solid var(--border-soft);
       background: #111827;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 14px;
+      font-size: 15px;
       color: #e5e7eb;
       box-shadow: 0 1px 0 #020617;
-      text-decoration:none;
+      text-decoration: none;
+      user-select: none;
+      transition:
+        transform 0.08s ease-out,
+        box-shadow 0.12s ease-out,
+        border-color 0.12s ease-out,
+        background 0.12s ease-out;
+    }
+
+    .row:active {
+      transform: translateY(1px) scale(0.995);
+      box-shadow:
+        0 0 0 1px #020617,
+        0 2px 8px rgba(15, 23, 42, 0.95);
     }
 
     .row-title {
@@ -209,8 +170,8 @@
     }
 
     .row-tag {
-      min-width: 28px;
-      padding: 3px 10px;
+      min-width: 44px;
+      padding: 4px 12px;
       border-radius: var(--pill-radius);
       border: 1px solid var(--border-soft);
       background: #18181b;
@@ -219,24 +180,7 @@
       text-align: center;
       font-variant-numeric: tabular-nums;
       box-shadow: 0 0 0 1px #020617;
-      white-space:nowrap;
-    }
-
-    .row--tap {
-      cursor: pointer;
-      user-select: none;
-      transition:
-        transform 0.08s ease-out,
-        box-shadow 0.12s ease-out,
-        border-color 0.12s ease-out,
-        background 0.12s ease-out;
-    }
-
-    .row--tap:active {
-      transform: translateY(1px) scale(0.995);
-      box-shadow:
-        0 0 0 1px #020617,
-        0 2px 8px rgba(15, 23, 42, 0.95);
+      white-space: nowrap;
     }
 
     .row--primary {
@@ -249,84 +193,80 @@
       color: rgba(148, 163, 184, 0.95);
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      margin: 10px 6px 6px;
-    }
-
-    .list-group-divider {
-      height: 1px;
-      background: rgba(55, 65, 81, 0.9);
-      margin: 12px 4px;
+      margin: 6px 6px 10px;
     }
   </style>
 </head>
 
 <body>
   <div class="desktop-note">
-    Open <b>/schedules.html</b> on a phone for the mobile menu.
+    Open <b>/schedules.html</b> on a phone.
   </div>
 
   <div class="app">
     <header class="app-header">
-      <a class="header-back" href="https://blog.clearroundtravel.com" aria-label="Back">
-        <span>←</span>
-      </a>
       <h1 class="header-title">Schedules</h1>
-      <a class="header-action" id="btnRefresh" href="#" aria-label="Refresh">Refresh</a>
     </header>
 
     <main class="app-main">
-      <div class="start-logo">
-        <div class="start-logo-mark">🛡️</div>
-        <div class="start-logo-title">CWF Schedule</div>
-        <div class="start-logo-subtitle">
-          <span id="displayDate">—</span><br />
-          Time: <span id="nowTime">—</span>
+      <div class="meta">
+        <div class="meta-title">🛡️ CWF Schedule</div>
+        <div class="meta-sub">
+          <div id="displayDate">—</div>
+          <div>Time: <span id="nowTime">—</span></div>
         </div>
       </div>
 
       <div class="list-group-label">Open</div>
 
-      <a class="row row--tap row--primary" id="btnPrinted" href="#">
-        <div class="row-title">Printed - Schedule</div>
-        <div class="row-tag" id="tagPrinted">—</div>
-      </a>
+      <div class="list-column">
+        <a class="row row--primary" id="btnPrinted" href="#">
+          <div class="row-title">Printed - Schedule</div>
+          <div class="row-tag" id="tagPrinted">—</div>
+        </a>
 
-      <a class="row row--tap" id="btnMobile" href="#">
-        <div class="row-title">Mobile - Schedule</div>
-        <div class="row-tag" id="tagMobile">—</div>
-      </a>
+        <a class="row" id="btnMobile" href="#">
+          <div class="row-title">Mobile - Schedule</div>
+          <div class="row-tag" id="tagMobile">—</div>
+        </a>
 
-      <a class="row row--tap" id="btnWatch" href="#">
-        <div class="row-title">Mobile - Watch</div>
-        <div class="row-tag" id="tagWatch">—</div>
-      </a>
+        <a class="row" id="btnWatch" href="#">
+          <div class="row-title">Mobile - Watch</div>
+          <div class="row-tag" id="tagWatch">—</div>
+        </a>
 
-      <div class="list-group-divider"></div>
-
-      <a class="row row--tap" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
-        <div class="row-title">TackLists</div>
-        <div class="row-tag">Open</div>
-      </a>
+        <a class="row" id="btnTack" href="#">
+          <div class="row-title">TackLists</div>
+          <div class="row-tag">Open</div>
+        </a>
+      </div>
     </main>
   </div>
 
 <script>
   /**
-   * /schedules.html (mobile-only)
+   * /schedules.html
    *
-   * You overwrite these:
-   *   /latest/schedule.json  -> used for v2 + v5
-   *   /latest/team.json      -> used for v3
+   * You overwrite these two pointer files:
+   *   https://blog.clearroundtravel.com/latest/schedule.json  (v2 + v5)
+   *   https://blog.clearroundtravel.com/latest/team.json      (v3)
    *
-   * No ring anchors.
-   * Published time comes from Last-Modified header of each latest file.
+   * IMPORTANT:
+   * - Links pass the LATEST pointer PATH directly as:
+   *     ?data=/latest/schedule.json
+   *     ?data=/latest/team.json
+   * - No ring anchors.
    */
 
-  const TIMEZONE = "America/New_York";
-  const PUBLISH_INTERVAL_MS = 30 * 60 * 1000;
+  const SITE = "https://blog.clearroundtravel.com";
 
-  const SCHEDULE_LATEST_URL = `${location.origin}/latest/schedule.json`;
-  const TEAM_LATEST_URL     = `${location.origin}/latest/team.json`;
+  const TIMEZONE = "America/New_York";
+
+  const LATEST_SCHEDULE_PATH = "/latest/schedule.json";
+  const LATEST_TEAM_PATH     = "/latest/team.json";
+
+  const LATEST_SCHEDULE_URL = SITE + LATEST_SCHEDULE_PATH;
+  const LATEST_TEAM_URL     = SITE + LATEST_TEAM_PATH;
 
   const fmtDateLong = (ms)=> new Intl.DateTimeFormat("en-US", {
     timeZone: TIMEZONE,
@@ -371,49 +311,36 @@
   }
 
   function setLinks(){
-    // schedule.json -> v5 + v2
-    const printed = `https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html?data=${encodeURIComponent(SCHEDULE_LATEST_URL)}`;
-    const mobile  = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v2.html?data=${encodeURIComponent(SCHEDULE_LATEST_URL)}`;
+    // v5 (printed) uses the SAME latest schedule pointer as v2
+    document.getElementById("btnPrinted").href =
+      SITE + "/schedule/data/schedule_onepage_v5.html?data=" + LATEST_SCHEDULE_PATH;
 
-    // team.json -> v3
-    const watch   = `https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v3.html?data=${encodeURIComponent(TEAM_LATEST_URL)}`;
+    // v2 (mobile schedule)
+    document.getElementById("btnMobile").href =
+      SITE + "/schedule/data/schedule_mobile_v2.html?data=" + LATEST_SCHEDULE_PATH;
 
-    document.getElementById("btnPrinted").href = printed;
-    document.getElementById("btnMobile").href  = mobile;
-    document.getElementById("btnWatch").href   = watch;
+    // v3 (mobile watch/team)
+    document.getElementById("btnWatch").href =
+      SITE + "/schedule/data/schedule_mobile_v3.html?data=" + LATEST_TEAM_PATH;
 
-    // Refresh link
-    document.getElementById("btnRefresh").href = location.href.split("#")[0];
+    // TackLists
+    document.getElementById("btnTack").href =
+      SITE + "/lists/index.html";
   }
 
   async function setPublishedTags(){
-    const schedMs = await fetchLastModifiedMs(SCHEDULE_LATEST_URL);
-    if(schedMs){
-      setText("tagPrinted", fmtTime(schedMs));
-      setText("tagMobile",  fmtTime(schedMs));
-    }else{
-      setText("tagPrinted", "—");
-      setText("tagMobile",  "—");
-    }
+    const schedMs = await fetchLastModifiedMs(LATEST_SCHEDULE_URL);
+    setText("tagPrinted", schedMs ? fmtTime(schedMs) : "—");
+    setText("tagMobile",  schedMs ? fmtTime(schedMs) : "—");
 
-    const teamMs = await fetchLastModifiedMs(TEAM_LATEST_URL);
-    if(teamMs){
-      setText("tagWatch", fmtTime(teamMs));
-    }else{
-      setText("tagWatch", "—");
-    }
+    const teamMs = await fetchLastModifiedMs(LATEST_TEAM_URL);
+    setText("tagWatch", teamMs ? fmtTime(teamMs) : "—");
   }
 
   (async function main(){
     startClock();
     setLinks();
     await setPublishedTags();
-
-    // Make "Refresh" act like a button without changing URL
-    document.getElementById("btnRefresh").addEventListener("click", (e)=>{
-      e.preventDefault();
-      setPublishedTags();
-    });
   })();
 </script>
 </body>
