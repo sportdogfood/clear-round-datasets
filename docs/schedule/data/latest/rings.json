@@ -2,283 +2,121 @@
   "meta": {
     "sqlDate": "2026-01-23",
     "show_id": 200000047,
-    "generated_at": "2026-01-23T22:06:34-05:00",
-    "source": "watch_trips",
-    "version": "rings-1"
+    "generated_at": "2026-01-23T22:49:27-05:00"
   },
-  "rings": [
-    {
-      "ring_number": 2,
-      "ringName": "Grand",
-      "classes": [
-        {
-          "class_id": 200018125,
-          "class_number": 3091,
-          "class_name": "WIHS Hunter Phase CALI",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "14:10:00",
-          "latest_estimated_start_time_display": "2:10 PM",
-          "time_sort": 51000
-        }
-      ]
-    },
-    {
-      "ring_number": 3,
-      "ringName": "Rost",
-      "classes": [
-        {
-          "class_id": 200018479,
-          "class_number": 2832,
-          "class_name": "$500 Large Junior Hunter 3'6\" 15 & Under",
-          "class_type": "Hunters",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "15:00:02",
-          "latest_estimated_start_time_display": "3:00 PM",
-          "time_sort": 54002
-        },
-        {
-          "class_id": 200018457,
-          "class_number": 2833,
-          "class_name": "$735 Large Junior Hunter 3'6\" 15 & Under Handy",
-          "class_type": "Hunters",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "15:00:02",
-          "latest_estimated_start_time_display": "3:00 PM",
-          "time_sort": 54002
-        }
-      ]
-    },
-    {
-      "ring_number": 5,
-      "ringName": "Denemethy",
-      "classes": [
-        {
-          "class_id": 200018128,
-          "class_number": 1032,
-          "class_name": "$1,500 1.30m Amateur Jumper II2b",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "09:15:02",
-          "latest_estimated_start_time_display": "9:15 AM",
-          "time_sort": 33302
-        }
-      ]
-    },
-    {
-      "ring_number": 6,
-      "ringName": "Ring 6",
-      "classes": [
-        {
-          "class_id": 200018223,
-          "class_number": 3050,
-          "class_name": "Platinum Performance USEF Show Jumping Talent Search 2*",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "08:00:03",
-          "latest_estimated_start_time_display": "8:00 AM",
-          "time_sort": 28803
-        },
-        {
-          "class_id": 200018176,
-          "class_number": 3092,
-          "class_name": "WIHS Jumper Phase CALI",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "09:45:02",
-          "latest_estimated_start_time_display": "9:45 AM",
-          "time_sort": 35102
-        },
-        {
-          "class_id": 200018267,
-          "class_number": 3034,
-          "class_name": "Marshall + Sterling USHJA 3'3\" Adult Jumping Seat Medal",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "11:50:02",
-          "latest_estimated_start_time_display": "11:50 AM",
-          "time_sort": 42602
-        },
-        {
-          "class_id": 200018483,
-          "class_number": 3035,
-          "class_name": "Marshall + Sterling USHJA 3'3\" Junior Jumping Seat Medal Sec. A",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "12:35:02",
-          "latest_estimated_start_time_display": "12:35 PM",
-          "time_sort": 45302
-        },
-        {
-          "class_id": 200022930,
-          "class_number": 3038,
-          "class_name": "Marshall + Sterling USHJA 3'3\" Junior Jumping Seat Medal Sec. B",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "14:00:00",
-          "latest_estimated_start_time_display": "2:00 PM",
-          "time_sort": 50400
-        }
-      ]
-    },
-    {
-      "ring_number": 9,
-      "ringName": "Ring 9",
-      "classes": [
-        {
-          "class_id": 200018373,
-          "class_number": 1097,
-          "class_name": "1.25m Schooling Jumper (Table II)",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "08:00:00",
-          "latest_estimated_start_time_display": "8:00 AM",
-          "time_sort": 28800
-        },
-        {
-          "class_id": 200018183,
-          "class_number": 1100,
-          "class_name": "1.15m Schooling Jumper (Table II)",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "09:20:00",
-          "latest_estimated_start_time_display": "9:20 AM",
-          "time_sort": 33600
-        },
-        {
-          "class_id": 200018338,
-          "class_number": 1041,
-          "class_name": "$1,500 1.10m Amateur Jumper 18-35 II2b",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "13:05:02",
-          "latest_estimated_start_time_display": "1:05 PM",
-          "time_sort": 47102
-        }
-      ]
-    },
-    {
-      "ring_number": 10,
-      "ringName": "Ring 10",
-      "classes": [
-        {
-          "class_id": 200018207,
-          "class_number": 1106,
-          "class_name": "1.0m Training Jumper (Table II)",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "08:00:04",
-          "latest_estimated_start_time_display": "8:00 AM",
-          "time_sort": 28804
-        }
-      ]
-    },
-    {
-      "ring_number": 11,
-      "ringName": "Ring 11",
-      "classes": [
-        {
-          "class_id": 200018492,
-          "class_number": 3105,
-          "class_name": "USHJA Hunter 2' Junior/Amateur",
-          "class_type": "Hunters",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "08:16:38",
-          "latest_estimated_start_time_display": "8:16 AM",
-          "time_sort": 29798
-        },
-        {
-          "class_id": 200018379,
-          "class_number": 3106,
-          "class_name": "USHJA Hunter 2' Junior/Amateur",
-          "class_type": "Hunters",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "08:16:38",
-          "latest_estimated_start_time_display": "8:16 AM",
-          "time_sort": 29798
-        }
-      ]
-    },
-    {
-      "ring_number": 12,
-      "ringName": "Ring 12",
-      "classes": [
-        {
-          "class_id": 200018533,
-          "class_number": 3060,
-          "class_name": "Marshall + Sterling USEF Pony Medal",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "13:35:03",
-          "latest_estimated_start_time_display": "1:35 PM",
-          "time_sort": 48903
-        },
-        {
-          "class_id": 200018543,
-          "class_number": 3093,
-          "class_name": "WIHS Pony Equitation",
-          "class_type": "Equitation",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "13:35:03",
-          "latest_estimated_start_time_display": "1:35 PM",
-          "time_sort": 48903
-        }
-      ]
-    },
-    {
-      "ring_number": 13,
-      "ringName": "South Ring",
-      "classes": [
-        {
-          "class_id": 200018273,
-          "class_number": 1109,
-          "class_name": ".90m Training Jumper (Table II)",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "09:02:24",
-          "latest_estimated_start_time_display": "9:02 AM",
-          "time_sort": 32544
-        },
-        {
-          "class_id": 200018309,
-          "class_number": 1112,
-          "class_name": "Low Child/Adult Amateur Training Jumper 39 & Under .90m II2b",
-          "class_type": "Jumpers",
-          "latest_status": "Completed",
-          "latest_estimated_start_time": "09:02:24",
-          "latest_estimated_start_time_display": "9:02 AM",
-          "time_sort": 32544
-        }
-      ]
-    }
-  ],
   "ringsByNumber": {
     "2": {
-      "ringName": "Grand"
+      "ring_number": 2,
+      "ringName": "Grand",
+      "class_numbers": [
+        3091
+      ]
     },
     "3": {
-      "ringName": "Rost"
+      "ring_number": 3,
+      "ringName": "Rost",
+      "class_numbers": [
+        2832,
+        2833
+      ]
     },
     "5": {
-      "ringName": "Denemethy"
+      "ring_number": 5,
+      "ringName": "Denemethy",
+      "class_numbers": [
+        1032
+      ]
     },
     "6": {
-      "ringName": "Ring 6"
+      "ring_number": 6,
+      "ringName": "Ring 6",
+      "class_numbers": [
+        3050,
+        3092,
+        3034,
+        3035,
+        3038
+      ]
     },
     "9": {
-      "ringName": "Ring 9"
+      "ring_number": 9,
+      "ringName": "Ring 9",
+      "class_numbers": [
+        1097,
+        1100,
+        1041
+      ]
     },
     "10": {
-      "ringName": "Ring 10"
+      "ring_number": 10,
+      "ringName": "Ring 10",
+      "class_numbers": [
+        1106
+      ]
     },
     "11": {
-      "ringName": "Ring 11"
+      "ring_number": 11,
+      "ringName": "Ring 11",
+      "class_numbers": [
+        3105,
+        3106
+      ]
     },
     "12": {
-      "ringName": "Ring 12"
+      "ring_number": 12,
+      "ringName": "Ring 12",
+      "class_numbers": [
+        3060,
+        3093
+      ]
     },
     "13": {
-      "ringName": "South Ring"
+      "ring_number": 13,
+      "ringName": "South Ring",
+      "class_numbers": [
+        1109,
+        1112
+      ]
     }
-  }
+  },
+  "ringsByName": {
+    "grand": {
+      "ring_number": 2
+    },
+    "rost": {
+      "ring_number": 3
+    },
+    "denemethy": {
+      "ring_number": 5
+    },
+    "ring 6": {
+      "ring_number": 6
+    },
+    "ring 9": {
+      "ring_number": 9
+    },
+    "ring 10": {
+      "ring_number": 10
+    },
+    "ring 11": {
+      "ring_number": 11
+    },
+    "ring 12": {
+      "ring_number": 12
+    },
+    "south ring": {
+      "ring_number": 13
+    }
+  },
+  "ringOrder": [
+    2,
+    3,
+    5,
+    6,
+    9,
+    10,
+    11,
+    12,
+    13
+  ]
 }

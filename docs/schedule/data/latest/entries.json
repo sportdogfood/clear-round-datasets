@@ -1,209 +1,863 @@
 {
   "meta": {
     "sqlDate": "2026-01-23",
-    "generated_at": "2026-01-23T22:06:34-05:00",
-    "show_id": 200000047
+    "show_id": 200000047,
+    "generated_at": "2026-01-23T22:49:27-05:00"
   },
-  "entriesByClassId": {
-    "200018125": [
+  "entriesByTeam": {
+    "elisabeth": [
       {
-        "order_of_go": 26,
-        "entry_id": 200150690,
-        "teamName": "Carsyn",
-        "barnName": "Indy"
-      },
-      {
-        "order_of_go": 33,
-        "entry_id": 200149830,
-        "teamName": "Noora",
-        "barnName": "Lenny"
-      }
-    ],
-    "200018128": [
-      {
-        "order_of_go": 26,
-        "entry_id": 200149677,
+        "backNumber": "26",
         "teamName": "Elisabeth",
-        "barnName": "Peri"
+        "barnName": "Peri",
+        "class_number": 1032,
+        "ring_number": 5,
+        "ringName": "Denemethy",
+        "latest_status": "Completed",
+        "latest_order_of_go": 26,
+        "latest_estimated_go_time": "09:35:00"
       }
     ],
-    "200018176": [
+    "taylor": [
       {
-        "order_of_go": 1,
-        "entry_id": 200150690,
-        "teamName": "Carsyn",
-        "barnName": "Indy"
-      },
-      {
-        "order_of_go": 3,
-        "entry_id": 200149830,
-        "teamName": "Noora",
-        "barnName": "Lenny"
-      }
-    ],
-    "200018183": [
-      {
-        "order_of_go": 34,
-        "entry_id": 200213886,
-        "teamName": "Carsyn",
-        "barnName": "Kindly"
-      }
-    ],
-    "200018207": [
-      {
-        "order_of_go": 30,
-        "entry_id": 200156040,
-        "teamName": "Josephine",
-        "barnName": "Curtis"
-      },
-      {
-        "order_of_go": 38,
-        "entry_id": 200209668,
-        "teamName": "Josephine",
-        "barnName": "Calypso"
-      }
-    ],
-    "200018223": [
-      {
-        "order_of_go": 6,
-        "entry_id": 200150690,
-        "teamName": "Carsyn",
-        "barnName": "Indy"
-      }
-    ],
-    "200018267": [
-      {
-        "order_of_go": 3,
-        "entry_id": 200156040,
-        "teamName": "Josephine",
-        "barnName": "Curtis"
-      }
-    ],
-    "200018273": [
-      {
-        "order_of_go": 14,
-        "entry_id": 200149382,
-        "teamName": "Sydney",
-        "barnName": "Charly"
-      },
-      {
-        "order_of_go": 26,
-        "entry_id": 200150525,
-        "teamName": "Sydney",
-        "barnName": "BB"
-      }
-    ],
-    "200018309": [
-      {
-        "order_of_go": 15,
-        "entry_id": 200150896,
-        "teamName": "Marley",
-        "barnName": "Cervin"
-      },
-      {
-        "order_of_go": 19,
-        "entry_id": 200149382,
-        "teamName": "Sydney",
-        "barnName": "Charly"
-      }
-    ],
-    "200018338": [
-      {
-        "order_of_go": 10,
-        "entry_id": 200150240,
+        "backNumber": "10",
         "teamName": "Taylor",
-        "barnName": "Maiki"
+        "barnName": "Maiki",
+        "class_number": 1041,
+        "ring_number": 9,
+        "ringName": "Ring 9",
+        "latest_status": "Completed",
+        "latest_order_of_go": 10,
+        "latest_estimated_go_time": "13:22:30"
       }
     ],
-    "200018373": [
+    "victoria": [
       {
-        "order_of_go": 17,
-        "entry_id": 200213996,
+        "backNumber": "17",
         "teamName": "Victoria",
-        "barnName": "Inchidee"
+        "barnName": "Inchidee",
+        "class_number": 1097,
+        "ring_number": 9,
+        "ringName": "Ring 9",
+        "latest_status": "Completed",
+        "latest_order_of_go": 17,
+        "latest_estimated_go_time": "00:00:00"
       }
     ],
-    "200018379": [
+    "carsyn": [
       {
-        "order_of_go": 28,
-        "entry_id": 200149164,
-        "teamName": "Lola",
-        "barnName": "Tank"
-      }
-    ],
-    "200018457": [
-      {
-        "order_of_go": 10,
-        "entry_id": 200142327,
-        "teamName": "Zoey",
-        "barnName": "Dorian"
-      }
-    ],
-    "200018479": [
-      {
-        "order_of_go": 9,
-        "entry_id": 200142327,
-        "teamName": "Zoey",
-        "barnName": "Dorian"
-      }
-    ],
-    "200018483": [
-      {
-        "order_of_go": 2,
-        "entry_id": 200150994,
-        "teamName": "Naomi",
-        "barnName": "Munster"
+        "backNumber": "34",
+        "teamName": "Carsyn",
+        "barnName": "Kindly",
+        "class_number": 1100,
+        "ring_number": 9,
+        "ringName": "Ring 9",
+        "latest_status": "Completed",
+        "latest_order_of_go": 34,
+        "latest_estimated_go_time": "10:26:00"
       },
       {
-        "order_of_go": 3,
-        "entry_id": 200149830,
+        "backNumber": "6",
+        "teamName": "Carsyn",
+        "barnName": "Indy",
+        "class_number": 3050,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 6,
+        "latest_estimated_go_time": "08:10:00"
+      },
+      {
+        "backNumber": "26",
+        "teamName": "Carsyn",
+        "barnName": "Indy",
+        "class_number": 3091,
+        "ring_number": 2,
+        "ringName": "Grand",
+        "latest_status": "Completed",
+        "latest_order_of_go": 26,
+        "latest_estimated_go_time": "14:50:00"
+      },
+      {
+        "backNumber": "1",
+        "teamName": "Carsyn",
+        "barnName": "Indy",
+        "class_number": 3092,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 1,
+        "latest_estimated_go_time": "09:40:00"
+      }
+    ],
+    "josephine": [
+      {
+        "backNumber": "38",
+        "teamName": "Josephine",
+        "barnName": "Calypso",
+        "class_number": 1106,
+        "ring_number": 10,
+        "ringName": "Ring 10",
+        "latest_status": "Completed",
+        "latest_order_of_go": 38,
+        "latest_estimated_go_time": "00:00:00"
+      },
+      {
+        "backNumber": "30",
+        "teamName": "Josephine",
+        "barnName": "Curtis",
+        "class_number": 1106,
+        "ring_number": 10,
+        "ringName": "Ring 10",
+        "latest_status": "Completed",
+        "latest_order_of_go": 30,
+        "latest_estimated_go_time": "00:00:00"
+      },
+      {
+        "backNumber": "3",
+        "teamName": "Josephine",
+        "barnName": "Curtis",
+        "class_number": 3034,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 3,
+        "latest_estimated_go_time": "11:54:00"
+      }
+    ],
+    "sydney": [
+      {
+        "backNumber": "26",
+        "teamName": "Sydney",
+        "barnName": "BB",
+        "class_number": 1109,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 26,
+        "latest_estimated_go_time": "09:15:00"
+      },
+      {
+        "backNumber": "14",
+        "teamName": "Sydney",
+        "barnName": "Charly",
+        "class_number": 1109,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 14,
+        "latest_estimated_go_time": "09:03:00"
+      },
+      {
+        "backNumber": "19",
+        "teamName": "Sydney",
+        "barnName": "Charly",
+        "class_number": 1112,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 19,
+        "latest_estimated_go_time": "09:08:00"
+      }
+    ],
+    "marley": [
+      {
+        "backNumber": "15",
+        "teamName": "Marley",
+        "barnName": "Cervin",
+        "class_number": 1112,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 15,
+        "latest_estimated_go_time": "09:04:00"
+      }
+    ],
+    "zoey": [
+      {
+        "backNumber": "9",
+        "teamName": "Zoey",
+        "barnName": "Dorian",
+        "class_number": 2832,
+        "ring_number": 3,
+        "ringName": "Rost",
+        "latest_status": "Completed",
+        "latest_order_of_go": 9,
+        "latest_estimated_go_time": "15:20:00"
+      },
+      {
+        "backNumber": "10",
+        "teamName": "Zoey",
+        "barnName": "Dorian",
+        "class_number": 2833,
+        "ring_number": 3,
+        "ringName": "Rost",
+        "latest_status": "Completed",
+        "latest_order_of_go": 10,
+        "latest_estimated_go_time": "15:22:30"
+      }
+    ],
+    "noora": [
+      {
+        "backNumber": "3",
         "teamName": "Noora",
-        "barnName": "Lenny"
-      }
-    ],
-    "200018492": [
-      {
-        "order_of_go": 25,
-        "entry_id": 200149164,
-        "teamName": "Lola",
-        "barnName": "Tank"
-      }
-    ],
-    "200018533": [
-      {
-        "order_of_go": 14,
-        "entry_id": 200149605,
-        "teamName": "Kate",
-        "barnName": "Paisley"
+        "barnName": "Lenny",
+        "class_number": 3035,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 3,
+        "latest_estimated_go_time": "12:51:00"
       },
       {
-        "order_of_go": 24,
-        "entry_id": 200180789,
-        "teamName": "Jess",
-        "barnName": "Crush"
-      }
-    ],
-    "200018543": [
-      {
-        "order_of_go": 15,
-        "entry_id": 200149605,
-        "teamName": "Kate",
-        "barnName": "Paisley"
+        "backNumber": "33",
+        "teamName": "Noora",
+        "barnName": "Lenny",
+        "class_number": 3091,
+        "ring_number": 2,
+        "ringName": "Grand",
+        "latest_status": "Completed",
+        "latest_order_of_go": 33,
+        "latest_estimated_go_time": "15:04:00"
       },
       {
-        "order_of_go": 25,
-        "entry_id": 200180789,
-        "teamName": "Jess",
-        "barnName": "Crush"
+        "backNumber": "3",
+        "teamName": "Noora",
+        "barnName": "Lenny",
+        "class_number": 3092,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 3,
+        "latest_estimated_go_time": "09:46:00"
       }
     ],
-    "200022930": [
+    "naomi": [
       {
-        "order_of_go": 2,
-        "entry_id": 200150994,
+        "backNumber": "2",
         "teamName": "Naomi",
-        "barnName": "Munster"
+        "barnName": "Munster",
+        "class_number": 3035,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 2,
+        "latest_estimated_go_time": "12:22:00"
+      },
+      {
+        "backNumber": "2",
+        "teamName": "Naomi",
+        "barnName": "Munster",
+        "class_number": 3038,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 2,
+        "latest_estimated_go_time": "14:02:00"
+      }
+    ],
+    "kate": [
+      {
+        "backNumber": "14",
+        "teamName": "Kate",
+        "barnName": "Paisley",
+        "class_number": 3060,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 14,
+        "latest_estimated_go_time": "13:56:00"
+      },
+      {
+        "backNumber": "15",
+        "teamName": "Kate",
+        "barnName": "Paisley",
+        "class_number": 3093,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 15,
+        "latest_estimated_go_time": "13:58:00"
+      }
+    ],
+    "jess": [
+      {
+        "backNumber": "24",
+        "teamName": "Jess",
+        "barnName": "Crush",
+        "class_number": 3060,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 24,
+        "latest_estimated_go_time": "14:16:00"
+      },
+      {
+        "backNumber": "25",
+        "teamName": "Jess",
+        "barnName": "Crush",
+        "class_number": 3093,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 25,
+        "latest_estimated_go_time": "14:18:00"
+      }
+    ],
+    "lola": [
+      {
+        "backNumber": "25",
+        "teamName": "Lola",
+        "barnName": "Tank",
+        "class_number": 3105,
+        "ring_number": 11,
+        "ringName": "Ring 11",
+        "latest_status": "Completed",
+        "latest_order_of_go": 25,
+        "latest_estimated_go_time": "08:39:00"
+      },
+      {
+        "backNumber": "28",
+        "teamName": "Lola",
+        "barnName": "Tank",
+        "class_number": 3106,
+        "ring_number": 11,
+        "ringName": "Ring 11",
+        "latest_status": "Completed",
+        "latest_order_of_go": 28,
+        "latest_estimated_go_time": "08:42:00"
       }
     ]
+  },
+  "entriesByBarn": {
+    "peri": [
+      {
+        "backNumber": "26",
+        "teamName": "Elisabeth",
+        "barnName": "Peri",
+        "class_number": 1032,
+        "ring_number": 5,
+        "ringName": "Denemethy",
+        "latest_status": "Completed",
+        "latest_order_of_go": 26,
+        "latest_estimated_go_time": "09:35:00"
+      }
+    ],
+    "maiki": [
+      {
+        "backNumber": "10",
+        "teamName": "Taylor",
+        "barnName": "Maiki",
+        "class_number": 1041,
+        "ring_number": 9,
+        "ringName": "Ring 9",
+        "latest_status": "Completed",
+        "latest_order_of_go": 10,
+        "latest_estimated_go_time": "13:22:30"
+      }
+    ],
+    "inchidee": [
+      {
+        "backNumber": "17",
+        "teamName": "Victoria",
+        "barnName": "Inchidee",
+        "class_number": 1097,
+        "ring_number": 9,
+        "ringName": "Ring 9",
+        "latest_status": "Completed",
+        "latest_order_of_go": 17,
+        "latest_estimated_go_time": "00:00:00"
+      }
+    ],
+    "kindly": [
+      {
+        "backNumber": "34",
+        "teamName": "Carsyn",
+        "barnName": "Kindly",
+        "class_number": 1100,
+        "ring_number": 9,
+        "ringName": "Ring 9",
+        "latest_status": "Completed",
+        "latest_order_of_go": 34,
+        "latest_estimated_go_time": "10:26:00"
+      }
+    ],
+    "calypso": [
+      {
+        "backNumber": "38",
+        "teamName": "Josephine",
+        "barnName": "Calypso",
+        "class_number": 1106,
+        "ring_number": 10,
+        "ringName": "Ring 10",
+        "latest_status": "Completed",
+        "latest_order_of_go": 38,
+        "latest_estimated_go_time": "00:00:00"
+      }
+    ],
+    "curtis": [
+      {
+        "backNumber": "30",
+        "teamName": "Josephine",
+        "barnName": "Curtis",
+        "class_number": 1106,
+        "ring_number": 10,
+        "ringName": "Ring 10",
+        "latest_status": "Completed",
+        "latest_order_of_go": 30,
+        "latest_estimated_go_time": "00:00:00"
+      },
+      {
+        "backNumber": "3",
+        "teamName": "Josephine",
+        "barnName": "Curtis",
+        "class_number": 3034,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 3,
+        "latest_estimated_go_time": "11:54:00"
+      }
+    ],
+    "bb": [
+      {
+        "backNumber": "26",
+        "teamName": "Sydney",
+        "barnName": "BB",
+        "class_number": 1109,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 26,
+        "latest_estimated_go_time": "09:15:00"
+      }
+    ],
+    "charly": [
+      {
+        "backNumber": "14",
+        "teamName": "Sydney",
+        "barnName": "Charly",
+        "class_number": 1109,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 14,
+        "latest_estimated_go_time": "09:03:00"
+      },
+      {
+        "backNumber": "19",
+        "teamName": "Sydney",
+        "barnName": "Charly",
+        "class_number": 1112,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 19,
+        "latest_estimated_go_time": "09:08:00"
+      }
+    ],
+    "cervin": [
+      {
+        "backNumber": "15",
+        "teamName": "Marley",
+        "barnName": "Cervin",
+        "class_number": 1112,
+        "ring_number": 13,
+        "ringName": "South Ring",
+        "latest_status": "Completed",
+        "latest_order_of_go": 15,
+        "latest_estimated_go_time": "09:04:00"
+      }
+    ],
+    "dorian": [
+      {
+        "backNumber": "9",
+        "teamName": "Zoey",
+        "barnName": "Dorian",
+        "class_number": 2832,
+        "ring_number": 3,
+        "ringName": "Rost",
+        "latest_status": "Completed",
+        "latest_order_of_go": 9,
+        "latest_estimated_go_time": "15:20:00"
+      },
+      {
+        "backNumber": "10",
+        "teamName": "Zoey",
+        "barnName": "Dorian",
+        "class_number": 2833,
+        "ring_number": 3,
+        "ringName": "Rost",
+        "latest_status": "Completed",
+        "latest_order_of_go": 10,
+        "latest_estimated_go_time": "15:22:30"
+      }
+    ],
+    "lenny": [
+      {
+        "backNumber": "3",
+        "teamName": "Noora",
+        "barnName": "Lenny",
+        "class_number": 3035,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 3,
+        "latest_estimated_go_time": "12:51:00"
+      },
+      {
+        "backNumber": "33",
+        "teamName": "Noora",
+        "barnName": "Lenny",
+        "class_number": 3091,
+        "ring_number": 2,
+        "ringName": "Grand",
+        "latest_status": "Completed",
+        "latest_order_of_go": 33,
+        "latest_estimated_go_time": "15:04:00"
+      },
+      {
+        "backNumber": "3",
+        "teamName": "Noora",
+        "barnName": "Lenny",
+        "class_number": 3092,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 3,
+        "latest_estimated_go_time": "09:46:00"
+      }
+    ],
+    "munster": [
+      {
+        "backNumber": "2",
+        "teamName": "Naomi",
+        "barnName": "Munster",
+        "class_number": 3035,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 2,
+        "latest_estimated_go_time": "12:22:00"
+      },
+      {
+        "backNumber": "2",
+        "teamName": "Naomi",
+        "barnName": "Munster",
+        "class_number": 3038,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 2,
+        "latest_estimated_go_time": "14:02:00"
+      }
+    ],
+    "indy": [
+      {
+        "backNumber": "6",
+        "teamName": "Carsyn",
+        "barnName": "Indy",
+        "class_number": 3050,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 6,
+        "latest_estimated_go_time": "08:10:00"
+      },
+      {
+        "backNumber": "26",
+        "teamName": "Carsyn",
+        "barnName": "Indy",
+        "class_number": 3091,
+        "ring_number": 2,
+        "ringName": "Grand",
+        "latest_status": "Completed",
+        "latest_order_of_go": 26,
+        "latest_estimated_go_time": "14:50:00"
+      },
+      {
+        "backNumber": "1",
+        "teamName": "Carsyn",
+        "barnName": "Indy",
+        "class_number": 3092,
+        "ring_number": 6,
+        "ringName": "Ring 6",
+        "latest_status": "Completed",
+        "latest_order_of_go": 1,
+        "latest_estimated_go_time": "09:40:00"
+      }
+    ],
+    "paisley": [
+      {
+        "backNumber": "14",
+        "teamName": "Kate",
+        "barnName": "Paisley",
+        "class_number": 3060,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 14,
+        "latest_estimated_go_time": "13:56:00"
+      },
+      {
+        "backNumber": "15",
+        "teamName": "Kate",
+        "barnName": "Paisley",
+        "class_number": 3093,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 15,
+        "latest_estimated_go_time": "13:58:00"
+      }
+    ],
+    "crush": [
+      {
+        "backNumber": "24",
+        "teamName": "Jess",
+        "barnName": "Crush",
+        "class_number": 3060,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 24,
+        "latest_estimated_go_time": "14:16:00"
+      },
+      {
+        "backNumber": "25",
+        "teamName": "Jess",
+        "barnName": "Crush",
+        "class_number": 3093,
+        "ring_number": 12,
+        "ringName": "Ring 12",
+        "latest_status": "Completed",
+        "latest_order_of_go": 25,
+        "latest_estimated_go_time": "14:18:00"
+      }
+    ],
+    "tank": [
+      {
+        "backNumber": "25",
+        "teamName": "Lola",
+        "barnName": "Tank",
+        "class_number": 3105,
+        "ring_number": 11,
+        "ringName": "Ring 11",
+        "latest_status": "Completed",
+        "latest_order_of_go": 25,
+        "latest_estimated_go_time": "08:39:00"
+      },
+      {
+        "backNumber": "28",
+        "teamName": "Lola",
+        "barnName": "Tank",
+        "class_number": 3106,
+        "ring_number": 11,
+        "ringName": "Ring 11",
+        "latest_status": "Completed",
+        "latest_order_of_go": 28,
+        "latest_estimated_go_time": "08:42:00"
+      }
+    ]
+  },
+  "entriesByBackNumber": {
+    "1": {
+      "backNumber": "1",
+      "teamName": "Carsyn",
+      "barnName": "Indy",
+      "class_number": 3092,
+      "ring_number": 6,
+      "ringName": "Ring 6",
+      "latest_status": "Completed",
+      "latest_order_of_go": 1,
+      "latest_estimated_go_time": "09:40:00"
+    },
+    "2": {
+      "backNumber": "2",
+      "teamName": "Naomi",
+      "barnName": "Munster",
+      "class_number": 3035,
+      "ring_number": 6,
+      "ringName": "Ring 6",
+      "latest_status": "Completed",
+      "latest_order_of_go": 2,
+      "latest_estimated_go_time": "12:22:00"
+    },
+    "3": {
+      "backNumber": "3",
+      "teamName": "Josephine",
+      "barnName": "Curtis",
+      "class_number": 3034,
+      "ring_number": 6,
+      "ringName": "Ring 6",
+      "latest_status": "Completed",
+      "latest_order_of_go": 3,
+      "latest_estimated_go_time": "11:54:00"
+    },
+    "6": {
+      "backNumber": "6",
+      "teamName": "Carsyn",
+      "barnName": "Indy",
+      "class_number": 3050,
+      "ring_number": 6,
+      "ringName": "Ring 6",
+      "latest_status": "Completed",
+      "latest_order_of_go": 6,
+      "latest_estimated_go_time": "08:10:00"
+    },
+    "9": {
+      "backNumber": "9",
+      "teamName": "Zoey",
+      "barnName": "Dorian",
+      "class_number": 2832,
+      "ring_number": 3,
+      "ringName": "Rost",
+      "latest_status": "Completed",
+      "latest_order_of_go": 9,
+      "latest_estimated_go_time": "15:20:00"
+    },
+    "10": {
+      "backNumber": "10",
+      "teamName": "Taylor",
+      "barnName": "Maiki",
+      "class_number": 1041,
+      "ring_number": 9,
+      "ringName": "Ring 9",
+      "latest_status": "Completed",
+      "latest_order_of_go": 10,
+      "latest_estimated_go_time": "13:22:30"
+    },
+    "14": {
+      "backNumber": "14",
+      "teamName": "Sydney",
+      "barnName": "Charly",
+      "class_number": 1109,
+      "ring_number": 13,
+      "ringName": "South Ring",
+      "latest_status": "Completed",
+      "latest_order_of_go": 14,
+      "latest_estimated_go_time": "09:03:00"
+    },
+    "15": {
+      "backNumber": "15",
+      "teamName": "Marley",
+      "barnName": "Cervin",
+      "class_number": 1112,
+      "ring_number": 13,
+      "ringName": "South Ring",
+      "latest_status": "Completed",
+      "latest_order_of_go": 15,
+      "latest_estimated_go_time": "09:04:00"
+    },
+    "17": {
+      "backNumber": "17",
+      "teamName": "Victoria",
+      "barnName": "Inchidee",
+      "class_number": 1097,
+      "ring_number": 9,
+      "ringName": "Ring 9",
+      "latest_status": "Completed",
+      "latest_order_of_go": 17,
+      "latest_estimated_go_time": "00:00:00"
+    },
+    "19": {
+      "backNumber": "19",
+      "teamName": "Sydney",
+      "barnName": "Charly",
+      "class_number": 1112,
+      "ring_number": 13,
+      "ringName": "South Ring",
+      "latest_status": "Completed",
+      "latest_order_of_go": 19,
+      "latest_estimated_go_time": "09:08:00"
+    },
+    "24": {
+      "backNumber": "24",
+      "teamName": "Jess",
+      "barnName": "Crush",
+      "class_number": 3060,
+      "ring_number": 12,
+      "ringName": "Ring 12",
+      "latest_status": "Completed",
+      "latest_order_of_go": 24,
+      "latest_estimated_go_time": "14:16:00"
+    },
+    "25": {
+      "backNumber": "25",
+      "teamName": "Jess",
+      "barnName": "Crush",
+      "class_number": 3093,
+      "ring_number": 12,
+      "ringName": "Ring 12",
+      "latest_status": "Completed",
+      "latest_order_of_go": 25,
+      "latest_estimated_go_time": "14:18:00"
+    },
+    "26": {
+      "backNumber": "26",
+      "teamName": "Elisabeth",
+      "barnName": "Peri",
+      "class_number": 1032,
+      "ring_number": 5,
+      "ringName": "Denemethy",
+      "latest_status": "Completed",
+      "latest_order_of_go": 26,
+      "latest_estimated_go_time": "09:35:00"
+    },
+    "28": {
+      "backNumber": "28",
+      "teamName": "Lola",
+      "barnName": "Tank",
+      "class_number": 3106,
+      "ring_number": 11,
+      "ringName": "Ring 11",
+      "latest_status": "Completed",
+      "latest_order_of_go": 28,
+      "latest_estimated_go_time": "08:42:00"
+    },
+    "30": {
+      "backNumber": "30",
+      "teamName": "Josephine",
+      "barnName": "Curtis",
+      "class_number": 1106,
+      "ring_number": 10,
+      "ringName": "Ring 10",
+      "latest_status": "Completed",
+      "latest_order_of_go": 30,
+      "latest_estimated_go_time": "00:00:00"
+    },
+    "33": {
+      "backNumber": "33",
+      "teamName": "Noora",
+      "barnName": "Lenny",
+      "class_number": 3091,
+      "ring_number": 2,
+      "ringName": "Grand",
+      "latest_status": "Completed",
+      "latest_order_of_go": 33,
+      "latest_estimated_go_time": "15:04:00"
+    },
+    "34": {
+      "backNumber": "34",
+      "teamName": "Carsyn",
+      "barnName": "Kindly",
+      "class_number": 1100,
+      "ring_number": 9,
+      "ringName": "Ring 9",
+      "latest_status": "Completed",
+      "latest_order_of_go": 34,
+      "latest_estimated_go_time": "10:26:00"
+    },
+    "38": {
+      "backNumber": "38",
+      "teamName": "Josephine",
+      "barnName": "Calypso",
+      "class_number": 1106,
+      "ring_number": 10,
+      "ringName": "Ring 10",
+      "latest_status": "Completed",
+      "latest_order_of_go": 38,
+      "latest_estimated_go_time": "00:00:00"
+    }
   }
 }
