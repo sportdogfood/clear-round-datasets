@@ -1,23 +1,43 @@
 {
   "meta": {
-    "sqlDate": "2026-01-23",
-    "show_id": 200000047,
-    "generated_at": "2026-01-23T22:49:27-05:00"
+    "sqlDate": "2026-01-11",
+    "show_id": 200000045,
+    "generated_at": "2026-01-23T23:07:22-05:00"
   },
   "ringsByNumber": {
+    "1": {
+      "ring_number": 1,
+      "ringName": "Ring 1",
+      "class_numbers": [
+        1030
+      ]
+    },
     "2": {
       "ring_number": 2,
-      "ringName": "Grand",
+      "ringName": "Ring 2",
       "class_numbers": [
+        2706,
+        2709,
+        2710,
         3091
       ]
     },
     "3": {
       "ring_number": 3,
-      "ringName": "Rost",
+      "ringName": "Ring 3",
       "class_numbers": [
+        2831,
+        2834,
+        2835,
         2832,
         2833
+      ]
+    },
+    "4": {
+      "ring_number": 4,
+      "ringName": "Ring 4",
+      "class_numbers": [
+        1040
       ]
     },
     "5": {
@@ -38,34 +58,55 @@
         3038
       ]
     },
+    "7": {
+      "ring_number": 7,
+      "ringName": "Ring 7",
+      "class_numbers": [
+        3081,
+        3076,
+        2854,
+        2855
+      ]
+    },
     "9": {
       "ring_number": 9,
       "ringName": "Ring 9",
       "class_numbers": [
         1097,
+        3041,
         1100,
-        1041
+        1041,
+        3032
       ]
     },
     "10": {
       "ring_number": 10,
       "ringName": "Ring 10",
       "class_numbers": [
-        1106
+        1106,
+        1767,
+        1077
       ]
     },
     "11": {
       "ring_number": 11,
       "ringName": "Ring 11",
       "class_numbers": [
+        2916,
         3105,
-        3106
+        3106,
+        402,
+        2919,
+        2920
       ]
     },
     "12": {
       "ring_number": 12,
       "ringName": "Ring 12",
       "class_numbers": [
+        4076,
+        4079,
+        4080,
         3060,
         3093
       ]
@@ -75,22 +116,34 @@
       "ringName": "South Ring",
       "class_numbers": [
         1109,
-        1112
+        1112,
+        3012,
+        3013,
+        3014
       ]
     }
   },
   "ringsByName": {
-    "grand": {
+    "ring 1": {
+      "ring_number": 1
+    },
+    "ring 2": {
       "ring_number": 2
     },
-    "rost": {
+    "ring 3": {
       "ring_number": 3
+    },
+    "ring 4": {
+      "ring_number": 4
     },
     "denemethy": {
       "ring_number": 5
     },
     "ring 6": {
       "ring_number": 6
+    },
+    "ring 7": {
+      "ring_number": 7
     },
     "ring 9": {
       "ring_number": 9
@@ -109,10 +162,13 @@
     }
   },
   "ringOrder": [
+    1,
     2,
     3,
+    4,
     5,
     6,
+    7,
     9,
     10,
     11,
