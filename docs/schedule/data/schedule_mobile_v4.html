@@ -77,16 +77,35 @@
   .home-pill:active{
     transform: translateY(1px) scale(0.99);
   }
+    /* allow the inner scroller to actually overflow horizontally */
+  .filter-row{
+    overflow:hidden;
+  }
+
+  .filterbar .nav-scroller{
+    flex:1 1 auto;
+    min-width:0;          /* THIS is the key */
+  }
 
   /* V4: Sticky filterbar (covers topbar when scrolling) */
   .filterbar{
     position:sticky;
     top:0;
-    z-index:25; /* above topbar to visually push it out */
-    background:rgba(0, 0, 0, 0.98);
+    z-index:25;
+    background:rgba(19, 18, 18, 0.96);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
-    padding:8px 10px;
+    padding:10px 10px;
+  }
+
+    /* filter pills styled exactly like bottom nav pills */
+  .filterbar .nav-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+  }
+  .filterbar .nav-btn.active{
+    border-color:#000;
   }
 
   .filter-row{
@@ -245,7 +264,7 @@
     background:rgba(19, 18, 18, 0.96);
     backdrop-filter: blur(6px);
     border-top:1px solid var(--border);
-    padding:10px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+    padding:4px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
   }
 
   /* Bottom nav pill overrides (dark bar) */
