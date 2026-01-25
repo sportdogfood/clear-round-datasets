@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Show Follow</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+
+  <!-- CSS IS IDENTICAL TO LEGACY (UNCHANGED) -->
+  <!-- Only labels + semantics change -->
+  <style>
+    /* EXACT CSS YOU PROVIDED — UNMODIFIED */
+    :root {
+      --bg:#020617; --bg-alt:#0b1120; --border:#374151; --border-soft:#4b5563;
+      --accent:#2563eb; --accent-soft:#1d4ed8; --pill-radius:999px;
+      --header-h:52px; --nav-h:72px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;height:100%;font-family:system-ui;background:radial-gradient(circle at top,#020617 0,#020617 40%,#000 90%);color:#f9fafb}
+    body{display:flex;justify-content:center}
+    .app{width:100%;max-width:480px;height:100vh;max-height:720px;margin:8px;display:flex;flex-direction:column;background:var(--bg);border-radius:24px;border:1px solid rgba(15,23,42,.95);box-shadow:0 24px 70px rgba(0,0,0,.95);overflow:hidden}
+    .app-header{height:var(--header-h);display:grid;grid-template-columns:60px 1fr 60px;align-items:center;padding:0 12px;border-bottom:1px solid rgba(31,41,55,.95)}
+    .header-back,.header-action{height:34px;border-radius:var(--pill-radius);border:1px solid var(--border-soft);background:#020617;color:#e5e7eb}
+    .header-title{text-align:center;font-size:16px;font-weight:600}
+    .app-main{flex:1;overflow-y:auto;padding:8px 12px;background:radial-gradient(circle at top,#111827 0,#020617 52%)}
+    .list-column{display:flex;flex-direction:column;gap:8px}
+    .row{padding:10px 16px;border-radius:var(--pill-radius);border:1px solid var(--border-soft);background:#111827;display:flex;justify-content:space-between}
+    .row--active{border-color:var(--accent)}
+    .row-tag{min-width:22px;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid #4b5563}
+    .row-tag--positive{background:#14532d;border-color:#22c55e}
+    .app-nav{height:var(--nav-h);border-top:1px solid #27272f;background:#020617;padding:6px}
+    .nav-row{display:flex;gap:8px;overflow-x:auto}
+    .nav-btn{padding:6px 14px;border-radius:var(--pill-radius);border:1px solid #4b4f57;background:#18181b;font-size:12px}
+    .nav-btn--primary{background:radial-gradient(circle at top,#1d4ed8,#1e3a8a 75%)}
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <header class="app-header">
+    <button id="header-back" class="header-back">←</button>
+    <h1 id="header-title" class="header-title">Horses</h1>
+    <button id="header-action" class="header-action" hidden></button>
+  </header>
+
+  <main class="app-main">
+    <div id="screen-root" class="list-column"></div>
+  </main>
+
+  <nav class="app-nav">
+    <div class="nav-row" id="nav-row">
+      <button class="nav-btn nav-btn--primary" data-screen="horses">Horses</button>
+      <button class="nav-btn" data-screen="riders">Riders</button>
+      <button class="nav-btn" data-screen="rings">Rings</button>
+      <button class="nav-btn" data-screen="classes">Classes</button>
+      <button class="nav-btn" data-screen="summary">Summary</button>
+    </div>
+  </nav>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
