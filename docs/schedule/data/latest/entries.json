@@ -2,11 +2,13 @@
   "meta": {
     "show_id": 200000047,
     "sqlDate": "2026-01-24",
-    "generated_at": "2026-01-24T18:44:40-05:00",
+    "generated_at": "2026-01-24T19:28:07-05:00",
     "path_gpt": "docs/schedule/data/latest/",
     "show_days_report_title": "🛡️ CWF Schedule",
     "latest_ingested_at": "2026-01-24T22:52:24.150Z",
-    "run_id": "20260124"
+    "run_id": "20260124",
+    "latest_start_ts_local": "1769299273",
+    "now_ts_local": "1769300835"
   },
   "entriesByTeam": {
     "elisabeth": [
@@ -30,7 +32,7 @@
         "latest_estimated_go_time_display": "1:01 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "14",
-        "calc_seconds": 40035
+        "calc_seconds": 42735
       }
     ],
     "taylor": [
@@ -54,7 +56,7 @@
         "latest_estimated_go_time_display": "10:16 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "32",
-        "calc_seconds": 50235
+        "calc_seconds": 52935
       },
       {
         "entry_id": 200149751,
@@ -76,7 +78,7 @@
         "latest_estimated_go_time_display": "1:10 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "19",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "entry_id": 200150078,
@@ -98,7 +100,7 @@
         "latest_estimated_go_time_display": "1:30 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "28",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "entry_id": 200150078,
@@ -120,7 +122,7 @@
         "latest_estimated_go_time_display": "1:35 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "30",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "entry_id": 200149751,
@@ -142,7 +144,7 @@
         "latest_estimated_go_time_display": "1:15 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "21",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "entry_id": 200150240,
@@ -164,7 +166,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "1",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "entry_id": 200150240,
@@ -186,7 +188,7 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Not Started",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       },
       {
         "entry_id": 200150240,
@@ -208,32 +210,10 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       }
     ],
     "sophie": [
-      {
-        "entry_id": 200150387,
-        "entryxclasses_uuid": "23E20B6E78984EE0B3BA6D2F349A9308",
-        "barnName": "Rimini",
-        "backNumber": "1065",
-        "teamName": "Sophie",
-        "class_id": 200018534,
-        "class_number": 1075,
-        "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-        "class_type": "Jumpers",
-        "total_trips": 19,
-        "class_group_id": 200018746,
-        "class_groupxclasses_id": 200028776,
-        "group_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-        "ring_number": 10,
-        "ringName": "Ring 10",
-        "latest_estimated_start_time_display": "2:45 PM",
-        "latest_estimated_go_time_display": "3:06 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "19",
-        "calc_seconds": 33135
-      },
       {
         "entry_id": 200150387,
         "entryxclasses_uuid": "307E8DA9BB7D40499DED7CA2EF96067E",
@@ -254,7 +234,7 @@
         "latest_estimated_go_time_display": "1:35 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "11",
-        "calc_seconds": 37635
+        "calc_seconds": 40335
       }
     ],
     "marley": [
@@ -278,7 +258,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "20",
-        "calc_seconds": 56531
+        "calc_seconds": 59231
       },
       {
         "entry_id": 200150896,
@@ -300,7 +280,7 @@
         "latest_estimated_go_time_display": "12:36 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "49",
-        "calc_seconds": 45735
+        "calc_seconds": 48435
       }
     ],
     "sydney": [
@@ -324,7 +304,7 @@
         "latest_estimated_go_time_display": "12:06 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "32",
-        "calc_seconds": 43334
+        "calc_seconds": 46034
       },
       {
         "entry_id": 200150525,
@@ -346,7 +326,7 @@
         "latest_estimated_go_time_display": "2:39 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "24",
-        "calc_seconds": 36735
+        "calc_seconds": 39435
       }
     ],
     "josephine": [
@@ -370,7 +350,7 @@
         "latest_estimated_go_time_display": "12:15 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "41",
-        "calc_seconds": 43334
+        "calc_seconds": 46034
       },
       {
         "entry_id": 200209668,
@@ -392,7 +372,7 @@
         "latest_estimated_go_time_display": "2:22 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "15",
-        "calc_seconds": 36135
+        "calc_seconds": 38835
       },
       {
         "entry_id": 200156040,
@@ -414,7 +394,7 @@
         "latest_estimated_go_time_display": "8:02 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "entry_id": 200156040,
@@ -436,7 +416,7 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       }
     ],
     "zoey": [
@@ -460,7 +440,7 @@
         "latest_estimated_go_time_display": "7:45 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 57435
+        "calc_seconds": 60135
       },
       {
         "entry_id": 200142327,
@@ -482,7 +462,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "9",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       },
       {
         "entry_id": 200142327,
@@ -504,32 +484,10 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "10",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       }
     ],
     "carsyn": [
-      {
-        "entry_id": 200142634,
-        "entryxclasses_uuid": "EAF7988FAEE142828828B74C3F4DB32F",
-        "barnName": "Pedro",
-        "backNumber": "4227",
-        "teamName": "Carsyn",
-        "class_id": 200018433,
-        "class_number": 2851,
-        "class_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-        "class_type": "Hunters",
-        "total_trips": 29,
-        "class_group_id": 200018726,
-        "class_groupxclasses_id": 200028752,
-        "group_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-        "ring_number": 6,
-        "ringName": "Ring 6",
-        "latest_estimated_start_time_display": "5:05 PM",
-        "latest_estimated_go_time_display": "5:05 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "Not assigned",
-        "calc_seconds": 23833
-      },
       {
         "entry_id": 200142634,
         "entryxclasses_uuid": "3B03EEA65F1F41619F5B8DDDAE0091F7",
@@ -550,7 +508,7 @@
         "latest_estimated_go_time_display": "2:52 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "27",
-        "calc_seconds": 34751
+        "calc_seconds": 37451
       },
       {
         "entry_id": 200142634,
@@ -572,7 +530,7 @@
         "latest_estimated_go_time_display": "2:54 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "28",
-        "calc_seconds": 34751
+        "calc_seconds": 37451
       }
     ],
     "jess": [
@@ -596,7 +554,7 @@
         "latest_estimated_go_time_display": "1:50 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 35531
+        "calc_seconds": 38231
       },
       {
         "entry_id": 200180789,
@@ -618,7 +576,7 @@
         "latest_estimated_go_time_display": "10:49 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "3",
-        "calc_seconds": 46332
+        "calc_seconds": 49032
       },
       {
         "entry_id": 200180789,
@@ -640,7 +598,7 @@
         "latest_estimated_go_time_display": "10:55 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "6",
-        "calc_seconds": 46332
+        "calc_seconds": 49032
       }
     ],
     "kate": [
@@ -664,7 +622,7 @@
         "latest_estimated_go_time_display": "10:30 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 47531
+        "calc_seconds": 50231
       },
       {
         "entry_id": 200149605,
@@ -686,7 +644,7 @@
         "latest_estimated_go_time_display": "8:04 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "3",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       },
       {
         "entry_id": 200149605,
@@ -708,31 +666,7 @@
         "latest_estimated_go_time_display": "8:06 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "4",
-        "calc_seconds": 56535
-      }
-    ],
-    "lainey": [
-      {
-        "entry_id": 200203162,
-        "entryxclasses_uuid": "E9593C296CDD471ABFB382281FF74C7C",
-        "barnName": "Owin",
-        "backNumber": "24",
-        "teamName": "Lainey",
-        "class_id": 200017204,
-        "class_number": 3014,
-        "class_name": "12-14 Equitation (2'9\")",
-        "class_type": "Equitation",
-        "total_trips": 52,
-        "class_group_id": 200018170,
-        "class_groupxclasses_id": 200027965,
-        "group_name": "12-14 Equitation (2'9\")",
-        "ring_number": 13,
-        "ringName": "South Ring",
-        "latest_estimated_start_time_display": "2:05 PM",
-        "latest_estimated_go_time_display": "1:58 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "24",
-        "calc_seconds": 1157830
+        "calc_seconds": 59235
       }
     ],
     "naomi": [
@@ -756,7 +690,7 @@
         "latest_estimated_go_time_display": "12:22 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 126433
+        "calc_seconds": 129133
       },
       {
         "entry_id": 200150994,
@@ -778,7 +712,7 @@
         "latest_estimated_go_time_display": "8:24 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "13",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "entry_id": 200150994,
@@ -800,7 +734,7 @@
         "latest_estimated_go_time_display": "1:10 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 37900
+        "calc_seconds": 40600
       },
       {
         "entry_id": 200150994,
@@ -822,7 +756,7 @@
         "latest_estimated_go_time_display": "12:04 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "13",
-        "calc_seconds": 43333
+        "calc_seconds": 46033
       }
     ],
     "noora": [
@@ -846,7 +780,7 @@
         "latest_estimated_go_time_display": "9:48 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "5",
-        "calc_seconds": 49933
+        "calc_seconds": 52633
       }
     ],
     "lola": [
@@ -870,7 +804,7 @@
         "latest_estimated_go_time_display": "1:41 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "62",
-        "calc_seconds": 39633
+        "calc_seconds": 42333
       },
       {
         "entry_id": 200149164,
@@ -892,7 +826,7 @@
         "latest_estimated_go_time_display": "1:45 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "66",
-        "calc_seconds": 39633
+        "calc_seconds": 42333
       }
     ]
   },
@@ -918,7 +852,7 @@
         "latest_estimated_go_time_display": "1:01 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "14",
-        "calc_seconds": 40035
+        "calc_seconds": 42735
       }
     ],
     "maiki": [
@@ -942,7 +876,7 @@
         "latest_estimated_go_time_display": "10:16 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "32",
-        "calc_seconds": 50235
+        "calc_seconds": 52935
       },
       {
         "entry_id": 200150240,
@@ -964,7 +898,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "1",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "entry_id": 200150240,
@@ -986,7 +920,7 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Not Started",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       },
       {
         "entry_id": 200150240,
@@ -1008,32 +942,10 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       }
     ],
     "rimini": [
-      {
-        "entry_id": 200150387,
-        "entryxclasses_uuid": "23E20B6E78984EE0B3BA6D2F349A9308",
-        "barnName": "Rimini",
-        "backNumber": "1065",
-        "teamName": "Sophie",
-        "class_id": 200018534,
-        "class_number": 1075,
-        "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-        "class_type": "Jumpers",
-        "total_trips": 19,
-        "class_group_id": 200018746,
-        "class_groupxclasses_id": 200028776,
-        "group_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-        "ring_number": 10,
-        "ringName": "Ring 10",
-        "latest_estimated_start_time_display": "2:45 PM",
-        "latest_estimated_go_time_display": "3:06 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "19",
-        "calc_seconds": 33135
-      },
       {
         "entry_id": 200150387,
         "entryxclasses_uuid": "307E8DA9BB7D40499DED7CA2EF96067E",
@@ -1054,7 +966,7 @@
         "latest_estimated_go_time_display": "1:35 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "11",
-        "calc_seconds": 37635
+        "calc_seconds": 40335
       }
     ],
     "cervin": [
@@ -1078,7 +990,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "20",
-        "calc_seconds": 56531
+        "calc_seconds": 59231
       },
       {
         "entry_id": 200150896,
@@ -1100,7 +1012,7 @@
         "latest_estimated_go_time_display": "12:36 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "49",
-        "calc_seconds": 45735
+        "calc_seconds": 48435
       }
     ],
     "bb": [
@@ -1124,7 +1036,7 @@
         "latest_estimated_go_time_display": "12:06 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "32",
-        "calc_seconds": 43334
+        "calc_seconds": 46034
       },
       {
         "entry_id": 200150525,
@@ -1146,7 +1058,7 @@
         "latest_estimated_go_time_display": "2:39 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "24",
-        "calc_seconds": 36735
+        "calc_seconds": 39435
       }
     ],
     "calypso": [
@@ -1170,7 +1082,7 @@
         "latest_estimated_go_time_display": "12:15 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "41",
-        "calc_seconds": 43334
+        "calc_seconds": 46034
       },
       {
         "entry_id": 200209668,
@@ -1192,7 +1104,7 @@
         "latest_estimated_go_time_display": "2:22 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "15",
-        "calc_seconds": 36135
+        "calc_seconds": 38835
       }
     ],
     "elliot": [
@@ -1216,7 +1128,7 @@
         "latest_estimated_go_time_display": "1:10 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "19",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "entry_id": 200149751,
@@ -1238,7 +1150,7 @@
         "latest_estimated_go_time_display": "1:15 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "21",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       }
     ],
     "navy": [
@@ -1262,7 +1174,7 @@
         "latest_estimated_go_time_display": "1:30 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "28",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "entry_id": 200150078,
@@ -1284,7 +1196,7 @@
         "latest_estimated_go_time_display": "1:35 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "30",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       }
     ],
     "dorian": [
@@ -1308,7 +1220,7 @@
         "latest_estimated_go_time_display": "7:45 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 57435
+        "calc_seconds": 60135
       },
       {
         "entry_id": 200142327,
@@ -1330,7 +1242,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "9",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       },
       {
         "entry_id": 200142327,
@@ -1352,32 +1264,10 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "10",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       }
     ],
     "pedro": [
-      {
-        "entry_id": 200142634,
-        "entryxclasses_uuid": "EAF7988FAEE142828828B74C3F4DB32F",
-        "barnName": "Pedro",
-        "backNumber": "4227",
-        "teamName": "Carsyn",
-        "class_id": 200018433,
-        "class_number": 2851,
-        "class_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-        "class_type": "Hunters",
-        "total_trips": 29,
-        "class_group_id": 200018726,
-        "class_groupxclasses_id": 200028752,
-        "group_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-        "ring_number": 6,
-        "ringName": "Ring 6",
-        "latest_estimated_start_time_display": "5:05 PM",
-        "latest_estimated_go_time_display": "5:05 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "Not assigned",
-        "calc_seconds": 23833
-      },
       {
         "entry_id": 200142634,
         "entryxclasses_uuid": "3B03EEA65F1F41619F5B8DDDAE0091F7",
@@ -1398,7 +1288,7 @@
         "latest_estimated_go_time_display": "2:52 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "27",
-        "calc_seconds": 34751
+        "calc_seconds": 37451
       },
       {
         "entry_id": 200142634,
@@ -1420,7 +1310,7 @@
         "latest_estimated_go_time_display": "2:54 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "28",
-        "calc_seconds": 34751
+        "calc_seconds": 37451
       }
     ],
     "crush": [
@@ -1444,7 +1334,7 @@
         "latest_estimated_go_time_display": "1:50 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 35531
+        "calc_seconds": 38231
       },
       {
         "entry_id": 200180789,
@@ -1466,7 +1356,7 @@
         "latest_estimated_go_time_display": "10:49 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "3",
-        "calc_seconds": 46332
+        "calc_seconds": 49032
       },
       {
         "entry_id": 200180789,
@@ -1488,7 +1378,7 @@
         "latest_estimated_go_time_display": "10:55 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "6",
-        "calc_seconds": 46332
+        "calc_seconds": 49032
       }
     ],
     "paisley": [
@@ -1512,7 +1402,7 @@
         "latest_estimated_go_time_display": "10:30 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 47531
+        "calc_seconds": 50231
       },
       {
         "entry_id": 200149605,
@@ -1534,7 +1424,7 @@
         "latest_estimated_go_time_display": "8:04 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "3",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       },
       {
         "entry_id": 200149605,
@@ -1556,31 +1446,7 @@
         "latest_estimated_go_time_display": "8:06 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "4",
-        "calc_seconds": 56535
-      }
-    ],
-    "owin": [
-      {
-        "entry_id": 200203162,
-        "entryxclasses_uuid": "E9593C296CDD471ABFB382281FF74C7C",
-        "barnName": "Owin",
-        "backNumber": "24",
-        "teamName": "Lainey",
-        "class_id": 200017204,
-        "class_number": 3014,
-        "class_name": "12-14 Equitation (2'9\")",
-        "class_type": "Equitation",
-        "total_trips": 52,
-        "class_group_id": 200018170,
-        "class_groupxclasses_id": 200027965,
-        "group_name": "12-14 Equitation (2'9\")",
-        "ring_number": 13,
-        "ringName": "South Ring",
-        "latest_estimated_start_time_display": "2:05 PM",
-        "latest_estimated_go_time_display": "1:58 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "24",
-        "calc_seconds": 1157830
+        "calc_seconds": 59235
       }
     ],
     "munster": [
@@ -1604,7 +1470,7 @@
         "latest_estimated_go_time_display": "12:22 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 126433
+        "calc_seconds": 129133
       },
       {
         "entry_id": 200150994,
@@ -1626,7 +1492,7 @@
         "latest_estimated_go_time_display": "8:24 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "13",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "entry_id": 200150994,
@@ -1648,7 +1514,7 @@
         "latest_estimated_go_time_display": "1:10 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 37900
+        "calc_seconds": 40600
       },
       {
         "entry_id": 200150994,
@@ -1670,7 +1536,7 @@
         "latest_estimated_go_time_display": "12:04 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "13",
-        "calc_seconds": 43333
+        "calc_seconds": 46033
       }
     ],
     "lenny": [
@@ -1694,7 +1560,7 @@
         "latest_estimated_go_time_display": "9:48 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "5",
-        "calc_seconds": 49933
+        "calc_seconds": 52633
       }
     ],
     "curtis": [
@@ -1718,7 +1584,7 @@
         "latest_estimated_go_time_display": "8:02 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "entry_id": 200156040,
@@ -1740,7 +1606,7 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       }
     ],
     "tank": [
@@ -1764,7 +1630,7 @@
         "latest_estimated_go_time_display": "1:41 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "62",
-        "calc_seconds": 39633
+        "calc_seconds": 42333
       },
       {
         "entry_id": 200149164,
@@ -1786,33 +1652,11 @@
         "latest_estimated_go_time_display": "1:45 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "66",
-        "calc_seconds": 39633
+        "calc_seconds": 42333
       }
     ]
   },
   "entriesByBackNumber": {
-    "24": {
-      "entry_id": 200203162,
-      "entryxclasses_uuid": "E9593C296CDD471ABFB382281FF74C7C",
-      "barnName": "Owin",
-      "backNumber": "24",
-      "teamName": "Lainey",
-      "class_id": 200017204,
-      "class_number": 3014,
-      "class_name": "12-14 Equitation (2'9\")",
-      "class_type": "Equitation",
-      "total_trips": 52,
-      "class_group_id": 200018170,
-      "class_groupxclasses_id": 200027965,
-      "group_name": "12-14 Equitation (2'9\")",
-      "ring_number": 13,
-      "ringName": "South Ring",
-      "latest_estimated_start_time_display": "2:05 PM",
-      "latest_estimated_go_time_display": "1:58 PM",
-      "latest_status_display": "Completed",
-      "latest_oog_display": "24",
-      "calc_seconds": 1157830
-    },
     "27": {
       "entry_id": 200142327,
       "entryxclasses_uuid": "080BCF9C6DDB41A9934ECB8522F5046C",
@@ -1833,7 +1677,7 @@
       "latest_estimated_go_time_display": "7:45 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 57435
+      "calc_seconds": 60135
     },
     "1058": {
       "entry_id": 200150525,
@@ -1855,7 +1699,7 @@
       "latest_estimated_go_time_display": "12:06 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "32",
-      "calc_seconds": 43334
+      "calc_seconds": 46034
     },
     "1061": {
       "entry_id": 200150896,
@@ -1877,7 +1721,7 @@
       "latest_estimated_go_time_display": "8:00 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "20",
-      "calc_seconds": 56531
+      "calc_seconds": 59231
     },
     "1063": {
       "entry_id": 200149164,
@@ -1899,29 +1743,29 @@
       "latest_estimated_go_time_display": "1:41 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "62",
-      "calc_seconds": 39633
+      "calc_seconds": 42333
     },
     "1065": {
       "entry_id": 200150387,
-      "entryxclasses_uuid": "23E20B6E78984EE0B3BA6D2F349A9308",
+      "entryxclasses_uuid": "307E8DA9BB7D40499DED7CA2EF96067E",
       "barnName": "Rimini",
       "backNumber": "1065",
       "teamName": "Sophie",
-      "class_id": 200018534,
-      "class_number": 1075,
-      "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
+      "class_id": 200018102,
+      "class_number": 1076,
+      "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2d",
       "class_type": "Jumpers",
-      "total_trips": 19,
-      "class_group_id": 200018746,
-      "class_groupxclasses_id": 200028776,
-      "group_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
+      "total_trips": 23,
+      "class_group_id": 200018745,
+      "class_groupxclasses_id": 200028775,
+      "group_name": "$1,500 1.10m Junior Jumper 14 & Under II2d",
       "ring_number": 10,
       "ringName": "Ring 10",
-      "latest_estimated_start_time_display": "2:45 PM",
-      "latest_estimated_go_time_display": "3:06 PM",
+      "latest_estimated_start_time_display": "1:15 PM",
+      "latest_estimated_go_time_display": "1:35 PM",
       "latest_status_display": "Completed",
-      "latest_oog_display": "19",
-      "calc_seconds": 33135
+      "latest_oog_display": "11",
+      "calc_seconds": 40335
     },
     "1069": {
       "entry_id": 200149605,
@@ -1943,7 +1787,7 @@
       "latest_estimated_go_time_display": "10:30 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 47531
+      "calc_seconds": 50231
     },
     "1078": {
       "entry_id": 200149830,
@@ -1965,7 +1809,7 @@
       "latest_estimated_go_time_display": "9:48 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "5",
-      "calc_seconds": 49933
+      "calc_seconds": 52633
     },
     "1079": {
       "entry_id": 200149751,
@@ -1987,7 +1831,7 @@
       "latest_estimated_go_time_display": "1:10 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "19",
-      "calc_seconds": 40332
+      "calc_seconds": 43032
     },
     "1080": {
       "entry_id": 200150240,
@@ -2009,7 +1853,7 @@
       "latest_estimated_go_time_display": "10:16 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "32",
-      "calc_seconds": 50235
+      "calc_seconds": 52935
     },
     "1081": {
       "entry_id": 200150994,
@@ -2031,7 +1875,7 @@
       "latest_estimated_go_time_display": "12:22 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "2",
-      "calc_seconds": 126433
+      "calc_seconds": 129133
     },
     "1082": {
       "entry_id": 200150078,
@@ -2053,7 +1897,7 @@
       "latest_estimated_go_time_display": "1:30 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "28",
-      "calc_seconds": 40332
+      "calc_seconds": 43032
     },
     "1083": {
       "entry_id": 200149677,
@@ -2075,7 +1919,7 @@
       "latest_estimated_go_time_display": "1:01 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "14",
-      "calc_seconds": 40035
+      "calc_seconds": 42735
     },
     "1399": {
       "entry_id": 200209668,
@@ -2097,7 +1941,7 @@
       "latest_estimated_go_time_display": "12:15 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "41",
-      "calc_seconds": 43334
+      "calc_seconds": 46034
     },
     "2643": {
       "entry_id": 200180789,
@@ -2119,7 +1963,7 @@
       "latest_estimated_go_time_display": "1:50 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 35531
+      "calc_seconds": 38231
     },
     "4224": {
       "entry_id": 200156040,
@@ -2141,29 +1985,29 @@
       "latest_estimated_go_time_display": "8:02 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "2",
-      "calc_seconds": 56532
+      "calc_seconds": 59232
     },
     "4227": {
       "entry_id": 200142634,
-      "entryxclasses_uuid": "EAF7988FAEE142828828B74C3F4DB32F",
+      "entryxclasses_uuid": "3B03EEA65F1F41619F5B8DDDAE0091F7",
       "barnName": "Pedro",
       "backNumber": "4227",
       "teamName": "Carsyn",
-      "class_id": 200018433,
-      "class_number": 2851,
-      "class_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
+      "class_id": 200018215,
+      "class_number": 2852,
+      "class_name": "Children's Hunter 14 & Under CALI @ 30+",
       "class_type": "Hunters",
-      "total_trips": 29,
-      "class_group_id": 200018726,
-      "class_groupxclasses_id": 200028752,
-      "group_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
+      "total_trips": 62,
+      "class_group_id": 200018725,
+      "class_groupxclasses_id": 200028750,
+      "group_name": "Children's Hunter 14 & Under",
       "ring_number": 6,
       "ringName": "Ring 6",
-      "latest_estimated_start_time_display": "5:05 PM",
-      "latest_estimated_go_time_display": "5:05 PM",
+      "latest_estimated_start_time_display": "2:03 PM",
+      "latest_estimated_go_time_display": "2:52 PM",
       "latest_status_display": "Completed",
-      "latest_oog_display": "Not assigned",
-      "calc_seconds": 23833
+      "latest_oog_display": "27",
+      "calc_seconds": 37451
     }
   }
 }

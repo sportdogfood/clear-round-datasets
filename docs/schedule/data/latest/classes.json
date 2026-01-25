@@ -2,11 +2,13 @@
   "meta": {
     "show_id": 200000047,
     "sqlDate": "2026-01-24",
-    "generated_at": "2026-01-24T18:44:40-05:00",
+    "generated_at": "2026-01-24T19:28:07-05:00",
     "path_gpt": "docs/schedule/data/latest/",
     "show_days_report_title": "🛡️ CWF Schedule",
     "latest_ingested_at": "2026-01-24T22:52:24.150Z",
-    "run_id": "20260124"
+    "run_id": "20260124",
+    "latest_start_ts_local": "1769299273",
+    "now_ts_local": "1769300835"
   },
   "classesByRingNumber": {
     "1": [
@@ -25,7 +27,7 @@
         "latest_estimated_go_time_display": "1:01 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "14",
-        "calc_seconds": 40035
+        "calc_seconds": 42735
       }
     ],
     "2": [
@@ -44,7 +46,7 @@
         "latest_estimated_go_time_display": "7:45 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 57435
+        "calc_seconds": 60135
       },
       {
         "class_group_id": 200018702,
@@ -61,7 +63,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "9",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       },
       {
         "class_group_id": 200018702,
@@ -78,7 +80,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "10",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       }
     ],
     "4": [
@@ -97,7 +99,7 @@
         "latest_estimated_go_time_display": "10:16 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "32",
-        "calc_seconds": 50235
+        "calc_seconds": 52935
       },
       {
         "class_group_id": 200018716,
@@ -114,7 +116,7 @@
         "latest_estimated_go_time_display": "12:06 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "32",
-        "calc_seconds": 43334
+        "calc_seconds": 46034
       },
       {
         "class_group_id": 200018717,
@@ -131,27 +133,10 @@
         "latest_estimated_go_time_display": "2:22 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "15",
-        "calc_seconds": 36135
+        "calc_seconds": 38835
       }
     ],
     "6": [
-      {
-        "class_group_id": 200018726,
-        "class_groupxclasses_id": 200028752,
-        "group_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-        "class_id": 200018433,
-        "class_number": 2851,
-        "class_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-        "class_type": "Hunters",
-        "total_trips": 29,
-        "ring_number": 6,
-        "ringName": "Ring 6",
-        "latest_estimated_start_time_display": "5:05 PM",
-        "latest_estimated_go_time_display": "5:05 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "Not assigned",
-        "calc_seconds": 23833
-      },
       {
         "class_group_id": 200018725,
         "class_groupxclasses_id": 200028750,
@@ -167,7 +152,7 @@
         "latest_estimated_go_time_display": "2:52 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "27",
-        "calc_seconds": 34751
+        "calc_seconds": 37451
       },
       {
         "class_group_id": 200018725,
@@ -184,7 +169,7 @@
         "latest_estimated_go_time_display": "2:54 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "28",
-        "calc_seconds": 34751
+        "calc_seconds": 37451
       },
       {
         "class_group_id": 200018656,
@@ -201,7 +186,7 @@
         "latest_estimated_go_time_display": "12:22 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "2",
-        "calc_seconds": 126433
+        "calc_seconds": 129133
       },
       {
         "class_group_id": 200018722,
@@ -218,7 +203,7 @@
         "latest_estimated_go_time_display": "8:24 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "13",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "class_group_id": 200022129,
@@ -235,7 +220,7 @@
         "latest_estimated_go_time_display": "9:48 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "5",
-        "calc_seconds": 49933
+        "calc_seconds": 52633
       },
       {
         "class_group_id": 200018724,
@@ -252,7 +237,7 @@
         "latest_estimated_go_time_display": "1:10 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 37900
+        "calc_seconds": 40600
       },
       {
         "class_group_id": 200018723,
@@ -269,7 +254,7 @@
         "latest_estimated_go_time_display": "12:04 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "13",
-        "calc_seconds": 43333
+        "calc_seconds": 46033
       }
     ],
     "7": [
@@ -288,7 +273,7 @@
         "latest_estimated_go_time_display": "1:10 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "19",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "class_group_id": 200018733,
@@ -305,7 +290,7 @@
         "latest_estimated_go_time_display": "1:35 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "30",
-        "calc_seconds": 40332
+        "calc_seconds": 43032
       },
       {
         "class_group_id": 200018728,
@@ -322,7 +307,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "1",
-        "calc_seconds": 56532
+        "calc_seconds": 59232
       },
       {
         "class_group_id": 200018729,
@@ -339,27 +324,10 @@
         "latest_estimated_go_time_display": "9:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 52935
+        "calc_seconds": 55635
       }
     ],
     "10": [
-      {
-        "class_group_id": 200018746,
-        "class_groupxclasses_id": 200028776,
-        "group_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-        "class_id": 200018534,
-        "class_number": 1075,
-        "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-        "class_type": "Jumpers",
-        "total_trips": 19,
-        "ring_number": 10,
-        "ringName": "Ring 10",
-        "latest_estimated_start_time_display": "2:45 PM",
-        "latest_estimated_go_time_display": "3:06 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "19",
-        "calc_seconds": 33135
-      },
       {
         "class_group_id": 200018745,
         "class_groupxclasses_id": 200028775,
@@ -375,7 +343,7 @@
         "latest_estimated_go_time_display": "1:35 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "11",
-        "calc_seconds": 37635
+        "calc_seconds": 40335
       },
       {
         "class_group_id": 200018743,
@@ -392,7 +360,7 @@
         "latest_estimated_go_time_display": "8:00 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "20",
-        "calc_seconds": 56531
+        "calc_seconds": 59231
       },
       {
         "class_group_id": 200018744,
@@ -409,7 +377,7 @@
         "latest_estimated_go_time_display": "12:36 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "49",
-        "calc_seconds": 45735
+        "calc_seconds": 48435
       }
     ],
     "12": [
@@ -428,7 +396,7 @@
         "latest_estimated_go_time_display": "1:50 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 35531
+        "calc_seconds": 38231
       },
       {
         "class_group_id": 200018759,
@@ -445,7 +413,7 @@
         "latest_estimated_go_time_display": "10:49 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "3",
-        "calc_seconds": 46332
+        "calc_seconds": 49032
       },
       {
         "class_group_id": 200018759,
@@ -462,7 +430,7 @@
         "latest_estimated_go_time_display": "10:55 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "6",
-        "calc_seconds": 46332
+        "calc_seconds": 49032
       },
       {
         "class_group_id": 200018758,
@@ -479,7 +447,7 @@
         "latest_estimated_go_time_display": "10:30 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "Not assigned",
-        "calc_seconds": 47531
+        "calc_seconds": 50231
       },
       {
         "class_group_id": 200018757,
@@ -496,7 +464,7 @@
         "latest_estimated_go_time_display": "8:04 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "3",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       },
       {
         "class_group_id": 200018757,
@@ -513,27 +481,10 @@
         "latest_estimated_go_time_display": "8:06 AM",
         "latest_status_display": "Completed",
         "latest_oog_display": "4",
-        "calc_seconds": 56535
+        "calc_seconds": 59235
       }
     ],
     "13": [
-      {
-        "class_group_id": 200018170,
-        "class_groupxclasses_id": 200027965,
-        "group_name": "12-14 Equitation (2'9\")",
-        "class_id": 200017204,
-        "class_number": 3014,
-        "class_name": "12-14 Equitation (2'9\")",
-        "class_type": "Equitation",
-        "total_trips": 52,
-        "ring_number": 13,
-        "ringName": "South Ring",
-        "latest_estimated_start_time_display": "2:05 PM",
-        "latest_estimated_go_time_display": "1:58 PM",
-        "latest_status_display": "Completed",
-        "latest_oog_display": "24",
-        "calc_seconds": 1157830
-      },
       {
         "class_group_id": 200018764,
         "class_groupxclasses_id": 200028803,
@@ -549,7 +500,7 @@
         "latest_estimated_go_time_display": "1:41 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "62",
-        "calc_seconds": 39633
+        "calc_seconds": 42333
       },
       {
         "class_group_id": 200018764,
@@ -566,7 +517,7 @@
         "latest_estimated_go_time_display": "1:45 PM",
         "latest_status_display": "Completed",
         "latest_oog_display": "66",
-        "calc_seconds": 39633
+        "calc_seconds": 42333
       }
     ]
   },
@@ -586,7 +537,7 @@
       "latest_estimated_go_time_display": "1:01 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "14",
-      "calc_seconds": 40035
+      "calc_seconds": 42735
     },
     "1042": {
       "class_group_id": 200018715,
@@ -603,24 +554,7 @@
       "latest_estimated_go_time_display": "10:16 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "32",
-      "calc_seconds": 50235
-    },
-    "1075": {
-      "class_group_id": 200018746,
-      "class_groupxclasses_id": 200028776,
-      "group_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-      "class_id": 200018534,
-      "class_number": 1075,
-      "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
-      "class_type": "Jumpers",
-      "total_trips": 19,
-      "ring_number": 10,
-      "ringName": "Ring 10",
-      "latest_estimated_start_time_display": "2:45 PM",
-      "latest_estimated_go_time_display": "3:06 PM",
-      "latest_status_display": "Completed",
-      "latest_oog_display": "19",
-      "calc_seconds": 33135
+      "calc_seconds": 52935
     },
     "1076": {
       "class_group_id": 200018745,
@@ -637,7 +571,7 @@
       "latest_estimated_go_time_display": "1:35 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "11",
-      "calc_seconds": 37635
+      "calc_seconds": 40335
     },
     "1737": {
       "class_group_id": 200018743,
@@ -654,7 +588,7 @@
       "latest_estimated_go_time_display": "8:00 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "20",
-      "calc_seconds": 56531
+      "calc_seconds": 59231
     },
     "1738": {
       "class_group_id": 200018744,
@@ -671,7 +605,7 @@
       "latest_estimated_go_time_display": "12:36 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "49",
-      "calc_seconds": 45735
+      "calc_seconds": 48435
     },
     "1765": {
       "class_group_id": 200018716,
@@ -688,7 +622,7 @@
       "latest_estimated_go_time_display": "12:06 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "32",
-      "calc_seconds": 43334
+      "calc_seconds": 46034
     },
     "1766": {
       "class_group_id": 200018717,
@@ -705,7 +639,7 @@
       "latest_estimated_go_time_display": "2:22 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "15",
-      "calc_seconds": 36135
+      "calc_seconds": 38835
     },
     "2707": {
       "class_group_id": 200018733,
@@ -722,7 +656,7 @@
       "latest_estimated_go_time_display": "1:10 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "19",
-      "calc_seconds": 40332
+      "calc_seconds": 43032
     },
     "2708": {
       "class_group_id": 200018733,
@@ -739,7 +673,7 @@
       "latest_estimated_go_time_display": "1:35 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "30",
-      "calc_seconds": 40332
+      "calc_seconds": 43032
     },
     "2831": {
       "class_group_id": 200018701,
@@ -756,7 +690,7 @@
       "latest_estimated_go_time_display": "7:45 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 57435
+      "calc_seconds": 60135
     },
     "2834": {
       "class_group_id": 200018702,
@@ -773,7 +707,7 @@
       "latest_estimated_go_time_display": "8:00 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "9",
-      "calc_seconds": 56535
+      "calc_seconds": 59235
     },
     "2835": {
       "class_group_id": 200018702,
@@ -790,24 +724,7 @@
       "latest_estimated_go_time_display": "8:00 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "10",
-      "calc_seconds": 56535
-    },
-    "2851": {
-      "class_group_id": 200018726,
-      "class_groupxclasses_id": 200028752,
-      "group_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-      "class_id": 200018433,
-      "class_number": 2851,
-      "class_name": "Children's Hunter 14 & Under U/S CALI @ 30+",
-      "class_type": "Hunters",
-      "total_trips": 29,
-      "ring_number": 6,
-      "ringName": "Ring 6",
-      "latest_estimated_start_time_display": "5:05 PM",
-      "latest_estimated_go_time_display": "5:05 PM",
-      "latest_status_display": "Completed",
-      "latest_oog_display": "Not assigned",
-      "calc_seconds": 23833
+      "calc_seconds": 59235
     },
     "2852": {
       "class_group_id": 200018725,
@@ -824,7 +741,7 @@
       "latest_estimated_go_time_display": "2:52 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "27",
-      "calc_seconds": 34751
+      "calc_seconds": 37451
     },
     "2853": {
       "class_group_id": 200018725,
@@ -841,7 +758,7 @@
       "latest_estimated_go_time_display": "2:54 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "28",
-      "calc_seconds": 34751
+      "calc_seconds": 37451
     },
     "2901": {
       "class_group_id": 200018760,
@@ -858,7 +775,7 @@
       "latest_estimated_go_time_display": "1:50 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 35531
+      "calc_seconds": 38231
     },
     "2902": {
       "class_group_id": 200018759,
@@ -875,7 +792,7 @@
       "latest_estimated_go_time_display": "10:49 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "3",
-      "calc_seconds": 46332
+      "calc_seconds": 49032
     },
     "2903": {
       "class_group_id": 200018759,
@@ -892,7 +809,7 @@
       "latest_estimated_go_time_display": "10:55 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "6",
-      "calc_seconds": 46332
+      "calc_seconds": 49032
     },
     "2916": {
       "class_group_id": 200018758,
@@ -909,7 +826,7 @@
       "latest_estimated_go_time_display": "10:30 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 47531
+      "calc_seconds": 50231
     },
     "2917": {
       "class_group_id": 200018757,
@@ -926,7 +843,7 @@
       "latest_estimated_go_time_display": "8:04 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "3",
-      "calc_seconds": 56535
+      "calc_seconds": 59235
     },
     "2918": {
       "class_group_id": 200018757,
@@ -943,24 +860,7 @@
       "latest_estimated_go_time_display": "8:06 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "4",
-      "calc_seconds": 56535
-    },
-    "3014": {
-      "class_group_id": 200018170,
-      "class_groupxclasses_id": 200027965,
-      "group_name": "12-14 Equitation (2'9\")",
-      "class_id": 200017204,
-      "class_number": 3014,
-      "class_name": "12-14 Equitation (2'9\")",
-      "class_type": "Equitation",
-      "total_trips": 52,
-      "ring_number": 13,
-      "ringName": "South Ring",
-      "latest_estimated_start_time_display": "2:05 PM",
-      "latest_estimated_go_time_display": "1:58 PM",
-      "latest_status_display": "Completed",
-      "latest_oog_display": "24",
-      "calc_seconds": 1157830
+      "calc_seconds": 59235
     },
     "3035": {
       "class_group_id": 200018656,
@@ -977,7 +877,7 @@
       "latest_estimated_go_time_display": "12:22 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "2",
-      "calc_seconds": 126433
+      "calc_seconds": 129133
     },
     "3036": {
       "class_group_id": 200018722,
@@ -994,7 +894,7 @@
       "latest_estimated_go_time_display": "8:24 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "13",
-      "calc_seconds": 56532
+      "calc_seconds": 59232
     },
     "3037": {
       "class_group_id": 200022129,
@@ -1011,7 +911,7 @@
       "latest_estimated_go_time_display": "9:48 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "5",
-      "calc_seconds": 49933
+      "calc_seconds": 52633
     },
     "3070": {
       "class_group_id": 200018728,
@@ -1028,7 +928,7 @@
       "latest_estimated_go_time_display": "8:00 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "1",
-      "calc_seconds": 56532
+      "calc_seconds": 59232
     },
     "3075": {
       "class_group_id": 200018724,
@@ -1045,7 +945,7 @@
       "latest_estimated_go_time_display": "1:10 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 37900
+      "calc_seconds": 40600
     },
     "3077": {
       "class_group_id": 200018729,
@@ -1062,7 +962,7 @@
       "latest_estimated_go_time_display": "9:00 AM",
       "latest_status_display": "Completed",
       "latest_oog_display": "Not assigned",
-      "calc_seconds": 52935
+      "calc_seconds": 55635
     },
     "3080": {
       "class_group_id": 200018723,
@@ -1079,7 +979,7 @@
       "latest_estimated_go_time_display": "12:04 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "13",
-      "calc_seconds": 43333
+      "calc_seconds": 46033
     },
     "4077": {
       "class_group_id": 200018764,
@@ -1096,7 +996,7 @@
       "latest_estimated_go_time_display": "1:41 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "62",
-      "calc_seconds": 39633
+      "calc_seconds": 42333
     },
     "4078": {
       "class_group_id": 200018764,
@@ -1113,7 +1013,7 @@
       "latest_estimated_go_time_display": "1:45 PM",
       "latest_status_display": "Completed",
       "latest_oog_display": "66",
-      "calc_seconds": 39633
+      "calc_seconds": 42333
     }
   }
 }
