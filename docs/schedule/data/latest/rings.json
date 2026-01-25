@@ -1,104 +1,106 @@
 {
   "meta": {
+    "sqlDate": "2026-01-25",
     "show_id": 200000047,
-    "sqlDate": "2026-01-24",
-    "generated_at": "2026-01-24T19:46:42-05:00",
-    "path_gpt": "docs/schedule/data/latest/",
-    "show_days_report_title": "🛡️ CWF Schedule",
-    "latest_ingested_at": "2026-01-24T22:52:24.150Z",
-    "run_id": "20260124",
-    "latest_start_ts_local": "1769299273",
-    "now_ts_local": "1769301735",
-    "now_tz_local": "America/New_York"
+    "generated_at": "2026-01-25T04:00:55-05:00"
   },
   "ringsByNumber": {
-    "1": {
-      "ring_number": 1,
-      "ringName": "Intl",
+    "3": {
+      "ring_number": 3,
+      "ringName": "Rost",
       "class_numbers": [
-        1031
-      ]
-    },
-    "2": {
-      "ring_number": 2,
-      "ringName": "Grand",
-      "class_numbers": [
-        2831,
-        2834,
-        2835
+        2854,
+        2855
       ]
     },
     "4": {
       "ring_number": 4,
       "ringName": "Mogavero",
       "class_numbers": [
-        1042,
-        1765,
-        1766
+        1030
+      ]
+    },
+    "5": {
+      "ring_number": 5,
+      "ringName": "Denemethy",
+      "class_numbers": [
+        1077
       ]
     },
     "6": {
       "ring_number": 6,
       "ringName": "Ring 6",
       "class_numbers": [
-        3036,
-        3037,
-        3080,
-        3035,
-        3075,
-        2852,
-        2853
+        3081,
+        3076
       ]
     },
     "7": {
       "ring_number": 7,
       "ringName": "Ring 7",
       "class_numbers": [
-        3070,
-        3077,
-        2707,
-        2708
+        2706,
+        2709,
+        2710,
+        4076,
+        4079,
+        4080
+      ]
+    },
+    "9": {
+      "ring_number": 9,
+      "ringName": "Ring 9",
+      "class_numbers": [
+        3041,
+        3042,
+        3032
       ]
     },
     "10": {
       "ring_number": 10,
       "ringName": "Ring 10",
       "class_numbers": [
-        1737,
-        1738,
-        1076
+        1739,
+        1767
+      ]
+    },
+    "11": {
+      "ring_number": 11,
+      "ringName": "Ring 11",
+      "class_numbers": [
+        402,
+        2919,
+        2920
       ]
     },
     "12": {
       "ring_number": 12,
       "ringName": "Ring 12",
       "class_numbers": [
-        2917,
-        2918,
-        2916,
-        2902,
-        2903,
-        2901
+        401,
+        2904,
+        2905
       ]
     },
     "13": {
       "ring_number": 13,
       "ringName": "South Ring",
       "class_numbers": [
-        4077,
-        4078
+        2991,
+        2992,
+        2993
       ]
     }
   },
   "ringsByName": {
-    "intl": {
-      "ring_number": 1
-    },
-    "grand": {
-      "ring_number": 2
+    "rost": {
+      "ring_number": 3
     },
     "mogavero": {
       "ring_number": 4
+    },
+    "denemethy": {
+      "ring_number": 5
     },
     "ring 6": {
       "ring_number": 6
@@ -106,8 +108,14 @@
     "ring 7": {
       "ring_number": 7
     },
+    "ring 9": {
+      "ring_number": 9
+    },
     "ring 10": {
       "ring_number": 10
+    },
+    "ring 11": {
+      "ring_number": 11
     },
     "ring 12": {
       "ring_number": 12
@@ -117,12 +125,14 @@
     }
   },
   "ringOrder": [
-    1,
-    2,
+    3,
     4,
+    5,
     6,
     7,
+    9,
     10,
+    11,
     12,
     13
   ]
