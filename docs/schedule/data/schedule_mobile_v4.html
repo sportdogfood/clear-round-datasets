@@ -83,7 +83,7 @@
     position:sticky;
     top:0;
     z-index:25; /* above topbar to visually push it out */
-    background:rgba(255,255,255,.98);
+    background:rgba(0, 0, 0, 0.98);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
     padding:8px 10px;
@@ -765,17 +765,7 @@
     horseWrap.innerHTML = "";
     statusWrap.innerHTML = "";
 
-    // HORSE
-    horseWrap.appendChild(makeFilterButton({
-      text: "All",
-      value: "__all__",
-      active: activeHorse === "__all__",
-      onClick: ()=>{
-        activeHorse = "__all__";
-        updateFilterUI();
-        applyFilters();
-      }
-    }));
+  
 
     for(const h of horsesList){
       horseWrap.appendChild(makeFilterButton({
@@ -790,17 +780,7 @@
       }));
     }
 
-    // STATUS (fixed 3 + All)
-    statusWrap.appendChild(makeFilterButton({
-      text: "All",
-      value: "__all__",
-      active: activeStatus === "__all__",
-      onClick: ()=>{
-        activeStatus = "__all__";
-        updateFilterUI();
-        applyFilters();
-      }
-    }));
+
 
     for(const k of ["upcoming","underway","completed"]){
       statusWrap.appendChild(makeFilterButton({
