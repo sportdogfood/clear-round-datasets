@@ -42,7 +42,7 @@
       if (!res.ok) return;
 
       const data = await res.json();
-      state.trips = Array.isArray(data) ? data : [];
+      state.trips = data?.entriesByBarn ? Object.values(data.entriesByBarn).flat() : [];
 
       render();
     } catch (_) {}
