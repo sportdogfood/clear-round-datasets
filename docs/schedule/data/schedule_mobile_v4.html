@@ -136,10 +136,6 @@
     border-color:#000;
   }
 
-  .nav-btn.dim{
-    opacity:.55;
-  }
-
   /* Main list */
   main{
     padding:4px 4px 4px 4px;
@@ -302,17 +298,10 @@
 <script>
   /**
    * Mobile schedule template v4
-   * Adds:
-   *  - Sticky on-page filters (Horse + Status)
-   *  - Hides .group.has-team when not matching filters
-   *  - Shades .group.has-team by computed group status (Upcoming/Underway/Completed)
    *
-   * Data files:
-   *   {show_id}-{show_day}M.json
-   * Example:
-   *   schedule_mobile_v4.html?data=200000046-20260118M.json
-   * Or:
-   *   schedule_mobile_v4.html?show_id=200000046&show_day=20260118
+   * Fix vs your last drop:
+   * ✅ Polling now keys off Last-Modified (primary) + body diff (fallback)
+   *    so it refreshes reliably like v3 even when edge caching serves the same text.
    */
 
   // Poll the JSON for changes
@@ -324,7 +313,6 @@
   const TIMEZONE = "America/New_York";
 
   // V4 filter state (persist across refresh)
-  const STATUS_ORDER = ["Upcoming", "Underway", "Completed"];
   let activeHorse = "__all__";
   let activeStatus = "__all__";
 
@@ -333,6 +321,7 @@
 
   let activeIO = null;
   let lastRaw = null;
+  let lastLastMod = null;   // ✅ NEW: Last-Modified tracking
   let currentDataUrl = null;
   let isRefreshing = false;
 
@@ -365,7 +354,7 @@
     const q = qs.get("data");
     if(q) return q;
 
-    // v3+: build from show_id + show_day
+    // build from show_id + show_day
     const showId = (qs.get("show_id") || qs.get("showId") || "").trim();
     const showDayRaw = (qs.get("show_day") || qs.get("showDay") || "").trim();
     const showDay = normalizeShowDay(showDayRaw);
@@ -429,24 +418,501 @@
     let hasUnderway = false;
     let hasUpcoming = false;
     let hasCompleted = false;
-    let hasAny = false;
+    let sawAnyStatus = false;
+    let sawNonCompleted = false;
 
     for(const c of items){
       const s = String(c.status2 ?? "").trim();
       if(!s) continue;
-      hasAny = true;
+      sawAnyStatus = true;
       if(s === "Underway") hasUnderway = true;
       else if(s === "Upcoming") hasUpcoming = true;
       else if(s === "Completed") hasCompleted = true;
+      else sawNonCompleted = true;
+      if(s !== "Completed") sawNonCompleted = true;
     }
 
     if(hasUnderway) return "Underway";
     if(hasUpcoming) return "Upcoming";
-    if(hasAny && hasCompleted && !hasUnderway && !hasUpcoming) return "Completed";
+    if(sawAnyStatus && hasCompleted && !sawNonCompleted) return "Completed";
     return "";
   }
 
   async function fetchTextMeta(url){
     const res = await fetch(url, {cache:"no-store"});
     const txt = await res.text();
-    if(!res.ok) throw new Error(`Fe
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    const lastMod = res.headers.get("last-modified"); // e.g. "Fri, 16 Jan 2026 17:30:00 GMT"
+    return { txt, lastMod };
+  }
+
+  function parseJsonText(txt, urlLabel){
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${urlLabel}: ${String(txt).slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function setHeader(rows){
+    const first = rows[0] || {};
+
+    const reportTitle =
+      first.show_days_report_title ??
+      first.show_report_title ??
+      (first.show_id ? `Show ${first.show_id}` : "Schedule");
+
+    const displayDate =
+      first.show_days_display_date ??
+      first.show_display_date ??
+      first.show_date ??
+      first.showDate ??
+      "";
+
+    document.getElementById("title").textContent = reportTitle;
+
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+
+    if(publishedAtMs){
+      subParts.push(`published: ${fmtTimeET(publishedAtMs)}`);
+      subParts.push(`next: ${fmtTimeET(publishedAtMs + PUBLISH_INTERVAL_MS)}`);
+    }
+
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function buildRings(rows){
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringEls = [];
+
+    for(let i=0;i<rings.length;i++){
+      const ring = rings[i];
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
+
+      const ringId = (Number.isFinite(ring.ring_number) && ring.ring_number !== 9999)
+        ? `ring-${ring.ring_number}`
+        : `ring-x${i+1}`;
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          const gstatus = computeGroupStatus(items);
+          return { gid, seq, gname, gdisplay: gd, gstatus, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+      sec.id = ringId;
+      sec.dataset.ringTitle = String(ringTitle);
+
+      sec.innerHTML = `<div class="ring-head ring-head">${esc(ringTitle)}</div>`;
+
+      for(const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTime = null;
+
+        for(const c of classes){
+          const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
+
+          const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+          const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
+
+          const showTime = (displayTime && displayTime !== lastTime);
+          if(showTime) lastTime = displayTime;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          const status2 = String(c.status2 ?? "").trim();
+          const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div></div>`;
+
+          cl += `
+            <div class="c${usingTime2 ? " time2" : ""}">
+              <div class="t">${esc(showTime ? displayTime : "")}</div>
+              <div class="n">${esc(label)}</div>
+              ${statusHtml}
+            </div>
+          `;
+        }
+
+        const horses = [];
+        if(g.gdisplay){
+          const parts = String(g.gdisplay).split(",").map(x=>x.trim()).filter(Boolean);
+          for(const p of parts){
+            const hn = extractHorseName(p);
+            if(hn) horses.push(hn);
+          }
+        }
+        const horsesNorm = Array.from(new Set(horses.map(h=>h.toLowerCase()))).join("|");
+        const statusNorm = normalizeStatusToken(g.gstatus);
+
+        const gDiv = document.createElement("div");
+        const hasTeam = !!g.gdisplay;
+
+        gDiv.className = `group${hasTeam ? " has-team" : ""}`;
+        if(hasTeam){
+          if(horsesNorm) gDiv.dataset.horses = horsesNorm;
+          if(statusNorm) gDiv.dataset.status = statusNorm;
+        }
+
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+
+        sec.appendChild(gDiv);
+      }
+
+      ringEls.push(sec);
+    }
+
+    return ringEls;
+  }
+
+  function buildBottomNav(ringEls){
+    const nav = document.getElementById("ringNav");
+    nav.innerHTML = "";
+
+    for(const sec of ringEls){
+      const a = document.createElement("a");
+      a.className = "nav-btn";
+      a.href = `#${sec.id}`;
+      a.textContent = sec.dataset.ringTitle || "Ring";
+      nav.appendChild(a);
+    }
+  }
+
+  function syncBottomNavHeight(){
+    const bottom = document.getElementById("bottomNav");
+    const h = bottom ? bottom.getBoundingClientRect().height : 64;
+    document.documentElement.style.setProperty("--bottom-nav-h", Math.ceil(h) + "px");
+  }
+
+  function syncFilterBarHeight(){
+    const fb = document.getElementById("filterBar");
+    const h = fb ? fb.getBoundingClientRect().height : 74;
+    document.documentElement.style.setProperty("--filterbar-h", Math.ceil(h) + "px");
+  }
+
+  function destroyActiveRingObserver(){
+    if(activeIO){
+      try { activeIO.disconnect(); } catch(e){}
+      activeIO = null;
+    }
+  }
+
+  function setupActiveRingObserver(){
+    destroyActiveRingObserver();
+
+    const buttons = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
+    const sections = Array.from(document.querySelectorAll("section.ring"));
+
+    const btnById = new Map();
+    for(const b of buttons){
+      const id = (b.getAttribute("href") || "").replace(/^#/, "");
+      btnById.set(id, b);
+    }
+
+    const clearActive = ()=>buttons.forEach(b=>b.classList.remove("active"));
+
+    const filterH = (document.getElementById("filterBar")?.getBoundingClientRect().height || 74);
+    const bottomH = (document.getElementById("bottomNav")?.getBoundingClientRect().height || 64);
+
+    activeIO = new IntersectionObserver((entries)=>{
+      const vis = entries
+        .filter(e=>e.isIntersecting)
+        .sort((a,b)=> (b.intersectionRatio - a.intersectionRatio));
+
+      if(!vis.length) return;
+
+      const id = vis[0].target.id;
+      clearActive();
+      const btn = btnById.get(id);
+      if(btn) btn.classList.add("active");
+    }, {
+      root: null,
+      rootMargin: `-${filterH + 10}px 0px -${bottomH + 10}px 0px`,
+      threshold: [0.2, 0.35, 0.5, 0.65]
+    });
+
+    sections.forEach(sec=>activeIO.observe(sec));
+  }
+
+  /* ----------------------------
+     FILTERS
+  -----------------------------*/
+
+  function collectFilterCandidatesFromDOM(){
+    const horseSet = new Set();
+
+    const groups = Array.from(document.querySelectorAll(".group.has-team"));
+    for(const g of groups){
+      const horses = String(g.dataset.horses ?? "").trim();
+      if(horses){
+        horses.split("|").map(x=>x.trim()).filter(Boolean).forEach(h=>horseSet.add(h));
+      }
+    }
+
+    const horsesList = Array.from(horseSet)
+      .map(h=>({ key: h, label: h }))
+      .sort((a,b)=>a.label.localeCompare(b.label));
+
+    return { horsesList };
+  }
+
+  function prettyHorseLabel(h){
+    const s = String(h||"").trim();
+    if(!s) return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function prettyStatusLabel(k){
+    const t = String(k||"").toLowerCase();
+    if(t === "upcoming") return "Upcoming";
+    if(t === "underway") return "Underway";
+    if(t === "completed") return "Completed";
+    return k;
+  }
+
+  function makeFilterButton({text, value, active, onClick}){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "nav-btn" + (active ? " active" : "");
+    b.textContent = text;
+    b.dataset.value = value;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function updateFilterUI(){
+    for(const b of Array.from(document.querySelectorAll("#horseFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeHorse);
+    }
+    for(const b of Array.from(document.querySelectorAll("#statusFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeStatus);
+    }
+  }
+
+  function applyFilters(){
+    const groups = Array.from(document.querySelectorAll(".group.has-team"));
+
+    const needHorse = activeHorse !== "__all__";
+    const needStatus = activeStatus !== "__all__";
+
+    const horseKey = String(activeHorse).toLowerCase();
+    const statusKey = String(activeStatus).toLowerCase();
+
+    for(const g of groups){
+      let ok = true;
+
+      if(needHorse){
+        const horses = String(g.dataset.horses ?? "");
+        ok = ok && horses.split("|").map(x=>x.trim()).includes(horseKey);
+      }
+
+      if(needStatus){
+        const st = String(g.dataset.status ?? "").trim().toLowerCase();
+        ok = ok && (st === statusKey);
+      }
+
+      g.style.display = ok ? "" : "none";
+    }
+  }
+
+  function renderFilters(){
+    const { horsesList } = collectFilterCandidatesFromDOM();
+
+    const horseWrap = document.getElementById("horseFilters");
+    const statusWrap = document.getElementById("statusFilters");
+
+    horseWrap.innerHTML = "";
+    statusWrap.innerHTML = "";
+
+    // HORSE
+    horseWrap.appendChild(makeFilterButton({
+      text: "All",
+      value: "__all__",
+      active: activeHorse === "__all__",
+      onClick: ()=>{
+        activeHorse = "__all__";
+        updateFilterUI();
+        applyFilters();
+      }
+    }));
+
+    for(const h of horsesList){
+      horseWrap.appendChild(makeFilterButton({
+        text: prettyHorseLabel(h.label),
+        value: h.key,
+        active: activeHorse === h.key,
+        onClick: ()=>{
+          activeHorse = (activeHorse === h.key) ? "__all__" : h.key;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    // STATUS (fixed 3 + All)
+    statusWrap.appendChild(makeFilterButton({
+      text: "All",
+      value: "__all__",
+      active: activeStatus === "__all__",
+      onClick: ()=>{
+        activeStatus = "__all__";
+        updateFilterUI();
+        applyFilters();
+      }
+    }));
+
+    for(const k of ["upcoming","underway","completed"]){
+      statusWrap.appendChild(makeFilterButton({
+        text: prettyStatusLabel(k),
+        value: k,
+        active: activeStatus === k,
+        onClick: ()=>{
+          activeStatus = (activeStatus === k) ? "__all__" : k;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    const horseExists = activeHorse === "__all__" || horsesList.some(x=>x.key === activeHorse);
+    if(!horseExists) activeHorse = "__all__";
+
+    updateFilterUI();
+    applyFilters();
+    syncFilterBarHeight();
+  }
+
+  /* ----------------------------
+     RENDER + REFRESH
+  -----------------------------*/
+
+  function renderRows(rows){
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("rings").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      destroyActiveRingObserver();
+      document.getElementById("horseFilters").innerHTML = "";
+      document.getElementById("statusFilters").innerHTML = "";
+      syncFilterBarHeight();
+      return;
+    }
+
+    setHeader(rows);
+
+    const ringEls = buildRings(rows);
+
+    const container = document.getElementById("rings");
+    container.innerHTML = "";
+    for(const el of ringEls) container.appendChild(el);
+
+    buildBottomNav(ringEls);
+    syncBottomNavHeight();
+
+    renderFilters();
+    setupActiveRingObserver();
+  }
+
+  function updatePublishedFromHeader(lastMod){
+    if(!lastMod) return;
+    const ms = Date.parse(lastMod);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
+  async function initialLoad(){
+    currentDataUrl = resolveDataUrl();
+
+    const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+    lastRaw = txt;
+    lastLastMod = lastMod || null;
+    updatePublishedFromHeader(lastMod);
+
+    const rows = parseJsonText(txt, currentDataUrl);
+    renderRows(rows);
+  }
+
+  async function pollForUpdates(){
+    if(isRefreshing) return;
+    if(!currentDataUrl) return;
+
+    isRefreshing = true;
+    try{
+      const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+
+      // ✅ refresh trigger (primary): Last-Modified changed
+      const lmChanged = !!(lastMod && lastLastMod && lastMod !== lastLastMod);
+
+      // ✅ refresh trigger (fallback): body changed
+      const bodyChanged = (lastRaw !== null && txt !== lastRaw);
+
+      // no change -> do nothing
+      if(!lmChanged && !bodyChanged){
+        return;
+      }
+
+      lastLastMod = lastMod || lastLastMod;
+      updatePublishedFromHeader(lastMod);
+
+      const rows = parseJsonText(txt, currentDataUrl);
+      const scrollY = window.scrollY;
+
+      lastRaw = txt;
+      renderRows(rows);
+
+      window.scrollTo(0, scrollY);
+
+    }catch(e){
+      // keep existing UI
+    }finally{
+      isRefreshing = false;
+    }
+  }
+
+  (async function main(){
+    await initialLoad();
+
+    // auto-refresh loop
+    setInterval(pollForUpdates, POLL_MS);
+
+    window.addEventListener("resize", ()=>{
+      syncBottomNavHeight();
+      syncFilterBarHeight();
+      setupActiveRingObserver();
+    });
+  })().catch(err=>{
+    document.getElementById("rings").innerHTML =
+      `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+</body>
+</html>
