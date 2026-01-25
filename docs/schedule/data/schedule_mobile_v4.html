@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CRT Schedule (Mobile v4)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+
+    --topbar-h: 56px;
+    --filterbar-h: 74px;
+    --bottom-nav-h: 64px;
+
+    --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:var(--bg);
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Sticky top header */
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(255,255,255,.96);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:10px 12px;
+    min-height:var(--topbar-h);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+  }
+  .title{font-weight:900; font-size:14px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* Topbar home button */
+  .topbar-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .topbar-text{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .home-pill{
+    flex:0 0 auto;
+    height:34px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    font-size:12px;
+    font-weight:900;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+  }
+  .home-pill:active{
+    transform: translateY(1px) scale(0.99);
+  }
+
+  /* V4: Sticky filterbar (covers topbar when scrolling) */
+  .filterbar{
+    position:sticky;
+    top:0;
+    z-index:25; /* above topbar to visually push it out */
+    background:rgba(255,255,255,.98);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:8px 10px;
+  }
+
+  .filter-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:4px 0;
+  }
+  .filter-label{
+    flex:0 0 auto;
+    font-size:10px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    color:#111;
+    width:54px;
+  }
+
+  /* Reuse nav scroller + pills */
+  .nav-scroller{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width:none;
+  }
+  .nav-scroller::-webkit-scrollbar{display:none;}
+
+  .nav-btn{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    padding:8px 10px;
+    font-size:12px;
+    font-weight:800;
+    border-radius:999px;
+    text-decoration:none;
+    white-space:nowrap;
+    user-select:none;
+    cursor:pointer;
+  }
+  .nav-btn.active{
+    border-color:#000;
+  }
+
+  .nav-btn.dim{
+    opacity:.55;
+  }
+
+  /* Main list */
+  main{
+    padding:4px 4px 4px 4px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .ring{
+    border:1px solid #000;
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+    /* anchor offset for sticky topbar + filterbar */
+    scroll-margin-top: calc(var(--topbar-h) + var(--filterbar-h) + 10px);
+  }
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:10px 10px;
+    font-weight:900;
+    font-size:14px;
+    letter-spacing:.02em;
+  }
+
+  /* highlight groups that have a team (gdisplay present) */
+  .group.has-team{
+    background: rgba(255, 255, 255, 0.43);
+  }
+
+  /* V4: shade by group status */
+  .group.has-team[data-status="upcoming"]{
+    background: rgba(255, 244, 205, 0.55);
+  }
+  .group.has-team[data-status="underway"]{
+    background: rgba(205, 238, 255, 0.55);
+  }
+  .group.has-team[data-status="completed"]{
+    background: rgba(228, 228, 228, 0.55);
+  }
+
+  .group-head{
+    padding:0px 10px 0px 6px;
+  }
+
+  /* group_display above group_name */
+  .gdisplay{
+    font-size:10px;
+    font-weight:700;
+    text-transform: uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    margin-bottom:-1px;
+    text-overflow:ellipsis;
+    text-align:right;
+    padding-right: 4px;
+    padding-top: 4px;
+    position: relative; z-index: 10;
+  }
+  .gname{
+    display:none; /* per spec: gname is hidden */
+  }
+
+  .class-list{
+    padding:0 10px 6px 10px;
+  }
+
+  .c{
+    display:grid;
+    grid-template-columns:62px 1fr auto; /* time | label | status */
+    column-gap:10px;
+    align-items:center;
+    line-height:1.15;
+    padding:8px 0;
+    border-bottom:1px solid #eee;
+  }
+  .c:last-child{border-bottom:none;}
+  .t{font-weight:700; font-size:12px; white-space:nowrap;}
+  .n{
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* status pill */
+  .s{
+    font-size:6px;
+    font-weight:600;
+    text-transform: uppercase;
+    white-space:nowrap;
+    padding-right: 4px;
+  }
+
+  /* ONLY the time highlights when start_display2 is being used */
+  .c.time2 .t{
+    background: rgb(11 93 71 / 18%);
+    padding:2px 6px;
+    border-radius:6px;
+    font-weight:900;
+    justify-self:start;
+    width:max-content;
+  }
+
+  .muted{color:var(--muted); font-size:12px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; border:1px solid #b00020; border-radius:10px;}
+
+  /* Bottom ring nav */
+  .bottom-nav{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:30;
+    background:rgba(19, 18, 18, 0.96);
+    backdrop-filter: blur(6px);
+    border-top:1px solid var(--border);
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+  }
+
+  /* Bottom nav pill overrides (dark bar) */
+  .bottom-nav .nav-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+  }
+  .bottom-nav .nav-btn.active{
+    border-color:#000;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="topbar-text">
+      <div class="title" id="title">Schedule</div>
+      <div class="subtitle" id="subtitle"></div>
+    </div>
+    <a class="home-pill" href="https://blog.clearroundtravel.com/schedule/data/schedules.html">Home</a>
+  </div>
+</header>
+
+<!-- V4: Sticky filters -->
+<nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
+  <div class="filter-row">
+    <div class="filter-label">Horse</div>
+    <div class="nav-scroller" id="horseFilters"></div>
+  </div>
+  <div class="filter-row">
+    <div class="filter-label">Status</div>
+    <div class="nav-scroller" id="statusFilters"></div>
+  </div>
+</nav>
+
+<main id="rings"></main>
+
+<nav class="bottom-nav" id="bottomNav">
+  <div class="nav-scroller" id="ringNav"></div>
+</nav>
+
+<script>
+  /**
+   * Mobile schedule template v4
+   * Adds:
+   *  - Sticky on-page filters (Horse + Status)
+   *  - Hides .group.has-team when not matching filters
+   *  - Shades .group.has-team by computed group status (Upcoming/Underway/Completed)
+   *
+   * Data files:
+   *   {show_id}-{show_day}M.json
+   * Example:
+   *   schedule_mobile_v4.html?data=200000046-20260118M.json
+   * Or:
+   *   schedule_mobile_v4.html?show_id=200000046&show_day=20260118
+   */
+
+  // Poll the JSON for changes
+  const POLL_MS = 6 * 60 * 1000;
+
+  // Your publish cadence (used only for "next:")
+  const PUBLISH_INTERVAL_MS = 8 * 60 * 1000;
+
+  const TIMEZONE = "America/New_York";
+
+  // V4 filter state (persist across refresh)
+  const STATUS_ORDER = ["Upcoming", "Underway", "Completed"];
+  let activeHorse = "__all__";
+  let activeStatus = "__all__";
+
+  const qs = new URLSearchParams(location.search);
+  const rawHash = (location.hash || "").replace(/^#/, "").trim();
+
+  let activeIO = null;
+  let lastRaw = null;
+  let currentDataUrl = null;
+  let isRefreshing = false;
+
+  // server-published time (ms) based on Last-Modified header
+  let publishedAtMs = null;
+
+  const fmtTimeET = (ms)=>{
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE,
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(new Date(ms));
+  };
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function normalizeShowDay(v){
+    // accepts "20260118" or "2026-01-18"
+    const s = String(v ?? "").trim();
+    if(!s) return "";
+    if(/^\d{8}$/.test(s)) return s;
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m) return `${m[1]}${m[2]}${m[3]}`;
+    return "";
+  }
+
+  function resolveDataUrl(){
+    // primary: explicit file
+    const q = qs.get("data");
+    if(q) return q;
+
+    // v3+: build from show_id + show_day
+    const showId = (qs.get("show_id") || qs.get("showId") || "").trim();
+    const showDayRaw = (qs.get("show_day") || qs.get("showDay") || "").trim();
+    const showDay = normalizeShowDay(showDayRaw);
+    if(showId && showDay){
+      return `${showId}-${showDay}M.json`;
+    }
+
+    // back-compat: hash like "200000046-20260118" or "200000046-20260118M" (optional .json)
+    if(/^\d+\-\d{8}M?(\.json)?$/i.test(rawHash)){
+      let base = rawHash.replace(/\.json$/i, "");
+      if(!/M$/i.test(base)) base = base + "M";
+      const file = base + ".json";
+
+      const next = new URL(location.href);
+      next.searchParams.set("data", file);
+      next.hash = "";
+      history.replaceState(null, "", next.toString());
+      return file;
+    }
+
+    return "schedule.json";
+  }
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  function extractHorseName(groupDisplayPart){
+    // "Pedro (11)" -> "Pedro"
+    const s = String(groupDisplayPart ?? "").trim();
+    if(!s) return "";
+    const idx = s.indexOf(" (");
+    return (idx > 0 ? s.slice(0, idx) : s).trim();
+  }
+
+  function normalizeStatusToken(s){
+    const v = String(s ?? "").trim().toLowerCase();
+    if(v === "upcoming") return "upcoming";
+    if(v === "underway") return "underway";
+    if(v === "completed") return "completed";
+    return "";
+  }
+
+  function computeGroupStatus(items){
+    // Priority:
+    // 1) any Underway
+    // 2) else any Upcoming
+    // 3) else all Completed
+    // else blank
+    let hasUnderway = false;
+    let hasUpcoming = false;
+    let hasCompleted = false;
+    let hasAny = false;
+
+    for(const c of items){
+      const s = String(c.status2 ?? "").trim();
+      if(!s) continue;
+      hasAny = true;
+      if(s === "Underway") hasUnderway = true;
+      else if(s === "Upcoming") hasUpcoming = true;
+      else if(s === "Completed") hasCompleted = true;
+    }
+
+    if(hasUnderway) return "Underway";
+    if(hasUpcoming) return "Upcoming";
+    if(hasAny && hasCompleted && !hasUnderway && !hasUpcoming) return "Completed";
+    return "";
+  }
+
+  async function fetchTextMeta(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fe
