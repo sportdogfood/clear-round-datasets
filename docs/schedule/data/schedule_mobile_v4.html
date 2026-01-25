@@ -95,15 +95,9 @@
     gap:8px;
     margin:4px 0;
   }
-  .filter-label{
-    flex:0 0 auto;
-    font-size:10px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.02em;
-    color:#111;
-    width:54px;
-  }
+
+  /* (labels removed in markup, keep rule safe) */
+  .filter-label{display:none;}
 
   /* Reuse nav scroller + pills */
   .nav-scroller{
@@ -280,11 +274,9 @@
 <!-- V4: Sticky filters -->
 <nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
   <div class="filter-row">
-    <div class="filter-label">Horse</div>
     <div class="nav-scroller" id="horseFilters"></div>
   </div>
   <div class="filter-row">
-    <div class="filter-label">Status</div>
     <div class="nav-scroller" id="statusFilters"></div>
   </div>
 </nav>
@@ -296,14 +288,6 @@
 </nav>
 
 <script>
-  /**
-   * Mobile schedule template v4
-   *
-   * Fix vs your last drop:
-   * ✅ Polling now keys off Last-Modified (primary) + body diff (fallback)
-   *    so it refreshes reliably like v3 even when edge caching serves the same text.
-   */
-
   // Poll the JSON for changes
   const POLL_MS = 6 * 60 * 1000;
 
@@ -321,7 +305,7 @@
 
   let activeIO = null;
   let lastRaw = null;
-  let lastLastMod = null;   // ✅ NEW: Last-Modified tracking
+  let lastLastMod = null;
   let currentDataUrl = null;
   let isRefreshing = false;
 
@@ -442,7 +426,7 @@
     const res = await fetch(url, {cache:"no-store"});
     const txt = await res.text();
     if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
-    const lastMod = res.headers.get("last-modified"); // e.g. "Fri, 16 Jan 2026 17:30:00 GMT"
+    const lastMod = res.headers.get("last-modified");
     return { txt, lastMod };
   }
 
@@ -520,7 +504,7 @@
       sec.id = ringId;
       sec.dataset.ringTitle = String(ringTitle);
 
-      sec.innerHTML = `<div class="ring-head ring-head">${esc(ringTitle)}</div>`;
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
 
       for(const g of groups){
         const classes = g.items.slice().sort((a,b)=>{
@@ -633,7 +617,8 @@
     destroyActiveRingObserver();
 
     const buttons = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
-    const sections = Array.from(document.querySelectorAll("section.ring"));
+    const sections = Array.from(document.querySelectorAll("section.ring"))
+      .filter(sec => sec.style.display !== "none"); // ignore hidden rings
 
     const btnById = new Map();
     for(const b of buttons){
@@ -730,6 +715,7 @@
     const horseKey = String(activeHorse).toLowerCase();
     const statusKey = String(activeStatus).toLowerCase();
 
+    // 1) Hide/show groups
     for(const g of groups){
       let ok = true;
 
@@ -745,6 +731,29 @@
 
       g.style.display = ok ? "" : "none";
     }
+
+    // 2) Hide/show entire rings + bottom-nav buttons
+    const ringSections = Array.from(document.querySelectorAll("section.ring"));
+    const ringNavBtns = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
+
+    const navById = new Map();
+    for(const b of ringNavBtns){
+      const id = (b.getAttribute("href") || "").replace(/^#/, "");
+      if(id) navById.set(id, b);
+    }
+
+    for(const sec of ringSections){
+      const teamGroups = Array.from(sec.querySelectorAll(".group.has-team"));
+      const anyVisible = teamGroups.some(g => g.style.display !== "none");
+
+      sec.style.display = anyVisible ? "" : "none";
+
+      const btn = navById.get(sec.id);
+      if(btn) btn.style.display = anyVisible ? "" : "none";
+    }
+
+    // 3) Rebuild active observer
+    setupActiveRingObserver();
   }
 
   function renderFilters(){
@@ -869,13 +878,9 @@
     try{
       const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
 
-      // ✅ refresh trigger (primary): Last-Modified changed
       const lmChanged = !!(lastMod && lastLastMod && lastMod !== lastLastMod);
-
-      // ✅ refresh trigger (fallback): body changed
       const bodyChanged = (lastRaw !== null && txt !== lastRaw);
 
-      // no change -> do nothing
       if(!lmChanged && !bodyChanged){
         return;
       }
