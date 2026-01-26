@@ -1,275 +1,147 @@
 {
   "meta": {
-    "generated_at": "2026-01-25T21:32:31-05:00",
-    "table": "ww_rings",
-    "view": "commit",
-    "record_count": 18,
-    "fields": [
-      "ring_number",
-      "ring_id",
-      "ring_name",
-      "ring_nickname",
-      "ringName",
-      "coordinates",
-      "defaultLat",
-      "defaultLong",
-      "distanceInFeet",
-      "estimatedTime",
-      "ring_priority"
-    ]
+    "show_id": 200000047,
+    "sqlDate": "2026-01-25",
+    "generated_at": "2026-01-25T21:38:56-05:00",
+    "path_gpt": "docs/schedule/data/latest/",
+    "show_days_report_title": "🛡️ CWF Schedule",
+    "latest_ingested_at": "2026-01-26T01:25:15.006Z",
+    "run_id": "20260125",
+    "latest_start_ts_local": "1769392865",
+    "now_ts_local": "1769394911",
+    "now_tz_local": "America/New_York"
   },
-  "records": [
-    {
-      "record_id": "rec46rYA4FCVDdSvj",
-      "ring_number": 1,
-      "ring_id": 51,
-      "ring_name": "International Ring",
-      "ring_nickname": "Intl",
-      "ringName": "Intl",
-      "coordinates": "26.633650, -80.272943",
-      "defaultLat": "26.63365",
-      "defaultLong": "-80.2729",
-      "distanceInFeet": 1135,
-      "estimatedTime": 270,
-      "ring_priority": 1
-    },
-    {
-      "record_id": "recaqADReURsnbSY9",
-      "ring_number": 2,
-      "ring_id": 9,
-      "ring_name": "E.R. Mische Grand Hunter",
-      "ring_nickname": "Grand",
-      "ringName": "Grand",
-      "coordinates": "26.634190, -80.271984",
-      "defaultLat": "26.63419",
-      "defaultLong": "-80.2720",
-      "distanceInFeet": 1452,
-      "estimatedTime": 348,
-      "ring_priority": 2
-    },
-    {
-      "record_id": "recjjNPooqN1AJmKn",
+  "ringsByNumber": {
+    "3": {
       "ring_number": 3,
-      "ring_id": 37,
-      "ring_name": "Rost Arena",
-      "ring_nickname": "Rost",
       "ringName": "Rost",
-      "coordinates": "26.634819, -80.272990",
-      "defaultLat": "26.63482",
-      "defaultLong": "-80.2730",
-      "distanceInFeet": 1176,
-      "estimatedTime": 0,
-      "ring_priority": 3
+      "class_numbers": [
+        2854,
+        2855
+      ]
     },
-    {
-      "record_id": "recjEeFi5zEFDd0D2",
+    "4": {
       "ring_number": 4,
-      "ring_id": 52,
-      "ring_name": "Mogavero",
-      "ring_nickname": "Mogavero",
       "ringName": "Mogavero",
-      "coordinates": "26.633659, -80.274447",
-      "defaultLat": "26.63366",
-      "defaultLong": "-80.2744",
-      "distanceInFeet": 646,
-      "estimatedTime": 156,
-      "ring_priority": 4
+      "class_numbers": [
+        1030
+      ]
     },
-    {
-      "record_id": "recHLnfLq0XHCsIWe",
+    "5": {
       "ring_number": 5,
-      "ring_id": 49,
-      "ring_name": "Denemethy",
-      "ring_nickname": "Denemethy",
       "ringName": "Denemethy",
-      "coordinates": "26.632676, -80.273781",
-      "defaultLat": "26.63268",
-      "defaultLong": "-80.2720",
-      "distanceInFeet": 957,
-      "estimatedTime": 228,
-      "ring_priority": 5
+      "class_numbers": [
+        1077
+      ]
     },
-    {
-      "record_id": "recF8I2JKF7NTbtHe",
+    "6": {
       "ring_number": 6,
-      "ring_id": 25,
-      "ring_name": "Ring 6",
-      "ring_nickname": "Ring 6",
       "ringName": "Ring 6",
-      "coordinates": "26.635085, -80.274768",
-      "defaultLat": "26.63509",
-      "defaultLong": "-80.2748",
-      "distanceInFeet": 708,
-      "estimatedTime": 168,
-      "ring_priority": 6
+      "class_numbers": [
+        3081,
+        3076
+      ]
     },
-    {
-      "record_id": "rec3JWaLcVlN2JKAF",
+    "7": {
       "ring_number": 7,
-      "ring_id": 56,
-      "ring_name": "Ring 7",
-      "ring_nickname": "Ring 7",
       "ringName": "Ring 7",
-      "coordinates": "26.633806, -80.275160",
-      "defaultLat": "26.63381",
-      "defaultLong": "-80.2752",
-      "distanceInFeet": 411,
-      "estimatedTime": 96,
-      "ring_priority": 7
+      "class_numbers": [
+        2706,
+        2709,
+        2710,
+        4076,
+        4079,
+        4080
+      ]
     },
-    {
-      "record_id": "recQ6nLtsAG1Eb7nj",
-      "ring_number": 8,
-      "ring_id": 57,
-      "ring_name": "Ring 8",
-      "ring_nickname": "Ring 8",
-      "ringName": "Ring 8",
-      "coordinates": null,
-      "defaultLat": null,
-      "defaultLong": null,
-      "distanceInFeet": null,
-      "estimatedTime": null,
-      "ring_priority": 8
-    },
-    {
-      "record_id": "recv8v5BNk3uTKOEZ",
+    "9": {
       "ring_number": 9,
-      "ring_id": 58,
-      "ring_name": "Ring 9",
-      "ring_nickname": "Ring 9",
       "ringName": "Ring 9",
-      "coordinates": "26.632652, -80.275553",
-      "defaultLat": "26.63265",
-      "defaultLong": "-80.2756",
-      "distanceInFeet": 411,
-      "estimatedTime": 96,
-      "ring_priority": 9
+      "class_numbers": [
+        3041,
+        3042,
+        3032
+      ]
     },
-    {
-      "record_id": "recgocstId2PT1rjR",
+    "10": {
       "ring_number": 10,
-      "ring_id": 53,
-      "ring_name": "Ring 10",
-      "ring_nickname": "Ring 10",
       "ringName": "Ring 10",
-      "coordinates": "26.632670, -80.276218",
-      "defaultLat": "26.63267",
-      "defaultLong": "-80.2762",
-      "distanceInFeet": 1176,
-      "estimatedTime": 282,
-      "ring_priority": 10
+      "class_numbers": [
+        1739,
+        1767
+      ]
     },
-    {
-      "record_id": "recGG13zFUtUEwfLv",
+    "11": {
       "ring_number": 11,
-      "ring_id": 22,
-      "ring_name": "Ring 11",
-      "ring_nickname": "Ring 11",
       "ringName": "Ring 11",
-      "coordinates": "26.634359, -80.270584",
-      "defaultLat": "26.63436",
-      "defaultLong": "-80.2706",
-      "distanceInFeet": 1913,
-      "estimatedTime": 462,
-      "ring_priority": 11
+      "class_numbers": [
+        402,
+        2919,
+        2920
+      ]
     },
-    {
-      "record_id": "recBtiKDot4k685ho",
+    "12": {
       "ring_number": 12,
-      "ring_id": 30,
-      "ring_name": "Ring 12",
-      "ring_nickname": "Ring 12",
       "ringName": "Ring 12",
-      "coordinates": "26.634352, -80.270228",
-      "defaultLat": "26.63435",
-      "defaultLong": "-80.2702",
-      "distanceInFeet": 2028,
-      "estimatedTime": 486,
-      "ring_priority": 12
+      "class_numbers": [
+        401,
+        2904,
+        2905
+      ]
     },
-    {
-      "record_id": "recIpjgHfobncMLLx",
+    "13": {
       "ring_number": 13,
-      "ring_id": 38,
-      "ring_name": "South Ring",
-      "ring_nickname": "South Ring",
       "ringName": "South Ring",
-      "coordinates": "26.631468, -80.277255",
-      "defaultLat": "26.63147",
-      "defaultLong": "-80.2773",
-      "distanceInFeet": 902,
-      "estimatedTime": 216,
-      "ring_priority": 13
-    },
-    {
-      "record_id": "recrS2wdpBMuA4Boi",
-      "ring_number": 14,
-      "ring_id": 2,
-      "ring_name": "The New $30 Ring",
-      "ring_nickname": "30 Ring",
-      "ringName": "30 Ring",
-      "coordinates": null,
-      "defaultLat": null,
-      "defaultLong": null,
-      "distanceInFeet": null,
-      "estimatedTime": null,
-      "ring_priority": 14
-    },
-    {
-      "record_id": "recPXIshy5UqfSByr",
-      "ring_number": 15,
-      "ring_id": 10,
-      "ring_name": "Equestrian Village Derby Field",
-      "ring_nickname": "Derby",
-      "ringName": "Derby",
-      "coordinates": "26.640655, -80.260183",
-      "defaultLat": "26.64066",
-      "defaultLong": "-80.2602",
-      "distanceInFeet": 5852,
-      "estimatedTime": 1404,
-      "ring_priority": 15
-    },
-    {
-      "record_id": "recQkGERWbuM9wJlB",
-      "ring_number": 17,
-      "ring_id": 3,
-      "ring_name": "Annex Derby Field",
-      "ring_nickname": "Annex",
-      "ringName": "Annex",
-      "coordinates": null,
-      "defaultLat": null,
-      "defaultLong": null,
-      "distanceInFeet": null,
-      "estimatedTime": null,
-      "ring_priority": 17
-    },
-    {
-      "record_id": "rec9QWgtEOzneQaCp",
-      "ring_number": 16,
-      "ring_id": 13,
-      "ring_name": "Equestrian Village International Ring",
-      "ring_nickname": "Village Intl",
-      "ringName": "Village Intl",
-      "coordinates": null,
-      "defaultLat": null,
-      "defaultLong": null,
-      "distanceInFeet": null,
-      "estimatedTime": null,
-      "ring_priority": 16
-    },
-    {
-      "record_id": "recRckWzBK0jZIQDH",
-      "ring_number": 18,
-      "ring_id": 44,
-      "ring_name": "VanKampen Covered Arena",
-      "ring_nickname": "Covered",
-      "ringName": "Covered",
-      "coordinates": null,
-      "defaultLat": null,
-      "defaultLong": null,
-      "distanceInFeet": null,
-      "estimatedTime": null,
-      "ring_priority": 18
+      "class_numbers": [
+        2991,
+        2992,
+        2993,
+        3012
+      ]
     }
+  },
+  "ringsByName": {
+    "rost": {
+      "ring_number": 3
+    },
+    "mogavero": {
+      "ring_number": 4
+    },
+    "denemethy": {
+      "ring_number": 5
+    },
+    "ring 6": {
+      "ring_number": 6
+    },
+    "ring 7": {
+      "ring_number": 7
+    },
+    "ring 9": {
+      "ring_number": 9
+    },
+    "ring 10": {
+      "ring_number": 10
+    },
+    "ring 11": {
+      "ring_number": 11
+    },
+    "ring 12": {
+      "ring_number": 12
+    },
+    "south ring": {
+      "ring_number": 13
+    }
+  },
+  "ringOrder": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    9,
+    10,
+    11,
+    12,
+    13
   ]
 }
