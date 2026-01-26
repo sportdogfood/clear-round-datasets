@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-01-26T15:14:51-05:00",
+    "generated_at": "2026-01-26T15:21:12-05:00",
     "table": "watch_trips",
     "view": "commit",
     "record_count": 34,
@@ -27,7 +27,7 @@
       "horseName",
       "teamName",
       "riderName",
-      "lastestPlacing",
+      "latestPlacing",
       "lastScore",
       "latestGO",
       "lastOOG"
@@ -58,7 +58,7 @@
       "horseName": "Crush",
       "teamName": "Jess",
       "riderName": "Jess",
-      "lastestPlacing": "10",
+      "latestPlacing": null,
       "lastScore": "142",
       "latestGO": "12:35 PM",
       "lastOOG": 11
@@ -87,7 +87,7 @@
       "horseName": "Paisley",
       "teamName": "Kate",
       "riderName": "Kate",
-      "lastestPlacing": "12",
+      "latestPlacing": null,
       "lastScore": "157",
       "latestGO": "12:21 PM",
       "lastOOG": 12
@@ -116,7 +116,7 @@
       "horseName": "Peri",
       "teamName": "Elisabeth",
       "riderName": "Elisabeth",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "10:36 AM",
       "lastOOG": 19
@@ -145,7 +145,7 @@
       "horseName": "Rimini",
       "teamName": "Sophie",
       "riderName": "Sophie",
-      "lastestPlacing": "3",
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "2:33 PM",
       "lastOOG": 14
@@ -174,7 +174,7 @@
       "horseName": "Cervin",
       "teamName": "Marley",
       "riderName": "Marley",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "10:42 AM",
       "lastOOG": 32
@@ -203,7 +203,7 @@
       "horseName": "BB",
       "teamName": "Sydney",
       "riderName": "Sydney",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "1:01 PM",
       "lastOOG": 9
@@ -232,7 +232,7 @@
       "horseName": "Calypso",
       "teamName": "Josephine",
       "riderName": "Josephine",
-      "lastestPlacing": "2",
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "12:59 PM",
       "lastOOG": 8
@@ -261,7 +261,7 @@
       "horseName": "Elliot",
       "teamName": "Taylor",
       "riderName": "Taylor",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "10:30 AM",
       "lastOOG": null
@@ -290,7 +290,7 @@
       "horseName": "Navy",
       "teamName": "Taylor",
       "riderName": "Taylor",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "10:30 AM",
       "lastOOG": null
@@ -319,7 +319,7 @@
       "horseName": "Navy",
       "teamName": "Taylor",
       "riderName": "Taylor",
-      "lastestPlacing": "7",
+      "latestPlacing": null,
       "lastScore": "79.5",
       "latestGO": "11:20 AM",
       "lastOOG": 11
@@ -348,7 +348,7 @@
       "horseName": "Elliot",
       "teamName": "Taylor",
       "riderName": "Taylor",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "66",
       "latestGO": "11:42 AM",
       "lastOOG": 20
@@ -377,7 +377,7 @@
       "horseName": "Elliot",
       "teamName": "Taylor",
       "riderName": "Taylor",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "64",
       "latestGO": "11:40 AM",
       "lastOOG": 19
@@ -406,7 +406,7 @@
       "horseName": "Navy",
       "teamName": "Taylor",
       "riderName": "Taylor",
-      "lastestPlacing": "5",
+      "latestPlacing": null,
       "lastScore": "81",
       "latestGO": "11:25 AM",
       "lastOOG": 13
@@ -435,7 +435,7 @@
       "horseName": "Pedro",
       "teamName": "Carsyn",
       "riderName": "Carsyn",
-      "lastestPlacing": "4",
+      "latestPlacing": null,
       "lastScore": "82",
       "latestGO": "1:40 PM",
       "lastOOG": 13
@@ -464,7 +464,7 @@
       "horseName": "Pedro",
       "teamName": "Carsyn",
       "riderName": "Carsyn",
-      "lastestPlacing": "2",
+      "latestPlacing": null,
       "lastScore": "83",
       "latestGO": "1:42 PM",
       "lastOOG": 14
@@ -493,7 +493,7 @@
       "horseName": "Crush",
       "teamName": "Jess",
       "riderName": "Jess",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "82",
       "latestGO": "12:17 PM",
       "lastOOG": 2
@@ -522,7 +522,7 @@
       "horseName": "Crush",
       "teamName": "Jess",
       "riderName": "Jess",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "65",
       "latestGO": "12:29 PM",
       "lastOOG": 8
@@ -551,7 +551,7 @@
       "horseName": "Paisley",
       "teamName": "Kate",
       "riderName": "Kate",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "70",
       "latestGO": "12:17 PM",
       "lastOOG": 8
@@ -580,7 +580,7 @@
       "horseName": "Paisley",
       "teamName": "Kate",
       "riderName": "Kate",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "78",
       "latestGO": "12:18 PM",
       "lastOOG": 9
@@ -609,7 +609,7 @@
       "horseName": "Prom Queen",
       "teamName": "Sasha",
       "riderName": "Sasha",
-      "lastestPlacing": "6",
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "8:40 AM",
       "lastOOG": null
@@ -638,7 +638,7 @@
       "horseName": "Prom Queen",
       "teamName": "Sasha",
       "riderName": "Sasha",
-      "lastestPlacing": "3",
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "9:26 AM",
       "lastOOG": 32
@@ -667,7 +667,7 @@
       "horseName": "Prom Queen",
       "teamName": "Sasha",
       "riderName": "Sasha",
-      "lastestPlacing": "4",
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "9:25 AM",
       "lastOOG": 31
@@ -696,7 +696,7 @@
       "horseName": "Tank",
       "teamName": "Lola",
       "riderName": "Lola",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "12:55 PM",
       "lastOOG": null
@@ -725,7 +725,7 @@
       "horseName": "Indy",
       "teamName": "Carsyn",
       "riderName": "Carsyn",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "12:30 PM",
       "lastOOG": 19
@@ -754,7 +754,7 @@
       "horseName": "Lenny",
       "teamName": "Noora",
       "riderName": "Noora",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "8:15 AM",
       "lastOOG": 8
@@ -783,7 +783,7 @@
       "horseName": "Jason",
       "teamName": "Zoey",
       "riderName": "Zoey",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "9:30 AM",
       "lastOOG": 1
@@ -812,7 +812,7 @@
       "horseName": "Indy",
       "teamName": "Carsyn",
       "riderName": "Carsyn",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "10:14 AM",
       "lastOOG": 23
@@ -841,7 +841,7 @@
       "horseName": "Jason",
       "teamName": "Zoey",
       "riderName": "Zoey",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "9:25 AM",
       "lastOOG": null
@@ -870,7 +870,7 @@
       "horseName": "Lenny",
       "teamName": "Noora",
       "riderName": "Noora",
-      "lastestPlacing": "8",
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "9:25 AM",
       "lastOOG": null
@@ -899,7 +899,7 @@
       "horseName": "Jason",
       "teamName": "Zoey",
       "riderName": "Zoey",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "53",
       "latestGO": "8:16 AM",
       "lastOOG": 9
@@ -928,7 +928,7 @@
       "horseName": "Lenny",
       "teamName": "Noora",
       "riderName": "Noora",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "66",
       "latestGO": "8:14 AM",
       "lastOOG": 8
@@ -957,7 +957,7 @@
       "horseName": "Tank",
       "teamName": "Lola",
       "riderName": "Lola",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": null,
       "latestGO": "12:16 PM",
       "lastOOG": null
@@ -986,7 +986,7 @@
       "horseName": "Tank",
       "teamName": "Lola",
       "riderName": "Lola",
-      "lastestPlacing": null,
+      "latestPlacing": null,
       "lastScore": "62",
       "latestGO": "2:51 PM",
       "lastOOG": 55
@@ -1015,7 +1015,7 @@
       "horseName": "Tank",
       "teamName": "Lola",
       "riderName": "Lola",
-      "lastestPlacing": "8",
+      "latestPlacing": null,
       "lastScore": "74.5",
       "latestGO": "2:53 PM",
       "lastOOG": 56
