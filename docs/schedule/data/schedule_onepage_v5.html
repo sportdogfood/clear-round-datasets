@@ -231,7 +231,8 @@
     const q = qs.get("data");
     if(q) return q;
     if(/^\d+\-\d{8}$/.test(hashKey)) return `${hashKey}.json`;
-    return "schedule.json";
+    // return "schedule.json";
+    return "docs/schedule/data/print/schedule.json";
   }
 
   const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
