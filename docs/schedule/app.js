@@ -1,5 +1,7 @@
-// app.js — Daily Horse Show App (watch_schedule + watch_trips)
-// CSS unchanged • legacy list/card UX • adds rollup ladders + toggles + peak row
+// app.js — CRT Daily Show Follow (rings/classes/horses/riders) — 2-payload version
+// CSS unchanged (uses existing classes). In-memory only. Refresh re-loads JSON.
+// Truth: watch_trips (entryxclasses_uuid). Schedule scaffold: watch_schedule.
+
 (function () {
   'use strict';
 
@@ -7,841 +9,1183 @@
   // CONFIG
   // ---------------------------------------------------------------------------
 
-  // Set these to your committed JSON paths.
-  // (No guessing: edit here once and keep stable.)
-  const SCHEDULE_URL = './data/latest/watch_schedule.json';
-  const TRIPS_URL    = './data/latest/watch_trips.json';
-
+  const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
+  const DATA_TRIPS_URL = './data/latest/watch_trips.json';
   const REFRESH_MS = 8 * 60 * 1000;
 
-  // Business rule: “today” is admin-controlled; default uses schedule meta.dt in payload.
-  // You can set this to force a day while testing (e.g. '2026-01-25'), or leave null.
-  const ADMIN_DT_OVERRIDE = null;
+  const STATUS_COMPLETED = 'Completed';
 
   // ---------------------------------------------------------------------------
   // STATE (in-memory only)
   // ---------------------------------------------------------------------------
 
   const state = {
-    schedule: [],  // watch_schedule.records
-    trips: [],     // watch_trips.records
+    // raw
+    schedule: [],
+    trips: [],
+    meta: { dt: null, sid: null, generated_at: null },
 
-    // Active horse set is the gating truth. Keys are horseName.
-    activeHorses: new Set(),
+    // user gating
+    activeHorseNames: new Set(),          // "followed" horses
+    selectedPeakKeys: new Set(),          // per-screen filter
+    ui: {
+      scopeMode: 'ACTIVE',                // FULL | ACTIVE
+      statusMode: 'ACTIVE',               // ACTIVE | COMPLETED
+    },
 
-    // UI navigation
-    currentScreen: 'start',
+    // nav
+    currentScreen: 'horses',              // horses | rings | classes | riders | summary | (detail pages)
     history: [],
-    detailKey: null,    // ring_number | class_id | horseName | riderName
-    detailKey2: null,   // optional (e.g. ring_number + group_id)
-
-    // Toggles (reused across templates)
-    scopeMode: 'ACTIVE',      // ACTIVE | FULL  (list-level)
-    statusMode: 'ACTIVE',     // ACTIVE | COMPLETED (status-level)
-
-    // Peak filters (on-page filter)
-    selectedPeak: new Set(),  // depends on screen: ring_number or class_group_id or riderName etc.
+    detail: null                          // { kind, key, extra }
   };
 
   // ---------------------------------------------------------------------------
-  // DOM
+  // DOM (assumed existing)
   // ---------------------------------------------------------------------------
 
   const screenRoot = document.getElementById('screen-root');
   const headerTitle = document.getElementById('header-title');
   const headerBack = document.getElementById('header-back');
   const navRow = document.getElementById('nav-row');
-  const navHorses = document.getElementById('nav-horses');
+
+  // ---------------------------------------------------------------------------
+  // TIME HELPERS (assume dt + latestStart is America/New_York local time)
+  // ---------------------------------------------------------------------------
+
+  function parseTimeToMinutes(timeStr) {
+    // "8:05 AM" -> minutes since midnight
+    if (!timeStr || typeof timeStr !== 'string') return null;
+    const s = timeStr.trim();
+    const m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return null;
+    let hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const ap = m[3].toUpperCase();
+    if (ap === 'AM') {
+      if (hh === 12) hh = 0;
+    } else {
+      if (hh !== 12) hh += 12;
+    }
+    return hh * 60 + mm;
+  }
+
+  function dtTimeToEpochMs(dt, timeStr) {
+    // dt = "YYYY-MM-DD", timeStr="h:mm AM"
+    const mins = parseTimeToMinutes(timeStr);
+    if (!dt || mins == null) return null;
+    const hh = Math.floor(mins / 60);
+    const mm = mins % 60;
+    // Interpret as local time (user runs in ET; requirement = assume ET)
+    const isoLocal = `${dt}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`;
+    const d = new Date(isoLocal);
+    const t = d.getTime();
+    return Number.isFinite(t) ? t : null;
+  }
 
   // ---------------------------------------------------------------------------
   // LOAD + REFRESH
   // ---------------------------------------------------------------------------
 
+  async function fetchJson(url) {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${url}`);
+    return await res.json();
+  }
+
   async function loadAll() {
     try {
-      const [schedRes, tripsRes] = await Promise.all([
-        fetch(SCHEDULE_URL, { cache: 'no-store' }),
-        fetch(TRIPS_URL, { cache: 'no-store' })
+      const [sched, trips] = await Promise.all([
+        fetchJson(DATA_SCHEDULE_URL),
+        fetchJson(DATA_TRIPS_URL)
       ]);
-      if (!schedRes.ok || !tripsRes.ok) return;
 
-      const schedJson = await schedRes.json();
-      const tripsJson = await tripsRes.json();
+      state.schedule = Array.isArray(sched?.records) ? sched.records : [];
+      state.trips = Array.isArray(trips?.records) ? trips.records : [];
 
-      state.schedule = Array.isArray(schedJson?.records) ? schedJson.records : [];
-      state.trips = Array.isArray(tripsJson?.records) ? tripsJson.records : [];
+      const dtScope =
+        sched?.meta?.dt ||
+        sched?.records?.[0]?.dt ||
+        trips?.records?.[0]?.dt ||
+        null;
 
-      // Initialize active horses ONCE: all horses in trips payload are active by default.
-      if (state.activeHorses.size === 0) {
-        const all = uniqueBy(state.trips, t => t.horseName || '').map(t => t.horseName).filter(Boolean);
-        all.forEach(h => state.activeHorses.add(h));
+      const sidScope =
+        sched?.records?.[0]?.sid ??
+        trips?.records?.[0]?.sid ??
+        null;
+
+      state.meta = {
+        dt: dtScope,
+        sid: sidScope,
+        generated_at: sched?.meta?.generated_at || trips?.meta?.generated_at || null
+      };
+
+      // Seed active horses (follow all on first load)
+      if (state.activeHorseNames.size === 0) {
+        const horses = uniqueStrings(state.trips.map(t => t?.horseName).filter(Boolean));
+        horses.forEach(h => state.activeHorseNames.add(h));
+      } else {
+        // If new horses appear later, auto-follow them (does not re-follow manually unfollowed)
+        const seen = new Set(state.trips.map(t => t?.horseName).filter(Boolean));
+        for (const h of seen) {
+          // Only auto-add if user has never interacted? We can't know; keep conservative:
+          // do not auto-add if any horse has been unfollowed (active set smaller than seen).
+          // If active set is empty (user unfollowed all), do not auto-add.
+        }
       }
 
       render();
-    } catch (_) {}
+    } catch (_) {
+      // fail silent
+    }
   }
 
   setInterval(loadAll, REFRESH_MS);
 
   // ---------------------------------------------------------------------------
-  // CORE HELPERS
+  // CORE GATING RULES
   // ---------------------------------------------------------------------------
 
-  function dtScope() {
-    if (ADMIN_DT_OVERRIDE) return ADMIN_DT_OVERRIDE;
-    const any = state.schedule[0] || state.trips[0];
-    return any?.dt || null;
+  function isHorseActive(horseName) {
+    return state.activeHorseNames.has(horseName);
   }
 
-  function isCompletedStatus(s) {
-    return String(s || '').toLowerCase() === 'completed';
+  function tripPassesStatusMode(trip) {
+    if (state.ui.statusMode === 'COMPLETED') return true;
+    return trip?.latestStatus !== STATUS_COMPLETED;
   }
 
-  function tripIsIncludedByStatus(t) {
-    if (state.statusMode === 'COMPLETED') return true;
-    // ACTIVE mode excludes completed
-    return !isCompletedStatus(t.latestStatus);
+  function schedulePassesStatusMode(rec) {
+    if (state.ui.statusMode === 'COMPLETED') return true;
+    return rec?.latestStatus !== STATUS_COMPLETED;
   }
 
-  function scheduleIsIncludedByStatus(s) {
-    if (state.statusMode === 'COMPLETED') return true;
-    return !isCompletedStatus(s.latestStatus);
-  }
-
-  function isActiveHorse(horseName) {
-    return state.activeHorses.has(horseName);
-  }
-
-  function tripIsActive(t) {
-    // “Active horses is the root truth filter”
-    return isActiveHorse(t.horseName) && tripIsIncludedByStatus(t);
-  }
-
-  function uniqueBy(arr, keyFn) {
-    const m = new Map();
-    for (const x of arr) {
-      const k = keyFn(x);
-      if (!m.has(k)) m.set(k, x);
-    }
-    return Array.from(m.values());
-  }
-
-  function sortByTimeLabel(a, b) {
-    // latestStart is display label like "8:05 AM" (no seconds). For now sort lexically as fallback.
-    // Primary correctness depends on your upstream ordering; this keeps a consistent deterministic sort.
-    const ta = String(a.latestStart || '');
-    const tb = String(b.latestStart || '');
-    if (ta < tb) return -1;
-    if (ta > tb) return 1;
-    return 0;
+  function tripIsIncluded(trip) {
+    if (!trip) return false;
+    if (state.ui.scopeMode === 'ACTIVE' && !isHorseActive(trip.horseName)) return false;
+    if (!tripPassesStatusMode(trip)) return false;
+    return true;
   }
 
   // ---------------------------------------------------------------------------
-  // INDEXES (implemented)
+  // INDEXES (recomputed each render)
   // ---------------------------------------------------------------------------
 
-  function idxTripsByClassId() {
-    const map = new Map();
-    for (const t of state.trips) {
-      const k = t.class_id;
-      if (k == null) continue;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(t);
-    }
-    return map;
-  }
-
-  function idxScheduleByRing() {
-    const map = new Map();
-    for (const s of state.schedule) {
-      const k = s.ring_number;
-      if (k == null) continue;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(s);
-    }
-    // stable order
-    for (const [k, arr] of map) {
-      arr.sort((a, b) => (a.class_number - b.class_number) || sortByTimeLabel(a, b));
-      map.set(k, arr);
-    }
-    return map;
-  }
-
-  function buildRingsOverview() {
-    const byRing = idxScheduleByRing();
-    const tripsByClass = idxTripsByClassId();
-
-    const rings = [];
-    for (const [ring_number, schedRows] of byRing.entries()) {
-      const ringName = schedRows[0]?.ringName || `Ring ${ring_number}`;
-
-      // filter schedule rows by status toggle (completed vs active)
-      const schedFiltered = schedRows.filter(scheduleIsIncludedByStatus);
-
-      // FULL vs ACTIVE:
-      // ACTIVE means ring has at least one active trip under it (via any class_id)
-      const ringHasActiveTrips = schedFiltered.some(s => {
-        const arr = tripsByClass.get(s.class_id) || [];
-        return arr.some(tripIsActive);
-      });
-
-      if (state.scopeMode === 'ACTIVE' && !ringHasActiveTrips) continue;
-
-      rings.push({
-        ring_number,
-        ringName,
-        schedRows: schedFiltered
-      });
-    }
-
-    rings.sort((a, b) => (a.ring_number - b.ring_number));
-    return { rings, tripsByClass };
-  }
-
-  function buildGroupsWithinRing(ringSchedRows) {
-    // group key: ring_number + class_group_id
-    const groupsMap = new Map();
-    for (const s of ringSchedRows) {
-      const gid = s.class_group_id;
-      if (gid == null) continue;
-      if (!groupsMap.has(gid)) groupsMap.set(gid, []);
-      groupsMap.get(gid).push(s);
-    }
-
-    const groups = [];
-    for (const [gid, rows] of groupsMap.entries()) {
-      rows.sort((a, b) => sortByTimeLabel(a, b) || (a.class_number - b.class_number));
-      const head = rows[0];
-      groups.push({
-        class_group_id: gid,
-        group_name: head?.group_name || '',
-        latestStart: head?.latestStart || '',
-        latestStatus: head?.latestStatus || null,
-        classes: rows
-      });
-    }
-
-    // sort groups by their first class time label
-    groups.sort((a, b) => sortByTimeLabel(a, b));
-    return groups;
-  }
-
-  function buildActiveHorsesList() {
-    const all = uniqueBy(state.trips, t => t.horseName || '').map(t => t.horseName).filter(Boolean);
-    all.sort((a, b) => a.localeCompare(b));
-    return all;
-  }
-
-  function buildRidersList() {
-    // Derived from trips under active horses.
-    const riders = new Map(); // riderName -> trips count
-    for (const t of state.trips) {
-      if (!tripIsActive(t)) continue;
-      const r = t.riderName || t.teamName || '';
-      if (!r) continue;
-      riders.set(r, (riders.get(r) || 0) + 1);
-    }
-    return Array.from(riders.entries())
-      .map(([riderName, count]) => ({ riderName, count }))
-      .sort((a, b) => a.riderName.localeCompare(b.riderName));
-  }
-
-  function buildClassesList() {
-    // Derived from schedule (groups-first, then classes)
-    // class list is only classes that exist in schedule payload.
-    const rows = state.schedule.filter(scheduleIsIncludedByStatus);
-
-    // build unique classes by class_id
-    const classes = uniqueBy(rows, s => s.class_id).filter(s => s.class_id != null);
-
-    const tripsByClass = idxTripsByClassId();
-
+  function uniqueStrings(arr) {
     const out = [];
-    for (const c of classes) {
-      const trips = (tripsByClass.get(c.class_id) || []).filter(tripIsActive);
-      if (state.scopeMode === 'ACTIVE' && trips.length === 0) continue;
-      out.push({
-        class_id: c.class_id,
-        class_name: c.class_name || '',
-        class_number: c.class_number || 0,
-        ringName: c.ringName || '',
-        ring_number: c.ring_number,
-        latestStart: c.latestStart || '',
-        latestStatus: c.latestStatus || null,
-        activeTripCount: trips.length
-      });
+    const seen = new Set();
+    for (const v of arr) {
+      if (v == null) continue;
+      const s = String(v);
+      if (!seen.has(s)) {
+        seen.add(s);
+        out.push(s);
+      }
     }
-
-    // sort by start label then class_number
-    out.sort((a, b) => sortByTimeLabel(a, b) || (a.class_number - b.class_number));
     return out;
   }
 
+  function indexData() {
+    const trips = state.trips || [];
+    const sched = state.schedule || [];
+
+    // Trips by keys
+    const tripsByRing = new Map();       // ring_number -> trips[]
+    const tripsByGroup = new Map();      // class_group_id -> trips[]
+    const tripsByClass = new Map();      // class_id -> trips[]
+    const tripsByHorse = new Map();      // horseName -> trips[]
+    const tripsByRider = new Map();      // riderName -> trips[]
+    const tripsByEntryKey = new Map();   // class_id|horseName -> trips[] (entry-ish)
+
+    for (const t of trips) {
+      const ring = t?.ring_number;
+      const gid = t?.class_group_id;
+      const cid = t?.class_id;
+      const horse = t?.horseName;
+      const rider = t?.riderName;
+
+      if (ring != null) pushMapArr(tripsByRing, String(ring), t);
+      if (gid != null) pushMapArr(tripsByGroup, String(gid), t);
+      if (cid != null) pushMapArr(tripsByClass, String(cid), t);
+      if (horse) pushMapArr(tripsByHorse, String(horse), t);
+      if (rider) pushMapArr(tripsByRider, String(rider), t);
+      if (cid != null && horse) pushMapArr(tripsByEntryKey, `${cid}|${horse}`, t);
+    }
+
+    // Schedule scaffold: Groups within Rings, Classes within Groups
+    const rings = new Map(); // ring_number -> { ring_number, ringName, groups: Map(gkey->groupObj), startMsMin }
+    for (const r of sched) {
+      // schedule rows are class-level records
+      const ringN = r?.ring_number;
+      const ringName = r?.ringName;
+      const gid = r?.class_group_id;
+      const gname = r?.group_name;
+      const cid = r?.class_id;
+      const cname = r?.class_name;
+      const cnum = r?.class_number;
+      const latestStart = r?.latestStart;
+      const latestStatus = r?.latestStatus;
+
+      if (ringN == null || gid == null || cid == null) continue;
+
+      const ringKey = String(ringN);
+      if (!rings.has(ringKey)) {
+        rings.set(ringKey, {
+          ring_number: ringN,
+          ringName: ringName || `Ring ${ringN}`,
+          startMsMin: null,
+          groups: new Map()
+        });
+      }
+      const ringObj = rings.get(ringKey);
+
+      const gKey = `${ringKey}|${gid}`;
+      if (!ringObj.groups.has(gKey)) {
+        ringObj.groups.set(gKey, {
+          ring_number: ringN,
+          ringName: ringObj.ringName,
+          class_group_id: gid,
+          group_name: gname || '(group)',
+          latestStart: latestStart || null,
+          latestStatus: latestStatus || null,
+          startMsMin: dtTimeToEpochMs(r?.dt || state.meta.dt, latestStart),
+          classes: new Map()
+        });
+      }
+      const gObj = ringObj.groups.get(gKey);
+
+      // keep earliest group start
+      const gStart = dtTimeToEpochMs(r?.dt || state.meta.dt, latestStart);
+      if (gStart != null) {
+        if (gObj.startMsMin == null || gStart < gObj.startMsMin) gObj.startMsMin = gStart;
+        if (ringObj.startMsMin == null || gStart < ringObj.startMsMin) ringObj.startMsMin = gStart;
+      }
+
+      const cKey = `${gid}|${cid}`;
+      if (!gObj.classes.has(cKey)) {
+        gObj.classes.set(cKey, {
+          class_group_id: gid,
+          class_id: cid,
+          class_number: cnum,
+          class_name: cname || '(class)',
+          latestStart: latestStart || null,
+          latestStatus: latestStatus || null,
+          startMs: dtTimeToEpochMs(r?.dt || state.meta.dt, latestStart)
+        });
+      }
+    }
+
+    return {
+      tripsByRing,
+      tripsByGroup,
+      tripsByClass,
+      tripsByHorse,
+      tripsByRider,
+      tripsByEntryKey,
+      rings
+    };
+  }
+
+  function pushMapArr(map, key, value) {
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(value);
+  }
+
   // ---------------------------------------------------------------------------
-  // UI BUILDERS (no new CSS; reuse existing classes)
+  // UI BUILDERS (CSS unchanged; use existing classes; multi-line via inline styles)
   // ---------------------------------------------------------------------------
 
-  function clearScreen() {
+  function clearRoot() {
     screenRoot.innerHTML = '';
   }
 
-  function row(label, tag, onClick, active, positiveTag) {
-    const r = document.createElement('div');
-    r.className = 'row row--tap';
-    if (active) r.classList.add('row--active');
-
-    const t = document.createElement('div');
-    t.className = 'row-title';
-    t.textContent = label;
-    r.appendChild(t);
-
-    if (tag != null) {
-      const g = document.createElement('div');
-      g.className = 'row-tag';
-      if (positiveTag) g.classList.add('row-tag--positive');
-      g.textContent = tag;
-      r.appendChild(g);
-    }
-
-    if (onClick) r.addEventListener('click', onClick);
-    screenRoot.appendChild(r);
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
   }
 
-  function sectionNavRow(buttons) {
-    // Reuse .nav-row and .nav-btn (existing CSS)
-    const wrap = document.createElement('div');
-    wrap.className = 'nav-row';
-    wrap.style.padding = '2px 0 8px 0'; // inline only; no CSS file changes
-    for (const b of buttons) {
-      const btn = document.createElement('button');
-      btn.className = 'nav-btn' + (b.primary ? ' nav-btn--primary' : '');
-      btn.textContent = b.label;
-      btn.addEventListener('click', b.onClick);
-      wrap.appendChild(btn);
+  function makePill(text) {
+    const p = el('div', 'row-tag row-tag--count', String(text));
+    return p;
+  }
+
+  function makeCard() {
+    const c = el('div', 'row');
+    // allow multi-line content while keeping exact CSS file unchanged
+    c.style.display = 'block';
+    c.style.padding = '12px 16px';
+    return c;
+  }
+
+  function makeCardHeader(titleText, countText, onClick) {
+    const hdr = el('div', null);
+    hdr.style.display = 'flex';
+    hdr.style.alignItems = 'center';
+    hdr.style.justifyContent = 'space-between';
+    hdr.style.gap = '10px';
+
+    const t = el('div', 'row-title', titleText);
+    t.style.fontWeight = '600';
+    t.style.fontSize = '14px';
+
+    hdr.appendChild(t);
+
+    if (countText != null) hdr.appendChild(makePill(countText));
+
+    if (onClick) {
+      hdr.style.cursor = 'pointer';
+      hdr.addEventListener('click', onClick);
     }
-    screenRoot.appendChild(wrap);
+
+    return hdr;
+  }
+
+  function makeSubline(text, rightText, onClick) {
+    const line = el('div', null);
+    line.style.display = 'flex';
+    line.style.alignItems = 'center';
+    line.style.justifyContent = 'space-between';
+    line.style.gap = '10px';
+    line.style.marginTop = '8px';
+
+    const left = el('div', null, text);
+    left.style.fontSize = '12px';
+    left.style.opacity = '0.92';
+
+    line.appendChild(left);
+
+    if (rightText != null) {
+      const r = makePill(rightText);
+      r.style.fontSize = '10px';
+      line.appendChild(r);
+    }
+
+    if (onClick) {
+      line.style.cursor = 'pointer';
+      line.addEventListener('click', onClick);
+    }
+
+    return line;
+  }
+
+  function makeDivider() {
+    const d = el('div', null);
+    d.style.height = '1px';
+    d.style.background = 'rgba(75,85,99,.55)';
+    d.style.marginTop = '10px';
+    return d;
+  }
+
+  function makePeakRow(items, selectedSet, onToggle) {
+    // reuse nav-row + nav-btn for horizontal scroll
+    const wrap = el('div', 'nav-row');
+    wrap.style.marginBottom = '10px';
+    wrap.style.padding = '2px 0';
+
+    items.forEach(it => {
+      const btn = el('button', 'nav-btn', it.label);
+      if (selectedSet.has(it.key)) btn.classList.add('nav-btn--primary');
+
+      btn.addEventListener('click', () => onToggle(it.key));
+      wrap.appendChild(btn);
+    });
+
+    return wrap;
+  }
+
+  function makeToggleRow() {
+    const wrap = el('div', 'nav-row');
+    wrap.style.marginBottom = '10px';
+    wrap.style.padding = '2px 0';
+
+    const btnScope = el('button', 'nav-btn', `Scope: ${state.ui.scopeMode}`);
+    btnScope.classList.add('nav-btn--primary');
+    btnScope.addEventListener('click', () => {
+      state.ui.scopeMode = (state.ui.scopeMode === 'ACTIVE') ? 'FULL' : 'ACTIVE';
+      render();
+    });
+
+    const btnStatus = el('button', 'nav-btn', `Status: ${state.ui.statusMode}`);
+    btnStatus.addEventListener('click', () => {
+      state.ui.statusMode = (state.ui.statusMode === 'ACTIVE') ? 'COMPLETED' : 'ACTIVE';
+      render();
+    });
+
+    wrap.appendChild(btnScope);
+    wrap.appendChild(btnStatus);
+
+    return wrap;
   }
 
   // ---------------------------------------------------------------------------
   // NAV
   // ---------------------------------------------------------------------------
 
-  function setScreen(screen, detail = null, detail2 = null, push = true) {
-    if (push) state.history.push({ screen: state.currentScreen, detailKey: state.detailKey, detailKey2: state.detailKey2 });
+  function setScreen(screen, detail = null, push = true) {
+    if (push) state.history.push({ screen: state.currentScreen, detail: state.detail, peak: new Set(state.selectedPeakKeys), ui: { ...state.ui } });
     state.currentScreen = screen;
-    state.detailKey = detail;
-    state.detailKey2 = detail2;
-
-    // reset peak selection when switching major screens
-    state.selectedPeak.clear();
+    state.detail = detail;
     render();
   }
 
   function goBack() {
     const prev = state.history.pop();
     if (!prev) {
-      state.currentScreen = 'start';
-      state.detailKey = null;
-      state.detailKey2 = null;
+      state.currentScreen = 'horses';
+      state.detail = null;
+      state.selectedPeakKeys = new Set();
       render();
       return;
     }
     state.currentScreen = prev.screen;
-    state.detailKey = prev.detailKey;
-    state.detailKey2 = prev.detailKey2;
+    state.detail = prev.detail;
+    state.selectedPeakKeys = prev.peak || new Set();
+    state.ui = prev.ui || state.ui;
+    render();
+  }
+
+  function resetPeak() {
+    state.selectedPeakKeys = new Set();
+  }
+
+  function togglePeak(key) {
+    if (state.selectedPeakKeys.has(key)) state.selectedPeakKeys.delete(key);
+    else state.selectedPeakKeys.add(key);
     render();
   }
 
   // ---------------------------------------------------------------------------
-  // TOGGLES
+  // SCREEN: HORSES (Active Horses selector + Horse ladder)
   // ---------------------------------------------------------------------------
 
-  function renderToggles() {
-    sectionNavRow([
-      {
-        label: state.scopeMode === 'ACTIVE' ? 'ACTIVE (scope)' : 'FULL (scope)',
-        primary: true,
-        onClick: () => {
-          state.scopeMode = (state.scopeMode === 'ACTIVE') ? 'FULL' : 'ACTIVE';
-          render();
-        }
-      },
-      {
-        label: state.statusMode === 'ACTIVE' ? 'ACTIVE (status)' : 'COMPLETED+ (status)',
-        primary: false,
-        onClick: () => {
-          state.statusMode = (state.statusMode === 'ACTIVE') ? 'COMPLETED' : 'ACTIVE';
-          render();
-        }
+  function renderHorses(idx) {
+    clearRoot();
+
+    // Peak row: active horses (acts as quick filter on this screen too)
+    const horseNames = uniqueStrings(state.trips.map(t => t?.horseName).filter(Boolean)).sort((a, b) => a.localeCompare(b));
+    const peakItems = horseNames.map(h => ({ key: h, label: h }));
+    const peakSelected = state.selectedPeakKeys.size ? state.selectedPeakKeys : new Set(); // if none selected, show all
+
+    screenRoot.appendChild(makeToggleRow());
+    screenRoot.appendChild(makePeakRow(peakItems, state.selectedPeakKeys, togglePeak));
+
+    // List: Horse overview cards
+    const list = el('div', 'list-column');
+    const visibleHorses = peakSelected.size ? horseNames.filter(h => peakSelected.has(h)) : horseNames;
+
+    for (const horse of visibleHorses) {
+      const allTrips = (idx.tripsByHorse.get(String(horse)) || []);
+      const includedTrips = allTrips.filter(tripIsIncluded);
+
+      // ACTIVE mode (scope) is the follow set; still show all horses in FULL mode
+      if (state.ui.scopeMode === 'ACTIVE' && !isHorseActive(horse)) {
+        // show but visually inactive + count 0? No — selector must still allow re-follow.
       }
-    ]);
-  }
 
-  // ---------------------------------------------------------------------------
-  // SCREENS
-  // ---------------------------------------------------------------------------
+      const card = makeCard();
 
-  function renderStart() {
-    clearScreen();
+      const followed = isHorseActive(horse);
+      const title = `${followed ? '●' : '○'} ${horse}`;
 
-    const dt = dtScope();
-    row(`Day scope`, dt || '—', null, false);
-
-    const activeCount = state.activeHorses.size;
-    row('Active Horses', String(activeCount), () => setScreen('horses'), false, activeCount > 0);
-
-    // NextUp logic placeholder: derived from schedule ordering, excludes completed in ACTIVE status mode.
-    // (You said “NextUp needs better logic”; this is not time-limited and won’t cap at 3.)
-    const next = buildNextUp();
-    if (next.length) {
-      row('Next Up (classes)', String(next.length), () => setScreen('summary'), false, true);
-    } else {
-      row('Next Up (classes)', '0', () => setScreen('summary'), false, false);
-    }
-
-    renderFooterHint();
-  }
-
-  function buildNextUp() {
-    // First upcoming schedule rows by start ordering; NOT time-limited; includes ties naturally.
-    // Status gating controlled by statusMode (ACTIVE excludes Completed).
-    const rows = state.schedule.filter(scheduleIsIncludedByStatus);
-    // sort by latestStart label then class_number
-    const sorted = rows.slice().sort((a, b) => sortByTimeLabel(a, b) || ((a.class_number || 0) - (b.class_number || 0)));
-
-    // upcoming only: in ACTIVE statusMode we already filtered out Completed; in COMPLETED mode we keep all.
-    // We do not have “now” time; so “upcoming” is “not Completed” when ACTIVE mode.
-    if (state.statusMode === 'COMPLETED') return sorted;
-
-    // ACTIVE mode: already not completed; return all (not capped).
-    return sorted;
-  }
-
-  function renderFooterHint() {
-    // Nothing else; keep UX minimal.
-  }
-
-  function renderHorses() {
-    clearScreen();
-
-    const all = buildActiveHorsesList();
-
-    // Controls
-    sectionNavRow([
-      {
-        label: 'Select All',
-        primary: true,
-        onClick: () => {
-          all.forEach(h => state.activeHorses.add(h));
-          render();
-        }
-      },
-      {
-        label: 'Clear All',
-        primary: false,
-        onClick: () => {
-          state.activeHorses.clear();
-          render();
-        }
-      }
-    ]);
-
-    all.forEach(horseName => {
-      const active = isActiveHorse(horseName);
-      const tripCount = state.trips.filter(t => (t.horseName === horseName)).length;
-
-      row(horseName, String(tripCount), () => {
-        active ? state.activeHorses.delete(horseName) : state.activeHorses.add(horseName);
+      card.appendChild(makeCardHeader(title, includedTrips.length, () => {
+        followed ? state.activeHorseNames.delete(horse) : state.activeHorseNames.add(horse);
         render();
-      }, active);
-    });
-  }
+      }));
 
-  function renderRings() {
-    clearScreen();
-    renderToggles();
+      // Level B: Classes under horse
+      const byClass = new Map();
+      for (const t of includedTrips) {
+        const cid = t?.class_id;
+        if (cid == null) continue;
+        const key = String(cid);
+        if (!byClass.has(key)) byClass.set(key, []);
+        byClass.get(key).push(t);
+      }
 
-    const { rings, tripsByClass } = buildRingsOverview();
-
-    // Peak row (horizontal) — ringPeak
-    sectionNavRow(
-      rings.map(r => ({
-        label: r.ringName,
-        primary: state.selectedPeak.has(r.ring_number),
-        onClick: () => {
-          if (state.selectedPeak.has(r.ring_number)) state.selectedPeak.delete(r.ring_number);
-          else state.selectedPeak.add(r.ring_number);
-          render();
-        }
-      }))
-    );
-
-    // ringsList — ringOverview cards
-    const visible = state.selectedPeak.size
-      ? rings.filter(r => state.selectedPeak.has(r.ring_number))
-      : rings;
-
-    visible.forEach(r => {
-      const groups = buildGroupsWithinRing(r.schedRows);
-
-      // ringOverview header
-      row(`${r.ringName}`, String(groups.length), () => setScreen('ringDetail', r.ring_number), false);
-
-      // group rollups inside ringOverview
-      groups.forEach(g => {
-        // count active trips under this group
-        const classIds = g.classes.map(c => c.class_id).filter(x => x != null);
-        let activeTripCount = 0;
-        for (const cid of classIds) {
-          const arr = tripsByClass.get(cid) || [];
-          activeTripCount += arr.filter(tripIsActive).length;
-        }
-
-        if (state.scopeMode === 'ACTIVE' && activeTripCount === 0) return;
-
-        const status = g.latestStatus ? ` • ${g.latestStatus}` : '';
-        row(
-          `${g.latestStart || ''} • ${g.group_name}${status}`,
-          String(activeTripCount),
-          () => setScreen('classGroupDetail', r.ring_number, g.class_group_id),
-          false,
-          activeTripCount > 0
-        );
+      const classKeys = [...byClass.keys()].sort((a, b) => {
+        const aa = byClass.get(a)[0];
+        const bb = byClass.get(b)[0];
+        const ta = dtTimeToEpochMs(aa?.dt || state.meta.dt, aa?.latestStart);
+        const tb = dtTimeToEpochMs(bb?.dt || state.meta.dt, bb?.latestStart);
+        if (ta != null && tb != null && ta !== tb) return ta - tb;
+        return Number(a) - Number(b);
       });
-    });
-  }
 
-  function renderRingDetail() {
-    clearScreen();
-    renderToggles();
+      for (const ck of classKeys) {
+        const sample = byClass.get(ck)[0];
+        const label = `${sample?.latestStart || ''} • ${sample?.class_name || '(class)'} • ${sample?.ringName || ''}`;
+        const count = byClass.get(ck).length;
+        card.appendChild(makeSubline(label, count, () => {
+          setScreen('horseDetail', { kind: 'horse', key: horse });
+        }));
+      }
 
-    const ring_number = state.detailKey;
-    const byRing = idxScheduleByRing();
-    const ringRows = (byRing.get(ring_number) || []).filter(scheduleIsIncludedByStatus);
-    const ringName = ringRows[0]?.ringName || `Ring ${ring_number}`;
-
-    row(`${ringName}`, String(ringRows.length), null, false);
-
-    const tripsByClass = idxTripsByClassId();
-    const groups = buildGroupsWithinRing(ringRows);
-
-    groups.forEach(g => {
-      row(`${g.latestStart || ''} • ${g.group_name}`, null, null, false);
-
-      // classes inside group
-      g.classes.forEach(c => {
-        const trips = (tripsByClass.get(c.class_id) || []).filter(tripIsActive);
-        if (state.scopeMode === 'ACTIVE' && trips.length === 0) return;
-
-        const status = c.latestStatus ? ` • ${c.latestStatus}` : '';
-        row(
-          `${c.class_name}${status}`,
-          String(trips.length),
-          () => setScreen('classDetail', c.class_id),
-          false,
-          trips.length > 0
-        );
-
-        // entry rollup under class: horses (active only)
-        const horses = uniqueBy(trips, t => (t.entry_id ?? t.entryxclasses_uuid ?? '') + '|' + (t.horseName || ''))
-          .map(t => t.horseName)
-          .filter(Boolean);
-
-        horses.slice(0, 6).forEach(h => {
-          row(`↳ ${h}`, null, () => setScreen('entryDetail', h), false);
-        });
-      });
-    });
-  }
-
-  function renderClassGroupDetail() {
-    clearScreen();
-    renderToggles();
-
-    const ring_number = state.detailKey;
-    const class_group_id = state.detailKey2;
-
-    const ringRows = state.schedule
-      .filter(s => s.ring_number === ring_number && s.class_group_id === class_group_id)
-      .filter(scheduleIsIncludedByStatus)
-      .slice()
-      .sort((a, b) => sortByTimeLabel(a, b) || ((a.class_number || 0) - (b.class_number || 0)));
-
-    const head = ringRows[0];
-    const title = head?.group_name || `Group ${class_group_id}`;
-
-    row(title, String(ringRows.length), null, false);
-
-    const tripsByClass = idxTripsByClassId();
-
-    ringRows.forEach(c => {
-      const trips = (tripsByClass.get(c.class_id) || []).filter(tripIsActive);
-      if (state.scopeMode === 'ACTIVE' && trips.length === 0) return;
-
-      const status = c.latestStatus ? ` • ${c.latestStatus}` : '';
-      row(
-        `${c.latestStart || ''} • ${c.class_name}${status}`,
-        String(trips.length),
-        () => setScreen('classDetail', c.class_id),
-        false,
-        trips.length > 0
-      );
-    });
-  }
-
-  function renderClasses() {
-    clearScreen();
-    renderToggles();
-
-    const classes = buildClassesList();
-
-    // Peak row — class groups (derived)
-    const groupMap = new Map(); // class_group_id -> label/count
-    for (const c of classes) {
-      const rowAny = state.schedule.find(s => s.class_id === c.class_id);
-      const gid = rowAny?.class_group_id;
-      const gname = rowAny?.group_name || '';
-      if (gid == null) continue;
-      if (!groupMap.has(gid)) groupMap.set(gid, { gid, gname, count: 0 });
-      groupMap.get(gid).count += 1;
+      list.appendChild(card);
     }
-    const groupPeak = Array.from(groupMap.values()).sort((a, b) => a.gname.localeCompare(b.gname));
 
-    sectionNavRow(
-      groupPeak.map(g => ({
-        label: g.gname ? g.gname.slice(0, 18) : String(g.gid),
-        primary: state.selectedPeak.has(g.gid),
-        onClick: () => {
-          if (state.selectedPeak.has(g.gid)) state.selectedPeak.delete(g.gid);
-          else state.selectedPeak.add(g.gid);
-          render();
+    screenRoot.appendChild(list);
+  }
+
+  function renderHorseDetail(idx) {
+    clearRoot();
+    const horse = state.detail?.key;
+    if (!horse) return;
+
+    screenRoot.appendChild(makeToggleRow());
+
+    const card = makeCard();
+    const allTrips = (idx.tripsByHorse.get(String(horse)) || []);
+    const includedTrips = allTrips.filter(tripIsIncluded);
+
+    card.appendChild(makeCardHeader(horse, includedTrips.length));
+
+    // Level B: trips (leaf)
+    const sorted = includedTrips.slice().sort((a, b) => {
+      const ta = dtTimeToEpochMs(a?.dt || state.meta.dt, a?.latestGO || a?.latestStart);
+      const tb = dtTimeToEpochMs(b?.dt || state.meta.dt, b?.latestGO || b?.latestStart);
+      if (ta != null && tb != null && ta !== tb) return ta - tb;
+      const oa = (a?.lastOOG ?? 999999);
+      const ob = (b?.lastOOG ?? 999999);
+      return oa - ob;
+    });
+
+    for (const t of sorted) {
+      const left = `${t.latestGO || t.latestStart || ''} • ${t.ringName || ''} • ${t.class_name || ''} • ${t.riderName || ''}`;
+      const right = t.lastOOG != null ? `OOG ${t.lastOOG}` : (t.latestStatus || '');
+      card.appendChild(makeSubline(left, right));
+    }
+
+    screenRoot.appendChild(card);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCREEN: RINGS (Ring -> Group -> Class -> Entries/Trips)
+  // ---------------------------------------------------------------------------
+
+  function renderRings(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
+
+    const ringArr = [...idx.rings.values()].sort((a, b) => {
+      // ringPriority not provided; fallback ring_number
+      if (a.ring_number !== b.ring_number) return a.ring_number - b.ring_number;
+      return String(a.ringName).localeCompare(String(b.ringName));
+    });
+
+    // Peak: rings
+    const peakItems = ringArr.map(r => ({ key: String(r.ring_number), label: r.ringName }));
+    screenRoot.appendChild(makePeakRow(peakItems, state.selectedPeakKeys, togglePeak));
+
+    const list = el('div', 'list-column');
+
+    const visibleRings = state.selectedPeakKeys.size
+      ? ringArr.filter(r => state.selectedPeakKeys.has(String(r.ring_number)))
+      : ringArr;
+
+    for (const ring of visibleRings) {
+      // Apply status gating at group/class/entry level; ring is included if any descendant survives when ACTIVE scope/status
+      const groupsArr = [...ring.groups.values()].filter(g => schedulePassesStatusMode(g));
+      const ringTripsAll = (idx.tripsByRing.get(String(ring.ring_number)) || []);
+      const ringTripsIncluded = ringTripsAll.filter(tripIsIncluded);
+
+      if (state.ui.scopeMode === 'ACTIVE' && ringTripsIncluded.length === 0) continue;
+      if (state.ui.statusMode === 'ACTIVE' && ringTripsIncluded.length === 0 && groupsArr.length === 0) continue;
+
+      const card = makeCard();
+      const groupCount = groupsArr.length;
+
+      card.appendChild(makeCardHeader(`${ring.ringName}`, groupCount, () => {
+        setScreen('ringDetail', { kind: 'ring', key: String(ring.ring_number) });
+      }));
+
+      // Level B: group rollups
+      const sortedGroups = groupsArr.slice().sort((a, b) => {
+        const ta = a.startMsMin ?? 0;
+        const tb = b.startMsMin ?? 0;
+        if (ta && tb && ta !== tb) return ta - tb;
+        return String(a.group_name).localeCompare(String(b.group_name));
+      });
+
+      for (const g of sortedGroups) {
+        const gid = String(g.class_group_id);
+        const gTrips = (idx.tripsByGroup.get(gid) || []).filter(tripIsIncluded);
+        if (state.ui.scopeMode === 'ACTIVE' && gTrips.length === 0) continue;
+
+        const status = g.latestStatus || '';
+        const time = g.latestStart || '';
+        const line = `${time} • ${g.group_name} ${status ? '• ' + status : ''}`;
+
+        // count: active horses within group (distinct horseName)
+        const horses = uniqueStrings(gTrips.map(t => t?.horseName).filter(Boolean));
+        card.appendChild(makeSubline(line, horses.length, () => {
+          setScreen('groupDetail', { kind: 'group', key: `${ring.ring_number}|${gid}` });
+        }));
+
+        // Level C: classes within group
+        const clsArr = [...g.classes.values()].filter(c => schedulePassesStatusMode(c));
+        const sortedClasses = clsArr.sort((a, b) => {
+          const ta = a.startMs ?? 0;
+          const tb = b.startMs ?? 0;
+          if (ta && tb && ta !== tb) return ta - tb;
+          return (a.class_number ?? 0) - (b.class_number ?? 0);
+        });
+
+        for (const c of sortedClasses) {
+          const cTrips = (idx.tripsByClass.get(String(c.class_id)) || []).filter(tripIsIncluded);
+          if (state.ui.scopeMode === 'ACTIVE' && cTrips.length === 0) continue;
+
+          const horsesInClass = uniqueStrings(cTrips.map(t => t?.horseName).filter(Boolean));
+          const line2 = `↳ ${c.class_name}`;
+          card.appendChild(makeSubline(line2, horsesInClass.length, () => {
+            setScreen('classDetail', { kind: 'class', key: String(c.class_id) });
+          }));
+
+          // Entries under class (by horse) — no slicing
+          const byHorse = new Map();
+          for (const t of cTrips) {
+            const h = t?.horseName;
+            if (!h) continue;
+            if (!byHorse.has(h)) byHorse.set(h, []);
+            byHorse.get(h).push(t);
+          }
+
+          const horsesSorted = [...byHorse.keys()].sort((a, b) => a.localeCompare(b));
+          for (const h of horsesSorted) {
+            const ts = byHorse.get(h);
+            // choose best display values
+            const sample = ts[0];
+            const oog = sample?.lastOOG != null ? `OOG ${sample.lastOOG}` : '';
+            const go = sample?.latestGO || '';
+            const entryLine = `   • ${h}${oog ? ' • ' + oog : ''}${go ? ' • ' + go : ''}`;
+            card.appendChild(makeSubline(entryLine, null, () => {
+              setScreen('entryDetail', { kind: 'entry', key: `${c.class_id}|${h}`, extra: { horse: h, class_id: c.class_id } });
+            }));
+          }
         }
-      }))
-    );
 
-    const visible = state.selectedPeak.size
-      ? classes.filter(c => {
-          const s = state.schedule.find(x => x.class_id === c.class_id);
-          return s && state.selectedPeak.has(s.class_group_id);
-        })
-      : classes;
+        card.appendChild(makeDivider());
+      }
 
-    visible.forEach(c => {
-      const label = `${c.latestStart || ''} • ${c.class_name} • ${c.ringName}`;
-      row(label, String(c.activeTripCount), () => setScreen('classDetail', c.class_id), false, c.activeTripCount > 0);
-    });
+      list.appendChild(card);
+    }
+
+    screenRoot.appendChild(list);
   }
 
-  function renderClassDetail() {
-    clearScreen();
-    renderToggles();
+  function renderRingDetail(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
 
-    const class_id = state.detailKey;
-    const sched = state.schedule.find(s => s.class_id === class_id);
-    const title = sched?.class_name || `Class ${class_id}`;
-    row(title, null, null, false);
+    const ringKey = state.detail?.key;
+    const ringObj = idx.rings.get(String(ringKey));
+    if (!ringObj) return;
 
-    const trips = state.trips
-      .filter(t => t.class_id === class_id)
-      .filter(tripIsActive)
-      .slice()
-      .sort((a, b) => (Number(a.lastOOG || 0) - Number(b.lastOOG || 0)));
+    const card = makeCard();
+    const groupsArr = [...ringObj.groups.values()].filter(g => schedulePassesStatusMode(g));
 
-    // entryOverview within class: horse -> trip meta
-    trips.forEach(t => {
-      // ignore derived backNumber/entryNumber mismatch; display is front-facing label later
-      const go = t.latestGO ? ` • ${t.latestGO}` : '';
-      const oog = (t.lastOOG != null) ? `#${t.lastOOG}` : '';
-      row(
-        `${t.horseName} • ${t.riderName || t.teamName || ''} • ${oog}${go}`,
-        null,
-        () => setScreen('entryDetail', t.horseName),
-        false
-      );
-    });
+    card.appendChild(makeCardHeader(`${ringObj.ringName}`, groupsArr.length));
+
+    const sortedGroups = groupsArr.slice().sort((a, b) => (a.startMsMin ?? 0) - (b.startMsMin ?? 0));
+    for (const g of sortedGroups) {
+      const gid = String(g.class_group_id);
+      const gTrips = (idx.tripsByGroup.get(gid) || []).filter(tripIsIncluded);
+      if (state.ui.scopeMode === 'ACTIVE' && gTrips.length === 0) continue;
+
+      const horses = uniqueStrings(gTrips.map(t => t?.horseName).filter(Boolean));
+      const line = `${g.latestStart || ''} • ${g.group_name}${g.latestStatus ? ' • ' + g.latestStatus : ''}`;
+      card.appendChild(makeSubline(line, horses.length, () => {
+        setScreen('groupDetail', { kind: 'group', key: `${ringObj.ring_number}|${gid}` });
+      }));
+
+      // classes
+      const clsArr = [...g.classes.values()].filter(c => schedulePassesStatusMode(c));
+      const sortedClasses = clsArr.sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
+      for (const c of sortedClasses) {
+        const cTrips = (idx.tripsByClass.get(String(c.class_id)) || []).filter(tripIsIncluded);
+        if (state.ui.scopeMode === 'ACTIVE' && cTrips.length === 0) continue;
+
+        const horsesInClass = uniqueStrings(cTrips.map(t => t?.horseName).filter(Boolean));
+        card.appendChild(makeSubline(`↳ ${c.class_name}`, horsesInClass.length, () => {
+          setScreen('classDetail', { kind: 'class', key: String(c.class_id) });
+        }));
+      }
+
+      card.appendChild(makeDivider());
+    }
+
+    screenRoot.appendChild(card);
   }
 
-  function renderEntryDetail() {
-    clearScreen();
-    renderToggles();
+  // ---------------------------------------------------------------------------
+  // SCREEN: CLASSES (Groups-first: Group -> Class -> Entries/Trips)
+  // ---------------------------------------------------------------------------
 
-    const horseName = state.detailKey;
-    row(horseName, null, null, false);
-
-    const trips = state.trips
-      .filter(t => t.horseName === horseName)
-      .filter(tripIsActive)
-      .slice()
-      .sort((a, b) => {
-        // ring then class then OOG
-        if ((a.ring_number || 0) !== (b.ring_number || 0)) return (a.ring_number || 0) - (b.ring_number || 0);
-        const ta = String(a.latestStart || '');
-        const tb = String(b.latestStart || '');
-        if (ta !== tb) return ta.localeCompare(tb);
-        return (Number(a.lastOOG || 0) - Number(b.lastOOG || 0));
-      });
-
-    trips.forEach(t => {
-      const status = t.latestStatus ? ` • ${t.latestStatus}` : '';
-      const go = t.latestGO ? ` • ${t.latestGO}` : '';
-      row(
-        `${t.ringName} • ${t.class_name}${status}`,
-        `${t.lastOOG != null ? '#' + t.lastOOG : ''}${go}`,
-        () => setScreen('riderDetail', (t.riderName || t.teamName || '')),
-        false
-      );
-    });
+  function listAllGroups(idx) {
+    const all = [];
+    for (const ring of idx.rings.values()) {
+      for (const g of ring.groups.values()) {
+        all.push(g);
+      }
+    }
+    return all;
   }
 
-  function renderRiders() {
-    clearScreen();
-    renderToggles();
+  function renderClasses(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
 
-    const riders = buildRidersList();
+    // Peak: groups
+    const groups = listAllGroups(idx).filter(g => schedulePassesStatusMode(g));
+    groups.sort((a, b) => {
+      const ta = a.startMsMin ?? 0;
+      const tb = b.startMsMin ?? 0;
+      if (ta && tb && ta !== tb) return ta - tb;
+      return String(a.group_name).localeCompare(String(b.group_name));
+    });
 
-    // Peak row — quick filter
-    sectionNavRow(
-      riders.map(r => ({
-        label: r.riderName,
-        primary: state.selectedPeak.has(r.riderName),
-        onClick: () => {
-          if (state.selectedPeak.has(r.riderName)) state.selectedPeak.delete(r.riderName);
-          else state.selectedPeak.add(r.riderName);
-          render();
+    const peakItems = groups.map(g => ({ key: String(g.class_group_id), label: g.group_name }));
+    screenRoot.appendChild(makePeakRow(peakItems, state.selectedPeakKeys, togglePeak));
+
+    const list = el('div', 'list-column');
+
+    const visibleGroups = state.selectedPeakKeys.size
+      ? groups.filter(g => state.selectedPeakKeys.has(String(g.class_group_id)))
+      : groups;
+
+    for (const g of visibleGroups) {
+      const gid = String(g.class_group_id);
+      const gTrips = (idx.tripsByGroup.get(gid) || []).filter(tripIsIncluded);
+      if (state.ui.scopeMode === 'ACTIVE' && gTrips.length === 0) continue;
+
+      const card = makeCard();
+      const horses = uniqueStrings(gTrips.map(t => t?.horseName).filter(Boolean));
+      card.appendChild(makeCardHeader(`${g.latestStart || ''} • ${g.group_name}`, horses.length, () => {
+        setScreen('groupDetail', { kind: 'groupOnly', key: gid });
+      }));
+
+      // Classes under group
+      const clsArr = [...g.classes.values()].filter(c => schedulePassesStatusMode(c));
+      const sortedClasses = clsArr.sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
+
+      for (const c of sortedClasses) {
+        const cTrips = (idx.tripsByClass.get(String(c.class_id)) || []).filter(tripIsIncluded);
+        if (state.ui.scopeMode === 'ACTIVE' && cTrips.length === 0) continue;
+
+        const horsesInClass = uniqueStrings(cTrips.map(t => t?.horseName).filter(Boolean));
+        card.appendChild(makeSubline(`${c.class_name}`, horsesInClass.length, () => {
+          setScreen('classDetail', { kind: 'class', key: String(c.class_id) });
+        }));
+
+        // Entries under class (by horse)
+        const byHorse = new Map();
+        for (const t of cTrips) {
+          const h = t?.horseName;
+          if (!h) continue;
+          if (!byHorse.has(h)) byHorse.set(h, []);
+          byHorse.get(h).push(t);
         }
-      }))
-    );
+        const horsesSorted = [...byHorse.keys()].sort((a, b) => a.localeCompare(b));
+        for (const h of horsesSorted) {
+          const sample = byHorse.get(h)[0];
+          const oog = sample?.lastOOG != null ? `OOG ${sample.lastOOG}` : '';
+          const go = sample?.latestGO || '';
+          const entryLine = `↳ ${h}${oog ? ' • ' + oog : ''}${go ? ' • ' + go : ''}`;
+          card.appendChild(makeSubline(entryLine, null, () => {
+            setScreen('entryDetail', { kind: 'entry', key: `${c.class_id}|${h}`, extra: { horse: h, class_id: c.class_id } });
+          }));
+        }
+      }
 
-    const visible = state.selectedPeak.size
-      ? riders.filter(r => state.selectedPeak.has(r.riderName))
-      : riders;
+      list.appendChild(card);
+    }
 
-    visible.forEach(r => {
-      row(r.riderName, String(r.count), () => setScreen('riderDetail', r.riderName), false, r.count > 0);
-    });
+    screenRoot.appendChild(list);
   }
 
-  function renderRiderDetail() {
-    clearScreen();
-    renderToggles();
+  function renderGroupDetail(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
 
-    const riderName = state.detailKey;
-    row(riderName, null, null, false);
+    const rawKey = state.detail?.key;
+    if (!rawKey) return;
 
-    const trips = state.trips
-      .filter(t => (t.riderName || t.teamName || '') === riderName)
-      .filter(tripIsActive)
-      .slice()
-      .sort((a, b) => (Number(a.lastOOG || 0) - Number(b.lastOOG || 0)));
+    // key can be "ring|gid" or "gid"
+    const gid = String(rawKey).includes('|') ? String(rawKey).split('|')[1] : String(rawKey);
 
-    trips.forEach(t => {
-      const status = t.latestStatus ? ` • ${t.latestStatus}` : '';
-      const go = t.latestGO ? ` • ${t.latestGO}` : '';
-      row(
-        `${t.class_name} • ${t.ringName}${status}`,
-        `${t.horseName}${go}`,
-        () => setScreen('entryDetail', t.horseName),
-        false
-      );
-    });
+    // find group object
+    let gObj = null;
+    for (const ring of idx.rings.values()) {
+      for (const g of ring.groups.values()) {
+        if (String(g.class_group_id) === gid) { gObj = g; break; }
+      }
+      if (gObj) break;
+    }
+    if (!gObj) return;
+
+    const card = makeCard();
+    const gTrips = (idx.tripsByGroup.get(gid) || []).filter(tripIsIncluded);
+    const horses = uniqueStrings(gTrips.map(t => t?.horseName).filter(Boolean));
+
+    card.appendChild(makeCardHeader(`${gObj.latestStart || ''} • ${gObj.group_name}`, horses.length));
+
+    // Classes -> entries -> trips context
+    const clsArr = [...gObj.classes.values()].filter(c => schedulePassesStatusMode(c));
+    const sortedClasses = clsArr.sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
+
+    for (const c of sortedClasses) {
+      const cTrips = (idx.tripsByClass.get(String(c.class_id)) || []).filter(tripIsIncluded);
+      if (state.ui.scopeMode === 'ACTIVE' && cTrips.length === 0) continue;
+
+      const horsesInClass = uniqueStrings(cTrips.map(t => t?.horseName).filter(Boolean));
+      card.appendChild(makeSubline(`${c.class_name}`, horsesInClass.length, () => {
+        setScreen('classDetail', { kind: 'class', key: String(c.class_id) });
+      }));
+
+      const byHorse = new Map();
+      for (const t of cTrips) {
+        const h = t?.horseName;
+        if (!h) continue;
+        if (!byHorse.has(h)) byHorse.set(h, []);
+        byHorse.get(h).push(t);
+      }
+      const horsesSorted = [...byHorse.keys()].sort((a, b) => a.localeCompare(b));
+      for (const h of horsesSorted) {
+        const ts = byHorse.get(h);
+        // show each trip row (leaf) for this entry (no slicing)
+        for (const t of ts) {
+          const left = `↳ ${h} • ${t.riderName || ''}`;
+          const right = t.latestGO || (t.lastOOG != null ? `OOG ${t.lastOOG}` : '');
+          card.appendChild(makeSubline(left, right, () => {
+            setScreen('entryDetail', { kind: 'entry', key: `${c.class_id}|${h}`, extra: { horse: h, class_id: c.class_id } });
+          }));
+        }
+      }
+
+      card.appendChild(makeDivider());
+    }
+
+    screenRoot.appendChild(card);
   }
 
-  function renderSummary() {
-    clearScreen();
-    renderToggles();
+  function renderClassDetail(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
 
-    // Summary = schedule truth joined with active trips
-    const tripsByClass = idxTripsByClassId();
-    const rows = state.schedule
-      .filter(scheduleIsIncludedByStatus)
-      .slice()
-      .sort((a, b) => {
-        if ((a.ring_number || 0) !== (b.ring_number || 0)) return (a.ring_number || 0) - (b.ring_number || 0);
-        const ta = String(a.latestStart || '');
-        const tb = String(b.latestStart || '');
-        if (ta !== tb) return ta.localeCompare(tb);
-        return (Number(a.class_number || 0) - Number(b.class_number || 0));
+    const classId = state.detail?.key;
+    if (!classId) return;
+
+    const cTripsAll = (idx.tripsByClass.get(String(classId)) || []);
+    const cTrips = cTripsAll.filter(tripIsIncluded);
+
+    // find a sample schedule record for name/time
+    const sample = cTripsAll[0] || null;
+    const title = sample?.class_name ? sample.class_name : `Class ${classId}`;
+
+    const card = makeCard();
+    card.appendChild(makeCardHeader(title, cTrips.length));
+
+    // Entries by horse
+    const byHorse = new Map();
+    for (const t of cTrips) {
+      const h = t?.horseName;
+      if (!h) continue;
+      if (!byHorse.has(h)) byHorse.set(h, []);
+      byHorse.get(h).push(t);
+    }
+
+    const horsesSorted = [...byHorse.keys()].sort((a, b) => a.localeCompare(b));
+    for (const h of horsesSorted) {
+      const ts = byHorse.get(h).slice().sort((a, b) => (a.lastOOG ?? 999999) - (b.lastOOG ?? 999999));
+      const first = ts[0];
+      const right = first?.latestGO || (first?.lastOOG != null ? `OOG ${first.lastOOG}` : '');
+      card.appendChild(makeSubline(`${h}`, right, () => {
+        setScreen('entryDetail', { kind: 'entry', key: `${classId}|${h}`, extra: { horse: h, class_id: Number(classId) } });
+      }));
+
+      // trips under entry (leaf) — no slicing
+      for (const t of ts) {
+        const left = `↳ ${t.riderName || ''} • ${t.ringName || ''}`;
+        const r = t.latestGO || (t.lastOOG != null ? `OOG ${t.lastOOG}` : '') || (t.latestStatus || '');
+        card.appendChild(makeSubline(left, r));
+      }
+
+      card.appendChild(makeDivider());
+    }
+
+    screenRoot.appendChild(card);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCREEN: RIDERS (trips-first, derived from watch_trips)
+  // ---------------------------------------------------------------------------
+
+  function renderRiders(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
+
+    // Peak: riders (derived from included trips)
+    const allTrips = state.trips.filter(tripIsIncluded);
+    const riderNames = uniqueStrings(allTrips.map(t => t?.riderName).filter(Boolean)).sort((a, b) => a.localeCompare(b));
+    const peakItems = riderNames.map(r => ({ key: r, label: r }));
+    screenRoot.appendChild(makePeakRow(peakItems, state.selectedPeakKeys, togglePeak));
+
+    const list = el('div', 'list-column');
+    const visibleRiders = state.selectedPeakKeys.size ? riderNames.filter(r => state.selectedPeakKeys.has(r)) : riderNames;
+
+    for (const rider of visibleRiders) {
+      const rTripsAll = (idx.tripsByRider.get(String(rider)) || []);
+      const rTrips = rTripsAll.filter(tripIsIncluded);
+      if (state.ui.scopeMode === 'ACTIVE' && rTrips.length === 0) continue;
+
+      const card = makeCard();
+      card.appendChild(makeCardHeader(rider, rTrips.length, () => {
+        setScreen('riderDetail', { kind: 'rider', key: rider });
+      }));
+
+      // rollup: classes/rings under rider
+      const byClass = new Map();
+      for (const t of rTrips) {
+        const cid = t?.class_id;
+        if (cid == null) continue;
+        const k = String(cid);
+        if (!byClass.has(k)) byClass.set(k, []);
+        byClass.get(k).push(t);
+      }
+
+      const classKeys = [...byClass.keys()].sort((a, b) => {
+        const aa = byClass.get(a)[0];
+        const bb = byClass.get(b)[0];
+        const ta = dtTimeToEpochMs(aa?.dt || state.meta.dt, aa?.latestStart);
+        const tb = dtTimeToEpochMs(bb?.dt || state.meta.dt, bb?.latestStart);
+        if (ta != null && tb != null && ta !== tb) return ta - tb;
+        return Number(a) - Number(b);
       });
 
-    rows.forEach(s => {
-      const trips = (tripsByClass.get(s.class_id) || []).filter(tripIsActive);
-      if (state.scopeMode === 'ACTIVE' && trips.length === 0) return;
+      for (const ck of classKeys) {
+        const sample = byClass.get(ck)[0];
+        const label = `${sample?.latestStart || ''} • ${sample?.class_name || ''} • ${sample?.ringName || ''}`;
+        card.appendChild(makeSubline(label, byClass.get(ck).length));
+      }
 
-      row(
-        `${s.ringName} • ${s.class_name}`,
-        String(trips.length),
-        () => setScreen('classDetail', s.class_id),
-        false,
-        trips.length > 0
-      );
+      list.appendChild(card);
+    }
 
-      // brief leaf preview
-      trips.slice(0, 4).forEach(t => {
-        const go = t.latestGO ? ` • ${t.latestGO}` : '';
-        const oog = (t.lastOOG != null) ? `#${t.lastOOG}` : '';
-        row(`↳ ${t.horseName} • ${oog}${go}`, null, () => setScreen('entryDetail', t.horseName), false);
-      });
+    screenRoot.appendChild(list);
+  }
+
+  function renderRiderDetail(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
+
+    const rider = state.detail?.key;
+    if (!rider) return;
+
+    const rTripsAll = (idx.tripsByRider.get(String(rider)) || []);
+    const rTrips = rTripsAll.filter(tripIsIncluded).slice().sort((a, b) => {
+      const ta = dtTimeToEpochMs(a?.dt || state.meta.dt, a?.latestGO || a?.latestStart);
+      const tb = dtTimeToEpochMs(b?.dt || state.meta.dt, b?.latestGO || b?.latestStart);
+      if (ta != null && tb != null && ta !== tb) return ta - tb;
+      return (a.lastOOG ?? 999999) - (b.lastOOG ?? 999999);
     });
+
+    const card = makeCard();
+    card.appendChild(makeCardHeader(rider, rTrips.length));
+
+    for (const t of rTrips) {
+      const left = `${t.latestGO || t.latestStart || ''} • ${t.ringName || ''} • ${t.class_name || ''} • ${t.horseName || ''}`;
+      const right = t.lastOOG != null ? `OOG ${t.lastOOG}` : (t.latestStatus || '');
+      card.appendChild(makeSubline(left, right, () => {
+        if (t?.class_id != null && t?.horseName) {
+          setScreen('entryDetail', { kind: 'entry', key: `${t.class_id}|${t.horseName}`, extra: { horse: t.horseName, class_id: t.class_id } });
+        }
+      }));
+    }
+
+    screenRoot.appendChild(card);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCREEN: ENTRY DETAIL (class_id + horseName)
+  // ---------------------------------------------------------------------------
+
+  function renderEntryDetail(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
+
+    const k = state.detail?.key;
+    if (!k || !String(k).includes('|')) return;
+    const [classId, horse] = String(k).split('|');
+
+    const trips = (idx.tripsByEntryKey.get(`${classId}|${horse}`) || []).filter(tripIsIncluded);
+    const title = `${horse} • ${trips[0]?.class_name || 'Class ' + classId}`;
+
+    const card = makeCard();
+    card.appendChild(makeCardHeader(title, trips.length));
+
+    const sorted = trips.slice().sort((a, b) => (a.lastOOG ?? 999999) - (b.lastOOG ?? 999999));
+    for (const t of sorted) {
+      const left = `${t.riderName || ''} • ${t.ringName || ''}`;
+      const right = t.latestGO || (t.lastOOG != null ? `OOG ${t.lastOOG}` : '') || (t.latestStatus || '');
+      card.appendChild(makeSubline(left, right));
+    }
+
+    screenRoot.appendChild(card);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCREEN: SUMMARY (ring -> group -> class -> entries/trips flattened)
+  // ---------------------------------------------------------------------------
+
+  function renderSummary(idx) {
+    clearRoot();
+    screenRoot.appendChild(makeToggleRow());
+
+    // Summary uses ring scaffolding but only included trips affect visibility in ACTIVE scope
+    const ringArr = [...idx.rings.values()].sort((a, b) => a.ring_number - b.ring_number);
+
+    const list = el('div', 'list-column');
+
+    for (const ring of ringArr) {
+      const ringTrips = (idx.tripsByRing.get(String(ring.ring_number)) || []).filter(tripIsIncluded);
+      if (state.ui.scopeMode === 'ACTIVE' && ringTrips.length === 0) continue;
+
+      const card = makeCard();
+      card.appendChild(makeCardHeader(`${ring.ringName}`, ringTrips.length, () => {
+        setScreen('ringDetail', { kind: 'ring', key: String(ring.ring_number) });
+      }));
+
+      // group rollups
+      const groupsArr = [...ring.groups.values()].filter(g => schedulePassesStatusMode(g));
+      groupsArr.sort((a, b) => (a.startMsMin ?? 0) - (b.startMsMin ?? 0));
+
+      for (const g of groupsArr) {
+        const gid = String(g.class_group_id);
+        const gTrips = (idx.tripsByGroup.get(gid) || []).filter(tripIsIncluded);
+        if (state.ui.scopeMode === 'ACTIVE' && gTrips.length === 0) continue;
+
+        const line = `${g.latestStart || ''} • ${g.group_name}${g.latestStatus ? ' • ' + g.latestStatus : ''}`;
+        card.appendChild(makeSubline(line, gTrips.length, () => {
+          setScreen('groupDetail', { kind: 'group', key: `${ring.ring_number}|${gid}` });
+        }));
+
+        // classes under group
+        const clsArr = [...g.classes.values()].filter(c => schedulePassesStatusMode(c));
+        clsArr.sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
+
+        for (const c of clsArr) {
+          const cTrips = (idx.tripsByClass.get(String(c.class_id)) || []).filter(tripIsIncluded);
+          if (state.ui.scopeMode === 'ACTIVE' && cTrips.length === 0) continue;
+
+          const horses = uniqueStrings(cTrips.map(t => t?.horseName).filter(Boolean));
+          card.appendChild(makeSubline(`↳ ${c.class_name}`, horses.length, () => {
+            setScreen('classDetail', { kind: 'class', key: String(c.class_id) });
+          }));
+
+          // entries list under class (horse + go)
+          const byHorse = new Map();
+          for (const t of cTrips) {
+            const h = t?.horseName;
+            if (!h) continue;
+            if (!byHorse.has(h)) byHorse.set(h, []);
+            byHorse.get(h).push(t);
+          }
+          const horsesSorted = [...byHorse.keys()].sort((a, b) => a.localeCompare(b));
+          for (const h of horsesSorted) {
+            const sample = byHorse.get(h)[0];
+            const go = sample?.latestGO || '';
+            const oog = sample?.lastOOG != null ? `OOG ${sample.lastOOG}` : '';
+            const entryLine = `   • ${h}${oog ? ' • ' + oog : ''}${go ? ' • ' + go : ''}`;
+            card.appendChild(makeSubline(entryLine, null, () => {
+              setScreen('entryDetail', { kind: 'entry', key: `${c.class_id}|${h}`, extra: { horse: h, class_id: c.class_id } });
+            }));
+          }
+        }
+
+        card.appendChild(makeDivider());
+      }
+
+      list.appendChild(card);
+    }
+
+    screenRoot.appendChild(list);
   }
 
   // ---------------------------------------------------------------------------
   // RENDER DISPATCH
   // ---------------------------------------------------------------------------
 
-  function updateNavCounts() {
-    if (!navHorses) return;
-    navHorses.textContent = `Active Horses (${state.activeHorses.size})`;
-  }
-
   function render() {
-    updateNavCounts();
+    if (!screenRoot || !headerTitle) return;
+
+    const idx = indexData();
 
     // Header title
     const titleMap = {
-      start: 'Start',
       horses: 'Active Horses',
       rings: 'Rings',
-      ringDetail: 'Ring',
-      classGroupDetail: 'Group',
       classes: 'Classes',
-      classDetail: 'Class',
-      entryDetail: 'Horse',
       riders: 'Riders',
+      summary: 'Summary',
+      ringDetail: 'Ring',
+      groupDetail: 'Group',
+      classDetail: 'Class',
+      horseDetail: 'Horse',
       riderDetail: 'Rider',
-      summary: 'Summary'
+      entryDetail: 'Entry'
     };
     headerTitle.textContent = titleMap[state.currentScreen] || state.currentScreen;
 
-    if (state.currentScreen === 'start') return renderStart();
-    if (state.currentScreen === 'horses') return renderHorses();
-    if (state.currentScreen === 'rings') return renderRings();
-    if (state.currentScreen === 'ringDetail') return renderRingDetail();
-    if (state.currentScreen === 'classGroupDetail') return renderClassGroupDetail();
-    if (state.currentScreen === 'classes') return renderClasses();
-    if (state.currentScreen === 'classDetail') return renderClassDetail();
-    if (state.currentScreen === 'entryDetail') return renderEntryDetail();
-    if (state.currentScreen === 'riders') return renderRiders();
-    if (state.currentScreen === 'riderDetail') return renderRiderDetail();
-    if (state.currentScreen === 'summary') return renderSummary();
+    // Back button visibility
+    if (headerBack) {
+      headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
+    }
+
+    // Render
+    if (state.currentScreen === 'horses') return renderHorses(idx);
+    if (state.currentScreen === 'horseDetail') return renderHorseDetail(idx);
+
+    if (state.currentScreen === 'rings') return renderRings(idx);
+    if (state.currentScreen === 'ringDetail') return renderRingDetail(idx);
+
+    if (state.currentScreen === 'classes') return renderClasses(idx);
+    if (state.currentScreen === 'groupDetail') return renderGroupDetail(idx);
+    if (state.currentScreen === 'classDetail') return renderClassDetail(idx);
+
+    if (state.currentScreen === 'riders') return renderRiders(idx);
+    if (state.currentScreen === 'riderDetail') return renderRiderDetail(idx);
+
+    if (state.currentScreen === 'entryDetail') return renderEntryDetail(idx);
+
+    if (state.currentScreen === 'summary') return renderSummary(idx);
+
+    // fallback
+    clearRoot();
   }
 
   // ---------------------------------------------------------------------------
   // EVENTS
   // ---------------------------------------------------------------------------
 
-  headerBack.addEventListener('click', goBack);
+  if (headerBack) headerBack.addEventListener('click', goBack);
 
   if (navRow) {
     navRow.addEventListener('click', e => {
       const btn = e.target.closest('[data-screen]');
       if (!btn) return;
 
-      // set primary button styling
-      const all = navRow.querySelectorAll('[data-screen]');
-      all.forEach(b => b.classList.remove('nav-btn--primary'));
-      btn.classList.add('nav-btn--primary');
+      const next = btn.dataset.screen;
 
-      setScreen(btn.dataset.screen, null, null, false);
+      // Switching primary screens resets peak selection (per-template)
+      if (next !== state.currentScreen) {
+        resetPeak();
+      }
+
+      state.currentScreen = next;
+      state.detail = null;
+      // do not push nav-to-nav into history
+      state.history = [];
+      render();
     });
   }
 
