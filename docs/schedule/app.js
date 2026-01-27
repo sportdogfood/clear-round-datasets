@@ -1,20 +1,12 @@
 // app.js (FULL DROP) — legacy rows + sticky peakbar + ring cards (group/class/entry collapsed)
 // Data:
-//   ./data/latest/watch_schedule.json  (context scaffold)
-//   ./data/latest/watch_trips.json     (truth overlay)
+//   ./data/latest/watch_schedule.json (context scaffold)
+//   ./data/latest/watch_trips.json    (truth overlay)
 //
-// Rules applied (per your notes):
-// - Start is real entry; header has Next button.
-// - Start -> Active Horses -> Next -> Rings
-// - Active Horses: ONLY legacy .row contract; click row toggles follow/unfollow; no extra text.
-// - Search input filters live (no rerender on each keystroke; fixes "1 character" issue).
-// - Bottom nav includes Start + 4 tabs, uses legacy contract, aggs from watch_trips only.
-// - Rings: sticky peakbar uses .nav-btn styling and scrolls horizontally.
-// - Rings card:
-//   - card-hdr--inverse is true inverse and flex
-//   - group-line: 3 cols, group_name ellipsis, agg only if >0
-//   - class-line: 3 cols, class_name ellipsis, agg only if >0
-//   - entry-line: ONLY horseName + number (no "OOG", no rider line), deduped by (class_id|horseName), choose earliest GO then smallest OOG.
+// Change in THIS drop:
+// - Adds header Next buttons on Rings / Classes / Riders
+//   Start -> Active Horses -> Rings -> Classes -> Riders -> Start
+// - Makes header Back sequential (Rings<-Horses, Classes<-Rings, Riders<-Classes)
 
 (function () {
   'use strict';
@@ -22,7 +14,6 @@
   // ------------------------------------------------------------
   // CONFIG
   // ------------------------------------------------------------
-
   const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
   const DATA_TRIPS_URL = './data/latest/watch_trips.json';
   const REFRESH_MS = 8 * 60 * 1000;
@@ -30,7 +21,6 @@
   // ------------------------------------------------------------
   // STATE
   // ------------------------------------------------------------
-
   const state = {
     loaded: false,
     schedule: [],
@@ -38,9 +28,9 @@
     meta: { dt: null, sid: null, generated_at: null },
 
     // navigation
-    screen: 'start',         // start | state | rings | classes | riders | classDetail | riderDetail
-    history: [],             // stack for header back
-    detail: null,            // { kind, key }
+    screen: 'start', // start | state | rings | classes | riders | classDetail | riderDetail
+    history: [],     // stack for header back in detail screens
+    detail: null,    // { kind, key }
 
     // horses
     followedHorses: new Set(),
@@ -48,16 +38,15 @@
 
     // peak filters (separate, per screen)
     peak: {
-      rings: new Set(),      // ring_number (string)
-      classes: new Set(),    // class_group_id (string)
-      riders: new Set()      // riderName (string)
+      rings: new Set(),   // ring_number (string)
+      classes: new Set(), // class_group_id (string)
+      riders: new Set()   // riderName (string)
     }
   };
 
   // ------------------------------------------------------------
   // DOM
   // ------------------------------------------------------------
-
   const screenRoot = document.getElementById('screen-root');
   const headerTitle = document.getElementById('header-title');
   const headerBack = document.getElementById('header-back');
@@ -67,7 +56,6 @@
   // ------------------------------------------------------------
   // UTIL
   // ------------------------------------------------------------
-
   function el(tag, cls, text) {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -170,7 +158,6 @@
   // ------------------------------------------------------------
   // LOAD
   // ------------------------------------------------------------
-
   async function fetchJson(url) {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`fetch failed: ${url}`);
@@ -223,18 +210,13 @@
   // ------------------------------------------------------------
   // INDEXES (schedule context + trips truth)
   // ------------------------------------------------------------
-
   function buildIndexes() {
     const schedule = state.schedule || [];
     const trips = state.trips || [];
 
-    // schedule context:
     // ringMap: ring_number -> { ring_number, ringName, groups: Map(gid -> groupObj) }
-    // groupObj: { class_group_id, group_name, groupStart, classes: Map(class_id -> classObj) }
-    // classObj: { class_id, class_number, class_name, classStart }
     const ringMap = new Map();
 
-    // helper to compute groupStart/classStart from schedule records
     function maybeSetEarlierTime(current, candidate) {
       if (!candidate) return current;
       if (!current) return candidate;
@@ -247,7 +229,6 @@
 
     for (const r of schedule) {
       if (!r) continue;
-
       const ringN = r.ring_number;
       const ringKey = ringN != null ? String(ringN) : null;
       if (!ringKey) continue;
@@ -272,7 +253,6 @@
       }
       const gObj = ringObj.groups.get(gid);
 
-      // groupStart = earliest classStart seen for this group
       const classStart = r.latestStart || null;
       gObj.groupStart = maybeSetEarlierTime(gObj.groupStart, classStart);
 
@@ -305,38 +285,24 @@
       if (!t) continue;
       const horse = t.horseName ? String(t.horseName) : null;
       if (!horse) continue;
-
-      // "Active" truth is: only followed horses
       if (!state.followedHorses.has(horse)) continue;
 
       tripsIncluded.push(t);
-
       push(tripsByHorse, horse, t);
-
       if (t.ring_number != null) push(tripsByRing, String(t.ring_number), t);
       if (t.class_group_id != null) push(tripsByGroup, String(t.class_group_id), t);
       if (t.class_id != null) push(tripsByClass, String(t.class_id), t);
       if (t.riderName) push(tripsByRider, String(t.riderName), t);
     }
 
-    return {
-      ringMap,
-      tripsIncluded,
-      tripsByRing,
-      tripsByGroup,
-      tripsByClass,
-      tripsByRider,
-      tripsByHorse
-    };
+    return { ringMap, tripsIncluded, tripsByRing, tripsByGroup, tripsByClass, tripsByRider, tripsByHorse };
   }
 
   // ------------------------------------------------------------
   // AGGS (from trips truth only)
   // ------------------------------------------------------------
-
   function renderAggs(idx) {
     const horsesCount = state.followedHorses.size;
-
     const ringsCount = uniqStrings(idx.tripsIncluded.map(t => t && t.ring_number).filter(v => v != null).map(String)).length;
     const classesCount = uniqStrings(idx.tripsIncluded.map(t => t && t.class_group_id).filter(v => v != null).map(String)).length;
     const ridersCount = uniqStrings(idx.tripsIncluded.map(t => t && t.riderName).filter(Boolean).map(String)).length;
@@ -350,7 +316,6 @@
   // ------------------------------------------------------------
   // PEAKBAR
   // ------------------------------------------------------------
-
   function renderPeakbar(items, selectedSet, onToggle) {
     if (!items || items.length === 0) return null;
 
@@ -380,7 +345,6 @@
   // ------------------------------------------------------------
   // TAGS / ROWS
   // ------------------------------------------------------------
-
   function makeTag(text, positive) {
     const t = el('span', 'row-tag row-tag--count', String(text == null ? '' : text));
     if (positive) t.classList.add('row-tag--positive');
@@ -400,11 +364,9 @@
   }
 
   // ------------------------------------------------------------
-  // RING CARD BUILD
+  // DEDUPE: first entry instance per (class_id|horseName)
   // ------------------------------------------------------------
-
   function chooseFirstTripForHorseClass(trips) {
-    // select by earliest latestGO (time), then smallest lastOOG
     let best = null;
     for (const t of trips) {
       if (!t) continue;
@@ -423,12 +385,13 @@
   }
 
   function dedupeFirstEntriesForClass(trips) {
-    // Dedup by class_id|horseName (NOT entryxclasses_uuid / trip_id)
     const byKey = new Map();
+
     for (const t of trips) {
       const cid = t && t.class_id != null ? String(t.class_id) : null;
       const h = t && t.horseName ? String(t.horseName) : null;
       if (!cid || !h) continue;
+
       const k = cid + '|' + h;
       if (!byKey.has(k)) byKey.set(k, []);
       byKey.get(k).push(t);
@@ -440,7 +403,6 @@
       if (best) out.push(best);
     }
 
-    // stable display order: by class_number (if present) then horse
     out.sort((a, b) => {
       const ca = a && a.class_number != null ? Number(a.class_number) : 999999;
       const cb = b && b.class_number != null ? Number(b.class_number) : 999999;
@@ -454,10 +416,10 @@
   // ------------------------------------------------------------
   // SCREENS
   // ------------------------------------------------------------
-
   function renderStart(idx) {
     clearRoot();
     setNavActive('start');
+
     setHeader('Start', {
       showBack: false,
       actionLabel: 'Next',
@@ -468,24 +430,22 @@
     const logo = el('div', 'start-logo');
     logo.appendChild(el('div', 'start-logo-title', 'CRT Daily Show'));
 
-    const sub = state.loaded
-      ? `sid ${state.meta.sid || '-'} • ${state.meta.dt || '-'}`
-      : 'Loading schedule...';
+    const sub = state.loaded ? `sid ${state.meta.sid || '-'} • ${state.meta.dt || '-'}` : 'Loading schedule...';
     logo.appendChild(el('div', 'start-logo-subtitle', sub));
-
     if (state.meta.generated_at) {
       logo.appendChild(el('div', 'start-logo-subtitle', `generated ${state.meta.generated_at}`));
     }
 
     wrap.appendChild(logo);
 
-    // Start session row (legacy)
-    const startRow = makeRow(state.loaded ? 'Start Session' : 'Loading…', makeTag(state.loaded ? 'GO' : '…'), false, () => {
-      state.screen = 'state';
-      render();
-    });
-    wrap.appendChild(startRow);
+    const startRow = makeRow(
+      state.loaded ? 'Start Session' : 'Loading…',
+      makeTag(state.loaded ? 'GO' : '…'),
+      false,
+      () => { state.screen = 'state'; render(); }
+    );
 
+    wrap.appendChild(startRow);
     screenRoot.appendChild(wrap);
   }
 
@@ -500,7 +460,6 @@
       onAction: () => { state.screen = 'rings'; render(); }
     });
 
-    // Search (legacy)
     const ss = el('div', 'state-search');
     const input = el('input', 'state-search-input');
     input.type = 'text';
@@ -509,25 +468,23 @@
     ss.appendChild(input);
     screenRoot.appendChild(ss);
 
-    // Build horse rows once; filter by toggling [hidden]
     const horses = uniqStrings(state.trips.map(t => t && t.horseName).filter(Boolean))
       .sort((a, b) => a.localeCompare(b));
 
     const rowNodes = [];
+
     for (const h of horses) {
       const horseTripsAll = idx.tripsByHorse.get(String(h)) || [];
       const tag = makeTag(horseTripsAll.length, horseTripsAll.length > 0);
-
       const followed = state.followedHorses.has(String(h));
+
       const row = makeRow(String(h), tag, followed, () => {
         const key = String(h);
         if (state.followedHorses.has(key)) state.followedHorses.delete(key);
         else state.followedHorses.add(key);
 
-        // update row style immediately
         row.classList.toggle('row--active', state.followedHorses.has(key));
 
-        // update aggs without full rerender
         const nextIdx = buildIndexes();
         renderAggs(nextIdx);
       });
@@ -549,7 +506,6 @@
       applyFilter(state.horseSearch);
     });
 
-    // apply initial filter if any
     applyFilter(state.horseSearch);
   }
 
@@ -560,11 +516,10 @@
     setHeader('Rings', {
       showBack: true,
       onBack: () => { state.screen = 'state'; render(); },
-      actionLabel: null,
-      onAction: null
+      actionLabel: 'Next',
+      onAction: () => { state.screen = 'classes'; render(); }
     });
 
-    // Peakbar: rings present in truth (active rings)
     const ringKeys = uniqStrings(idx.tripsIncluded.map(t => t && t.ring_number).filter(v => v != null).map(String))
       .sort((a, b) => Number(a) - Number(b));
 
@@ -580,9 +535,7 @@
       const ringTrips = dedupeFirstEntriesForClass(ringTripsAll);
       const ringCount = ringTrips.length;
 
-      // card
       const card = el('div', 'ring-card');
-
       const hdr = el('div', 'card-hdr card-hdr--inverse');
       hdr.appendChild(el('div', 'card-hdr-title', ringObj.ringName || `Ring ${rk}`));
       if (ringCount > 0) hdr.appendChild(makeTag(ringCount, true));
@@ -590,11 +543,9 @@
 
       const body = el('div', 'card-body');
 
-      // groups from schedule context, but only those that have trips (truth)
       const groups = [];
-      for (const g of ringObj.groups.values()) {
-        groups.push(g);
-      }
+      for (const g of ringObj.groups.values()) groups.push(g);
+
       groups.sort((a, b) => {
         const ta = timeToMinutes(a.groupStart) ?? 999999;
         const tb = timeToMinutes(b.groupStart) ?? 999999;
@@ -604,32 +555,30 @@
 
       for (const g of groups) {
         const gTripsAll = idx.tripsByGroup.get(String(g.class_group_id)) || [];
-        // keep only those in this ring
         const gTripsRing = gTripsAll.filter(t => t && String(t.ring_number) === String(rk));
         const gFirst = dedupeFirstEntriesForClass(gTripsRing);
         const gCount = gFirst.length;
         if (gCount === 0) continue;
 
-        // group line (3 cols)
         const gl = el('div', 'group-line line-tap');
-        const tcol = el('div', 'line-time', g.groupStart || '');
-        const ncol = el('div', 'line-name', g.group_name || '(Group)');
-        const acol = el('div', 'line-agg');
-        if (gCount > 0) acol.appendChild(makeTag(gCount, true));
-        gl.appendChild(tcol);
-        gl.appendChild(ncol);
-        gl.appendChild(acol);
+        gl.appendChild(el('div', 'line-time', g.groupStart || ''));
+        gl.appendChild(el('div', 'line-name', g.group_name || '(Group)'));
+
+        const ga = el('div', 'line-agg');
+        if (gCount > 0) ga.appendChild(makeTag(gCount, true));
+        gl.appendChild(ga);
+
         gl.addEventListener('click', () => {
-          // jump to classes screen with peak set to this group
           state.peak.classes = new Set([String(g.class_group_id)]);
           state.screen = 'classes';
           render();
         });
+
         body.appendChild(gl);
 
-        // classes under group
         const classes = [];
         for (const c of g.classes.values()) classes.push(c);
+
         classes.sort((a, b) => {
           const na = a.class_number != null ? Number(a.class_number) : 999999;
           const nb = b.class_number != null ? Number(b.class_number) : 999999;
@@ -644,29 +593,30 @@
           if (cCount === 0) continue;
 
           const cl = el('div', 'class-line indent-1 line-tap');
-          const ct = el('div', 'line-time', c.classStart || '');
-          const cn = el('div', 'line-name', `${c.class_number != null ? c.class_number + ' ' : ''}${c.class_name || '(Class)'}`.trim());
+          cl.appendChild(el('div', 'line-time', c.classStart || ''));
+
+          const classLabel = `${c.class_number != null ? c.class_number + ' ' : ''}${c.class_name || '(Class)'}`.trim();
+          cl.appendChild(el('div', 'line-name', classLabel));
+
           const ca = el('div', 'line-agg');
           if (cCount > 0) ca.appendChild(makeTag(cCount, true));
-          cl.appendChild(ct);
-          cl.appendChild(cn);
           cl.appendChild(ca);
+
           cl.addEventListener('click', () => pushDetail('classDetail', { kind: 'class', key: String(c.class_id) }));
           body.appendChild(cl);
 
-          // entries collapsed: show ONLY first entry instance per (class_id|horseName)
-          // entry-line: Name + number (no label, no rider)
-          const bestEntries = cFirst.slice(0, 3); // keep rings readable; change if you want more
+          // entries collapsed: horseName + number only (no "First", no "OOG" label, no rider line)
+          const bestEntries = cFirst.slice(0, 3);
           for (const t of bestEntries) {
-            const num = (t.lastOOG != null ? String(t.lastOOG) : (t.latestPlacing != null ? String(t.latestPlacing) : ''));
+            const num = (t.lastOOG != null ? String(t.lastOOG) : '');
             const eline = el('div', 'entry-line indent-2');
-            const et = el('div', 'line-time', '');
-            const en = el('div', 'line-name', String(t.horseName || ''));
+            eline.appendChild(el('div', 'line-time', ''));
+            eline.appendChild(el('div', 'line-name', String(t.horseName || '')));
+
             const ea = el('div', 'line-agg');
             if (num) ea.appendChild(makeTag(num, false));
-            eline.appendChild(et);
-            eline.appendChild(en);
             eline.appendChild(ea);
+
             body.appendChild(eline);
           }
         }
@@ -684,16 +634,14 @@
     setHeader('Classes', {
       showBack: true,
       onBack: () => { state.screen = 'rings'; render(); },
-      actionLabel: null,
-      onAction: null
+      actionLabel: 'Next',
+      onAction: () => { state.screen = 'riders'; render(); }
     });
 
-    // peak = active groups from truth
     const groupKeys = uniqStrings(idx.tripsIncluded.map(t => t && t.class_group_id).filter(v => v != null).map(String))
       .sort((a, b) => Number(a) - Number(b));
 
     const peakItems = groupKeys.map(gid => {
-      // try to find name from schedule context
       let name = `Group ${gid}`;
       for (const r of idx.ringMap.values()) {
         const g = r.groups.get(String(gid));
@@ -712,7 +660,6 @@
       const first = dedupeFirstEntriesForClass(trips);
       const count = first.length;
 
-      // group row -> opens nothing; tap to clear peak is not requested; keep as detail-less header row
       let gname = `Group ${gid}`;
       for (const r of idx.ringMap.values()) {
         const g = r.groups.get(String(gid));
@@ -720,12 +667,12 @@
       }
 
       const row = makeRow(gname, makeTag(count, count > 0), false, () => {
-        // go to first class in this group if present
         const firstTrip = first[0];
         if (firstTrip && firstTrip.class_id != null) {
           pushDetail('classDetail', { kind: 'class', key: String(firstTrip.class_id) });
         }
       });
+
       screenRoot.appendChild(row);
     }
   }
@@ -736,9 +683,9 @@
 
     setHeader('Riders', {
       showBack: true,
-      onBack: () => { state.screen = 'rings'; render(); },
-      actionLabel: null,
-      onAction: null
+      onBack: () => { state.screen = 'classes'; render(); },
+      actionLabel: 'Next',
+      onAction: () => { state.screen = 'start'; render(); }
     });
 
     const riderKeys = uniqStrings(idx.tripsIncluded.map(t => t && t.riderName).filter(Boolean).map(String))
@@ -758,34 +705,26 @@
       const row = makeRow(String(rider), makeTag(count, count > 0), false, () => {
         pushDetail('riderDetail', { kind: 'rider', key: String(rider) });
       });
+
       screenRoot.appendChild(row);
     }
   }
 
   function renderClassDetail(idx) {
     const classId = state.detail && state.detail.key ? String(state.detail.key) : null;
-
     clearRoot();
     setNavActive('classes');
-    setHeader('Class', {
-      showBack: true,
-      onBack: goBack,
-      actionLabel: null,
-      onAction: null
-    });
 
+    setHeader('Class', { showBack: true, onBack: goBack, actionLabel: null, onAction: null });
     if (!classId) return;
 
     const tripsAll = idx.tripsByClass.get(String(classId)) || [];
     const first = dedupeFirstEntriesForClass(tripsAll);
 
-    // title row (legacy)
-    const title = `Class ${classId}`;
-    screenRoot.appendChild(makeRow(title, makeTag(first.length, first.length > 0), false, null));
+    screenRoot.appendChild(makeRow(`Class ${classId}`, makeTag(first.length, first.length > 0), false, null));
 
-    // entries as rows: horse name + number (no OOG label)
     for (const t of first) {
-      const num = (t.lastOOG != null ? String(t.lastOOG) : (t.latestPlacing != null ? String(t.latestPlacing) : ''));
+      const num = (t.lastOOG != null ? String(t.lastOOG) : '');
       const row = makeRow(String(t.horseName || ''), makeTag(num, false), false, null);
       screenRoot.appendChild(row);
     }
@@ -793,22 +732,15 @@
 
   function renderRiderDetail(idx) {
     const rider = state.detail && state.detail.key ? String(state.detail.key) : null;
-
     clearRoot();
     setNavActive('riders');
-    setHeader(rider || 'Rider', {
-      showBack: true,
-      onBack: goBack,
-      actionLabel: null,
-      onAction: null
-    });
 
+    setHeader(rider || 'Rider', { showBack: true, onBack: goBack, actionLabel: null, onAction: null });
     if (!rider) return;
 
     const tripsAll = idx.tripsByRider.get(String(rider)) || [];
     const first = dedupeFirstEntriesForClass(tripsAll);
 
-    // entries as rows: horse + class_number
     for (const t of first) {
       const right = (t.class_number != null ? String(t.class_number) : (t.class_id != null ? String(t.class_id) : ''));
       const row = makeRow(String(t.horseName || ''), makeTag(right, false), false, null);
@@ -819,14 +751,12 @@
   // ------------------------------------------------------------
   // RENDER
   // ------------------------------------------------------------
-
   function render() {
     if (!screenRoot || !headerTitle) return;
 
     const idx = buildIndexes();
     renderAggs(idx);
 
-    // details keep their parent tab highlighted
     const primary = {
       start: 'start',
       state: 'state',
@@ -836,6 +766,7 @@
       classDetail: 'classes',
       riderDetail: 'riders'
     };
+
     setNavActive(primary[state.screen] || 'start');
 
     if (state.screen === 'start') return renderStart(idx);
@@ -853,7 +784,6 @@
   // ------------------------------------------------------------
   // EVENTS
   // ------------------------------------------------------------
-
   if (navRow) {
     navRow.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-screen]');
@@ -865,9 +795,6 @@
       state.history = [];
       state.detail = null;
 
-      // switching tabs does not clear peaks automatically (your previous preference);
-      // keep as-is so peak choice persists across visits.
-
       state.screen = next;
       render();
     });
@@ -876,7 +803,7 @@
   // ------------------------------------------------------------
   // BOOT
   // ------------------------------------------------------------
-
   loadAll().catch(() => {});
   render();
+
 })();
