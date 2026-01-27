@@ -1,14 +1,34 @@
-// app.js — CRT Daily Show (Option B: Cards) + Session Start + Legacy nav contract
-// Data:
-//   docs/schedule/data/latest/watch_schedule.json  (full schedule scaffold)
-//   docs/schedule/data/latest/watch_trips.json     (truth overlay: active entries)
+/*
+CRT Daily Show — Single-file build (Option 1: sectioned app.js)
+
+Edit rules:
+- Keep this as ONE file (no bundler). No re-ordering unless explicitly required.
+- Make changes inside the smallest relevant SECTION.
+
+TABLE OF CONTENTS
+01 CONFIG
+02 STATE
+03 DOM
+04 UTIL
+05 LOAD
+06 INDEXES
+07 GATING (toggles)
+08 TOP CONTROLS (toggles + peak)
+09 CARD BUILDERS
+10 NAV + BACK
+11 SCREENS (primary)
+12 SCREENS (details)
+13 RENDER
+14 EVENTS
+15 BOOT
+*/
 
 (function () {
   'use strict';
 
-  // ------------------------------------------------------------
-  // CONFIG
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 01 — CONFIG
+  // ============================================================
 
   const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
   const DATA_TRIPS_URL = './data/latest/watch_trips.json';
@@ -16,9 +36,9 @@
 
   const STATUS_COMPLETED = 'Completed';
 
-  // ------------------------------------------------------------
-  // STATE
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 02 — STATE
+  // ============================================================
 
   const state = {
     loaded: false,
@@ -49,18 +69,18 @@
     detail: null            // { kind, key }
   };
 
-  // ------------------------------------------------------------
-  // DOM
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 03 — DOM
+  // ============================================================
 
   const screenRoot = document.getElementById('screen-root');
   const headerTitle = document.getElementById('header-title');
   const headerBack = document.getElementById('header-back');
   const navRow = document.getElementById('nav-row');
 
-  // ------------------------------------------------------------
-  // UTIL
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 04 — UTIL
+  // ============================================================
 
   function el(tag, cls, text) {
     const n = document.createElement(tag);
@@ -122,9 +142,9 @@
     return hh * 60 + mm;
   }
 
-  // ------------------------------------------------------------
-  // LOAD
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 05 — LOAD
+  // ============================================================
 
   async function fetchJson(url) {
     const res = await fetch(url, { cache: 'no-store' });
@@ -166,9 +186,9 @@
 
   setInterval(() => { loadAll().catch(() => {}); }, REFRESH_MS);
 
-  // ------------------------------------------------------------
-  // INDEXES
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 06 — INDEXES
+  // ============================================================
 
   function buildIndexes() {
     const schedule = state.schedule || [];
@@ -253,9 +273,9 @@
     return { ringMap, groupMap, classMap, tripsByHorse, tripsByRing, tripsByGroup, tripsByClass, tripsByRider, tripsByEntryKey };
   }
 
-  // ------------------------------------------------------------
-  // GATING (toggles) — independent from peak
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 07 — GATING (toggles) — independent from peak
+  // ============================================================
 
   function classIsCompleted(classId, idx) {
     const rec = idx.classMap.get(String(classId));
@@ -285,9 +305,9 @@
     return true;
   }
 
-  // ------------------------------------------------------------
-  // TOP CONTROLS
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 08 — TOP CONTROLS (toggles + peak)
+  // ============================================================
 
   function renderToggleRow() {
     const scroller = el('div', 'top-scroller');
@@ -335,9 +355,9 @@
     render();
   }
 
-  // ------------------------------------------------------------
-  // CARD BUILDERS
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 09 — CARD BUILDERS
+  // ============================================================
 
   function makeTag(text, positive) {
     const t = el('div', 'row-tag row-tag--count', String(text));
@@ -377,9 +397,9 @@
     lines.appendChild(line);
   }
 
-  // ------------------------------------------------------------
-  // NAV + BACK
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 10 — NAV + BACK
+  // ============================================================
 
   function goto(screen) {
     // switching primary tabs: clear detail/back + peak for that screen only stays (legacy preference: keep; change if needed)
@@ -404,9 +424,9 @@
     render();
   }
 
-  // ------------------------------------------------------------
-  // SCREENS
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 11 — SCREENS (primary)
+  // ============================================================
 
   function renderStart(idx) {
     clearRoot();
@@ -692,7 +712,10 @@
     }
   }
 
-  // DETAILS
+  // ============================================================
+  // SECTION 12 — SCREENS (details)
+  // ============================================================
+
 
   function renderRingDetail(idx) {
     const ringKey = state.detail && state.detail.key;
@@ -882,9 +905,9 @@
     screenRoot.appendChild(card);
   }
 
-  // ------------------------------------------------------------
-  // RENDER
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 13 — RENDER
+  // ============================================================
 
   function renderAggs(idx) {
     const followedCount = state.followedHorses.size;
@@ -948,9 +971,9 @@
     renderStart(idx);
   }
 
-  // ------------------------------------------------------------
-  // EVENTS
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 14 — EVENTS
+  // ============================================================
 
   if (headerBack) headerBack.addEventListener('click', goBack);
 
@@ -968,9 +991,9 @@
     });
   }
 
-  // ------------------------------------------------------------
-  // BOOT (session start required; data can load in background)
-  // ------------------------------------------------------------
+  // ============================================================
+  // SECTION 15 — BOOT (session start required; data can load in background)
+  // ============================================================
 
   loadAll().catch(() => {});
   render();
