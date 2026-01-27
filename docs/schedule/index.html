@@ -1,4 +1,4 @@
-<!-- index.html — CRT Daily Show App (legacy nav + legacy row contract + NEW card contract) -->
+<!-- index.html (CARD MODE, legacy nav/header kept) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +17,6 @@
       --pill-radius: 999px;
       --header-h: 52px;
       --nav-h: 72px;
-      --card-radius: 18px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -31,13 +30,8 @@
     [hidden] { display: none !important; }
 
     .app{
-      width: 100%;
-      max-width: 480px;
-      height: 100vh;
-      max-height: 720px;
-      margin: 8px;
-      display: flex;
-      flex-direction: column;
+      width: 100%; max-width: 480px; height: 100vh; max-height: 720px;
+      margin: 8px; display: flex; flex-direction: column;
       background: var(--bg);
       border-radius: 24px;
       border: 1px solid rgba(15, 23, 42, 0.95);
@@ -47,7 +41,7 @@
       overflow: hidden;
     }
 
-    /* Header ----------------------------------------------------- */
+    /* Header */
     .app-header{
       height: var(--header-h);
       flex-shrink: 0;
@@ -63,30 +57,17 @@
     .header-title{ justify-self: center; text-align: center; }
     .header-action{ justify-self: end; }
 
-    .header-back,
-    .header-action {
-      min-width: 60px;
-      height: 34px;
-      padding: 0 16px;
+    .header-back, .header-action {
+      min-width: 60px; height: 34px; padding: 0 16px;
       border-radius: var(--pill-radius);
       border: 1px solid var(--border-soft);
       background: #020617;
       color: #e5e7eb;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 500;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500;
       cursor: pointer;
-      box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 1),
-        0 3px 10px rgba(0, 0, 0, 0.8);
-      transition:
-        background 0.12s ease-out,
-        border-color 0.12s ease-out,
-        transform 0.08s ease-out,
-        box-shadow 0.12s ease-out,
-        color 0.12s ease-out;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 1), 0 3px 10px rgba(0,0,0,.8);
+      transition: background .12s ease-out, border-color .12s ease-out, transform .08s ease-out, box-shadow .12s ease-out, color .12s ease-out;
     }
     .header-back span { font-size: 16px; line-height: 1; }
     .header-action {
@@ -94,65 +75,41 @@
       background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
       color: #f9fafb;
     }
-    .header-back:active,
-    .header-action:active {
+    .header-back:active, .header-action:active {
       transform: translateY(1px) scale(0.97);
-      box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 1),
-        0 2px 6px rgba(0, 0, 0, 0.9);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 1), 0 2px 6px rgba(0,0,0,.9);
     }
     .header-title {
-      flex: 1;
-      text-align: center;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
-      padding: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 16px; font-weight: 600; margin: 0; padding: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    /* Main content ---------------------------------------------- */
-    .app-main {
+    /* Main */
+    .app-main{
       flex: 1;
       overflow-y: auto;
       padding: 8px 12px 8px;
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
-
-    .list-column {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .list-column{
+      display: flex; flex-direction: column; gap: 10px;
       padding-bottom: 12px;
     }
 
-    /* Start logo ------------------------------------------------- */
-    .start-logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+    /* Start logo (legacy) */
+    .start-logo{
+      display:flex; flex-direction:column; align-items:center; gap:8px;
       margin: 10px 0 18px;
     }
-    .start-logo-title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-align: center;
+    .start-logo-title{
+      font-size: 18px; font-weight: 600; letter-spacing: .04em; text-align:center;
     }
-    .start-logo-subtitle {
-      font-size: 12px;
-      color: #d1d5db;
-      opacity: 0.9;
-      text-align:center;
-      max-width: 320px;
-      line-height: 1.35;
+    .start-logo-subtitle{
+      font-size: 12px; color: #d1d5db; opacity: .9; text-align:center;
     }
 
-    /* Long pills (legacy rows) ---------------------------------- */
-    .row {
+    /* Legacy pills (kept for tags + any row controls) */
+    .row{
       width: 100%;
       min-height: 46px;
       padding: 10px 16px;
@@ -166,13 +123,10 @@
       color: #e5e7eb;
       box-shadow: 0 1px 0 #020617;
     }
-    .row-title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      padding-right: 8px;
+    .row-title{
+      white-space: nowrap; overflow:hidden; text-overflow: ellipsis; padding-right: 8px;
     }
-    .row-tag {
+    .row-tag{
       min-width: 28px;
       padding: 3px 10px;
       border-radius: var(--pill-radius);
@@ -184,111 +138,67 @@
       font-variant-numeric: tabular-nums;
       box-shadow: 0 0 0 1px #020617;
     }
-    .row-tag--boolean { min-width: 18px; width: 18px; height: 18px; padding: 0; border-radius: 999px; font-size: 0; }
     .row-tag--count { min-width: 30px; }
-    .row-tag--positive { border-color: #22c55e; background: #14532d; color: #f9fafb; }
-
-    .row--active {
-      border-color: var(--accent);
-      background: radial-gradient(circle at top, #1f2937, #020617 75%);
-      box-shadow:
-        0 0 0 1px #020617,
-        0 4px 10px rgba(15, 23, 42, 0.75);
-      color: #f9fafb;
+    .row-tag--positive{
+      border-color: #22c55e; background: #14532d; color: #f9fafb;
     }
-    .row--active .row-title { color: #f9fafb; }
-
-    .row--tap {
-      cursor: pointer;
-      user-select: none;
-      transition:
-        transform 0.08s ease-out,
-        box-shadow 0.12s ease-out,
-        border-color 0.12s ease-out,
-        background 0.12s ease-out;
+    .row--tap{
+      cursor:pointer; user-select:none;
+      transition: transform .08s ease-out, box-shadow .12s ease-out, border-color .12s ease-out, background .12s ease-out;
     }
-    .row--tap:active {
+    .row--tap:active{
       transform: translateY(1px) scale(0.995);
-      box-shadow:
-        0 0 0 1px #020617,
-        0 2px 8px rgba(15, 23, 42, 0.95);
+      box-shadow: 0 0 0 1px #020617, 0 2px 8px rgba(15,23,42,.95);
     }
 
-    /* NEW: Cards (Option B) ------------------------------------- */
-    .card {
+    /* CARD MODE (new) */
+    .card{
       width: 100%;
-      border-radius: var(--card-radius);
-      border: 1px solid rgba(75, 85, 99, 0.9);
-      background: linear-gradient(180deg, rgba(17,24,39,1) 0%, rgba(2,6,23,1) 90%);
-      box-shadow:
-        0 0 0 1px rgba(2,6,23,1),
-        0 10px 24px rgba(0,0,0,0.55);
-      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid rgba(75,85,99,.9);
+      background: radial-gradient(circle at top, rgba(31,41,55,.85), rgba(2,6,23,.92) 70%);
+      box-shadow: 0 1px 0 #020617;
+      padding: 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .card--tap{
-      cursor:pointer;
-      user-select:none;
-      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out, border-color 0.12s ease-out;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .08s ease-out, box-shadow .12s ease-out, border-color .12s ease-out, background .12s ease-out;
     }
     .card--tap:active{
       transform: translateY(1px) scale(0.995);
-      box-shadow:
-        0 0 0 1px rgba(2,6,23,1),
-        0 8px 18px rgba(0,0,0,0.75);
+      box-shadow: 0 0 0 1px #020617, 0 2px 10px rgba(15,23,42,.95);
     }
     .card--active{
       border-color: var(--accent);
-      box-shadow:
-        0 0 0 1px rgba(2,6,23,1),
-        0 14px 30px rgba(15, 23, 42, 0.75);
+      box-shadow: 0 0 0 1px #020617, 0 6px 16px rgba(15,23,42,.65);
     }
     .card-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 12px 14px;
+      display:flex; align-items:center; justify-content:space-between; gap: 10px;
     }
     .card-title{
-      font-size: 14px;
-      font-weight: 650;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 14px; font-weight: 650;
+      white-space: nowrap; overflow:hidden; text-overflow: ellipsis;
     }
     .card-lines{
-      padding: 0 14px 12px;
-      display:flex;
-      flex-direction:column;
-      gap: 8px;
+      display:flex; flex-direction:column; gap: 8px;
     }
     .card-line{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(75,85,99,0.65);
-      background: rgba(2,6,23,0.45);
-    }
-    .card-line-text{
+      display:flex; align-items:center; justify-content:space-between; gap: 10px;
       font-size: 12px;
-      color: rgba(229,231,235,0.95);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      padding-right: 8px;
+      color: rgba(229,231,235,.92);
     }
-    .card-divider{
-      height:1px;
-      background: rgba(55, 65, 81, 0.9);
-      margin: 8px 12px 10px;
+    .card-line-left{
+      white-space: nowrap; overflow:hidden; text-overflow: ellipsis;
+      opacity: .98;
     }
 
-    /* State search ---------------------------------------------- */
-    .state-search { margin: 4px 2px 10px; }
-    .state-search-input {
+    /* State search (legacy) */
+    .state-search{ margin: 4px 2px 10px; }
+    .state-search-input{
       width: 100%;
       padding: 10px 16px;
       border-radius: var(--pill-radius);
@@ -299,33 +209,43 @@
       outline: none;
       box-shadow: 0 1px 0 #020617;
     }
-    .state-search-input::placeholder { color: rgba(156, 163, 175, 0.95); }
+    .state-search-input::placeholder{ color: rgba(156,163,175,.95); }
 
-    /* Bottom nav ------------------------------------------------ */
-    .app-nav {
+    /* Top scrollers (toggles + peak) */
+    .top-scroller{
+      overflow-x:auto; -webkit-overflow-scrolling: touch; white-space: nowrap;
+      width: 100%;
+      margin: 4px 0 10px;
+    }
+    .top-row{
+      display:inline-flex; gap:8px; padding: 0 2px; align-items:center;
+    }
+    .top-sep{
+      height: 1px;
+      background: rgba(55,65,81,.9);
+      margin: 6px 4px 10px;
+    }
+
+    /* Bottom nav (legacy) */
+    .app-nav{
       height: var(--nav-h);
       flex-shrink: 0;
       border-top: 1px solid #27272f;
       background: #020617;
-      box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.85);
+      box-shadow: 0 -14px 30px rgba(0,0,0,.85);
       backdrop-filter: blur(12px);
-      display: flex;
-      align-items: flex-start;
+      display:flex;
+      align-items:flex-start;
       padding: 6px 6px 10px;
     }
-    .nav-scroller {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      white-space: nowrap;
+    .nav-scroller{
+      overflow-x:auto; -webkit-overflow-scrolling: touch; white-space: nowrap;
       width: 100%;
     }
-    .nav-row {
-      display: inline-flex;
-      gap: 8px;
-      padding: 0 4px;
-      align-items: center;
+    .nav-row{
+      display:inline-flex; gap:8px; padding: 0 4px; align-items:center;
     }
-    .nav-btn {
+    .nav-btn{
       padding: 6px 14px;
       border-radius: var(--pill-radius);
       border: 1px solid #4b4f57;
@@ -337,33 +257,21 @@
       cursor: pointer;
       user-select: none;
       box-shadow: 0 1px 0 #020617;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition:
-        background 0.12s ease-out,
-        color 0.12s ease-out,
-        border-color 0.12s ease-out,
-        box-shadow 0.12s ease-out,
-        transform 0.08s ease-out;
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      transition: background .12s ease-out, color .12s ease-out, border-color .12s ease-out, box-shadow .12s ease-out, transform .08s ease-out;
     }
-    .nav-btn--primary {
+    .nav-btn--primary{
       border-color: var(--accent);
       background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
       color: #f9fafb;
-      box-shadow:
-        0 0 0 1px #020617,
-        0 3px 10px rgba(15, 23, 42, 0.8);
+      box-shadow: 0 0 0 1px #020617, 0 3px 10px rgba(15,23,42,.8);
     }
-    .nav-btn:active {
+    .nav-btn:active{
       transform: translateY(1px) scale(0.98);
-      box-shadow:
-        0 0 0 1px #020617,
-        0 2px 6px rgba(15, 23, 42, 0.9);
+      box-shadow: 0 0 0 1px #020617, 0 2px 6px rgba(15,23,42,.9);
     }
-    .nav-label { display: inline-block; }
-    .nav-agg {
+    .nav-label{ display:inline-block; }
+    .nav-agg{
       min-width: 22px;
       padding: 2px 8px;
       border-radius: 999px;
@@ -375,10 +283,12 @@
       font-variant-numeric: tabular-nums;
       box-shadow: 0 0 0 1px #020617;
     }
-    .nav-agg--positive { border-color: #22c55e; background: #14532d; color: #f9fafb; }
-
-    button { font-family: inherit; }
-    .is-hidden{ visibility: hidden; pointer-events: none; }
+    .nav-agg--positive{
+      border-color: #22c55e;
+      background: #14532d;
+      color: #f9fafb;
+    }
+    button{ font-family: inherit; }
   </style>
 </head>
 
@@ -387,7 +297,7 @@
     <header class="app-header">
       <button class="header-back" id="header-back" type="button"><span>&larr;</span></button>
       <h1 class="header-title" id="header-title">Start</h1>
-      <button class="header-action" id="header-action" type="button" hidden>↻</button>
+      <button class="header-action" id="header-action" type="button" hidden></button>
     </header>
 
     <main class="app-main">
@@ -402,9 +312,9 @@
             <span class="nav-label">Start</span>
           </button>
 
-          <button class="nav-btn" type="button" data-screen="horses">
+          <button class="nav-btn" type="button" data-screen="state">
             <span class="nav-label">Active Horses</span>
-            <span class="nav-agg" data-nav-agg="horses">0</span>
+            <span class="nav-agg" data-nav-agg="state">0</span>
           </button>
 
           <button class="nav-btn" type="button" data-screen="rings">
@@ -429,8 +339,8 @@
         </div>
       </div>
     </nav>
-
-    <script src="app.js"></script>
   </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
