@@ -1,832 +1,1171 @@
-/* app.js (FULL DROP)
-   Fixes implemented:
-   - WHITE UI compatible with index.html
-   - Schedule always FULL (no nav mode toggle)
-   - No "unfollow horse" anywhere
-   - Uses schedule day (meta.dt / dt) for all time parsing (not today's date)
-   - Schedule layout matches Rings layout: 3-tier lines + entry rollup chips
-   - Tap horse/class/ring anywhere => INLINE detail card on SAME page (no click-through)
-   - Riders / Classes / Horses screens also show INLINE detail card (no click-through)
-   - If agg == 0 => do not render that line/chip
-*/
+// app.js — CRT Daily Show (Legacy UI contract + Cards + Peaks + Schedule/Timeline modes)
+//
+// FULL DROP — changes applied per your list:
+//
+// ✅ Removed ALL “unfollow / active set” functionality (no ON/OFF anywhere)
+// ✅ Schedule (bottom nav) ALWAYS renders FULL (never filtered)
+// ✅ Schedule: click horse chip → Horse detail (INLINE on Schedule page)
+// ✅ Schedule: click class line → Class detail (INLINE on Schedule page)
+// ✅ Schedule: tap ring card header → Ring detail (INLINE on Schedule page)
+// ✅ Removed Next button logic (top-right) — no next screen cycling
+// ✅ Fixed peak anchor offset so ring headers are not hidden under sticky peakbar
+// ✅ Added clear “TARGET” comments for where each detail card is rendered/attached
+//
+// Data:
+//   ./data/latest/watch_schedule.json (context scaffold)
+//   ./data/latest/watch_trips.json    (truth overlay)
 
 (function () {
   'use strict';
 
-  // -----------------------------
+  // ----------------------------
   // CONFIG
-  // -----------------------------
+  // ----------------------------
   const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
   const DATA_TRIPS_URL = './data/latest/watch_trips.json';
   const REFRESH_MS = 8 * 60 * 1000;
 
-  // -----------------------------
-  // DOM
-  // -----------------------------
-  const el = {
-    headerBack: document.getElementById('header-back'),
-    headerTitle: document.getElementById('header-title'),
-    appMain: document.getElementById('app-main'),
-    screenRoot: document.getElementById('screen-root'),
-    navRow: document.getElementById('nav-row'),
-  };
+  // If duration is unknown, assume per-trip duration:
+  const DUR_PER_TRIP_SEC = 149; // 2m 29s
 
-  // -----------------------------
+  // ----------------------------
+  // DOM
+  // ----------------------------
+  const screenRoot = document.getElementById('screen-root');
+  const appMain = document.getElementById('app-main');
+  const headerTitle = document.getElementById('header-title');
+  const headerBack = document.getElementById('header-back');
+  const navRow = document.getElementById('nav-row');
+
+  // ----------------------------
   // STATE
-  // -----------------------------
+  // ----------------------------
   const state = {
     loaded: false,
     schedule: [],
     trips: [],
     meta: { dt: null, sid: null, generated_at: null },
-    ui: {
-      screen: 'schedule',
-      query: '',
-      detail: null, // { type:'horse'|'rider'|'class'|'ring', key:'...', label:'...' }
-    },
-    idx: null, // built indexes
+
+    // primary nav
+    screen: 'start',
+    history: [],
+    detail: null,
+
+    // INLINE detail panel (shown at top of Schedule screen)
+    inlineDetail: null, // { kind:'horse'|'class'|'ring'|'rider', key:string }
+
+    // per-screen search
+    search: {
+      horses: '',
+      rings: '',
+      classes: '',
+      riders: '',
+      schedule: '',
+      timeline: ''
+    }
   };
 
-  // -----------------------------
-  // UTIL formatting (your rules)
-  // -----------------------------
-  function safeStr(v) { return (v === null || v === undefined) ? '' : String(v); }
+  // ----------------------------
+  // UTIL (DOM)
+  // ----------------------------
+  function el(tag, clsOrAttrs, text) {
+    const n = document.createElement(tag);
 
-  function fmtTimeA(raw) {
-    // raw can be:
-    // - ISO datetime
-    // - "HH:mm:ss"
-    // - "HH:mm"
-    // If only time -> assume scope dt (handled in parseToEpoch)
-    const d = parseToDate(raw);
-    if (!d) return '';
-    let h = d.getHours();
-    const m = d.getMinutes();
-    const ap = h >= 12 ? 'P' : 'A';
-    h = h % 12; if (h === 0) h = 12;
-    const mm = String(m).padStart(2, '0');
-    return `${h}:${mm}${ap}`;
-  }
-
-  function capFirstN(s, n) {
-    const t = safeStr(s).trim();
-    if (!t) return '';
-    return t.toUpperCase().slice(0, n);
-  }
-
-  // status = caps first 4 chars
-  function fmtStatus4(s) { return capFirstN(s, 4); }
-
-  // ring = caps first 6
-  function fmtRing6(s) { return capFirstN(s, 6); }
-
-  // -----------------------------
-  // Time parsing (IMPORTANT: use schedule dt, not "today")
-  // -----------------------------
-  function scopeDt() {
-    // prefer meta dt from schedule file; fallback infer from first record's dt
-    if (state.meta && state.meta.dt) return state.meta.dt;
-    const s0 = state.schedule && state.schedule[0];
-    if (s0 && s0.dt) return s0.dt;
-    // last resort: keep null
-    return null;
-  }
-
-  function parseToDate(raw) {
-    if (!raw) return null;
-    const t = safeStr(raw).trim();
-    if (!t) return null;
-
-    // ISO
-    const iso = Date.parse(t);
-    if (!Number.isNaN(iso) && (t.includes('T') || t.includes('-'))) {
-      return new Date(iso);
+    if (typeof clsOrAttrs === 'string') {
+      if (clsOrAttrs) n.className = clsOrAttrs;
+      if (text != null) n.textContent = text;
+      return n;
     }
 
-    // time-only "HH:mm:ss" or "HH:mm"
-    const dt = scopeDt();
-    if (!dt) return null;
-    const timePart = t.length === 5 ? `${t}:00` : t; // HH:mm -> HH:mm:ss
-    const isoLocal = `${dt}T${timePart}`;
-    const ms = Date.parse(isoLocal);
-    if (Number.isNaN(ms)) return null;
-    return new Date(ms);
-  }
+    if (clsOrAttrs && typeof clsOrAttrs === 'object') {
+      const a = clsOrAttrs;
 
-  function parseToEpoch(raw) {
-    const d = parseToDate(raw);
-    return d ? d.getTime() : null;
-  }
+      if (a.className) n.className = a.className;
+      if (a.text != null) n.textContent = a.text;
+      if (a.html != null) n.innerHTML = a.html;
 
-  // -----------------------------
-  // DATA LOAD
-  // -----------------------------
-  async function fetchJson(url) {
-    const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) throw new Error(`Fetch failed ${r.status} for ${url}`);
-    return r.json();
-  }
+      if (a.id) n.id = a.id;
+      if (a.href) n.setAttribute('href', a.href);
+      if (a.type) n.setAttribute('type', a.type);
+      if (a.placeholder) n.setAttribute('placeholder', a.placeholder);
+      if (a.value != null) n.value = a.value;
 
-  async function loadAll() {
-    const [scheduleJson, tripsJson] = await Promise.all([
-      fetchJson(DATA_SCHEDULE_URL),
-      fetchJson(DATA_TRIPS_URL),
-    ]);
-
-    // Expect shape: either { meta, rows } OR already array
-    const schedMeta = scheduleJson && scheduleJson.meta ? scheduleJson.meta : {};
-    const schedRows = Array.isArray(scheduleJson) ? scheduleJson : (scheduleJson.rows || scheduleJson.data || []);
-    const tripsMeta = tripsJson && tripsJson.meta ? tripsJson.meta : {};
-    const tripsRows = Array.isArray(tripsJson) ? tripsJson : (tripsJson.rows || tripsJson.data || []);
-
-    state.schedule = Array.isArray(schedRows) ? schedRows : [];
-    state.trips = Array.isArray(tripsRows) ? tripsRows : [];
-
-    // dt: keep schedule dt even if it's old (your requirement)
-    state.meta.sid = schedMeta.sid || tripsMeta.sid || null;
-    state.meta.dt = schedMeta.dt || (state.schedule[0] && state.schedule[0].dt) || tripsMeta.dt || (state.trips[0] && state.trips[0].dt) || null;
-    state.meta.generated_at = schedMeta.generated_at || tripsMeta.generated_at || null;
-
-    state.idx = buildIndexes();
-    state.loaded = true;
-  }
-
-  // -----------------------------
-  // INDEXES (rings, classes, riders, horses)
-  // -----------------------------
-  function buildIndexes() {
-    const byRing = new Map();     // ringKey -> { ring_number, ringName, lines:[], entries:[] }
-    const byClass = new Map();    // classKey -> { class_id, class_number, class_name, lines:[], entries:[] }
-    const byRider = new Map();    // riderKey -> { riderName, lines:[], entries:[] }
-    const byHorse = new Map();    // horseKey -> { horseName, lines:[], entries:[] }
-
-    // schedule rows: ring_number, ringName, group_name, class_name, latestStart/latestStatus, total_trips, class_id/class_number
-    for (const r of state.schedule) {
-      const ring_number = r.ring_number ?? r.ringNumber ?? null;
-      const ringName = r.ringName ?? r.ring_name ?? '';
-      const ringKey = ring_number !== null ? `ring:${ring_number}` : `ring:${ringName}`;
-
-      const class_id = r.class_id ?? null;
-      const class_number = r.class_number ?? r.classNumber ?? null;
-      const class_name = r.class_name ?? r.className ?? ''; // IMPORTANT: class_name
-      const classKey = class_id ? `class:${class_id}` : `class:${class_number || class_name}`;
-
-      const t = r.latestStart ?? r.lastestStart ?? r.estimated_start_time ?? r.estimatedStart ?? '';
-      const status = r.latestStatus ?? r.latest_status ?? r.status ?? '';
-      const agg = Number(r.total_trips ?? r.agg ?? 0) || 0;
-
-      // ring aggregator card lines (we render class lines for rings/schedule layout)
-      if (!byRing.has(ringKey)) byRing.set(ringKey, { ring_number, ringName, lines: [], entryMap: new Map() });
-      byRing.get(ringKey).lines.push({
-        kind: 'class',
-        timeRaw: t,
-        time: fmtTimeA(t),
-        title: class_name || safeStr(r.group_name || ''),
-        agg,
-        classKey,
-        ringKey,
-        class_id,
-        class_number,
-      });
-
-      // classes list lines
-      if (!byClass.has(classKey)) byClass.set(classKey, { class_id, class_number, class_name, lines: [], entryMap: new Map() });
-      byClass.get(classKey).lines.push({
-        kind: 'ring',
-        timeRaw: t,
-        time: fmtTimeA(t),
-        title: (ringName || `Ring ${ring_number ?? ''}`).trim(),
-        agg,
-        ringKey,
-        classKey,
-      });
-    }
-
-    // trips rows: horseName, riderName, ringName, ring_number, class_name, class_id, entryNumber/backNumber, latestGO, lastestPlacing, etc.
-    for (const tr of state.trips) {
-      const horseName = tr.horseName ?? tr.horse_name ?? '';
-      const riderName = tr.riderName ?? tr.rider_name ?? '';
-      const ring_number = tr.ring_number ?? tr.ringNumber ?? null;
-      const ringName = tr.ringName ?? tr.ring_name ?? '';
-      const ringKey = ring_number !== null ? `ring:${ring_number}` : `ring:${ringName}`;
-
-      const class_id = tr.class_id ?? null;
-      const class_number = tr.class_number ?? tr.classNumber ?? null;
-      const class_name = tr.class_name ?? tr.className ?? '';
-      const classKey = class_id ? `class:${class_id}` : `class:${class_number || class_name}`;
-
-      const horseKey = `horse:${horseName || tr.entry_id || tr.entryNumber || ''}`;
-      const riderKey = `rider:${riderName || tr.rider_id || ''}`;
-
-      const oogRaw = tr.latestGO ?? tr.last_order_of_go ?? tr.lastGO ?? tr.oog ?? tr.order_of_go ?? null;
-      const oog = oogRaw === null || oogRaw === undefined ? null : String(oogRaw).replace(/^OOG\s*/i, '').trim();
-
-      const goTime = tr.last_estimated_go_time ?? tr.latest_estimated_go_time ?? tr.latestStart ?? tr.lastestStart ?? tr.estimated_start_time ?? '';
-      const aggOne = 1; // a trip contributes as 1 "active" entry for rollups
-
-      // Ensure containers exist
-      if (!byRing.has(ringKey)) byRing.set(ringKey, { ring_number, ringName, lines: [], entryMap: new Map() });
-      if (!byClass.has(classKey)) byClass.set(classKey, { class_id, class_number, class_name, lines: [], entryMap: new Map() });
-      if (!byHorse.has(horseKey)) byHorse.set(horseKey, { horseName, lines: [], entryMap: new Map() });
-      if (!byRider.has(riderKey)) byRider.set(riderKey, { riderName, lines: [], entryMap: new Map() });
-
-      // Entry rollup chips: "Pedro - 14" (horseName - oogNumber)
-      const chipLabel = `${horseName || '—'} - ${oog || '—'}`.trim();
-      const chipKey = `${horseName}|${oog || ''}|${classKey}|${ringKey}`;
-
-      // Dedup rule: earliest GO / smallest OOG
-      upsertChip(byRing.get(ringKey).entryMap, chipKey, { label: chipLabel, horseKey, riderKey, classKey, ringKey, oog, goTime }, goTime, oog);
-      upsertChip(byClass.get(classKey).entryMap, chipKey, { label: chipLabel, horseKey, riderKey, classKey, ringKey, oog, goTime }, goTime, oog);
-      upsertChip(byHorse.get(horseKey).entryMap, chipKey, { label: chipLabel, horseKey, riderKey, classKey, ringKey, oog, goTime }, goTime, oog);
-      upsertChip(byRider.get(riderKey).entryMap, chipKey, { label: chipLabel, horseKey, riderKey, classKey, ringKey, oog, goTime }, goTime, oog);
-
-      // Horses list line: time | class_name | agg
-      byHorse.get(horseKey).lines.push({
-        kind: 'class',
-        timeRaw: goTime,
-        time: fmtTimeA(goTime),
-        title: class_name || '—',
-        agg: aggOne,
-        horseKey, riderKey, classKey, ringKey,
-      });
-
-      // Riders list line
-      byRider.get(riderKey).lines.push({
-        kind: 'class',
-        timeRaw: goTime,
-        time: fmtTimeA(goTime),
-        title: class_name || '—',
-        agg: aggOne,
-        horseKey, riderKey, classKey, ringKey,
-      });
-    }
-
-    // Sort lines by time
-    for (const m of [byRing, byClass, byHorse, byRider]) {
-      for (const v of m.values()) {
-        v.lines.sort((a,b) => (parseToEpoch(a.timeRaw) || 0) - (parseToEpoch(b.timeRaw) || 0));
+      if (a.dataset && typeof a.dataset === 'object') {
+        Object.keys(a.dataset).forEach(k => { n.dataset[k] = a.dataset[k]; });
       }
+
+      if (a.style && typeof a.style === 'object') {
+        Object.keys(a.style).forEach(k => { n.style[k] = a.style[k]; });
+      }
+
+      if (text != null) n.textContent = text;
+
+      return n;
     }
 
-    return { byRing, byClass, byHorse, byRider };
+    if (text != null) n.textContent = text;
+    return n;
   }
 
-  function upsertChip(map, key, obj, timeRaw, oog) {
-    if (!map.has(key)) {
-      map.set(key, obj);
-      return;
-    }
-    const cur = map.get(key);
-
-    // Compare earliest GO time
-    const curT = parseToEpoch(cur.goTime) || Number.POSITIVE_INFINITY;
-    const newT = parseToEpoch(timeRaw) || Number.POSITIVE_INFINITY;
-
-    // Compare smallest OOG
-    const curO = cur.oog ? Number(cur.oog) : Number.POSITIVE_INFINITY;
-    const newO = oog ? Number(oog) : Number.POSITIVE_INFINITY;
-
-    if (newT < curT || (newT === curT && newO < curO)) {
-      map.set(key, obj);
-    }
+  function normalizeStr(s) {
+    return String(s || '').trim().toLowerCase();
   }
 
-  // -----------------------------
-  // RENDER HELPERS
-  // -----------------------------
-  function clearRoot() { el.screenRoot.innerHTML = ''; }
-
-  function setTitle(t) { el.headerTitle.textContent = t; }
-
-  function navAggSet(name, n) {
-    const node = document.querySelector(`[data-nav-agg="${name}"]`);
-    if (!node) return;
-    node.textContent = String(n || 0);
+  function idify(s) {
+    return normalizeStr(s)
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
   }
 
-  function makePeakbar(peaks) {
-    // peaks = [{label, agg, onClick}]
-    const bar = document.createElement('div');
-    bar.className = 'peakbar';
-
-    const sc = document.createElement('div');
-    sc.className = 'nav-scroller';
-
-    const row = document.createElement('div');
-    row.className = 'nav-row';
-
-    for (const p of peaks) {
-      if (!p || !p.agg || p.agg <= 0) continue; // don't display agg=0
-      const b = document.createElement('button');
-      b.className = 'nav-btn';
-      b.type = 'button';
-      b.innerHTML = `<span class="nav-label">${safeStr(p.label)}</span><span class="nav-agg">${p.agg}</span>`;
-      b.addEventListener('click', p.onClick);
-      row.appendChild(b);
-    }
-
-    sc.appendChild(row);
-    bar.appendChild(sc);
-    return bar;
-  }
-
-  function makeCard(title, id) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    if (id) card.id = id;
-
-    const hdr = document.createElement('div');
-    hdr.className = 'card-hdr';
-    hdr.innerHTML = `<div class="card-title">${safeStr(title)}</div>`;
-
-    const body = document.createElement('div');
-    body.className = 'card-body';
-
-    card.appendChild(hdr);
-    card.appendChild(body);
-    return { card, body };
-  }
-
-  function addLine(body, time, name, agg, clickHandler) {
-    if (!agg || agg <= 0) return; // global rule
-    const line = document.createElement('div');
-    line.className = 'card-line';
-
-    const timeEl = document.createElement('div');
-    timeEl.className = 'c-time';
-    timeEl.textContent = safeStr(time);
-
-    const nameEl = document.createElement('div');
-    nameEl.className = 'c-name';
-    nameEl.textContent = safeStr(name);
-    if (clickHandler) {
-      nameEl.style.cursor = 'pointer';
-      nameEl.addEventListener('click', clickHandler);
-    }
-
-    const aggEl = document.createElement('div');
-    aggEl.className = 'c-agg';
-    aggEl.textContent = safeStr(agg);
-
-    line.appendChild(timeEl);
-    line.appendChild(nameEl);
-    line.appendChild(aggEl);
-    body.appendChild(line);
-  }
-
-  function addEntryRollup(body, chips) {
-    // chips: array of {label, horseKey, riderKey, classKey, ringKey}
-    const wrap = document.createElement('div');
-    wrap.className = 'entry-rollup';
-
-    for (const c of chips) {
-      const chip = document.createElement('span');
-      chip.className = 'entry-chip';
-      chip.textContent = c.label;
-      chip.addEventListener('click', () => {
-        // Tap chip shows horse detail (primary), with ring/class context in the detail card
-        openDetail('horse', c.horseKey, c.label);
-      });
-      wrap.appendChild(chip);
-    }
-
-    body.appendChild(wrap);
-  }
-
-  // -----------------------------
-  // INLINE DETAIL CARD (TARGET THIS MARKUP)
-  // -----------------------------
-  function renderDetailCard() {
-    // DETAIL CARD TARGET:
-    // Edit this function to change the detail card layout/markup for all entity types.
-    const d = state.ui.detail;
-    if (!d) return null;
-
-    const wrap = document.createElement('div');
-    wrap.className = 'detail-wrap';
-
-    const note = document.createElement('div');
-    note.className = 'detail-note';
-    note.textContent = `DETAIL: ${d.type.toUpperCase()} — ${d.label || d.key}`;
-    wrap.appendChild(note);
-
-    const { card, body } = makeCard(`${d.label || d.key}`);
-
-    // Populate detail lines based on entity type
-    const lines = detailLinesFor(d.type, d.key);
-    for (const ln of lines.slice(0, 30)) {
-      addLine(body, ln.time, ln.title, ln.agg, ln.onClick);
-    }
-
-    // For detail, also show rollup chips when available
-    const chips = detailChipsFor(d.type, d.key);
-    if (chips.length) addEntryRollup(body, chips);
-
-    wrap.appendChild(card);
-    return wrap;
-  }
-
-  function openDetail(type, key, label) {
-    state.ui.detail = { type, key, label: label || key };
-    render();
-  }
-
-  function closeDetail() {
-    state.ui.detail = null;
-    render();
-  }
-
-  function detailLinesFor(type, key) {
+  function uniqStrings(list) {
     const out = [];
-    if (!state.idx) return out;
-    if (type === 'ring') {
-      const ring = state.idx.byRing.get(key);
-      if (!ring) return out;
-      for (const l of ring.lines) {
-        out.push({
-          time: fmtTimeA(l.timeRaw),
-          title: l.title,
-          agg: l.agg || 0,
-          onClick: () => openDetail('class', l.classKey, l.title),
-        });
-      }
-      return out;
-    }
-    if (type === 'class') {
-      const cls = state.idx.byClass.get(key);
-      if (!cls) return out;
-      for (const l of cls.lines) {
-        out.push({
-          time: fmtTimeA(l.timeRaw),
-          title: l.title,
-          agg: l.agg || 0,
-          onClick: () => openDetail('ring', l.ringKey, l.title),
-        });
-      }
-      return out;
-    }
-    if (type === 'horse') {
-      const h = state.idx.byHorse.get(key);
-      if (!h) return out;
-      for (const l of h.lines) {
-        out.push({
-          time: fmtTimeA(l.timeRaw),
-          title: l.title,
-          agg: l.agg || 0,
-          onClick: () => openDetail('class', l.classKey, l.title),
-        });
-      }
-      return out;
-    }
-    if (type === 'rider') {
-      const r = state.idx.byRider.get(key);
-      if (!r) return out;
-      for (const l of r.lines) {
-        out.push({
-          time: fmtTimeA(l.timeRaw),
-          title: l.title,
-          agg: l.agg || 0,
-          onClick: () => openDetail('class', l.classKey, l.title),
-        });
-      }
-      return out;
+    const seen = new Set();
+    for (const v of list) {
+      if (v == null) continue;
+      const s = String(v);
+      if (!seen.has(s)) { seen.add(s); out.push(s); }
     }
     return out;
   }
 
-  function detailChipsFor(type, key) {
-    const out = [];
-    if (!state.idx) return out;
-
-    let entryMap = null;
-    if (type === 'ring') entryMap = state.idx.byRing.get(key)?.entryMap;
-    if (type === 'class') entryMap = state.idx.byClass.get(key)?.entryMap;
-    if (type === 'horse') entryMap = state.idx.byHorse.get(key)?.entryMap;
-    if (type === 'rider') entryMap = state.idx.byRider.get(key)?.entryMap;
-
-    if (!entryMap) return out;
-    for (const v of entryMap.values()) out.push(v);
-
-    // Prefer smallest OOG then earliest time
-    out.sort((a,b) => {
-      const ao = a.oog ? Number(a.oog) : 999999;
-      const bo = b.oog ? Number(b.oog) : 999999;
-      if (ao !== bo) return ao - bo;
-      return (parseToEpoch(a.goTime) || 0) - (parseToEpoch(b.goTime) || 0);
-    });
-
-    return out.slice(0, 40);
+  function clearRoot() {
+    if (screenRoot) screenRoot.innerHTML = '';
   }
 
-  // -----------------------------
-  // SCREENS
-  // -----------------------------
+  function setHeader(title) {
+    if (headerTitle) headerTitle.textContent = title || '';
+    if (headerBack) headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
+  }
+
+  function setNavActive(primaryScreen) {
+    if (!navRow) return;
+    const btns = navRow.querySelectorAll('[data-screen]');
+    btns.forEach(b => {
+      const on = b.dataset.screen === primaryScreen;
+      b.classList.toggle('nav-btn--primary', on);
+    });
+  }
+
+  function setAgg(key, value) {
+    const node = document.querySelector(`[data-nav-agg="${key}"]`);
+    if (!node) return;
+    node.textContent = String(value);
+    node.classList.toggle('nav-agg--positive', Number(value) > 0);
+  }
+
+  // ----------------------------
+  // UTIL (time)
+  // ----------------------------
+  function timeToMinutes(t) {
+    if (!t) return null;
+    const s0 = String(t).trim();
+    if (!s0) return null;
+
+    let m = s0.match(/^(\d{1,2}):(\d{2})\s*([AaPp])\s*([Mm])?$/);
+    if (m) {
+      let hh = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      const ap = m[3].toUpperCase(); // A or P
+      if (ap === 'A') {
+        if (hh === 12) hh = 0;
+      } else {
+        if (hh !== 12) hh += 12;
+      }
+      return hh * 60 + mm;
+    }
+
+    m = s0.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (m) {
+      const hh = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      if (hh < 0 || hh > 23) return null;
+      if (mm < 0 || mm > 59) return null;
+      return hh * 60 + mm;
+    }
+
+    return null;
+  }
+
+  function fmtTimeShort(t) {
+    const mins = timeToMinutes(t);
+    if (mins == null) return String(t || '').trim();
+
+    const h24 = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+
+    const ap = h24 >= 12 ? 'P' : 'A';
+    let h = h24 % 12;
+    if (h === 0) h = 12;
+    return `${h}:${String(m).padStart(2, '0')}${ap}`;
+  }
+
+  function fmtClockFromMinutes(totalMinutes) {
+    const mins = Math.max(0, Math.floor(totalMinutes));
+    const h24 = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+    const ap = h24 >= 12 ? 'P' : 'A';
+    let h = h24 % 12;
+    if (h === 0) h = 12;
+    return `${h}:${String(m).padStart(2, '0')}${ap}`;
+  }
+
+  function fmtStatus4(v) {
+    const s = String(v || '').trim();
+    if (!s) return '';
+    return s.toUpperCase().slice(0, 4);
+  }
+
+  function safeNum(v, fallback) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : (fallback ?? null);
+  }
+
+  function safeNumber(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+
+    const s = String(v).trim();
+    if (!s) return null;
+
+    const n = Number(s.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function roundUpTo5Minutes(d) {
+    const ms = 5 * 60 * 1000;
+    return new Date(Math.ceil(d.getTime() / ms) * ms);
+  }
+
+  function parseAmPmTimeToDate(dt, t) {
+    const mins = timeToMinutes(t);
+    if (mins == null) return null;
+    const hh = Math.floor(mins / 60);
+    const mm = mins % 60;
+    return new Date(`${dt}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00`);
+  }
+
+  function parseTripStartEnd(trip, opts) {
+    const dt = (opts && opts.dt) ? opts.dt : (trip && trip.dt) ? String(trip.dt) : state.meta.dt;
+
+    const startLabel = (trip && (trip.latestGO || trip.latestStart || trip.estimated_start_time))
+      ? String(trip.latestGO || trip.latestStart || trip.estimated_start_time).trim()
+      : '';
+    if (!dt || !startLabel) return { start: null, end: null };
+
+    const start = parseAmPmTimeToDate(dt, startLabel);
+    if (!start) return { start: null, end: null };
+
+    const tripsCount = safeNumber(trip && trip.total_trips);
+    const nTrips = (tripsCount != null && tripsCount > 0) ? tripsCount : 1;
+
+    const end = roundUpTo5Minutes(new Date(start.getTime() + (nTrips * DUR_PER_TRIP_SEC * 1000)));
+    return { start, end };
+  }
+
+  // ----------------------------
+  // LOAD
+  // ----------------------------
+  async function fetchJson(url) {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${url}`);
+    return await res.json();
+  }
+
+  async function loadAll() {
+    const [sched, trips] = await Promise.all([
+      fetchJson(DATA_SCHEDULE_URL),
+      fetchJson(DATA_TRIPS_URL)
+    ]);
+
+    const nextGenerated =
+      (sched && sched.meta && sched.meta.generated_at) ||
+      (trips && trips.meta && trips.meta.generated_at) ||
+      null;
+
+    if (state.loaded && nextGenerated && state.meta.generated_at === nextGenerated) return;
+
+    state.schedule = Array.isArray(sched && sched.records) ? sched.records : [];
+    state.trips = Array.isArray(trips && trips.records) ? trips.records : [];
+
+    const dtScope =
+      (sched && sched.meta && sched.meta.dt) ||
+      (state.schedule[0] && state.schedule[0].dt) ||
+      (state.trips[0] && state.trips[0].dt) ||
+      null;
+
+    const sidScope =
+      (sched && sched.meta && sched.meta.sid) ||
+      (state.schedule[0] && state.schedule[0].sid) ||
+      (state.trips[0] && state.trips[0].sid) ||
+      null;
+
+    state.meta = { dt: dtScope, sid: sidScope, generated_at: nextGenerated };
+
+    state.loaded = true;
+    render();
+  }
+
+  setInterval(() => { loadAll().catch(() => {}); }, REFRESH_MS);
+
+  // ----------------------------
+  // INDEXES (schedule scaffold + trips truth)
+  // ----------------------------
+  function buildScheduleIndex() {
+    const ringMap = new Map(); // ring_number string -> { ring_number, ringName, groups: Map }
+    const classMap = new Map(); // class_id string -> scheduleRec (first)
+
+    for (const r of (state.schedule || [])) {
+      if (!r) continue;
+
+      const ringN = r.ring_number;
+      const gid = r.class_group_id;
+      const cid = r.class_id;
+
+      if (ringN == null || gid == null || cid == null) continue;
+
+      const ringKey = String(ringN);
+      const ringName = r.ringName || (ringN != null ? `Ring ${ringN}` : 'Ring');
+
+      if (!ringMap.has(ringKey)) {
+        ringMap.set(ringKey, { ring_number: ringN, ringName, groups: new Map() });
+      }
+      const ringObj = ringMap.get(ringKey);
+
+      const gidKey = String(gid);
+      if (!ringObj.groups.has(gidKey)) {
+        ringObj.groups.set(gidKey, {
+          class_group_id: gid,
+          group_name: r.group_name || r.class_name || '(Group)',
+          latestStart: r.latestStart || null,
+          latestStatus: r.latestStatus || null,
+          classes: new Map()
+        });
+      }
+      const gObj = ringObj.groups.get(gidKey);
+
+      const cidKey = String(cid);
+      if (!gObj.classes.has(cidKey)) {
+        gObj.classes.set(cidKey, {
+          class_id: cid,
+          class_number: r.class_number,
+          class_name: r.class_name || '(Class)',
+          latestStart: r.latestStart || null,
+          latestStatus: r.latestStatus || null
+        });
+      }
+
+      if (!classMap.has(cidKey)) classMap.set(cidKey, r);
+    }
+
+    return { ringMap, classMap };
+  }
+
+  function pickBestTrip(tripsList) {
+    if (!tripsList || tripsList.length === 0) return null;
+
+    let best = null;
+    let bestT = 999999;
+    let bestO = 999999;
+
+    for (const t of tripsList) {
+      const goM = timeToMinutes(t && (t.latestGO || t.latestStart)) ?? 999999;
+      const oog = (t && t.lastOOG != null) ? safeNum(t.lastOOG, 999999) : 999999;
+
+      if (!best) { best = t; bestT = goM; bestO = oog; continue; }
+      if (goM < bestT) { best = t; bestT = goM; bestO = oog; continue; }
+      if (goM === bestT && oog < bestO) { best = t; bestT = goM; bestO = oog; continue; }
+    }
+
+    return best;
+  }
+
+  // FULL truth index (no Active filtering at all)
+  function buildTruthIndex() {
+    const byEntryKey = new Map(); // `${class_id}|${horseName}` -> trips[]
+    const byHorse = new Map();    // horseName -> entryKey[]
+    const byRing = new Map();     // ring_number string -> entryKey[]
+    const byGroup = new Map();    // class_group_id string -> entryKey[]
+    const byClass = new Map();    // class_id string -> entryKey[]
+    const byRider = new Map();    // riderName -> entryKey[]
+
+    function pushKey(map, k, entryKey) {
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(entryKey);
+    }
+
+    for (const t of (state.trips || [])) {
+      if (!t) continue;
+
+      const horse = t.horseName ? String(t.horseName) : null;
+      const cid = t.class_id != null ? String(t.class_id) : null;
+      if (!horse || !cid) continue;
+
+      const entryKey = `${cid}|${horse}`;
+
+      if (!byEntryKey.has(entryKey)) byEntryKey.set(entryKey, []);
+      byEntryKey.get(entryKey).push(t);
+
+      pushKey(byHorse, horse, entryKey);
+
+      if (t.ring_number != null) pushKey(byRing, String(t.ring_number), entryKey);
+      if (t.class_group_id != null) pushKey(byGroup, String(t.class_group_id), entryKey);
+      pushKey(byClass, cid, entryKey);
+
+      if (t.riderName) pushKey(byRider, String(t.riderName), entryKey);
+    }
+
+    const entryBest = new Map();
+    for (const [k, list] of byEntryKey.entries()) entryBest.set(k, pickBestTrip(list));
+
+    function uniqKeys(arr) {
+      const out = [];
+      const seen = new Set();
+      for (const k of (arr || [])) {
+        if (!seen.has(k)) { seen.add(k); out.push(k); }
+      }
+      return out;
+    }
+
+    for (const [k, arr] of byHorse.entries()) byHorse.set(k, uniqKeys(arr));
+    for (const [k, arr] of byRing.entries()) byRing.set(k, uniqKeys(arr));
+    for (const [k, arr] of byGroup.entries()) byGroup.set(k, uniqKeys(arr));
+    for (const [k, arr] of byClass.entries()) byClass.set(k, uniqKeys(arr));
+    for (const [k, arr] of byRider.entries()) byRider.set(k, uniqKeys(arr));
+
+    return { byEntryKey, entryBest, byHorse, byRing, byGroup, byClass, byRider };
+  }
+
+  // ----------------------------
+  // NAV / DETAILS
+  // ----------------------------
+  function goto(screen) {
+    state.screen = screen;
+    state.detail = null;
+    state.history = [];
+    if (screen !== 'rings') state.inlineDetail = null;
+    render();
+  }
+
+  function pushDetail(screen, detail) {
+    state.history.push({ screen: state.screen, detail: state.detail });
+    state.screen = screen;
+    state.detail = detail;
+    render();
+  }
+
+  function goBack() {
+    const prev = state.history.pop();
+    if (!prev) return;
+    state.screen = prev.screen;
+    state.detail = prev.detail;
+    render();
+  }
+
+  function getPrimaryForScreen(screen) {
+    const map = {
+      start: 'start',
+      horses: 'horses',
+      rings: 'rings',
+      schedule: 'rings',
+      timeline: 'timeline',
+      riders: 'riders',
+
+      ringDetail: 'rings',
+      groupDetail: 'rings',
+      classDetail: 'rings',
+      riderDetail: 'riders',
+      horseDetail: 'horses'
+    };
+    return map[screen] || 'start';
+  }
+
+  function setInlineDetail(kind, key) {
+    // Only used on Schedule (rings) screen.
+    state.inlineDetail = { kind, key: String(key) };
+    render();
+
+    // Scroll to inline detail after render
+    setTimeout(() => {
+      const node = document.getElementById('inline-detail');
+      if (!node || !appMain) return;
+      const peakbar = document.querySelector('.peakbar');
+      const offset = (peakbar ? peakbar.offsetHeight : 0) + 10;
+      appMain.scrollTo({ top: Math.max(0, node.offsetTop - offset), behavior: 'smooth' });
+    }, 0);
+  }
+
+  // ----------------------------
+  // AGGS (truth only)
+  // ----------------------------
+  function renderAggs(_sIdx, tIdx) {
+    setAgg('horses', tIdx.byHorse.size);
+    setAgg('rings', tIdx.byRing.size);
+    setAgg('riders', tIdx.byRider.size);
+  }
+
+  // ----------------------------
+  // RENDER HELPERS (cards + peaks)
+  // ----------------------------
+  function makeTagCount(n) {
+    const t = el('div', 'row-tag row-tag--count', String(n));
+    if (Number(n) > 0) t.classList.add('row-tag--positive');
+    return t;
+  }
+
+  function renderSearch(screenKey, placeholder) {
+    const wrap = el('div', 'state-search');
+    const input = el('input', 'state-search-input');
+    input.type = 'text';
+    input.placeholder = placeholder || 'Search...';
+    input.value = state.search[screenKey] || '';
+
+    input.addEventListener('input', () => {
+      state.search[screenKey] = input.value;
+      render();
+    });
+
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function scrollToIdWithinMain(id) {
+    if (!appMain) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    const peakbar = document.querySelector('.peakbar');
+    const offset = (peakbar ? peakbar.offsetHeight : 0) + 10;
+    appMain.scrollTo({ top: Math.max(0, target.offsetTop - offset), behavior: 'smooth' });
+  }
+
+  function renderPeakBar(items) {
+    const root = el('div', 'peakbar');
+    const scroller = el('div', 'nav-scroller');
+    const row = el('div', 'nav-row peakbar-row');
+
+    items.forEach((it) => {
+      if (typeof it.agg === 'number' && it.agg === 0) return;
+
+      const a = el('a', 'nav-btn');
+      a.href = it.href || '#';
+      a.appendChild(el('span', 'nav-label', it.label));
+
+      if (typeof it.agg === 'number') {
+        const aggCls = 'nav-agg' + (it.agg > 0 ? ' nav-agg--positive' : '');
+        a.appendChild(el('span', aggCls, String(it.agg)));
+      }
+
+      a.addEventListener('click', (ev) => {
+        const href = it.href || '';
+        const hash = href.split('#')[1] || '';
+        if (!hash) return;
+        ev.preventDefault();
+        scrollToIdWithinMain(hash); // ✅ offset fix (no hidden ring header)
+        history.replaceState(null, '', `#${hash}`);
+      });
+
+      row.appendChild(a);
+    });
+
+    scroller.appendChild(row);
+    root.appendChild(scroller);
+    return root;
+  }
+
+  function makeCard(title, aggValue, inverseHdr, onClick) {
+    const card = el('div', 'card' + (onClick ? ' card--tap' : ''));
+    if (onClick) card.addEventListener('click', onClick);
+
+    const hdr = el('div', 'card-hdr' + (inverseHdr ? ' card-hdr--inverse' : ''));
+    hdr.appendChild(el('div', 'card-title', title));
+
+    if (aggValue != null && Number(aggValue) > 0) hdr.appendChild(makeTagCount(aggValue));
+
+    card.appendChild(hdr);
+    card.appendChild(el('div', 'card-body'));
+    return card;
+  }
+
+  function addCardLine(card, leftTxt, midTxt, rightNode, onClick) {
+    const body = card.querySelector('.card-body');
+    const line = el('div', 'card-line');
+
+    const l = el('div', 'c-time', leftTxt || '');
+    const m = el('div', 'c-name', midTxt || '');
+
+    line.appendChild(l);
+    line.appendChild(m);
+
+    const r = el('div', 'c-agg');
+    if (rightNode) r.appendChild(rightNode);
+    line.appendChild(r);
+
+    if (onClick) {
+      line.style.cursor = 'pointer';
+      line.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+    }
+
+    body.appendChild(line);
+  }
+
+  function addEntryRollup(card, bestTrips, onHorseClick) {
+    if (!bestTrips || bestTrips.length === 0) return;
+
+    const body = card.querySelector('.card-body');
+    const line = el('div', 'card-line');
+
+    line.appendChild(el('div', 'c-time', '')); // blank left
+
+    const mid = el('div', 'c-name');
+    const roll = el('div', 'entry-rollup');
+
+    bestTrips.forEach((t) => {
+      const horse = (t && t.horseName) ? String(t.horseName).trim() : '';
+      const oog = (t && t.lastOOG != null && String(t.lastOOG).trim() !== '') ? String(t.lastOOG).trim() : '';
+      if (!horse || !oog) return;
+
+      const chip = el('span', 'entry-chip', `${horse} - ${oog}`);
+      if (typeof onHorseClick === 'function') {
+        chip.style.cursor = 'pointer';
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onHorseClick(horse);
+        });
+      }
+      roll.appendChild(chip);
+    });
+
+    if (!roll.childNodes.length) return;
+
+    mid.appendChild(roll);
+    line.appendChild(mid);
+
+    line.appendChild(el('div', 'c-agg'));
+    body.appendChild(line);
+  }
+
+  // ----------------------------
+  // SCREEN: START
+  // ----------------------------
   function renderStart() {
     clearRoot();
-    setTitle('Start');
+    setHeader('Start');
 
-    const r1 = rowButton('Schedule (Full)', 'Open full schedule', () => goto('schedule'));
-    const r2 = rowButton('Timeline', 'Horses by time buckets', () => goto('timeline'));
-    const r3 = rowButton('Horses', 'Active horses', () => goto('horses'));
-    const r4 = rowButton('Riders', 'Active riders', () => goto('riders'));
+    const wrap = el('div', 'list-column');
 
-    el.screenRoot.appendChild(r1);
-    el.screenRoot.appendChild(r2);
-    el.screenRoot.appendChild(r3);
-    el.screenRoot.appendChild(r4);
-  }
+    const logo = el('div', 'start-logo');
+    logo.appendChild(el('div', 'start-logo-title', 'CRT Daily Show'));
 
-  function rowButton(title, tag, onClick) {
-    const row = document.createElement('div');
-    row.className = 'row row--tap';
-    row.innerHTML = `<div class="row-title">${safeStr(title)}</div><div class="row-tag">${safeStr(tag)}</div>`;
-    row.addEventListener('click', onClick);
-    return row;
-  }
+    const sub = state.loaded
+      ? `sid ${state.meta.sid || '-'} • ${state.meta.dt || '-'}`
+      : 'Loading schedule...';
+    logo.appendChild(el('div', 'start-logo-subtitle', sub));
 
-  function renderSchedule() {
-    clearRoot();
-    setTitle('Schedule');
-
-    // Inline detail card on top (if open)
-    const detail = renderDetailCard();
-    if (detail) el.screenRoot.appendChild(detail);
-
-    // Peaks = rings with agg count (only >0)
-    const peaks = [];
-    const rings = [...state.idx.byRing.entries()]
-      .map(([k,v]) => {
-        const agg = v.entryMap ? v.entryMap.size : 0;
-        return { key:k, ring_number:v.ring_number, ringName:v.ringName, agg };
-      })
-      .sort((a,b) => (a.ring_number ?? 999) - (b.ring_number ?? 999));
-
-    for (const r of rings) {
-      if (!r.agg || r.agg <= 0) continue;
-      peaks.push({
-        label: r.ringName ? r.ringName : `Ring ${r.ring_number ?? ''}`,
-        agg: r.agg,
-        onClick: () => {
-          location.hash = `#schedule-${r.key.replace(':','-')}`;
-        }
-      });
+    if (state.meta.generated_at) {
+      logo.appendChild(el('div', 'start-logo-subtitle', `generated ${state.meta.generated_at}`));
     }
 
-    if (peaks.length) el.screenRoot.appendChild(makePeakbar(peaks));
+    wrap.appendChild(logo);
 
-    // Ring cards
-    for (const r of rings) {
-      if (!r.agg || r.agg <= 0) continue; // global rule
-      const ringObj = state.idx.byRing.get(r.key);
-
-      const anchorId = `schedule-${r.key.replace(':','-')}`;
-      const title = ringObj.ringName ? ringObj.ringName : `Ring ${ringObj.ring_number ?? ''}`;
-
-      const { card, body } = makeCard(title, anchorId);
-
-      // class line: time | class_name | STATUS(4)
-      for (const ln of ringObj.lines.slice(0, 40)) {
-        const time = fmtTimeA(ln.timeRaw);
-        const name = ln.title; // class_name preferred (already set)
-        const status = fmtStatus4(ln.agg > 0 ? 'COMP' : ''); // not ideal; keep agg on right
-        addLine(body, time, name, ln.agg || 0, () => openDetail('class', ln.classKey, name));
+    const btn = el('div', 'row row--tap');
+    btn.appendChild(el('div', 'row-title', 'Start Session'));
+    btn.appendChild(el('div', 'row-tag row-tag--count', 'GO'));
+    btn.addEventListener('click', async () => {
+      if (!state.loaded) {
+        try { await loadAll(); } catch (_) {}
       }
+      goto('rings'); // start goes straight to Schedule
+    });
+    wrap.appendChild(btn);
 
-      // entry rollup chips (deduped)
-      const chips = [...ringObj.entryMap.values()];
-      if (chips.length) addEntryRollup(body, chips);
-
-      el.screenRoot.appendChild(card);
-    }
-
-    // Click-ins: Rings + Classes remain accessible inside schedule via detail
-    // (tap a class line => class detail; class detail lines let you open ring detail)
+    screenRoot.appendChild(wrap);
   }
 
-  function renderHorses() {
+  // ----------------------------
+  // SCREEN: HORSES (list -> detail screen)
+  // ----------------------------
+  function renderHorses(_sIdx, tIdx) {
     clearRoot();
-    setTitle('Horses');
+    setHeader('Horses');
 
-    const detail = renderDetailCard();
-    if (detail) el.screenRoot.appendChild(detail);
+    screenRoot.appendChild(renderSearch('horses', 'Search horses...'));
 
-    const horses = [...state.idx.byHorse.entries()]
-      .map(([k,v]) => ({ key:k, name:v.horseName, agg: v.entryMap ? v.entryMap.size : 0 }))
-      .filter(x => x.agg > 0)
-      .sort((a,b) => b.agg - a.agg || a.name.localeCompare(b.name));
+    const q = normalizeStr(state.search.horses);
+    const horsesAll = [...tIdx.byHorse.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+    const horses = q ? horsesAll.filter(h => normalizeStr(h).includes(q)) : horsesAll;
 
-    navAggSet('horses', horses.length);
-
-    // Simple list as cards (rings layout)
     for (const h of horses) {
-      const obj = state.idx.byHorse.get(h.key);
-      const { card, body } = makeCard(h.name || '—');
+      const keys = tIdx.byHorse.get(String(h)) || [];
+      if (keys.length === 0) continue;
 
-      // time | class_name | agg(=1 per trip line)
-      for (const ln of obj.lines.slice(0, 20)) {
-        addLine(body, ln.time, ln.title, ln.agg, () => openDetail('class', ln.classKey, ln.title));
-      }
+      const row = el('div', 'row row--tap');
+      row.id = `horse-${idify(h)}`;
 
-      // entry rollup
-      const chips = [...obj.entryMap.values()];
-      if (chips.length) addEntryRollup(body, chips);
+      row.appendChild(el('div', 'row-title', String(h)));
+      row.appendChild(makeTagCount(keys.length));
 
-      card.addEventListener('click', (e) => {
-        // avoid double-open if click on inner elements
-        if (e.target && (e.target.classList.contains('entry-chip') || e.target.classList.contains('c-name'))) return;
-        openDetail('horse', h.key, h.name);
+      row.addEventListener('click', () => {
+        pushDetail('horseDetail', { kind: 'horse', key: String(h) });
       });
 
-      el.screenRoot.appendChild(card);
+      screenRoot.appendChild(row);
     }
   }
 
-  function renderRiders() {
+  function renderHorseDetail(_sIdx, tIdx) {
+    const horse = state.detail && state.detail.key ? String(state.detail.key) : null;
+
     clearRoot();
-    setTitle('Riders');
+    setHeader(horse || 'Horse');
 
-    const detail = renderDetailCard();
-    if (detail) el.screenRoot.appendChild(detail);
+    if (!horse) return;
 
-    const riders = [...state.idx.byRider.entries()]
-      .map(([k,v]) => ({ key:k, name:v.riderName, agg: v.entryMap ? v.entryMap.size : 0 }))
-      .filter(x => x.agg > 0)
-      .sort((a,b) => b.agg - a.agg || a.name.localeCompare(b.name));
-
-    navAggSet('riders', riders.length);
-
-    for (const r of riders) {
-      const obj = state.idx.byRider.get(r.key);
-      const { card, body } = makeCard(r.name || '—');
-
-      for (const ln of obj.lines.slice(0, 20)) {
-        addLine(body, ln.time, ln.title, ln.agg, () => openDetail('class', ln.classKey, ln.title));
-      }
-
-      const chips = [...obj.entryMap.values()];
-      if (chips.length) addEntryRollup(body, chips);
-
-      card.addEventListener('click', (e) => {
-        if (e.target && (e.target.classList.contains('entry-chip') || e.target.classList.contains('c-name'))) return;
-        openDetail('rider', r.key, r.name);
+    // TARGET: HORSE DETAIL CARD (screen) -------------------------
+    const entryKeys = (tIdx.byHorse.get(horse) || []).slice();
+    const bestTrips = entryKeys
+      .map(k => tIdx.entryBest.get(k))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const ta = timeToMinutes(a.latestGO || a.latestStart) ?? 999999;
+        const tb = timeToMinutes(b.latestGO || b.latestStart) ?? 999999;
+        if (ta !== tb) return ta - tb;
+        const ra = safeNum(a.ring_number, 999999);
+        const rb = safeNum(b.ring_number, 999999);
+        if (ra !== rb) return ra - rb;
+        return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
       });
 
-      el.screenRoot.appendChild(card);
+    const card = makeCard(horse, bestTrips.length, true, null);
+    addEntryRollup(card, bestTrips.slice(0, 60));
+    screenRoot.appendChild(card);
+  }
+
+  // ----------------------------
+  // INLINE DETAIL (Schedule top panel)
+  // ----------------------------
+  function renderInlineDetailPanel(sIdx, tIdx) {
+    if (!state.inlineDetail) return null;
+
+    const kind = state.inlineDetail.kind;
+    const key = String(state.inlineDetail.key);
+
+    const wrap = el('div', { id: 'inline-detail' });
+
+    const closeRow = el('div', 'row row--tap');
+    closeRow.appendChild(el('div', 'row-title', 'Clear Detail'));
+    closeRow.appendChild(el('div', 'row-tag row-tag--count', 'X'));
+    closeRow.addEventListener('click', () => {
+      state.inlineDetail = null;
+      render();
+    });
+    wrap.appendChild(closeRow);
+
+    if (kind === 'horse') {
+      // TARGET: HORSE DETAIL CARD (inline) -----------------------
+      const entryKeys = (tIdx.byHorse.get(key) || []).slice();
+      const bestTrips = entryKeys.map(k => tIdx.entryBest.get(k)).filter(Boolean);
+      const card = makeCard(key, bestTrips.length, true, null);
+      addEntryRollup(card, bestTrips.slice(0, 60));
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    if (kind === 'class') {
+      // TARGET: CLASS DETAIL CARD (inline) -----------------------
+      const schedRec = sIdx.classMap.get(key);
+      const title = schedRec && schedRec.class_name ? String(schedRec.class_name) : `Class ${key}`;
+      const cKeys = tIdx.byClass.get(key) || [];
+      const bestTrips = cKeys.map(k => tIdx.entryBest.get(k)).filter(Boolean);
+      const card = makeCard(title, bestTrips.length, true, null);
+      addEntryRollup(card, bestTrips.slice(0, 80), (horse) => setInlineDetail('horse', horse));
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    if (kind === 'ring') {
+      // TARGET: RING DETAIL CARD (inline) ------------------------
+      const ringObj = sIdx.ringMap.get(key);
+      if (!ringObj) return wrap;
+      const ringEntryKeys = tIdx.byRing.get(key) || [];
+      const card = makeCard(ringObj.ringName, ringEntryKeys.length, true, null);
+
+      const groups = [...ringObj.groups.values()].sort((a, b) => {
+        const ta = timeToMinutes(a.latestStart) ?? 999999;
+        const tb = timeToMinutes(b.latestStart) ?? 999999;
+        if (ta !== tb) return ta - tb;
+        return String(a.group_name).localeCompare(String(b.group_name));
+      });
+
+      for (const g of groups) {
+        const gid = String(g.class_group_id);
+        const gKeys = tIdx.byGroup.get(gid) || [];
+        if (gKeys.length === 0) continue;
+
+        addCardLine(
+          card,
+          fmtTimeShort(g.latestStart || ''),
+          String(g.group_name),
+          (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
+          null
+        );
+
+        const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
+        for (const c of classes) {
+          const cid = String(c.class_id);
+          const cKeys = tIdx.byClass.get(cid) || [];
+          if (cKeys.length === 0) continue;
+
+          addCardLine(
+            card,
+            (c.class_number != null ? String(c.class_number) : ''),
+            String(c.class_name || ''),
+            makeTagCount(cKeys.length),
+            () => setInlineDetail('class', cid)
+          );
+
+          const bestTrips = cKeys.map(k => tIdx.entryBest.get(k)).filter(Boolean).slice(0, 20);
+          addEntryRollup(card, bestTrips, (horse) => setInlineDetail('horse', horse));
+        }
+      }
+
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    return wrap;
+  }
+
+  // ----------------------------
+  // SCREEN: RINGS (Schedule)
+  // ----------------------------
+  function renderRings(sIdx, tIdx) {
+    clearRoot();
+    setHeader('Schedule');
+
+    screenRoot.appendChild(renderSearch('rings', 'Search rings...'));
+
+    // INLINE detail (top of Schedule)
+    const inline = renderInlineDetailPanel(sIdx, tIdx);
+    if (inline) screenRoot.appendChild(inline);
+
+    const ringsAll = [...sIdx.ringMap.values()]
+      .sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
+
+    const q = normalizeStr(state.search.rings);
+
+    const peakItems = ringsAll.map(r => {
+      const rk = String(r.ring_number);
+      const entryKeys = tIdx.byRing.get(rk) || [];
+      return {
+        key: rk,
+        label: String(r.ringName),
+        agg: entryKeys.length,
+        href: `#ring-${rk}`
+      };
+    });
+
+    screenRoot.appendChild(renderPeakBar(peakItems));
+
+    for (const r of ringsAll) {
+      const rk = String(r.ring_number);
+      const ringEntryKeys = tIdx.byRing.get(rk) || [];
+      if (ringEntryKeys.length === 0) continue;
+      if (q && !normalizeStr(r.ringName).includes(q)) continue;
+
+      // Tap ring card header -> INLINE ring detail
+      const card = makeCard(String(r.ringName), ringEntryKeys.length, true, () => {
+        setInlineDetail('ring', rk);
+      });
+      card.id = `ring-${rk}`;
+
+      const groups = [...r.groups.values()].sort((a, b) => {
+        const ta = timeToMinutes(a.latestStart) ?? 999999;
+        const tb = timeToMinutes(b.latestStart) ?? 999999;
+        if (ta !== tb) return ta - tb;
+        return String(a.group_name).localeCompare(String(b.group_name));
+      });
+
+      for (const g of groups) {
+        const gid = String(g.class_group_id);
+        const gKeys = tIdx.byGroup.get(gid) || [];
+        if (gKeys.length === 0) continue;
+
+        addCardLine(
+          card,
+          fmtTimeShort(g.latestStart || ''),
+          String(g.group_name),
+          (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
+          null
+        );
+
+        const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
+        for (const c of classes) {
+          const cid = String(c.class_id);
+          const cKeys = tIdx.byClass.get(cid) || [];
+          if (cKeys.length === 0) continue;
+
+          // Click class line -> INLINE class detail
+          addCardLine(
+            card,
+            (c.class_number != null ? String(c.class_number) : ''),
+            String(c.class_name || '').trim(),
+            makeTagCount(cKeys.length),
+            () => setInlineDetail('class', cid)
+          );
+
+          // Rollup chips -> INLINE horse detail
+          const bestTrips = cKeys
+            .map(k => tIdx.entryBest.get(k))
+            .filter(Boolean)
+            .sort((a, b) => {
+              const ta = timeToMinutes(a.latestGO || a.latestStart) ?? 999999;
+              const tb = timeToMinutes(b.latestGO || b.latestStart) ?? 999999;
+              if (ta !== tb) return ta - tb;
+              return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
+            })
+            .slice(0, 14);
+
+          addEntryRollup(card, bestTrips, (horse) => setInlineDetail('horse', horse));
+        }
+      }
+
+      screenRoot.appendChild(card);
     }
   }
 
-  function renderTimeline() {
+  // ----------------------------
+  // SCREEN: RIDERS (list -> detail screen)
+  // ----------------------------
+  function renderRiders(_sIdx, tIdx) {
     clearRoot();
-    setTitle('Timeline');
+    setHeader('Riders');
 
-    const detail = renderDetailCard();
-    if (detail) el.screenRoot.appendChild(detail);
+    screenRoot.appendChild(renderSearch('riders', 'Search riders...'));
 
-    // Build simple hour buckets based on scope day and all trip goTimes
-    const dt = scopeDt();
+    const q = normalizeStr(state.search.riders);
+    const ridersAll = [...tIdx.byRider.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+
+    for (const name of ridersAll) {
+      const keys = tIdx.byRider.get(name) || [];
+      if (keys.length === 0) continue;
+      if (q && !normalizeStr(name).includes(q)) continue;
+
+      const row = el('div', 'row row--tap');
+      row.id = `rider-${idify(name)}`;
+      row.appendChild(el('div', 'row-title', String(name)));
+      row.appendChild(makeTagCount(keys.length));
+      row.addEventListener('click', () => {
+        pushDetail('riderDetail', { kind: 'rider', key: String(name) });
+      });
+      screenRoot.appendChild(row);
+    }
+  }
+
+  function renderRiderDetail(_sIdx, tIdx) {
+    const rider = state.detail && state.detail.key ? String(state.detail.key) : null;
+    clearRoot();
+    setHeader(rider || 'Rider');
+
+    if (!rider) return;
+
+    const keys = tIdx.byRider.get(rider) || [];
+    if (keys.length === 0) return;
+
+    // TARGET: RIDER DETAIL CARD (screen) -------------------------
+    const card = makeCard(rider, keys.length, true, null);
+
+    const bestTrips = keys
+      .map(k => tIdx.entryBest.get(k))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const ta = timeToMinutes(a.latestGO || a.latestStart) ?? 999999;
+        const tb = timeToMinutes(b.latestGO || b.latestStart) ?? 999999;
+        if (ta !== tb) return ta - tb;
+        const ra = safeNum(a.ring_number, 999999);
+        const rb = safeNum(b.ring_number, 999999);
+        if (ra !== rb) return ra - rb;
+        return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
+      });
+
+    addEntryRollup(card, bestTrips.slice(0, 60));
+    screenRoot.appendChild(card);
+  }
+
+  // ----------------------------
+  // SCREEN: TIMELINE (Full) — uses payload dt
+  // ----------------------------
+  function renderTimeline(_sIdx, tIdx) {
+    clearRoot();
+    setHeader('Timeline');
+
+    const dt = state.meta.dt;
     if (!dt) {
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.innerHTML = `<div class="row-title">No dt found</div><div class="row-tag">—</div>`;
-      el.screenRoot.appendChild(row);
+      screenRoot.appendChild(el('div', 'row', 'No dt found in payload.'));
       return;
     }
 
-    const all = [];
-    for (const [hk, hv] of state.idx.byHorse.entries()) {
-      // pick earliest go time from chips if available
-      for (const chip of hv.entryMap.values()) {
-        const ms = parseToEpoch(chip.goTime);
-        if (!ms) continue;
-        all.push({ horseKey: hk, horseName: hv.horseName, ms, label: chip.label, classKey: chip.classKey, ringKey: chip.ringKey });
-      }
+    const DAY_START_MIN = 8 * 60;
+    const DAY_END_MIN = 18 * 60;
+    const SLOT_MIN = 30;
+
+    const PX_PER_MIN = 4;
+    const GUTTER_PX = 180;
+
+    const root = el('div', 'screen');
+
+    let horses = Array.from(tIdx.byHorse.keys());
+    horses.sort((a, b) => String(a).localeCompare(String(b)));
+
+    const viewport = el('div', 'timeline-viewport');
+    const grid = el('div', 'timeline-grid');
+
+    const dayWidth = (DAY_END_MIN - DAY_START_MIN) * PX_PER_MIN;
+    grid.style.width = `${GUTTER_PX + dayWidth}px`;
+
+    const axis = el('div', 'timeline-axis');
+    axis.appendChild(el('div', 'timeline-axis-left', 'Horse'));
+
+    const axisRight = el('div', 'timeline-axis-right');
+    axisRight.style.width = `${dayWidth}px`;
+
+    for (let m = DAY_START_MIN; m <= DAY_END_MIN; m += SLOT_MIN) {
+      const cell = el('div', 'timeline-axis-cell', fmtClockFromMinutes(m));
+      cell.style.left = `${(m - DAY_START_MIN) * PX_PER_MIN}px`;
+      cell.style.width = `${SLOT_MIN * PX_PER_MIN}px`;
+      axisRight.appendChild(cell);
     }
 
-    all.sort((a,b) => a.ms - b.ms);
+    axis.appendChild(axisRight);
+    grid.appendChild(axis);
 
-    // Bucket by hour
-    const buckets = new Map(); // "9:00A" -> []
-    for (const it of all) {
-      const d = new Date(it.ms);
-      d.setMinutes(0,0,0);
-      const key = fmtTimeA(d.toISOString());
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(it);
-    }
+    const rowsWrap = el('div', 'timeline-rows');
 
-    // Peaks = hour buckets
-    const peaks = [];
-    for (const [k, arr] of buckets.entries()) {
-      if (!arr.length) continue;
-      peaks.push({
-        label: k,
-        agg: arr.length,
-        onClick: () => { location.hash = `#bucket-${k.replace(':','').replace('A','A').replace('P','P')}`; }
+    horses.forEach((horseName) => {
+      const entryKeys = tIdx.byHorse.get(String(horseName)) || [];
+      if (!entryKeys.length) return;
+
+      const row = el('div', 'timeline-row');
+
+      const left = el('div', 'timeline-horse');
+      left.appendChild(el('div', 'timeline-horse-name', String(horseName)));
+      left.addEventListener('click', () => pushDetail('horseDetail', { kind: 'horse', key: String(horseName) }));
+      row.appendChild(left);
+
+      const lane = el('div', 'timeline-lane');
+      lane.style.width = `${dayWidth}px`;
+
+      const cards = entryKeys
+        .map((k) => tIdx.entryBest.get(k))
+        .filter(Boolean)
+        .map((it) => {
+          const t = parseTripStartEnd(it, { dt });
+          if (!t || !t.start || !t.end) return null;
+
+          const st = t.start.getHours() * 60 + t.start.getMinutes();
+          const en = t.end.getHours() * 60 + t.end.getMinutes();
+
+          const startMin = Math.max(DAY_START_MIN, st);
+          const endMin = Math.min(DAY_END_MIN, Math.max(startMin + 5, en));
+
+          if (endMin <= DAY_START_MIN || startMin >= DAY_END_MIN) return null;
+
+          return { it, startMin, endMin };
+        })
+        .filter(Boolean)
+        .sort((a, b) => (a.startMin - b.startMin) || (safeNum(a.it.lastOOG, 999999) - safeNum(b.it.lastOOG, 999999)));
+
+      cards.forEach(({ it, startMin, endMin }) => {
+        const c = el('div', 'timeline-card');
+        c.style.left = `${(startMin - DAY_START_MIN) * PX_PER_MIN}px`;
+        c.style.width = `${Math.max(70, (endMin - startMin) * PX_PER_MIN)}px`;
+
+        const top = el('div', 'timeline-card-top');
+        top.appendChild(el('span', 'timeline-card-class', (it.class_number != null ? String(it.class_number) : '—')));
+        top.appendChild(el('span', 'timeline-card-ring', String(it.ringName || (it.ring_number != null ? `R${it.ring_number}` : ''))));
+        c.appendChild(top);
+
+        const mid = el('div', 'timeline-card-mid');
+        const timeTxt = fmtTimeShort(it.latestGO || it.latestStart || '');
+        if (timeTxt) mid.appendChild(el('span', 'timeline-card-time', timeTxt));
+        const stTxt = fmtStatus4(it.latestStatus);
+        if (stTxt) mid.appendChild(el('span', 'timeline-card-status', stTxt));
+        c.appendChild(mid);
+
+        c.addEventListener('click', () => {
+          if (it.class_id != null) pushDetail('horseDetail', { kind: 'horse', key: String(it.horseName || '') });
+        });
+
+        lane.appendChild(c);
       });
-    }
-    if (peaks.length) el.screenRoot.appendChild(makePeakbar(peaks));
 
-    // Bucket cards: title = hour
-    for (const [k, arr] of buckets.entries()) {
-      const anchor = `bucket-${k.replace(':','').replace('A','A').replace('P','P')}`;
-      const { card, body } = makeCard(k, anchor);
-
-      // Each line: time | horseName | agg(=1)
-      for (const it of arr.slice(0, 50)) {
-        addLine(body, fmtTimeA(new Date(it.ms).toISOString()), it.horseName, 1, () => openDetail('horse', it.horseKey, it.horseName));
-      }
-
-      el.screenRoot.appendChild(card);
-    }
-  }
-
-  // -----------------------------
-  // NAV + ROUTER
-  // -----------------------------
-  function goto(screen) {
-    state.ui.screen = screen;
-    // do NOT clear detail automatically; you wanted detail on-page
-    render();
-    highlightNav();
-  }
-
-  function highlightNav() {
-    const btns = el.navRow.querySelectorAll('.nav-btn');
-    btns.forEach(b => {
-      const s = b.getAttribute('data-screen');
-      if (!s) return;
-      b.classList.toggle('nav-btn--primary', s === state.ui.screen);
+      row.appendChild(lane);
+      rowsWrap.appendChild(row);
     });
+
+    grid.appendChild(rowsWrap);
+    viewport.appendChild(grid);
+    root.appendChild(viewport);
+    screenRoot.appendChild(root);
   }
 
+  // ----------------------------
+  // ROUTER
+  // ----------------------------
   function render() {
-    // if detail is open, allow back button to close detail first
-    el.headerBack.onclick = () => {
-      if (state.ui.detail) { closeDetail(); return; }
-      goto('start');
-    };
+    if (!screenRoot || !headerTitle) return;
 
-    if (!state.loaded) {
-      clearRoot();
-      setTitle('Loading…');
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.innerHTML = `<div class="row-title">Loading data…</div><div class="row-tag">—</div>`;
-      el.screenRoot.appendChild(row);
-      return;
-    }
+    const sIdx = buildScheduleIndex();
+    const tIdx = buildTruthIndex();
 
-    switch (state.ui.screen) {
-      case 'start': renderStart(); break;
-      case 'horses': renderHorses(); break;
-      case 'riders': renderRiders(); break;
-      case 'timeline': renderTimeline(); break;
-      case 'schedule':
-      default: renderSchedule(); break;
-    }
+    renderAggs(sIdx, tIdx);
+
+    const primary = getPrimaryForScreen(state.screen);
+    setNavActive(primary);
+
+    if (headerBack) headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
+
+    if (state.screen === 'start') return renderStart();
+    if (state.screen === 'horses') return renderHorses(sIdx, tIdx);
+
+    if (state.screen === 'rings' || state.screen === 'schedule') return renderRings(sIdx, tIdx);
+
+    if (state.screen === 'timeline') return renderTimeline(sIdx, tIdx);
+
+    if (state.screen === 'riders') return renderRiders(sIdx, tIdx);
+    if (state.screen === 'riderDetail') return renderRiderDetail(sIdx, tIdx);
+    if (state.screen === 'horseDetail') return renderHorseDetail(sIdx, tIdx);
+
+    state.screen = 'start';
+    renderStart();
   }
 
-  // -----------------------------
-  // INIT
-  // -----------------------------
-  async function init() {
-    // nav clicks
-    el.navRow.addEventListener('click', (e) => {
-      const btn = e.target.closest('.nav-btn');
+  // ----------------------------
+  // EVENTS
+  // ----------------------------
+  if (headerBack) headerBack.addEventListener('click', goBack);
+
+  if (navRow) {
+    navRow.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-screen]');
       if (!btn) return;
-      const screen = btn.getAttribute('data-screen');
-      if (!screen) return;
-      goto(screen);
+
+      let next = btn.dataset.screen;
+
+      // Schedule always renders FULL and is the Rings/Schedule screen.
+      if (next === 'schedule') next = 'rings';
+
+      state.history = [];
+      state.detail = null;
+      if (next !== 'rings') state.inlineDetail = null;
+
+      state.screen = next;
+      render();
     });
-
-    await loadAll();
-    // initial counts
-    navAggSet('horses', [...state.idx.byHorse.values()].filter(v => v.entryMap && v.entryMap.size > 0).length);
-    navAggSet('riders', [...state.idx.byRider.values()].filter(v => v.entryMap && v.entryMap.size > 0).length);
-
-    goto('schedule');
-
-    // refresh loop
-    setInterval(async () => {
-      try {
-        await loadAll();
-        render();
-      } catch (err) {
-        // keep UI; do not crash
-        // eslint-disable-next-line no-console
-        console.warn('Refresh failed', err);
-      }
-    }, REFRESH_MS);
   }
 
-  init().catch((err) => {
-    // eslint-disable-next-line no-console
-    console.error(err);
-    clearRoot();
-    setTitle('Error');
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `<div class="row-title">Failed to load data</div><div class="row-tag">ERR</div>`;
-    el.screenRoot.appendChild(row);
-  });
+  // ----------------------------
+  // BOOT
+  // ----------------------------
+  loadAll().catch(() => {});
+  render();
 })();
