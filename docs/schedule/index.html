@@ -345,6 +345,42 @@
     .timeline-card-ring{font-weight:700;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .timeline-card-mid{display:flex;gap:10px;margin-top:2px;font-size:11px;color:#555}
     .timeline-card-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    <style>
+  /* Timeline dark theme (matches app) */
+  .timeline-viewport{
+    background: radial-gradient(circle at top, #111827 0, #020617 70%);
+    color:#e5e7eb;
+    border:1px solid rgba(75,85,99,0.65);
+  }
+  .timeline-axis{
+    background: rgba(2,6,23,0.92);
+    border-bottom:1px solid rgba(75,85,99,0.55);
+  }
+  .timeline-axis-left{
+    background: rgba(2,6,23,0.92);
+    color:#f9fafb;
+    border-right:1px solid rgba(75,85,99,0.55);
+  }
+  .timeline-axis-cell{
+    border-left:1px solid rgba(75,85,99,0.35);
+    color: rgba(203,213,225,0.9);
+  }
+  .timeline-row{ border-bottom:1px solid rgba(75,85,99,0.22); }
+  .timeline-horse{
+    background: rgba(2,6,23,0.92);
+    border-right:1px solid rgba(75,85,99,0.55);
+    color:#f9fafb;
+  }
+  .timeline-card{
+    background: rgba(17,24,39,0.92);
+    border:1px solid rgba(75,85,99,0.65);
+    color:#f9fafb;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+  }
+  .timeline-card-ring{ color: rgba(203,213,225,0.9); }
+  .timeline-card-mid{ color: rgba(203,213,225,0.85); }
+</style>
   </style>
 </head>
 
