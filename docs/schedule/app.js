@@ -68,12 +68,12 @@
       timeline: ''
     },
 
-    // per-screen peak anchors (selected key for highlight)
+    // per-screen peak selections
     peak: {
-      rings: null,    // ring_number string
-      classes: null,  // class_group_id string
-      riders: null,   // riderName string
-      schedule: null  // ring_number string
+      rings: new Set(),   // ring_number string
+      classes: new Set(), // class_group_id string
+      riders: new Set(),  // riderName string
+      schedule: new Set() // ring_number string
     }
   };
 
@@ -86,15 +86,6 @@
     if (text != null) n.textContent = text;
     return n;
   }
-
-
-  function safeId(s) {
-    return String(s || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  }
-
 
   function normalizeStr(s) {
     return String(s || '').trim().toLowerCase();
@@ -282,149 +273,58 @@
   // ----------------------------
 
   function buildScheduleIndex() {
-  const recs = Array.isArray(state.schedule?.records) ? state.schedule.records : [];
-  const ringMap = new Map();  // ring_number -> ring
-  const groupMap = new Map(); // class_group_id -> group (across rings)
-  const classMap = new Map(); // class_id -> class
+    const ringMap = new Map(); // ring_number string -> { ring_number, ringName, groups: Map }
+    const groupMap = new Map(); // class_group_id string -> groupObj
+    const classMap = new Map(); // class_id string -> scheduleRec (first)
 
-  const toInt = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? Math.trunc(n) : 0;
-  };
+    for (const r of (state.schedule || [])) {
+      if (!r) continue;
 
-  const parseClock = (s) => {
-    // accepts: "12:15pm", "12:15 pm", "12:15 PM"
-    if (!s) return NaN;
-    const m = String(s).trim().match(/^(\d{1,2}):(\d{2})\s*([ap]m)$/i);
-    if (!m) return NaN;
-    let hh = Number(m[1]);
-    const mm = Number(m[2]);
-    const ap = m[3].toLowerCase();
-    if (hh === 12) hh = 0;
-    if (ap === "pm") hh += 12;
-    return hh * 60 + mm;
-  };
+      const ringN = r.ring_number;
+      const gid = r.class_group_id;
+      const cid = r.class_id;
 
-  const cmpClock = (a, b) => {
-    const A = parseClock(a);
-    const B = parseClock(b);
-    if (!Number.isFinite(A) && !Number.isFinite(B)) return 0;
-    if (!Number.isFinite(A)) return 1;
-    if (!Number.isFinite(B)) return -1;
-    return A - B;
-  };
+      if (ringN == null || gid == null || cid == null) continue;
 
-  const ensureRing = (ring_number, ringName) => {
-    const key = String(ring_number ?? "");
-    if (!key) return null;
-    if (!ringMap.has(key)) {
-      ringMap.set(key, {
-        ring_number: ring_number ?? null,
-        ringName: ringName ?? "",
-        groups: new Map(),  // class_group_id -> group
-        classes: new Map(), // class_id -> class
-      });
-    }
-    const r = ringMap.get(key);
-    if (ringName && !r.ringName) r.ringName = ringName;
-    return r;
-  };
+      const ringKey = String(ringN);
+      const ringName = r.ringName || (ringN != null ? `Ring ${ringN}` : 'Ring');
 
-  const ensureGroup = (ring, g) => {
-    const gid = String(g.class_group_id ?? "");
-    if (!gid) return null;
+      if (!ringMap.has(ringKey)) {
+        ringMap.set(ringKey, { ring_number: ringN, ringName, groups: new Map() });
+      }
+      const ringObj = ringMap.get(ringKey);
 
-    if (!ring.groups.has(gid)) {
-      ring.groups.set(gid, {
-        class_group_id: g.class_group_id ?? null,
-        class_groupxclasses_id: g.class_groupxclasses_id ?? null,
-        group_name: g.group_name ?? "",
-        ring_number: ring.ring_number ?? null,
-        ringName: ring.ringName ?? "",
-        latestStart: g.latestStart ?? "",
-        latestStatus: g.latestStatus ?? "",
-        total_trips: toInt(g.total_trips),
-        classes: new Map(), // class_id -> class
-      });
+      const gidKey = String(gid);
+      if (!ringObj.groups.has(gidKey)) {
+        const gObj = {
+          class_group_id: gid,
+          group_name: r.group_name || r.class_name || '(Group)',
+          latestStart: r.latestStart || null,
+          latestStatus: r.latestStatus || null,
+          classes: new Map()
+        };
+        ringObj.groups.set(gidKey, gObj);
+        groupMap.set(gidKey, gObj);
+      }
+      const gObj = ringObj.groups.get(gidKey);
+
+      const cidKey = String(cid);
+      if (!gObj.classes.has(cidKey)) {
+        const cObj = {
+          class_id: cid,
+          class_number: r.class_number,
+          class_name: r.class_name || '(Class)',
+          latestStart: r.latestStart || null,
+          latestStatus: r.latestStatus || null
+        };
+        gObj.classes.set(cidKey, cObj);
+      }
+
+      if (!classMap.has(cidKey)) classMap.set(cidKey, r);
     }
 
-    const group = ring.groups.get(gid);
-
-    if (g.group_name && !group.group_name) group.group_name = g.group_name;
-    if (g.latestStart && (!group.latestStart || cmpClock(g.latestStart, group.latestStart) < 0)) group.latestStart = g.latestStart;
-    if (g.latestStatus && !group.latestStatus) group.latestStatus = g.latestStatus;
-    if (Number.isFinite(Number(g.total_trips)) && toInt(g.total_trips) > toInt(group.total_trips)) group.total_trips = toInt(g.total_trips);
-
-    groupMap.set(gid, group);
-    return group;
-  };
-
-  const ensureClass = (ring, group, c) => {
-    const cid = String(c.class_id ?? "");
-    if (!cid) return null;
-
-    if (!ring.classes.has(cid)) {
-      ring.classes.set(cid, {
-        class_id: c.class_id ?? null,
-        class_number: c.class_number ?? "",
-        class_name: c.class_name ?? "",
-        class_type: c.class_type ?? "",
-        class_group_id: c.class_group_id ?? null,
-        class_groupxclasses_id: c.class_groupxclasses_id ?? null,
-        group_name: c.group_name ?? "",
-        ring_number: ring.ring_number ?? null,
-        ringName: ring.ringName ?? "",
-        latestStart: c.latestStart ?? "",
-        latestStatus: c.latestStatus ?? "",
-        total_trips: toInt(c.total_trips),
-      });
-    }
-
-    const klass = ring.classes.get(cid);
-
-    if (c.class_number && !klass.class_number) klass.class_number = c.class_number;
-    if (c.class_name && !klass.class_name) klass.class_name = c.class_name;
-    if (c.class_type && !klass.class_type) klass.class_type = c.class_type;
-    if (c.group_name && !klass.group_name) klass.group_name = c.group_name;
-    if (c.latestStart && (!klass.latestStart || cmpClock(c.latestStart, klass.latestStart) < 0)) klass.latestStart = c.latestStart;
-    if (c.latestStatus && !klass.latestStatus) klass.latestStatus = c.latestStatus;
-    if (Number.isFinite(Number(c.total_trips)) && toInt(c.total_trips) > toInt(klass.total_trips)) klass.total_trips = toInt(c.total_trips);
-
-    if (group) group.classes.set(cid, klass);
-    classMap.set(cid, klass);
-    return klass;
-  };
-
-  // Schedule file (if present)
-  for (const r of recs) {
-    const ring = ensureRing(r.ring_number, r.ringName);
-    if (!ring) continue;
-    const group = ensureGroup(ring, r);
-    ensureClass(ring, group, r);
+    return { ringMap, groupMap, classMap };
   }
-
-  // Fallback: derive schedule index from trips truth when schedule is empty
-  if (ringMap.size === 0) {
-    const tRecs = Array.isArray(state.trips?.records) ? state.trips.records : [];
-    for (const t of tRecs) {
-      const ring = ensureRing(t.ring_number, t.ringName);
-      if (!ring) continue;
-      const group = ensureGroup(ring, t);
-      ensureClass(ring, group, t);
-    }
-  }
-
-  for (const ring of ringMap.values()) {
-    ring.groupsArr = Array.from(ring.groups.values());
-    ring.classesArr = Array.from(ring.classes.values());
-  }
-  for (const g of groupMap.values()) {
-    g.classesArr = Array.from(g.classes.values());
-  }
-
-  return { ringMap, groupMap, classMap };
-}
-
 
   // Dedup entries by (class_id|horseName), choosing earliest GO then smallest OOG
   function pickBestTrip(tripsList) {
@@ -548,36 +448,33 @@
     return wrap;
   }
 
-  function renderPeakBar(items, selectedKey, onSelect) {
-  const bar = el('div', 'peakbar');
-  const scroller = el('div', 'nav-scroller');
-  const row = el('div', 'nav-row');
+  function renderPeakBar(items, selectedSet, onToggle) {
+    const bar = el('div', 'peakbar');
+    const scroller = el('div', 'nav-scroller');
+    const row = el('div', 'nav-row');
 
-  for (const it of items) {
-    const href = it.href || (`#${it.key}`);
-    const a = el('a', `nav-btn${it.key === selectedKey ? ' nav-btn--primary' : ''}`, null);
-    a.href = href;
+    for (const it of items) {
+      const b = el('button', 'nav-btn', null);
+      b.type = 'button';
 
-    const label = el('span', 'nav-label', it.label || String(it.key));
-    a.appendChild(label);
+      const label = el('span', 'nav-label', it.label);
+      const agg = el('span', 'nav-agg', String(it.agg ?? 0));
+      if ((it.agg ?? 0) > 0) agg.classList.add('nav-agg--positive');
 
-    if (it.agg !== undefined && it.agg !== null && String(it.agg) !== '') {
-      const agg = el('span', 'nav-agg', String(it.agg));
-      a.appendChild(agg);
+      b.appendChild(label);
+      b.appendChild(agg);
+
+      const on = selectedSet.has(it.key);
+      b.classList.toggle('nav-btn--primary', on);
+
+      b.addEventListener('click', () => onToggle(it.key));
+      row.appendChild(b);
     }
 
-    a.addEventListener('click', () => {
-      if (typeof onSelect === 'function') onSelect(it.key);
-    });
-
-    row.appendChild(a);
+    scroller.appendChild(row);
+    bar.appendChild(scroller);
+    return bar;
   }
-
-  scroller.appendChild(row);
-  bar.appendChild(scroller);
-  return bar;
-}
-
 
   function toggleSet(set, key) {
     if (set.has(key)) set.delete(key);
@@ -834,11 +731,12 @@
     const ringsAll = [...sIdx.ringMap.values()].sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
 
     const peakItems = buildRingPeakItems(sIdx, tIdx, ringsAll);
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.rings, (k) => { state.peak.rings = k; }));
+    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.rings, (k) => toggleSet(state.peak.rings, k)));
 
     const q = normalizeStr(state.search.rings);
     const visible = ringsAll
       .filter(r => ringVisibleInMode(tIdx, String(r.ring_number)))
+      .filter(r => (state.peak.rings.size ? state.peak.rings.has(String(r.ring_number)) : true))
       .filter(r => (q ? normalizeStr(r.ringName).includes(q) : true));
 
     for (const r of visible) {
@@ -1025,21 +923,21 @@
       .map(g => {
         const gid = String(g.class_group_id);
         const keys = tIdx.byGroup.get(gid) || [];
-        return { key: gid, label: String(g.group_name), agg: keys.length, href: `#group-${gid}` };
+        return { key: gid, label: String(g.group_name), agg: keys.length };
       });
 
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.classes, (k) => { state.peak.classes = k; }));
+    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.classes, (k) => toggleSet(state.peak.classes, k)));
 
     const q = normalizeStr(state.search.classes);
 
     // visible groups (mode + peak + search)
     const visible = peakItems
       .filter(it => (state.scopeMode === 'FULL' ? true : (it.agg > 0)))
+      .filter(it => (state.peak.classes.size ? state.peak.classes.has(it.key) : true))
       .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
 
     for (const it of visible) {
       const row = el('div', 'row row--tap');
-      row.id = `group-${String(it.key)}`;
       row.appendChild(el('div', 'row-title', it.label));
       row.appendChild(makeTagCount(it.agg));
       row.addEventListener('click', () => {
@@ -1100,17 +998,17 @@
       return { key: String(name), label: String(name), agg: keys.length };
     });
 
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.riders, (k) => { state.peak.riders = k; }));
+    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.riders, (k) => toggleSet(state.peak.riders, k)));
 
     const q = normalizeStr(state.search.riders);
 
     const visible = peakItems
       .filter(it => (state.scopeMode === 'FULL' ? true : (it.agg > 0)))
+      .filter(it => (state.peak.riders.size ? state.peak.riders.has(it.key) : true))
       .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
 
     for (const it of visible) {
       const row = el('div', 'row row--tap');
-      row.id = `rider-${safeId(String(it.key))}`;
       row.appendChild(el('div', 'row-title', it.label));
       row.appendChild(makeTagCount(it.agg));
       row.addEventListener('click', () => {
@@ -1289,11 +1187,12 @@
 
     // ring peak for schedule (optional)
     const peakItems = buildRingPeakItems(sIdx, tIdx, ringsAll);
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.schedule, (k) => { state.peak.schedule = k; }));
+    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.schedule, (k) => toggleSet(state.peak.schedule, k)));
 
     const q = normalizeStr(state.search.schedule);
     const visible = ringsAll
       .filter(r => ringVisibleInMode(tIdx, String(r.ring_number)))
+      .filter(r => (state.peak.schedule.size ? state.peak.schedule.has(String(r.ring_number)) : true))
       .filter(r => (q ? normalizeStr(r.ringName).includes(q) : true));
 
     for (const r of visible) {
