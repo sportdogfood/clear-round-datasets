@@ -286,6 +286,8 @@
     }
 
     .nav-btn {
+      text-decoration: none;
+
       padding: 6px 14px;
       border-radius: var(--pill-radius);
       border: 1px solid #4b4f57;
@@ -326,6 +328,9 @@
         0 0 0 1px #020617,
         0 2px 6px rgba(15, 23, 42, 0.9);
     }
+
+    a.nav-btn { color: inherit; }
+
 
     .nav-label { display: inline-block; }
 
@@ -511,6 +516,121 @@
       text-overflow: ellipsis;
     }
 
+  
+    /* Schedule table (inside ring cards) -------------------------------- */
+    .sched-head, .sched-row{
+      display: grid;
+      grid-template-columns: 70px 1fr 70px 1.4fr 90px 70px 24px;
+      gap: 8px;
+      align-items: center;
+    }
+    .sched-head{
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.95);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 8px 14px 6px;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.7);
+      background: rgba(2,6,23,0.55);
+    }
+    .sched-row{
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: var(--pill-radius);
+      border: 1px solid var(--border-soft);
+      background: #111827;
+      font-size: 13px;
+      color: #e5e7eb;
+      box-shadow: 0 1px 0 #020617;
+    }
+    .sched-col{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sched-row .sched-col.sched-ring,
+    .sched-row .sched-col.sched-class,
+    .sched-row .sched-col.sched-horse{
+      cursor: pointer;
+    }
+    .sched-list{ display:flex; flex-direction:column; gap:8px; padding-top: 10px; }
+
+    /* Timeline grid ----------------------------------------------------- */
+    .timeline{ display:flex; flex-direction:column; gap:10px; }
+    .timeline-grid{
+      display:flex;
+      gap:0;
+      border: 1px solid rgba(55, 65, 81, 0.7);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(2,6,23,0.45);
+    }
+    .timeline-left{
+      width: 150px;
+      flex: 0 0 150px;
+      background: #020617;
+      border-right: 1px solid rgba(55, 65, 81, 0.7);
+      position: sticky;
+      left: 0;
+      z-index: 3;
+    }
+    .timeline-horse{
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.35);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .timeline-right{
+      flex: 1;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .timeline-ruler{
+      display:flex;
+      min-width: 900px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #020617;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.7);
+    }
+    .timeline-slot{
+      flex: 0 0 90px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.95);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-right: 1px solid rgba(55, 65, 81, 0.35);
+    }
+    .timeline-track{
+      position: relative;
+      min-width: 900px;
+      height: 40px;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.22);
+    }
+    .timeline-block{
+      position:absolute;
+      top: 6px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(59, 130, 246, 0.9);
+      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
+      color:#f9fafb;
+      padding: 4px 10px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      cursor:pointer;
+      box-shadow: 0 0 0 1px #020617;
+      overflow:hidden;
+    }
+    .timeline-block-top{ font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .timeline-block-sub{ font-size: 11px; opacity: 0.9; white-space: nowrap; overflow:hidden; text-overflow:ellipsis; }
+    
   </style>
 </head>
 

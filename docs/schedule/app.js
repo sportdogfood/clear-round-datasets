@@ -49,6 +49,7 @@
 
     // global mode for Schedule/Timeline (A/F)
     scopeMode: 'ACTIVE', // ACTIVE | FULL
+  scheduleMode: 'ACTIVE', // schedule-only (ACTIVE | FULL)
 
     // primary nav
     screen: 'start',
@@ -89,6 +90,14 @@
 
   function normalizeStr(s) {
     return String(s || '').trim().toLowerCase();
+  }
+
+
+  function idify(s) {
+    return normalizeStr(s)
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
   }
 
   function uniqStrings(list) {
@@ -350,11 +359,13 @@
     return best;
   }
 
-  function buildTruthIndex() {
+  function buildTruthIndex(opts = {}) {
+    const mode = (opts.mode ?? state.scopeMode);
+    const ignoreActive = !!opts.ignoreActive;
     const includedTrip = (t) => {
       if (!t) return false;
 
-      if (state.scopeMode === 'ACTIVE') {
+      if (!ignoreActive && mode === 'ACTIVE') {
         const h = t.horseName ? String(t.horseName) : null;
         if (!h) return false;
         if (!state.activeHorses.has(h)) return false;
@@ -476,10 +487,8 @@
     return bar;
   }
 
-  function toggleSet(set, key) {
-    if (set.has(key)) set.delete(key);
-    else set.add(key);
-    render();
+  function toggleSet(_set, _val) {
+    // no-op (anchor peaks)
   }
 
   function makeCard(title, aggValue, inverseHdr, onClick) {
@@ -641,6 +650,7 @@
 
     for (const h of horses) {
       const row = el('div', 'row row--tap');
+      row.id = `group-${it.key}`;
       const active = state.activeHorses.has(String(h));
       if (active) row.classList.add('row--active');
 
@@ -731,12 +741,14 @@
     const ringsAll = [...sIdx.ringMap.values()].sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
 
     const peakItems = buildRingPeakItems(sIdx, tIdx, ringsAll);
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.rings, (k) => toggleSet(state.peak.rings, k)));
+        // Anchor peaks
+    for (const it of peakItems) { it.href = `#ring-${it.key}`; it.primary = Number(it.agg||0) > 0; it.showZero = true; }
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null, true));
 
     const q = normalizeStr(state.search.rings);
     const visible = ringsAll
       .filter(r => ringVisibleInMode(tIdx, String(r.ring_number)))
-      .filter(r => (state.peak.rings.size ? state.peak.rings.has(String(r.ring_number)) : true))
+      
       .filter(r => (q ? normalizeStr(r.ringName).includes(q) : true));
 
     for (const r of visible) {
@@ -745,6 +757,7 @@
       const card = makeCard(String(r.ringName), ringEntryKeys.length, true, () => {
         pushDetail('ringDetail', { kind: 'ring', key: rk });
       });
+      card.id = `ring-${rk}`;
 
       // groups sorted by start time
       const groups = [...r.groups.values()].sort((a, b) => {
@@ -926,18 +939,20 @@
         return { key: gid, label: String(g.group_name), agg: keys.length };
       });
 
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.classes, (k) => toggleSet(state.peak.classes, k)));
+        // Anchor peaks
+    for (const it of peakItems) { it.href = `#group-${it.key}`; it.primary = Number(it.agg||0) > 0; }
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null, true));
 
     const q = normalizeStr(state.search.classes);
 
     // visible groups (mode + peak + search)
     const visible = peakItems
       .filter(it => (state.scopeMode === 'FULL' ? true : (it.agg > 0)))
-      .filter(it => (state.peak.classes.size ? state.peak.classes.has(it.key) : true))
-      .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
+            .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
 
     for (const it of visible) {
       const row = el('div', 'row row--tap');
+      row.id = `rider-${idify(it.key)}`;
       row.appendChild(el('div', 'row-title', it.label));
       row.appendChild(makeTagCount(it.agg));
       row.addEventListener('click', () => {
@@ -998,14 +1013,15 @@
       return { key: String(name), label: String(name), agg: keys.length };
     });
 
-    screenRoot.appendChild(renderPeakBar(peakItems, state.peak.riders, (k) => toggleSet(state.peak.riders, k)));
+        // Anchor peaks
+    for (const it of peakItems) { it.href = `#rider-${idify(it.key)}`; it.primary = Number(it.agg||0) > 0; }
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null, true));
 
     const q = normalizeStr(state.search.riders);
 
     const visible = peakItems
       .filter(it => (state.scopeMode === 'FULL' ? true : (it.agg > 0)))
-      .filter(it => (state.peak.riders.size ? state.peak.riders.has(it.key) : true))
-      .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
+            .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
 
     for (const it of visible) {
       const row = el('div', 'row row--tap');
@@ -1328,13 +1344,14 @@
   if (navRow) {
     navRow.addEventListener('click', (e) => {
       const modePill = e.target.closest('[data-mode-pill]');
-      if (modePill) {
-        // toggle A/F without changing current tab
-        state.scopeMode = (state.scopeMode === 'ACTIVE') ? 'FULL' : 'ACTIVE';
+    if (modePill) {
+      // Schedule-only mode toggle
+      if (state.screen === 'schedule') {
+        state.scheduleMode = (state.scheduleMode === 'FULL') ? 'ACTIVE' : 'FULL';
         render();
-        e.stopPropagation();
-        return;
       }
+      return;
+    }
 
       const btn = e.target.closest('[data-screen]');
       if (!btn) return;
