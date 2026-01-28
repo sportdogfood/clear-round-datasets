@@ -141,7 +141,8 @@
         el.classList.add('nav-agg--positive');
         return;
       }
-      const isFull = state.ui.scopeMode === 'FULL';
+      // scopeMode is stored on root state
+      const isFull = state.scopeMode === 'FULL';
       el.textContent = isFull ? 'F' : 'A';
       el.classList.toggle('nav-agg--positive', !isFull);
     });
