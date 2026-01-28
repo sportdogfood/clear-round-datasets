@@ -231,18 +231,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     const mm = mins % 60;
     return new Date(`${dt}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00`);
   }
-  
-  function safeNumber(v) {
-  if (v === null || v === undefined) return null;
-  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-
-  const s = String(v).trim();
-  if (!s) return null;
-
-  // keep digits, decimal, minus (handles "12", "12.3", "-5", and strips "12 mins", "#12", etc.)
-  const n = Number(s.replace(/[^\d.-]/g, ''));
-  return Number.isFinite(n) ? n : null;
-}
 
   function parseTripStartEnd(trip, dtFallback) {
     // Prefer calendar fields if present, else use dt + latestStart + duration fallback
@@ -264,7 +252,8 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
       end = m ? parseAmPmTimeToDate(m[1], m[2]) : null;
     }
     if (!end) {
-      const trips = safeNumber(trip.total_trips, 1);
+      // total_trips may be blank/string; default to 1
+      const trips = safeNum(trip.total_trips, 1);
       const ms = trips * DUR_PER_TRIP_SEC * 1000;
       end = new Date(start.getTime() + ms);
     }
