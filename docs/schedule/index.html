@@ -1,4 +1,4 @@
-<!-- index.html -->
+<!-- index.html (FULL DROP — corrected) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -286,8 +286,6 @@
     }
 
     .nav-btn {
-      text-decoration: none;
-
       padding: 6px 14px;
       border-radius: var(--pill-radius);
       border: 1px solid #4b4f57;
@@ -309,7 +307,6 @@
         border-color 0.12s ease-out,
         box-shadow 0.12s ease-out,
         transform 0.08s ease-out;
-    
       text-decoration: none;
     }
 
@@ -330,7 +327,6 @@
     }
 
     a.nav-btn { color: inherit; }
-
 
     .nav-label { display: inline-block; }
 
@@ -371,12 +367,12 @@
       background: linear-gradient(to bottom, rgba(2,6,23,0.95), rgba(2,6,23,0.75));
       backdrop-filter: blur(10px);
       padding: 6px 0 8px;
-      margin: -8px 0 6px; /* align with app-main padding */
+      margin: -8px 0 6px;
     }
 
     .peakbar .nav-scroller { padding: 0 2px; }
 
-    /* Cards (separate from .row) -------------------------------- */
+    /* Cards ------------------------------------------------------ */
 
     .card {
       border-radius: 18px;
@@ -416,8 +412,19 @@
       padding-right: 8px;
     }
 
+    .card-hdr-sub{
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(203,213,225,0.92);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .card-body{ padding: 6px 0; }
 
+    /* 3-tier line: time | title | agg  -------------------------- */
     .card-line{
       display: grid;
       grid-template-columns: 72px 1fr 56px;
@@ -428,7 +435,6 @@
       font-size: 13px;
       color: #e5e7eb;
     }
-
     .card-line:first-child{ border-top: none; }
 
     .c-time{
@@ -453,89 +459,41 @@
       justify-content: center;
     }
 
-    /* Entry grid (detail tables inside cards) ------------------- */
-    .entry-grid-hdr{
-      display: grid;
-      grid-template-columns: 84px 1.2fr 64px 1.4fr 92px 64px 56px;
-      gap: 10px;
-      align-items: center;
-      padding: 8px 12px;
-      border: 1px solid rgba(75,85,99,0.65);
-      background: rgba(2,6,23,0.6);
-      border-radius: 14px;
-      color: rgba(226,232,240,0.92);
-      font-size: 11px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      font-variant-numeric: tabular-nums;
-    }
-    .entry-grid-row{
-      display: grid;
-      grid-template-columns: 84px 1.2fr 64px 1.4fr 92px 64px 56px;
-      gap: 10px;
-      align-items: center;
-      padding: 10px 12px;
-      border: 1px solid rgba(75,85,99,0.55);
-      background: rgba(17,24,39,0.7);
-      border-radius: 16px;
-      color: #f9fafb;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out;
-    }
-    .entry-grid-row:active{
-      transform: translateY(1px) scale(0.995);
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.95);
-    }
-    .entry-ell{
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .entry-pill{
-      justify-self: end;
-      min-width: 36px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid #22c55e;
-      background: #14532d;
-      color: #f9fafb;
-      font-size: 12px;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
-      box-shadow: 0 0 0 1px #020617;
-    }
-
-    .card-hdr-sub{
-      margin-top: 4px;
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(203,213,225,0.92);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-  
-    /* Schedule table (inside ring cards) -------------------------------- */
-    .sched-head, .sched-row{
-      display: grid;
-      grid-template-columns: 70px 1fr 70px 1.4fr 90px 70px 24px;
+    /* Entry rollup chips (horizontal) --------------------------- */
+    .entry-rollup{
+      display: flex;
       gap: 8px;
+      padding: 8px 12px 10px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-top: 1px solid rgba(55,65,81,0.35);
+    }
+
+    .entry-chip{
+      display: inline-flex;
       align-items: center;
-    }
-    .sched-head{
-      font-size: 11px;
-      color: rgba(148, 163, 184, 0.95);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      padding: 8px 14px 6px;
-      border-bottom: 1px solid rgba(55, 65, 81, 0.7);
+      justify-content: center;
+      padding: 6px 12px;              /* <- requested padding */
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.75);
       background: rgba(2,6,23,0.55);
+      color: #f9fafb;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      box-shadow: 0 0 0 1px rgba(2,6,23,0.75);
     }
+
+    /* (Legacy schedule classnames retained, but forced to 3-tier) */
+    .sched-list{ display:flex; flex-direction:column; gap:8px; padding: 10px 12px 12px; }
+    .sched-head{ display:none; }
     .sched-row{
+      display: grid;
+      grid-template-columns: 72px 1fr 56px; /* <- 3-tier, not 7 cols */
+      gap: 10px;
+      align-items: center;
       min-height: 42px;
-      padding: 10px 14px;
+      padding: 10px 12px;
       border-radius: var(--pill-radius);
       border: 1px solid var(--border-soft);
       background: #111827;
@@ -543,173 +501,86 @@
       color: #e5e7eb;
       box-shadow: 0 1px 0 #020617;
     }
-    .sched-col{
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .sched-col{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sched-row .sched-col.sched-ring,
     .sched-row .sched-col.sched-class,
-    .sched-row .sched-col.sched-horse{
-      cursor: pointer;
-    }
-    .sched-list{ display:flex; flex-direction:column; gap:8px; padding-top: 10px; }
+    .sched-row .sched-col.sched-horse{ cursor: pointer; }
 
-    /* Timeline grid ----------------------------------------------------- */
-    .timeline{ display:flex; flex-direction:column; gap:10px; }
-    .timeline-grid{
-      display:flex;
-      gap:0;
-      border: 1px solid rgba(55, 65, 81, 0.7);
-      border-radius: 18px;
-      overflow: hidden;
-      background: rgba(2,6,23,0.45);
+    /* WHITE Timeline grid (single system) ------------------------ */
+
+    .timeline-viewport{
+      height: calc(100vh - var(--header-h) - var(--nav-h) - 24px);
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      color:#111;
     }
-    .timeline-left{
-      width: 150px;
-      flex: 0 0 150px;
-      background: #020617;
-      border-right: 1px solid rgba(55, 65, 81, 0.7);
-      position: sticky;
-      left: 0;
-      z-index: 3;
+    .timeline-grid{position:relative;min-height:100%}
+    .timeline-axis{
+      position:sticky;top:0;z-index:10;
+      display:flex;align-items:stretch;
+      background:#fff;border-bottom:1px solid var(--border);
+      height:42px;
     }
-    .timeline-horse{
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(55, 65, 81, 0.35);
-      font-size: 12px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
+    .timeline-axis-left{
+      position:sticky;left:0;z-index:12;
+      width:180px;min-width:180px;
+      padding:10px 12px;
+      font-weight:800;
+      background:#fff;
+      border-right:1px solid var(--border);
+      color:#111;
     }
-    .timeline-right{
-      flex: 1;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .timeline-ruler{
-      display:flex;
-      min-width: 900px;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: #020617;
-      border-bottom: 1px solid rgba(55, 65, 81, 0.7);
-    }
-    .timeline-slot{
-      flex: 0 0 90px;
-      padding: 8px 10px;
-      font-size: 11px;
-      color: rgba(148, 163, 184, 0.95);
+    .timeline-axis-right{position:relative;height:42px}
+    .timeline-axis-cell{
+      position:absolute;top:0;bottom:0;
+      border-left:1px solid #eee;
+      padding:10px 8px;
+      font-size:12px;color:#555;
+      background:transparent;
+      font-variant-numeric: tabular-nums;
       text-transform: uppercase;
       letter-spacing: 0.03em;
-      border-right: 1px solid rgba(55, 65, 81, 0.35);
     }
-    .timeline-track{
-      position: relative;
-      min-width: 900px;
-      height: 40px;
-      border-bottom: 1px solid rgba(55, 65, 81, 0.22);
+    .timeline-now{
+      position:absolute;top:0;bottom:0;width:2px;
+      background:#111;opacity:.5;
     }
-    .timeline-block{
-      position:absolute;
-      top: 6px;
-      height: 28px;
-      border-radius: 999px;
-      border: 1px solid rgba(59, 130, 246, 0.9);
-      background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
-      color:#f9fafb;
-      padding: 4px 10px;
-      display:flex;
-      gap: 10px;
-      align-items:center;
+    .timeline-now-label{
+      position:absolute;top:6px;
+      transform:translateX(-50%);
+      font-size:11px;font-weight:800;
+      background:#fff;padding:2px 6px;border:1px solid var(--border);border-radius:999px;
+    }
+    .timeline-rows{position:relative}
+    .timeline-row{display:flex;min-height:54px;border-bottom:1px solid #f0f0f0}
+    .timeline-horse{
+      position:sticky;left:0;z-index:9;
+      width:180px;min-width:180px;
+      padding:10px 12px;
+      background:#fff;border-right:1px solid var(--border);
       cursor:pointer;
-      box-shadow: 0 0 0 1px #020617;
+    }
+    .timeline-horse-name{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-lane{position:relative}
+    .timeline-card{
+      position:absolute;top:8px;height:38px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fafafa;
+      padding:6px 8px;
+      cursor:pointer;
       overflow:hidden;
     }
-    .timeline-block-top{ font-size: 12px; font-weight: 600; white-space: nowrap; }
-    .timeline-block-sub{ font-size: 11px; opacity: 0.9; white-space: nowrap; overflow:hidden; text-overflow:ellipsis; }
-    
-  
-  /* Schedule 7-col table */
-  .table7{margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-  .table7-hdr,.table7-row{display:grid;grid-template-columns: 92px 1.4fr 72px 1.6fr 1.1fr 72px 16px;align-items:center}
-  .table7-hdr{background:#f7f7f7;color:#444;font-size:12px;font-weight:700}
-  .table7-row{border-top:1px solid var(--border);font-size:13px}
-  .table7-cell{padding:10px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .table7-link{cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-  .table7-link:hover{opacity:.85}
+    .timeline-card:hover{opacity:.9}
+    .timeline-card-top{display:flex;justify-content:space-between;gap:10px}
+    .timeline-card-class{font-weight:900;font-size:12px}
+    .timeline-card-ring{font-weight:700;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-card-mid{display:flex;gap:10px;margin-top:2px;font-size:11px;color:#555}
+    .timeline-card-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  /* Timeline grid */
-  .timeline-viewport{
-    height: calc(100vh - var(--topbar-h) - var(--bottom-nav-h) - 24px);
-    overflow:auto;
-    border:1px solid var(--border);
-    border-radius:12px;
-    background:#fff;
-  }
-  .timeline-grid{position:relative;min-height:100%}
-  .timeline-axis{
-    position:sticky;top:0;z-index:10;
-    display:flex;align-items:stretch;
-    background:#fff;border-bottom:1px solid var(--border);
-    height:42px;
-  }
-  .timeline-axis-left{
-    position:sticky;left:0;z-index:12;
-    width:180px;min-width:180px;
-    padding:10px 12px;
-    font-weight:800;
-    background:#fff;
-    border-right:1px solid var(--border);
-  }
-  .timeline-axis-right{position:relative;height:42px}
-  .timeline-axis-cell{
-    position:absolute;top:0;bottom:0;
-    border-left:1px solid #eee;
-    padding:10px 8px;
-    font-size:12px;color:#555;
-    background:linear-gradient(to right, rgba(0,0,0,0.00), rgba(0,0,0,0.00));
-  }
-  .timeline-now{
-    position:absolute;top:0;bottom:0;width:2px;
-    background:#111;opacity:.5;
-  }
-  .timeline-now-label{
-    position:absolute;top:6px;
-    transform:translateX(-50%);
-    font-size:11px;font-weight:800;
-    background:#fff;padding:2px 6px;border:1px solid var(--border);border-radius:999px;
-  }
-  .timeline-rows{position:relative}
-  .timeline-row{display:flex;min-height:54px;border-bottom:1px solid #f0f0f0}
-  .timeline-horse{
-    position:sticky;left:0;z-index:9;
-    width:180px;min-width:180px;
-    padding:10px 12px;
-    background:#fff;border-right:1px solid var(--border);
-    cursor:pointer;
-  }
-  .timeline-horse-name{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .timeline-lane{position:relative}
-  .timeline-card{
-    position:absolute;top:8px;height:38px;
-    border:1px solid var(--border);
-    border-radius:10px;
-    background:#fafafa;
-    padding:6px 8px;
-    cursor:pointer;
-    overflow:hidden;
-  }
-  .timeline-card:hover{opacity:.9}
-  .timeline-card-top{display:flex;justify-content:space-between;gap:10px}
-  .timeline-card-class{font-weight:900;font-size:12px}
-  .timeline-card-ring{font-weight:700;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .timeline-card-mid{display:flex;gap:10px;margin-top:2px;font-size:11px;color:#555}
-  .timeline-card-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-</style>
+  </style>
 </head>
 
 <body>
@@ -728,7 +599,7 @@
       <div id="screen-root" class="list-column"></div>
     </main>
 
-    <!-- Bottom nav -->
+    <!-- Bottom nav (trimmed: schedule is rings; rings/classes/riders stay click-in only) -->
     <nav class="app-nav">
       <div class="nav-scroller">
         <div class="nav-row" id="nav-row">
@@ -737,7 +608,7 @@
           </button>
 
           <button class="nav-btn" type="button" data-screen="horses">
-            <span class="nav-label">Active Horses</span>
+            <span class="nav-label">Horses</span>
             <span class="nav-agg" data-nav-agg="horses">0</span>
           </button>
 
@@ -748,22 +619,6 @@
 
           <button class="nav-btn" type="button" data-screen="timeline">
             <span class="nav-label">Timeline</span>
-            
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="rings">
-            <span class="nav-label">Rings</span>
-            <span class="nav-agg" data-nav-agg="rings">0</span>
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="classes">
-            <span class="nav-label">Classes</span>
-            <span class="nav-agg" data-nav-agg="classes">0</span>
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="riders">
-            <span class="nav-label">Riders</span>
-            <span class="nav-agg" data-nav-agg="riders">0</span>
           </button>
         </div>
       </div>
