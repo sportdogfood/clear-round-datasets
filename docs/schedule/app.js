@@ -27,8 +27,6 @@
   const DATA_TRIPS_URL = './data/latest/watch_trips.json';
   const REFRESH_MS = 8 * 60 * 1000;
 
-  const STATUS_COMPLETED = 'Completed';
-
   // ----------------------------
   // DOM
   // ----------------------------
@@ -48,8 +46,8 @@
     meta: { dt: null, sid: null, generated_at: null },
 
     // global mode for Schedule/Timeline (A/F)
-    scopeMode: 'ACTIVE', // ACTIVE | FULL
-  scheduleMode: 'ACTIVE', // schedule-only (ACTIVE | FULL)
+    scopeMode: 'ACTIVE',   // ACTIVE | FULL (Rings/Classes/Riders)
+    scheduleMode: 'ACTIVE', // schedule-only (ACTIVE | FULL)
 
     // primary nav
     screen: 'start',
@@ -69,7 +67,7 @@
       timeline: ''
     },
 
-    // per-screen peak selections
+    // per-screen peak selections (anchor peaks, but keep for contract)
     peak: {
       rings: new Set(),   // ring_number string
       classes: new Set(), // class_group_id string
@@ -81,8 +79,29 @@
   // ----------------------------
   // UTIL
   // ----------------------------
-  function el(tag, cls, text) {
+  // Supports:
+  //   el('div', 'cls', 'text')
+  //   el('div', { className:'cls', text:'...', id:'x', href:'#' })
+  function el(tag, a, b) {
     const n = document.createElement(tag);
+
+    // props form
+    if (a && typeof a === 'object' && !Array.isArray(a)) {
+      const props = a;
+      if (props.className) n.className = props.className;
+      if (props.id) n.id = props.id;
+      if (props.href != null) n.setAttribute('href', props.href);
+      if (props.type) n.setAttribute('type', props.type);
+      if (props.placeholder != null) n.setAttribute('placeholder', props.placeholder);
+      if (props.value != null) n.value = props.value;
+      if (props.text != null) n.textContent = props.text;
+      if (props.hidden != null) n.hidden = !!props.hidden;
+      return n;
+    }
+
+    // legacy form
+    const cls = a;
+    const text = b;
     if (cls) n.className = cls;
     if (text != null) n.textContent = text;
     return n;
@@ -91,7 +110,6 @@
   function normalizeStr(s) {
     return String(s || '').trim().toLowerCase();
   }
-
 
   function idify(s) {
     return normalizeStr(s)
@@ -143,17 +161,17 @@
   }
 
   function setModePills() {
-    document.querySelectorAll('[data-mode-pill]').forEach(el => {
-      const screen = el.getAttribute('data-mode-pill');
+    document.querySelectorAll('[data-mode-pill]').forEach(p => {
+      const screen = p.getAttribute('data-mode-pill');
       if (screen === 'timeline') {
-        el.textContent = 'A';
-        el.classList.add('nav-agg--positive');
+        // Timeline is always ACTIVE
+        p.textContent = 'A';
+        p.classList.add('nav-agg--positive');
         return;
       }
-      // scopeMode is stored on root state
       const isFull = state.scopeMode === 'FULL';
-      el.textContent = isFull ? 'F' : 'A';
-      el.classList.toggle('nav-agg--positive', !isFull);
+      p.textContent = isFull ? 'F' : 'A';
+      p.classList.toggle('nav-agg--positive', !isFull);
     });
   }
 
@@ -175,96 +193,119 @@
     return hh * 60 + mm;
   }
 
-  
-function fmtClockDate(d) {
-  if (!(d instanceof Date) || isNaN(d.getTime())) return "";
-  let h = d.getHours();
-  const m = d.getMinutes();
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${String(m).padStart(2, "0")} ${ampm}`;
-}
-
-function fmtClockFromMinutes(totalMinutes) {
-  const mins = Math.max(0, Math.floor(totalMinutes));
-  const h24 = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  let h = h24;
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${String(m).padStart(2, "0")} ${ampm}`;
-}
-
-// Normalize / display time strings (accepts "HH:mm:ss", "HH:mm", or "h:mm AM/PM")
-function fmtTime(t) {
-  const s = String(t || "").trim();
-  if (!s) return "";
-  // Already AM/PM
-  if (/(AM|PM)$/i.test(s)) {
-    return s.replace(/\s+/g, " ").replace(/:(\d\d)(\s*(AM|PM))$/i, " $2").replace(/\s+/g, " ").trim();
+  function fmtClockDate(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+    let h = d.getHours();
+    const m = d.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
   }
-  // 24h "HH:mm:ss" or "HH:mm"
-  const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-  if (!m) return s;
-  let hh = parseInt(m[1], 10);
-  const mm = m[2];
-  const ampm = hh >= 12 ? "PM" : "AM";
-  hh = hh % 12;
-  if (hh === 0) hh = 12;
-  return `${hh}:${mm} ${ampm}`;
-}
 
-const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
+  function fmtClockFromMinutes(totalMinutes) {
+    const mins = Math.max(0, Math.floor(totalMinutes));
+    const h24 = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+    let h = h24;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
+  // Normalize / display time strings (accepts "HH:mm:ss", "HH:mm", or "h:mm AM/PM")
+  function fmtTime(t) {
+    const s = String(t || '').trim();
+    if (!s) return '';
+    // Already AM/PM
+    if (/(AM|PM)$/i.test(s)) {
+      return s.replace(/\s+/g, ' ').trim();
+    }
+    // 24h "HH:mm:ss" or "HH:mm"
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) return s;
+    let hh = parseInt(m[1], 10);
+    const mm = m[2];
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12;
+    if (hh === 0) hh = 12;
+    return `${hh}:${mm} ${ampm}`;
+  }
+
+  const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
   function roundUpTo5Minutes(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return d;
     const ms = 5 * 60 * 1000;
     return new Date(Math.ceil(d.getTime() / ms) * ms);
   }
 
   function parseAmPmTimeToDate(dt, t) {
     // dt: 'YYYY-MM-DD', t: '12:15pm' or '12:15 PM'
-    const mins = timeToMinutes(String(t).replace(/\s*([AaPp])\s*([Mm])?$/, (m,a)=>` ${a.toUpperCase()}M`));
+    if (!dt || !t) return null;
+    const tNorm = String(t).trim().replace(/\s*([AaPp])\s*([Mm])?$/, (_m, a) => ` ${a.toUpperCase()}M`);
+    const mins = timeToMinutes(tNorm);
     if (mins == null) return null;
     const hh = Math.floor(mins / 60);
     const mm = mins % 60;
-    return new Date(`${dt}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00`);
+    return new Date(`${String(dt).trim()}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
   }
 
-  function parseTripStartEnd(trip, dtFallback) {
-    // Prefer calendar fields if present, else use dt + latestStart + duration fallback
-    const dt = dtFallback || trip.dt;
-    let start = null;
-    if (trip.latest_calendar_start) {
-      // 'YYYY-MM-DD 12:15pm'
-      const m = String(trip.latest_calendar_start).trim().match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
-      start = m ? parseAmPmTimeToDate(m[1], m[2]) : null;
-    }
-    if (!start && dt && trip.latestStart) {
-      start = parseAmPmTimeToDate(dt, trip.latestStart);
-    }
-    if (!start) return { start: null, end: null };
+  function safeNumber(v, fallback = null) {
+    if (v === null || v === undefined) return fallback;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : fallback;
 
-    let end = null;
-    if (trip.latest_calendar_end) {
-      const m = String(trip.latest_calendar_end).trim().match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
-      end = m ? parseAmPmTimeToDate(m[1], m[2]) : null;
-    }
-    if (!end) {
-      // total_trips may be blank/string; default to 1
-      const trips = safeNum(trip.total_trips, 1);
-      const ms = trips * DUR_PER_TRIP_SEC * 1000;
-      end = new Date(start.getTime() + ms);
-    }
-    end = roundUpTo5Minutes(end);
-    return { start, end };
+    const s = String(v).trim();
+    if (!s) return fallback;
+
+    const n = Number(s.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(n) ? n : fallback;
   }
-
 
   function safeNum(v, fallback) {
     const n = Number(v);
     return Number.isFinite(n) ? n : (fallback ?? null);
+  }
+
+  // parseTripStartEnd(trip, dtFallbackOrOpts)
+  // - dtFallbackOrOpts can be:
+  //   - string dt 'YYYY-MM-DD'
+  //   - { dt:'YYYY-MM-DD', preferCalendar:true }
+  function parseTripStartEnd(trip, dtFallbackOrOpts) {
+    const opts = (dtFallbackOrOpts && typeof dtFallbackOrOpts === 'object' && !Array.isArray(dtFallbackOrOpts))
+      ? dtFallbackOrOpts
+      : { dt: dtFallbackOrOpts };
+
+    const dt = (opts && opts.dt) ? String(opts.dt).trim() : (trip && trip.dt ? String(trip.dt).trim() : null);
+    const preferCalendar = !!(opts && opts.preferCalendar);
+
+    let start = null;
+
+    if (preferCalendar && trip && trip.latest_calendar_start) {
+      // 'YYYY-MM-DD 12:15pm'
+      const m = String(trip.latest_calendar_start).trim().match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
+      start = m ? parseAmPmTimeToDate(m[1], m[2]) : null;
+    }
+    if (!start && dt && trip && trip.latestStart) {
+      start = parseAmPmTimeToDate(dt, trip.latestStart);
+    }
+    if (!start || !(start instanceof Date) || isNaN(start.getTime())) return { start: null, end: null };
+
+    let end = null;
+    if (preferCalendar && trip && trip.latest_calendar_end) {
+      const m = String(trip.latest_calendar_end).trim().match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
+      end = m ? parseAmPmTimeToDate(m[1], m[2]) : null;
+    }
+    if (!end || !(end instanceof Date) || isNaN(end.getTime())) {
+      const tripsCt = safeNumber(trip && trip.total_trips, 1);
+      const ms = safeNumber(tripsCt, 1) * DUR_PER_TRIP_SEC * 1000;
+      end = new Date(start.getTime() + ms);
+    }
+    end = roundUpTo5Minutes(end);
+    if (!(end instanceof Date) || isNaN(end.getTime())) return { start, end: null };
+
+    return { start, end };
   }
 
   // ----------------------------
@@ -322,9 +363,8 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   // ----------------------------
   // INDEXES (schedule scaffold + trips truth)
   // ----------------------------
-
   function buildScheduleIndex() {
-    const ringMap = new Map(); // ring_number string -> { ring_number, ringName, groups: Map }
+    const ringMap = new Map();  // ring_number string -> { ring_number, ringName, groups: Map }
     const groupMap = new Map(); // class_group_id string -> groupObj
     const classMap = new Map(); // class_id string -> scheduleRec (first)
 
@@ -404,6 +444,7 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   function buildTruthIndex(opts = {}) {
     const mode = (opts.mode ?? state.scopeMode);
     const ignoreActive = !!opts.ignoreActive;
+
     const includedTrip = (t) => {
       if (!t) return false;
 
@@ -412,11 +453,9 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
         if (!h) return false;
         if (!state.activeHorses.has(h)) return false;
       }
-
       return true;
     };
 
-    // group trips by entryKey
     const byEntryKey = new Map(); // `${class_id}|${horseName}` -> trips[]
     const byHorse = new Map();    // horseName -> entryKey[]
     const byRing = new Map();     // ring_number string -> entryKey[]
@@ -450,13 +489,11 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
       if (t.riderName) pushKey(byRider, String(t.riderName), entryKey);
     }
 
-    // best trip per entryKey
     const entryBest = new Map();
     for (const [k, list] of byEntryKey.entries()) {
       entryBest.set(k, pickBestTrip(list));
     }
 
-    // de-dupe entryKey lists
     function uniqKeys(arr) {
       const out = [];
       const seen = new Set();
@@ -491,7 +528,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     input.placeholder = placeholder || 'Search...';
     input.value = state.search[screenKey] || '';
 
-    // do NOT block typing; update state then render
     input.addEventListener('input', () => {
       state.search[screenKey] = input.value;
       render();
@@ -501,61 +537,51 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     return wrap;
   }
 
-  function renderPeakBar(items, selectedSet, onToggle) {
   // Peak bar is ANCHOR navigation (not an in-page filter).
-  // - items may include: { key, label, agg, href }
-  // - selectedSet is optional (legacy). If missing, no item is "selected".
-  const sel = (selectedSet && typeof selectedSet.has === "function") ? selectedSet : new Set();
-  const root = el("div", { className: "peakbar" });
+  // items: { key, label, agg, href }
+  function renderPeakBar(items, selectedSet, onToggle) {
+    const sel = (selectedSet && typeof selectedSet.has === 'function') ? selectedSet : new Set();
+    const root = el('div', 'peakbar');
 
-  const scroller = el("div", { className: "nav-scroller" });
-  const row = el("div", { className: "nav-row peakbar-row", id: "peak-row" });
+    const scroller = el('div', 'nav-scroller');
+    const row = el('div', 'nav-row peakbar-row');
+    row.id = 'peak-row';
 
-  items.forEach((it) => {
-    const isPrimary = sel.has(it.key);
-    const cls = "nav-btn" + (isPrimary ? " nav-btn--primary" : "");
-    const href = it.href || (it.key ? `#${String(it.key)}` : "#");
+    (items || []).forEach((it) => {
+      const isPrimary = sel.has(it.key);
+      const cls = 'nav-btn' + (isPrimary ? ' nav-btn--primary' : '');
+      const href = it.href || (it.key ? `#${String(it.key)}` : '#');
 
-    // Use <a> so this is a real anchor link; still intercept for smooth scroll.
-    const a = el("a", { className: cls, href });
+      const a = el('a', { className: cls, href });
 
-    a.appendChild(el("span", { className: "nav-label", text: it.label }));
+      a.appendChild(el('span', { className: 'nav-label', text: it.label }));
 
-    if (typeof it.agg === "number") {
-      const aggCls = "nav-agg" + (it.agg > 0 ? " nav-agg--positive" : "");
-      a.appendChild(el("span", { className: aggCls, text: String(it.agg) }));
-    }
-
-    a.addEventListener("click", (ev) => {
-      // If caller passed a handler, let it run (legacy), otherwise anchor-scroll.
-      if (typeof onToggle === "function") {
-        ev.preventDefault();
-        onToggle(it.key);
-        return;
+      if (typeof it.agg === 'number') {
+        const aggCls = 'nav-agg' + (it.agg > 0 ? ' nav-agg--positive' : '');
+        a.appendChild(el('span', { className: aggCls, text: String(it.agg) }));
       }
 
-      const hash = (href || "").split("#")[1] || "";
-      if (!hash) return;
+      a.addEventListener('click', (ev) => {
+        if (typeof onToggle === 'function') {
+          ev.preventDefault();
+          onToggle(it.key);
+          return;
+        }
+        const hash = (href || '').split('#')[1] || '';
+        if (!hash) return;
 
-      // Smooth scroll within the main scroll container.
-      ev.preventDefault();
-      const target = document.getElementById(hash);
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-      // Keep URL hash in sync (no jump).
-      history.replaceState(null, "", `#${hash}`);
+        ev.preventDefault();
+        const target = document.getElementById(hash);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', `#${hash}`);
+      });
+
+      row.appendChild(a);
     });
 
-    row.appendChild(a);
-  });
-
-  scroller.appendChild(row);
-  root.appendChild(scroller);
-  return root;
-}
-
-
-  function toggleSet(_set, _val) {
-    // no-op (anchor peaks)
+    scroller.appendChild(row);
+    root.appendChild(scroller);
+    return root;
   }
 
   function makeCard(title, aggValue, inverseHdr, onClick) {
@@ -565,7 +591,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     const hdr = el('div', 'card-hdr' + (inverseHdr ? ' card-hdr--inverse' : ''));
     hdr.appendChild(el('div', 'card-title', title));
 
-    // show agg only if >0
     if (aggValue != null && Number(aggValue) > 0) {
       hdr.appendChild(makeTagCount(aggValue));
     }
@@ -595,6 +620,12 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     }
 
     body.appendChild(line);
+  }
+
+  function renderEmpty(msg) {
+    const box = el('div', 'empty');
+    box.appendChild(el('div', 'empty-title', msg || 'No data'));
+    return box;
   }
 
   // ----------------------------
@@ -652,18 +683,11 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   // ----------------------------
   // AGGS (truth only)
   // ----------------------------
-  function renderAggs(sIdx, tIdx) {
-    // active horses count = size of active set (default all)
+  function renderAggs(_sIdx, tIdx) {
     setAgg('horses', state.activeHorses.size);
-
-    // rings/classes/riders aggs from truth (deduped entries)
-    const ringsCount = tIdx.byRing.size;
-    const groupsCount = tIdx.byGroup.size;
-    const ridersCount = tIdx.byRider.size;
-
-    setAgg('rings', ringsCount);
-    setAgg('classes', groupsCount);
-    setAgg('riders', ridersCount);
+    setAgg('rings', tIdx.byRing.size);
+    setAgg('classes', tIdx.byGroup.size);
+    setAgg('riders', tIdx.byRider.size);
   }
 
   // ----------------------------
@@ -702,7 +726,7 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   // ----------------------------
   // SCREEN: ACTIVE HORSES (list -> detail)
   // ----------------------------
-  function renderHorses(sIdx, tIdx) {
+  function renderHorses(_sIdx, tIdx) {
     clearRoot();
     setHeader('Active Horses');
     setHeaderAction('Next', true);
@@ -715,15 +739,19 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     const horses = q ? horsesAll.filter(h => normalizeStr(h).includes(q)) : horsesAll;
 
+    if (!horses.length) {
+      screenRoot.appendChild(renderEmpty(state.loaded ? 'No horses found' : 'Loading...'));
+      return;
+    }
+
     for (const h of horses) {
       const row = el('div', 'row row--tap');
-      row.id = `horse-${String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-')}`;
+      row.id = `horse-${idify(h)}`;
       const active = state.activeHorses.has(String(h));
       if (active) row.classList.add('row--active');
 
       row.appendChild(el('div', 'row-title', String(h)));
 
-      // count = number of deduped entries for this horse (in current mode)
       const keys = tIdx.byHorse.get(String(h)) || [];
       row.appendChild(makeTagCount(keys.length));
 
@@ -735,7 +763,7 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     }
   }
 
-  function renderHorseDetail(sIdx, tIdx) {
+  function renderHorseDetail(_sIdx, tIdx) {
     const horse = state.detail && state.detail.key ? String(state.detail.key) : null;
 
     clearRoot();
@@ -744,7 +772,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     if (!horse) return;
 
-    // toggle row (ONLY place to change active)
     const toggle = el('div', 'row row--tap');
     toggle.appendChild(el('div', 'row-title', state.activeHorses.has(horse) ? 'Active' : 'Inactive'));
     toggle.appendChild(el('div', 'row-tag row-tag--count', state.activeHorses.has(horse) ? 'ON' : 'OFF'));
@@ -755,7 +782,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     });
     screenRoot.appendChild(toggle);
 
-    // list this horse's deduped entries
     const entryKeys = (tIdx.byHorse.get(horse) || []).slice();
     const bestTrips = entryKeys
       .map(k => tIdx.entryBest.get(k))
@@ -769,6 +795,11 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
         if (ra !== rb) return ra - rb;
         return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
       });
+
+    if (!bestTrips.length) {
+      screenRoot.appendChild(renderEmpty('No trips for this horse'));
+      return;
+    }
 
     for (const t of bestTrips) {
       const left = `${t.latestGO || ''} • Ring ${t.ring_number != null ? t.ring_number : ''} • ${t.class_number || ''}`.trim();
@@ -784,11 +815,10 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   // SCREEN: RINGS (summary + peak + cards)
   // ----------------------------
   function buildRingPeakItems(sIdx, tIdx, ringList) {
-    // always build from schedule scaffold (so peaks never "disappear")
     return ringList.map(r => {
       const rk = String(r.ring_number);
       const entryKeys = tIdx.byRing.get(rk) || [];
-      return { key: rk, label: String(r.ringName), agg: entryKeys.length };
+      return { key: rk, label: String(r.ringName), agg: entryKeys.length, href: `#ring-${rk}` };
     });
   }
 
@@ -807,15 +837,17 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     const ringsAll = [...sIdx.ringMap.values()].sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
 
+    if (!ringsAll.length) {
+      screenRoot.appendChild(renderEmpty(state.loaded ? 'No rings in schedule' : 'Loading...'));
+      return;
+    }
+
     const peakItems = buildRingPeakItems(sIdx, tIdx, ringsAll);
-        // Anchor peaks
-    for (const it of peakItems) { it.href = `#ring-${it.key}`; it.primary = Number(it.agg||0) > 0; it.showZero = true; }
-    screenRoot.appendChild(renderPeakBar(peakItems, null, null, true));
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null));
 
     const q = normalizeStr(state.search.rings);
     const visible = ringsAll
       .filter(r => ringVisibleInMode(tIdx, String(r.ring_number)))
-      
       .filter(r => (q ? normalizeStr(r.ringName).includes(q) : true));
 
     for (const r of visible) {
@@ -826,7 +858,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
       });
       card.id = `ring-${rk}`;
 
-      // groups sorted by start time
       const groups = [...r.groups.values()].sort((a, b) => {
         const ta = timeToMinutes(a.latestStart) ?? 999999;
         const tb = timeToMinutes(b.latestStart) ?? 999999;
@@ -849,14 +880,11 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
           const cKeys = tIdx.byClass.get(cid) || [];
           if (state.scopeMode === 'ACTIVE' && cKeys.length === 0) continue;
 
-          // class line (3 cols) — name includes class number
           const classLabel = `${c.class_number || ''} ${c.class_name || ''}`.trim();
           addCardLine(card, c.latestStart || '', classLabel, makeTagCount(cKeys.length), () => {
             pushDetail('classDetail', { kind: 'class', key: cid });
           });
 
-          // entry lines (collapsed: show best for each entryKey; display horseName + OOG number)
-          // in rings card context: show up to 6 entries (more than before, still bounded)
           const bestTrips = cKeys
             .map(k => tIdx.entryBest.get(k))
             .filter(Boolean)
@@ -871,9 +899,7 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
           for (const bt of bestTrips) {
             const horseName = bt.horseName ? String(bt.horseName) : '';
             const oog = (bt.lastOOG != null) ? String(bt.lastOOG) : '';
-            // entry line uses card-line layout, but blank time col
             addCardLine(card, '', horseName, (oog ? makeTagCount(oog) : null), () => {
-              // jump to horse detail (so they can toggle active there)
               if (horseName) pushDetail('horseDetail', { kind: 'horse', key: horseName });
             });
           }
@@ -953,7 +979,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     if (!gid) return;
 
-    // find group in schedule scaffold
     let gObj = null;
     for (const r of sIdx.ringMap.values()) {
       if (r.groups.has(gid)) { gObj = r.groups.get(gid); break; }
@@ -988,11 +1013,14 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     screenRoot.appendChild(renderSearch('classes', 'Search classes...'));
 
-    // build group list from schedule scaffold
     const groupsAll = [];
     for (const r of sIdx.ringMap.values()) for (const g of r.groups.values()) groupsAll.push(g);
 
-    // group peak items (label + agg)
+    if (!groupsAll.length) {
+      screenRoot.appendChild(renderEmpty(state.loaded ? 'No groups/classes in schedule' : 'Loading...'));
+      return;
+    }
+
     const peakItems = groupsAll
       .sort((a, b) => {
         const ta = timeToMinutes(a.latestStart) ?? 999999;
@@ -1003,23 +1031,19 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
       .map(g => {
         const gid = String(g.class_group_id);
         const keys = tIdx.byGroup.get(gid) || [];
-        return { key: gid, label: String(g.group_name), agg: keys.length };
+        return { key: gid, label: String(g.group_name), agg: keys.length, href: `#group-${idify(gid)}` };
       });
 
-        // Anchor peaks
-    for (const it of peakItems) { it.href = `#group-${it.key}`; it.primary = Number(it.agg||0) > 0; }
-    screenRoot.appendChild(renderPeakBar(peakItems, null, null, true));
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null));
 
     const q = normalizeStr(state.search.classes);
-
-    // visible groups (mode + peak + search)
     const visible = peakItems
       .filter(it => (state.scopeMode === 'FULL' ? true : (it.agg > 0)))
-            .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
+      .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
 
     for (const it of visible) {
       const row = el('div', 'row row--tap');
-      row.id = `rider-${idify(it.key)}`;
+      row.id = `group-${idify(it.key)}`;
       row.appendChild(el('div', 'row-title', it.label));
       row.appendChild(makeTagCount(it.agg));
       row.addEventListener('click', () => {
@@ -1067,7 +1091,7 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   // ----------------------------
   // SCREEN: RIDERS (peak + rows)
   // ----------------------------
-  function renderRiders(sIdx, tIdx) {
+  function renderRiders(_sIdx, tIdx) {
     clearRoot();
     setHeader('Riders');
     setHeaderAction('Next', true);
@@ -1075,23 +1099,27 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     screenRoot.appendChild(renderSearch('riders', 'Search riders...'));
 
     const ridersAll = [...tIdx.byRider.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+
+    if (!ridersAll.length) {
+      screenRoot.appendChild(renderEmpty(state.loaded ? 'No riders in truth' : 'Loading...'));
+      return;
+    }
+
     const peakItems = ridersAll.map(name => {
       const keys = tIdx.byRider.get(name) || [];
-      return { key: String(name), label: String(name), agg: keys.length };
+      return { key: String(name), label: String(name), agg: keys.length, href: `#rider-${idify(name)}` };
     });
 
-        // Anchor peaks
-    for (const it of peakItems) { it.href = `#rider-${idify(it.key)}`; it.primary = Number(it.agg||0) > 0; }
-    screenRoot.appendChild(renderPeakBar(peakItems, null, null, true));
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null));
 
     const q = normalizeStr(state.search.riders);
-
     const visible = peakItems
       .filter(it => (state.scopeMode === 'FULL' ? true : (it.agg > 0)))
-            .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
+      .filter(it => (q ? normalizeStr(it.label).includes(q) : true));
 
     for (const it of visible) {
       const row = el('div', 'row row--tap');
+      row.id = `rider-${idify(it.key)}`;
       row.appendChild(el('div', 'row-title', it.label));
       row.appendChild(makeTagCount(it.agg));
       row.addEventListener('click', () => {
@@ -1101,7 +1129,7 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     }
   }
 
-  function renderRiderDetail(sIdx, tIdx) {
+  function renderRiderDetail(_sIdx, tIdx) {
     const rider = state.detail && state.detail.key ? String(state.detail.key) : null;
     clearRoot();
     setHeader(rider || 'Rider');
@@ -1114,10 +1142,9 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     const pairs = keys
       .map(k => [k, tIdx.entryBest.get(k)])
-      .filter(([,t]) => Boolean(t));
+      .filter(([, t]) => Boolean(t));
 
-    // sort by GO time, then ring, then OOG
-    pairs.sort(([,a], [,b]) => {
+    pairs.sort(([, a], [, b]) => {
       const ta = timeToMinutes(a.latestGO || a.latestStart) ?? 999999;
       const tb = timeToMinutes(b.latestGO || b.latestStart) ?? 999999;
       if (ta !== tb) return ta - tb;
@@ -1133,14 +1160,13 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
     const tripKeyOf = (k) => String(k);
 
     const firstPair = pairs.length ? pairs[0] : null;
-    const nextPair = pairs.find(([,t]) => {
+    const nextPair = pairs.find(([, t]) => {
       const st = normStatus(t.latestStatus);
       return st && !st.startsWith('completed');
     }) || null;
 
-    // Card header sublabel: Next ring • time
     if (nextPair) {
-      const [,nt] = nextPair;
+      const [, nt] = nextPair;
       const sub = el('div', 'card-hdr-sub', `Next: ${ringLabelOf(nt)} • ${timeLabelOf(nt)}`.trim());
       const hdr = card.querySelector('.card-hdr');
       if (hdr) hdr.appendChild(sub);
@@ -1148,7 +1174,6 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
 
     const body = card.querySelector('.card-body');
     if (body) {
-      // 7-col header
       const hdrRow = el('div', 'entry-grid-hdr');
       hdrRow.appendChild(el('div', 'entry-cell entry-cell--muted', 'Time'));
       hdrRow.appendChild(el('div', 'entry-cell entry-cell--muted', 'Ring'));
@@ -1186,12 +1211,10 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
           oogCell.appendChild(pill);
         }
 
-        // row click -> class detail (primary)
         row.addEventListener('click', () => {
           if (t.class_id != null) pushDetail('classDetail', { kind: 'class', key: String(t.class_id) });
         });
 
-        // cell clicks -> respective lists
         ringCell.addEventListener('click', (e) => {
           e.stopPropagation();
           if (t.ring_number != null) pushDetail('ringDetail', { kind: 'ring', key: String(t.ring_number) });
@@ -1217,38 +1240,35 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
         used.add(tripKeyOf(k));
       };
 
-      // Next = next class not completed
       if (nextPair) {
         addLabel('Next');
-        const [k,t] = nextPair;
+        const [k, t] = nextPair;
         addEntryRow(k, t);
       }
 
-      // First Up = first class on list (chronological)
       if (firstPair) {
-        const [k,t] = firstPair;
+        const [k, t] = firstPair;
         if (!used.has(tripKeyOf(k))) {
           addLabel('First Up');
           addEntryRow(k, t);
         }
       }
 
-      // Remaining -> Morning / Afternoon
       const remaining = pairs.filter(([k]) => !used.has(tripKeyOf(k)));
       const morning = [];
       const afternoon = [];
-      for (const [k,t] of remaining) {
+      for (const [k, t] of remaining) {
         const mins = timeToMinutes(t.latestGO || t.latestStart);
-        if (mins != null && mins < (12 * 60)) morning.push([k,t]);
-        else afternoon.push([k,t]);
+        if (mins != null && mins < (12 * 60)) morning.push([k, t]);
+        else afternoon.push([k, t]);
       }
       if (morning.length) {
         addLabel('Morning');
-        for (const [k,t] of morning) addEntryRow(k, t);
+        for (const [k, t] of morning) addEntryRow(k, t);
       }
       if (afternoon.length) {
         addLabel('Afternoon');
-        for (const [k,t] of afternoon) addEntryRow(k, t);
+        for (const [k, t] of afternoon) addEntryRow(k, t);
       }
     }
 
@@ -1256,326 +1276,256 @@ const DUR_PER_TRIP_SEC = 149; // 2 minutes 29 seconds
   }
 
   // ----------------------------
-  // SCREEN: SCHEDULE (template + A/F toggle in bottom nav)
-  // - For now: ring cards overview (same contract as Rings), with optional ring peak
+  // SCREEN: SCHEDULE (mounts)
   // ----------------------------
   function renderSchedule(sIdx, tIdxBase) {
-  const mode = state.scheduleMode === "FULL" ? "FULL" : "ACTIVE";
-  const tIdx = (mode === "FULL") ? buildTruthIndex({ mode: "FULL" }) : tIdxBase;
+    clearRoot();
 
-  setHeader(`Schedule (${mode === "FULL" ? "Full" : "Active"})`, "Rings by priority + next-up entries");
+    const mode = state.scheduleMode === 'FULL' ? 'FULL' : 'ACTIVE';
+    setHeader(`Schedule (${mode === 'FULL' ? 'Full' : 'Active'})`);
+    setHeaderAction('Next', true);
 
-  const ringsAll = (sIdx && Array.isArray(sIdx.rings)) ? sIdx.rings.slice() : [];
-
-  function ringKeyOf(r) {
-    const n = safeNum(r && r.ring_number, null);
-    if (n !== null) return String(n);
-    const nn = String(r && (r.ringName || r.ring_name || "")).trim();
-    return nn || "";
-  }
-
-  function ringAgg(rk) {
-    const set = tIdx.byRing.get(String(rk));
-    return set ? set.size : 0;
-  }
-
-  function ringEarliestGroupStartMin(r) {
-    const dt = String((sIdx && sIdx.sqlDate) || state.sqlDate || "").trim();
-    let best = 99999;
-    (r && Array.isArray(r.groups) ? r.groups : []).forEach((g) => {
-      const t = String(g && (g.latestStart || g.latest_start_time || "")).trim();
-      if (!dt || !t) return;
-      const d = parseLocalDateTime(dt, t);
-      if (!d) return;
-      const mins = d.getHours() * 60 + d.getMinutes();
-      if (mins < best) best = mins;
-    });
-    return best;
-  }
-
-  // Sort rings by ring_priority, then earliest group start time, then ring_number
-  ringsAll.sort((a, b) => {
-    const pa = safeNum(a && a.ring_priority, 999);
-    const pb = safeNum(b && b.ring_priority, 999);
-    if (pa !== pb) return pa - pb;
-
-    const ea = ringEarliestGroupStartMin(a);
-    const eb = ringEarliestGroupStartMin(b);
-    if (ea !== eb) return ea - eb;
-
-    return safeNum(a && a.ring_number, 999) - safeNum(b && b.ring_number, 999);
-  });
-
-  const peakItems = ringsAll
-    .map((r) => {
-      const rk = ringKeyOf(r);
-      return {
-        key: rk,
-        label: String(r && (r.ringName || r.ring_name || `Ring ${rk}`)),
-        agg: ringAgg(rk),
-        href: `#schedule-ring-${rk}`,
-      };
-    })
-    .filter((it) => (mode === "FULL" ? true : (it.agg || 0) > 0));
-
-  const root = el("div", { className: "screen" });
-  root.appendChild(renderPeakBar(peakItems, null, null));
-
-  const list = el("div", { className: "list" });
-
-  ringsAll.forEach((r) => {
-    const rk = ringKeyOf(r);
-    const agg = ringAgg(rk);
-    if (mode !== "FULL" && agg === 0) return;
-
-    const card = el("div", { className: "card", id: `schedule-ring-${rk}` });
-
-    const hdr = el("div", { className: "card-hdr card-hdr--inverse" });
-    hdr.appendChild(el("div", { className: "card-title", text: String(r && (r.ringName || r.ring_name || `Ring ${rk}`)) }));
-    hdr.appendChild(el("div", { className: "card-meta" }));
-    hdr.appendChild(el("div", { className: "card-agg", text: String(agg) }));
-    card.appendChild(hdr);
-
-    const body = el("div", { className: "card-body" });
-
-    // Groups list (high-level)
-    const groups = (r && Array.isArray(r.groups)) ? r.groups : [];
-    if (groups.length) {
-      const gl = el("div", { className: "sublist" });
-      groups.forEach((g) => {
-        const t = String(g && (g.latestStart || g.latest_start_time || "")).trim();
-        const st = t ? fmtTime(t) : "—";
-        const name = String(g && (g.group_name || g.groupName || "Group")).trim();
-        const line = el("div", { className: "row row--tight row--tap" });
-        line.appendChild(el("div", { className: "row-main", text: name }));
-        line.appendChild(el("div", { className: "row-sub", text: st }));
-        gl.appendChild(line);
-      });
-      body.appendChild(gl);
+    if (!state.loaded) {
+      screenRoot.appendChild(renderEmpty('Loading...'));
+      return;
     }
 
-    // Next-up entries table (truth-derived)
-    const entryKeys = Array.from(tIdx.byRing.get(String(rk)) || []);
-    const rows = entryKeys
-      .map((k) => tIdx.entryBest.get(k))
-      .filter(Boolean)
-      .map((it) => {
-        const t = parseTripStartEnd(it, { preferCalendar: true });
-        const startMin = t && t.start ? (t.start.getHours() * 60 + t.start.getMinutes()) : 99999;
-        return { it, startMin };
+    const tIdx = (mode === 'FULL') ? buildTruthIndex({ mode: 'FULL', ignoreActive: true }) : tIdxBase;
+
+    // derive rings from scaffold (ringMap)
+    const ringsAll = [...sIdx.ringMap.values()].sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
+
+    if (!ringsAll.length) {
+      screenRoot.appendChild(renderEmpty('No rings in schedule scaffold'));
+      return;
+    }
+
+    // peaks
+    const peakItems = ringsAll
+      .map(r => {
+        const rk = String(r.ring_number);
+        const keys = tIdx.byRing.get(rk) || [];
+        return { key: rk, label: String(r.ringName), agg: keys.length, href: `#schedule-ring-${rk}` };
       })
-      .sort((a, b) => (a.startMin - b.startMin) || (safeNum(a.it.latestGO, 9999) - safeNum(b.it.latestGO, 9999)));
+      .filter(it => (mode === 'FULL' ? true : (it.agg || 0) > 0));
 
-    const table = el("div", { className: "table7" });
-    const hdrRow = el("div", { className: "table7-hdr" });
-    ["Time", "Ring", "Class", "Horse", "Status", "Place", ""].forEach((t) => hdrRow.appendChild(el("div", { className: "table7-cell table7-cell--hdr", text: t })));
-    table.appendChild(hdrRow);
+    screenRoot.appendChild(renderPeakBar(peakItems, null, null));
 
-    rows.slice(0, 25).forEach(({ it }) => {
-      const t = parseTripStartEnd(it, { preferCalendar: true });
-      const timeTxt = t && t.start ? fmtClockDate(t.start) : (it.latestStart ? fmtTime(it.latestStart) : "—");
-      const statusTxt = String(it.latestStatus || "").trim() || "—";
-      const placeTxt = (it.latestPlacing === null || typeof it.latestPlacing === "undefined") ? "" : String(it.latestPlacing);
+    // cards
+    for (const r of ringsAll) {
+      const rk = String(r.ring_number);
+      const entryKeys = tIdx.byRing.get(rk) || [];
+      const agg = entryKeys.length;
 
-      const row = el("div", { className: "table7-row" });
+      if (mode !== 'FULL' && agg === 0) continue;
 
-      // Time (click -> class detail)
-      const cTime = el("div", { className: "table7-cell table7-link", text: timeTxt });
-      cTime.addEventListener("click", () => {
-        if (it.class_id != null) pushDetail("classDetail", { kind: "class", key: String(it.class_id) });
+      const card = makeCard(String(r.ringName), agg, true, () => {
+        pushDetail('ringDetail', { kind: 'ring', key: rk });
       });
-      row.appendChild(cTime);
+      card.id = `schedule-ring-${rk}`;
 
-      // Ring (click -> ring detail)
-      const cRing = el("div", { className: "table7-cell table7-link", text: String(r && (r.ringName || r.ring_name || `Ring ${rk}`)) });
-      cRing.addEventListener("click", () => pushDetail("ringDetail", { kind: "ring", key: String(rk) }));
-      row.appendChild(cRing);
-
-      // Class (click -> class detail)
-      const cClass = el("div", { className: "table7-cell table7-link", text: it.class_number != null ? String(it.class_number) : "—" });
-      cClass.addEventListener("click", () => {
-        if (it.class_id != null) pushDetail("classDetail", { kind: "class", key: String(it.class_id) });
+      // scaffold groups list (no filtering)
+      const groups = [...r.groups.values()].sort((a, b) => {
+        const ta = timeToMinutes(a.latestStart) ?? 999999;
+        const tb = timeToMinutes(b.latestStart) ?? 999999;
+        if (ta !== tb) return ta - tb;
+        return String(a.group_name).localeCompare(String(b.group_name));
       });
-      row.appendChild(cClass);
 
-      // Horse (click -> horse detail)
-      const cHorse = el("div", { className: "table7-cell table7-link", text: String(it.horseName || "—") });
-      cHorse.addEventListener("click", () => pushDetail("horseDetail", { kind: "horse", key: String(it.horseName || "") }));
-      row.appendChild(cHorse);
+      for (const g of groups) {
+        const gid = String(g.class_group_id);
+        const gKeys = tIdx.byGroup.get(gid) || [];
+        if (mode !== 'FULL' && gKeys.length === 0) continue;
 
-      // Status
-      row.appendChild(el("div", { className: "table7-cell", text: statusTxt }));
+        addCardLine(card, g.latestStart || '', String(g.group_name), makeTagCount(gKeys.length), () => {
+          pushDetail('groupDetail', { kind: 'group', key: gid });
+        });
+      }
 
-      // Place
-      row.appendChild(el("div", { className: "table7-cell", text: placeTxt }));
+      // next-up entries (truth) — show top 12 by earliest start
+      const dt = state.meta.dt || null;
+      const nextRows = (entryKeys || [])
+        .map(k => tIdx.entryBest.get(k))
+        .filter(Boolean)
+        .map(it => {
+          const win = parseTripStartEnd(it, { dt, preferCalendar: true });
+          const st = win && win.start ? (win.start.getHours() * 60 + win.start.getMinutes()) : 999999;
+          return { it, st };
+        })
+        .sort((a, b) => (a.st - b.st) || (timeToMinutes(a.it.latestGO) ?? 999999) - (timeToMinutes(b.it.latestGO) ?? 999999))
+        .slice(0, 12);
 
-      // Spacer
-      row.appendChild(el("div", { className: "table7-cell", text: "" }));
+      for (const row of nextRows) {
+        const it = row.it;
+        const win = parseTripStartEnd(it, { dt, preferCalendar: true });
+        const timeTxt = (win && win.start) ? fmtClockDate(win.start) : (it.latestGO ? fmtTime(it.latestGO) : (it.latestStart ? fmtTime(it.latestStart) : ''));
+        const label = `${it.class_number != null ? String(it.class_number) : ''} ${it.horseName || ''}`.trim();
+        const oog = (it.lastOOG != null && String(it.lastOOG).trim() !== '') ? String(it.lastOOG) : '';
+        addCardLine(card, timeTxt, label, (oog ? makeTagCount(oog) : null), () => {
+          if (it.class_id != null) pushDetail('classDetail', { kind: 'class', key: String(it.class_id) });
+        });
+      }
 
-      table.appendChild(row);
-    });
-
-    body.appendChild(table);
-
-    card.appendChild(body);
-    list.appendChild(card);
-  });
-
-  root.appendChild(list);
-  return root;
-}
-
-
-function renderTimeline(_sIdx, tIdxBase) {
-  // Timeline is ALWAYS ACTIVE (no full mode here).
-  const tIdx = buildTruthIndex({ mode: "ACTIVE" });
-
-  setHeader("Timeline (Active)", "8:00 AM → 6:00 PM (30 min slots)");
-
-  const DAY_START_MIN = 8 * 60;
-  const DAY_END_MIN = 18 * 60;
-  const SLOT_MIN = 30;
-
-  const PX_PER_MIN = 4;                // 30 min => 120px
-  const GUTTER_PX = 180;               // horse label column
-  const ROW_H = 54;                    // per-horse lane height
-  const AXIS_H = 42;
-
-  const root = el("div", { className: "screen" });
-
-  // Active horses (left column)
-  let horses = Array.from(state.activeHorses || []);
-  if (!horses.length) horses = Array.from(tIdx.byHorse.keys());
-
-  horses.sort((a, b) => String(a).localeCompare(String(b)));
-
-  const viewport = el("div", { className: "timeline-viewport" });
-  const grid = el("div", { className: "timeline-grid" });
-
-  const dayWidth = (DAY_END_MIN - DAY_START_MIN) * PX_PER_MIN;
-  grid.style.width = `${GUTTER_PX + dayWidth}px`;
-
-  // Axis row (sticky top)
-  const axis = el("div", { className: "timeline-axis" });
-
-  const axisLeft = el("div", { className: "timeline-axis-left", text: "Horse" });
-  axis.appendChild(axisLeft);
-
-  const axisRight = el("div", { className: "timeline-axis-right" });
-  axisRight.style.width = `${dayWidth}px`;
-
-  for (let m = DAY_START_MIN; m <= DAY_END_MIN; m += SLOT_MIN) {
-    const label = fmtClockFromMinutes(m);
-    const cell = el("div", { className: "timeline-axis-cell", text: label });
-    cell.style.left = `${(m - DAY_START_MIN) * PX_PER_MIN}px`;
-    cell.style.width = `${SLOT_MIN * PX_PER_MIN}px`;
-    axisRight.appendChild(cell);
+      screenRoot.appendChild(card);
+    }
   }
 
-  // Now marker
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  if (nowMin >= DAY_START_MIN && nowMin <= DAY_END_MIN) {
-    const nowLine = el("div", { className: "timeline-now" });
-    nowLine.style.left = `${(nowMin - DAY_START_MIN) * PX_PER_MIN}px`;
-    axisRight.appendChild(nowLine);
+  // ----------------------------
+  // SCREEN: TIMELINE (mounts)
+  // ----------------------------
+  function renderTimeline(_sIdx, _tIdxBase) {
+    clearRoot();
+    setHeader('Timeline (Active)');
+    setHeaderAction('Next', true);
 
-    const nowLbl = el("div", { className: "timeline-now-label", text: "Now" });
-    nowLbl.style.left = `${(nowMin - DAY_START_MIN) * PX_PER_MIN}px`;
-    axisRight.appendChild(nowLbl);
-  }
+    if (!state.loaded) {
+      screenRoot.appendChild(renderEmpty('Loading...'));
+      return;
+    }
 
-  axis.appendChild(axisRight);
-  grid.appendChild(axis);
+    // Timeline is ALWAYS ACTIVE (uses activeHorses filter)
+    const tIdx = buildTruthIndex({ mode: 'ACTIVE' });
 
-  // Rows
-  const rowsWrap = el("div", { className: "timeline-rows" });
+    const DAY_START_MIN = 8 * 60;
+    const DAY_END_MIN = 18 * 60;
+    const SLOT_MIN = 30;
 
-  horses.forEach((horseName) => {
-    const row = el("div", { className: "timeline-row" });
+    const PX_PER_MIN = 4;    // 30 min => 120px
+    const GUTTER_PX = 180;   // horse label column
+    const ROW_H = 54;
 
-    const left = el("div", { className: "timeline-horse" });
-    left.appendChild(el("div", { className: "timeline-horse-name", text: String(horseName) }));
-    left.addEventListener("click", () => pushDetail("horseDetail", { kind: "horse", key: String(horseName) }));
-    row.appendChild(left);
+    const root = el('div', 'screen');
 
-    const lane = el("div", { className: "timeline-lane" });
-    lane.style.width = `${dayWidth}px`;
-    lane.style.height = `${ROW_H}px`;
+    let horses = Array.from(state.activeHorses || []);
+    if (!horses.length) horses = Array.from(tIdx.byHorse.keys());
+    horses.sort((a, b) => String(a).localeCompare(String(b)));
 
-    const entryKeys = tIdx.byHorse.get(String(horseName)) || [];
-    const cards = entryKeys
-      .map((k) => tIdx.entryBest.get(k))
-      .filter(Boolean)
-      .map((it) => {
-        const t = parseTripStartEnd(it, { preferCalendar: true });
-        if (!t || !t.start || !t.end) return null;
-        const st = t.start.getHours() * 60 + t.start.getMinutes();
-        const en = t.end.getHours() * 60 + t.end.getMinutes();
+    const viewport = el('div', 'timeline-viewport');
+    const grid = el('div', 'timeline-grid');
 
-        const startMin = Math.max(DAY_START_MIN, st);
-        const endMin = Math.min(DAY_END_MIN, Math.max(startMin + 5, en));
+    const dayWidth = (DAY_END_MIN - DAY_START_MIN) * PX_PER_MIN;
+    grid.style.width = `${GUTTER_PX + dayWidth}px`;
 
-        if (endMin <= DAY_START_MIN || startMin >= DAY_END_MIN) return null;
+    // Axis
+    const axis = el('div', 'timeline-axis');
+    axis.appendChild(el('div', { className: 'timeline-axis-left', text: 'Horse' }));
 
-        return { it, startMin, endMin };
-      })
-      .filter(Boolean)
-      .sort((a, b) => (a.startMin - b.startMin) || (safeNum(a.it.latestGO, 9999) - safeNum(b.it.latestGO, 9999)));
+    const axisRight = el('div', 'timeline-axis-right');
+    axisRight.style.width = `${dayWidth}px`;
 
-    cards.forEach(({ it, startMin, endMin }) => {
-      const c = el("div", { className: "timeline-card" });
-      c.style.left = `${(startMin - DAY_START_MIN) * PX_PER_MIN}px`;
-      c.style.width = `${Math.max(70, (endMin - startMin) * PX_PER_MIN)}px`;
+    for (let m = DAY_START_MIN; m <= DAY_END_MIN; m += SLOT_MIN) {
+      const label = fmtClockFromMinutes(m);
+      const cell = el('div', { className: 'timeline-axis-cell', text: label });
+      cell.style.left = `${(m - DAY_START_MIN) * PX_PER_MIN}px`;
+      cell.style.width = `${SLOT_MIN * PX_PER_MIN}px`;
+      axisRight.appendChild(cell);
+    }
 
-      const top = el("div", { className: "timeline-card-top" });
-      const cn = it.class_number != null ? String(it.class_number) : "—";
-      top.appendChild(el("span", { className: "timeline-card-class", text: cn }));
-      top.appendChild(el("span", { className: "timeline-card-ring", text: String(it.ringName || "") }));
-      c.appendChild(top);
+    // Now marker
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin >= DAY_START_MIN && nowMin <= DAY_END_MIN) {
+      const nowLine = el('div', 'timeline-now');
+      nowLine.style.left = `${(nowMin - DAY_START_MIN) * PX_PER_MIN}px`;
+      axisRight.appendChild(nowLine);
 
-      const mid = el("div", { className: "timeline-card-mid" });
-      mid.appendChild(el("span", { className: "timeline-card-time", text: it.latestStart ? fmtTime(it.latestStart) : "" }));
-      const stTxt = String(it.latestStatus || "").trim();
-      if (stTxt) mid.appendChild(el("span", { className: "timeline-card-status", text: stTxt }));
-      c.appendChild(mid);
+      const nowLbl = el('div', { className: 'timeline-now-label', text: 'Now' });
+      nowLbl.style.left = `${(nowMin - DAY_START_MIN) * PX_PER_MIN}px`;
+      axisRight.appendChild(nowLbl);
+    }
 
-      c.addEventListener("click", () => {
-        if (it.class_id != null) pushDetail("classDetail", { kind: "class", key: String(it.class_id) });
+    axis.appendChild(axisRight);
+    grid.appendChild(axis);
+
+    // Rows
+    const rowsWrap = el('div', 'timeline-rows');
+    const dt = state.meta.dt || null;
+
+    horses.forEach((horseName) => {
+      const row = el('div', 'timeline-row');
+
+      const left = el('div', 'timeline-horse');
+      left.appendChild(el('div', { className: 'timeline-horse-name', text: String(horseName) }));
+      left.addEventListener('click', () => pushDetail('horseDetail', { kind: 'horse', key: String(horseName) }));
+      row.appendChild(left);
+
+      const lane = el('div', 'timeline-lane');
+      lane.style.width = `${dayWidth}px`;
+      lane.style.height = `${ROW_H}px`;
+
+      const entryKeys = tIdx.byHorse.get(String(horseName)) || [];
+      const cards = entryKeys
+        .map(k => tIdx.entryBest.get(k))
+        .filter(Boolean)
+        .map(it => {
+          const t = parseTripStartEnd(it, { dt, preferCalendar: true });
+          if (!t || !t.start || !t.end) return null;
+
+          const st = t.start.getHours() * 60 + t.start.getMinutes();
+          const en = t.end.getHours() * 60 + t.end.getMinutes();
+
+          const startMin = Math.max(DAY_START_MIN, st);
+          const endMin = Math.min(DAY_END_MIN, Math.max(startMin + 5, en));
+
+          if (endMin <= DAY_START_MIN || startMin >= DAY_END_MIN) return null;
+
+          return { it, startMin, endMin };
+        })
+        .filter(Boolean)
+        .sort((a, b) => (a.startMin - b.startMin) || (timeToMinutes(a.it.latestGO) ?? 999999) - (timeToMinutes(b.it.latestGO) ?? 999999));
+
+      cards.forEach(({ it, startMin, endMin }) => {
+        const c = el('div', 'timeline-card');
+        c.style.left = `${(startMin - DAY_START_MIN) * PX_PER_MIN}px`;
+        c.style.width = `${Math.max(70, (endMin - startMin) * PX_PER_MIN)}px`;
+
+        const top = el('div', 'timeline-card-top');
+        const cn = it.class_number != null ? String(it.class_number) : '—';
+        top.appendChild(el('span', { className: 'timeline-card-class', text: cn }));
+        top.appendChild(el('span', { className: 'timeline-card-ring', text: String(it.ringName || (it.ring_number != null ? `Ring ${it.ring_number}` : '')) }));
+        c.appendChild(top);
+
+        const mid = el('div', 'timeline-card-mid');
+        mid.appendChild(el('span', { className: 'timeline-card-time', text: it.latestStart ? fmtTime(it.latestStart) : (it.latestGO ? fmtTime(it.latestGO) : '') }));
+        const stTxt = String(it.latestStatus || '').trim();
+        if (stTxt) mid.appendChild(el('span', { className: 'timeline-card-status', text: stTxt }));
+        c.appendChild(mid);
+
+        c.addEventListener('click', () => {
+          if (it.class_id != null) pushDetail('classDetail', { kind: 'class', key: String(it.class_id) });
+        });
+
+        lane.appendChild(c);
       });
 
-      lane.appendChild(c);
+      row.appendChild(lane);
+      rowsWrap.appendChild(row);
     });
 
-    row.appendChild(lane);
-    rowsWrap.appendChild(row);
-  });
+    grid.appendChild(rowsWrap);
+    viewport.appendChild(grid);
+    root.appendChild(viewport);
 
-  grid.appendChild(rowsWrap);
-  viewport.appendChild(grid);
-  root.appendChild(viewport);
-  return root;
-}
+    screenRoot.appendChild(root);
+  }
 
-
-function render() {
+  // ----------------------------
+  // ROUTER
+  // ----------------------------
+  function render() {
     if (!screenRoot || !headerTitle) return;
 
     const sIdx = buildScheduleIndex();
     const tIdx = buildTruthIndex();
 
-    // aggs + mode pills
     renderAggs(sIdx, tIdx);
     setModePills();
 
-    // nav active
     const primary = getPrimaryForScreen(state.screen);
     setNavActive(primary);
 
-    // header back visibility
     if (headerBack) headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
 
-    // route
     if (state.screen === 'start') return renderStart();
     if (state.screen === 'horses') return renderHorses(sIdx, tIdx);
     if (state.screen === 'schedule') return renderSchedule(sIdx, tIdx);
@@ -1591,7 +1541,6 @@ function render() {
     if (state.screen === 'riderDetail') return renderRiderDetail(sIdx, tIdx);
     if (state.screen === 'horseDetail') return renderHorseDetail(sIdx, tIdx);
 
-    // fallback
     state.screen = 'start';
     renderStart();
   }
@@ -1602,29 +1551,26 @@ function render() {
   if (headerBack) headerBack.addEventListener('click', goBack);
 
   if (headerAction) headerAction.addEventListener('click', () => {
-    // Next is always a primary-tab advance
     nextPrimaryScreen();
   });
 
-  // Bottom nav clicks + mode toggles for Schedule/Timeline
+  // Bottom nav clicks + schedule mode toggle
   if (navRow) {
     navRow.addEventListener('click', (e) => {
       const modePill = e.target.closest('[data-mode-pill]');
-    if (modePill) {
-      // Schedule-only mode toggle
-      if (state.screen === 'schedule') {
-        state.scheduleMode = (state.scheduleMode === 'FULL') ? 'ACTIVE' : 'FULL';
-        render();
+      if (modePill) {
+        if (state.screen === 'schedule') {
+          state.scheduleMode = (state.scheduleMode === 'FULL') ? 'ACTIVE' : 'FULL';
+          render();
+        }
+        return;
       }
-      return;
-    }
 
       const btn = e.target.closest('[data-screen]');
       if (!btn) return;
 
       const next = btn.dataset.screen;
 
-      // switching primary tab: clear detail stack
       state.history = [];
       state.detail = null;
       state.screen = next;
