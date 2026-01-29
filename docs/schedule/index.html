@@ -1,4 +1,4 @@
-<!-- index.html — FULL DROP (corrected to match requirements) -->
+<!-- index.html — FIXED: removed nested <style> tag, timeline uses dark theme, and rollup grid styles added -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,12 +45,12 @@
       overflow: hidden;
     }
 
-    /* Header ----------------------------------------------------- */
+    /* Header */
     .app-header{
       height: var(--header-h);
       flex-shrink: 0;
       display: grid;
-      grid-template-columns: 60px 1fr 60px; /* keep title centered */
+      grid-template-columns: 60px 1fr 60px;
       align-items: center;
       padding: 0 12px;
       border-bottom: 1px solid rgba(31, 41, 55, 0.95);
@@ -59,7 +59,7 @@
     }
     .header-back{ justify-self: start; }
     .header-title{ justify-self: center; text-align: center; }
-    .header-spacer{ justify-self: end; width: 60px; height: 34px; } /* replaces removed Next button */
+    .header-spacer{ justify-self: end; width: 60px; height: 34px; }
 
     .header-back {
       min-width: 60px;
@@ -94,7 +94,7 @@
       text-overflow: ellipsis;
     }
 
-    /* Main content ---------------------------------------------- */
+    /* Main content */
     .app-main {
       flex: 1;
       overflow-y: auto;
@@ -104,7 +104,7 @@
 
     .list-column { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
 
-    /* Start logo ------------------------------------------------- */
+    /* Start logo */
     .start-logo {
       display: flex; flex-direction: column; align-items: center;
       gap: 8px; margin: 10px 0 18px;
@@ -112,7 +112,7 @@
     .start-logo-title { font-size: 18px; font-weight: 600; letter-spacing: 0.04em; text-align: center; }
     .start-logo-subtitle { font-size: 12px; color: #d1d5db; opacity: 0.9; }
 
-    /* Rows ------------------------------------------------------- */
+    /* Rows */
     .row {
       width: 100%;
       min-height: 46px;
@@ -140,7 +140,7 @@
     .row--tap { cursor: pointer; user-select: none; transition: transform 0.08s ease-out; }
     .row--tap:active { transform: translateY(1px) scale(0.995); }
 
-    /* Search ----------------------------------------------------- */
+    /* Search */
     .state-search { margin: 4px 2px 10px; }
     .state-search-input {
       width: 100%;
@@ -155,7 +155,7 @@
     }
     .state-search-input::placeholder { color: rgba(156, 163, 175, 0.95); }
 
-    /* Bottom nav ------------------------------------------------ */
+    /* Bottom nav */
     .app-nav {
       height: var(--nav-h);
       flex-shrink: 0;
@@ -197,7 +197,6 @@
       box-shadow: 0 0 0 1px #020617, 0 3px 10px rgba(15, 23, 42, 0.8);
     }
     .nav-btn:active { transform: translateY(1px) scale(0.98); }
-    a.nav-btn { color: inherit; }
 
     .nav-agg {
       min-width: 22px; padding: 2px 8px; border-radius: 999px;
@@ -207,7 +206,7 @@
     }
     .nav-agg--positive { border-color: #22c55e; background: #14532d; color: #f9fafb; }
 
-    /* Peak bar --------------------------------------------------- */
+    /* Peak bar */
     .peakbar {
       position: sticky;
       top: 0;
@@ -218,7 +217,7 @@
       margin: -8px 0 6px;
     }
 
-    /* Cards ------------------------------------------------------ */
+    /* Cards */
     .card {
       border-radius: 18px;
       border: 1px solid rgba(75, 85, 99, 0.9);
@@ -261,19 +260,19 @@
     .c-name{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .c-agg{ justify-self: end; display: inline-flex; align-items: center; justify-content: center; }
 
-    .entry-rollup{
-      display: flex;
+    /* ✅ WRAPPED rollup grid */
+    .entry-rollup-grid{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
-      padding: 8px 12px 10px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-top: 1px solid rgba(55,65,81,0.35);
+      padding: 2px 0;
+      width: 100%;
     }
     .entry-chip{
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid rgba(75,85,99,0.75);
       background: rgba(2,6,23,0.55);
@@ -281,112 +280,110 @@
       font-size: 12px;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       box-shadow: 0 0 0 1px rgba(2,6,23,0.75);
+      width: 100%;
     }
 
-    /* Timeline (unchanged) -------------------------------------- */
+    /* Timeline (dark theme + 60px horse col) */
     .timeline-viewport{
       height: calc(100vh - var(--header-h) - var(--nav-h) - 24px);
       overflow:auto;
-      border:1px solid var(--border);
+      border:1px solid rgba(75,85,99,0.65);
       border-radius:12px;
-      background:#fff;
-      color:#111;
+      background: radial-gradient(circle at top, #111827 0, #020617 70%);
+      color:#e5e7eb;
     }
     .timeline-grid{position:relative;min-height:100%}
+
     .timeline-axis{
-      position:sticky;top:0;z-index:10;
+      position:sticky;top:0;z-index:20;
       display:flex;align-items:stretch;
-      background:#fff;border-bottom:1px solid var(--border);
+      background: rgba(2,6,23,0.92);
+      border-bottom:1px solid rgba(75,85,99,0.55);
       height:42px;
     }
     .timeline-axis-left{
-      position:sticky;left:0;z-index:12;
-      width:180px;min-width:180px;
-      padding:10px 12px;
+      position:sticky;left:0;z-index:22;
+      width:60px;min-width:60px;max-width:60px;
+      padding:10px 8px;
       font-weight:800;
-      background:#fff;
-      border-right:1px solid var(--border);
-      color:#111;
+      background: rgba(2,6,23,0.92);
+      border-right:1px solid rgba(75,85,99,0.55);
+      color:#f9fafb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .timeline-axis-right{position:relative;height:42px}
     .timeline-axis-cell{
       position:absolute;top:0;bottom:0;
-      border-left:1px solid #eee;
+      border-left:1px solid rgba(75,85,99,0.35);
       padding:10px 8px;
-      font-size:12px;color:#555;
+      font-size:12px;color: rgba(203,213,225,0.9);
       background:transparent;
       font-variant-numeric: tabular-nums;
       text-transform: uppercase;
       letter-spacing: 0.03em;
+      z-index:21;
     }
+
     .timeline-rows{position:relative}
-    .timeline-row{display:flex;min-height:54px;border-bottom:1px solid #f0f0f0}
+    .timeline-row{display:flex;min-height:54px;border-bottom:1px solid rgba(75,85,99,0.22)}
     .timeline-horse{
-      position:sticky;left:0;z-index:9;
-      width:180px;min-width:180px;
-      padding:10px 12px;
-      background:#fff;border-right:1px solid var(--border);
+      position:sticky;left:0;z-index:18;
+      width:60px;min-width:60px;max-width:60px;
+      padding:10px 8px;
+      background: rgba(2,6,23,0.92);
+      border-right:1px solid rgba(75,85,99,0.55);
       cursor:pointer;
+      color:#f9fafb;
     }
-    .timeline-horse-name{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-horse-name{
+      font-weight:800;font-size:12px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+    }
     .timeline-lane{position:relative}
+
     .timeline-card{
-      position:absolute;top:8px;height:38px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      background:#fafafa;
+      position:absolute;top:8px;height:44px;
+      border:1px solid rgba(75,85,99,0.65);
+      border-radius:12px;
+      background: rgba(17,24,39,0.92);
       padding:6px 8px;
       cursor:pointer;
       overflow:hidden;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+      color:#f9fafb;
     }
-    .timeline-card-top{display:flex;justify-content:space-between;gap:10px}
-    .timeline-card-class{font-weight:900;font-size:12px}
-    .timeline-card-ring{font-weight:700;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .timeline-card-mid{display:flex;gap:10px;margin-top:2px;font-size:11px;color:#555}
-    .timeline-card-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-card-row{
+      display:grid;
+      grid-template-columns: 34px 1fr 10px 44px;
+      gap:8px;
+      align-items:center;
+      line-height: 1.1;
+    }
+    .timeline-cell{
+      font-size:11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+    }
+    .timeline-cell--num{ font-weight:900; }
+    .timeline-cell--name{ font-weight:700; color: rgba(226,232,240,0.92); }
+    .timeline-cell--st{ text-align:right; font-weight:800; color: rgba(203,213,225,0.95); }
 
-    <style>
-  /* Timeline dark theme (matches app) */
-  .timeline-viewport{
-    background: radial-gradient(circle at top, #111827 0, #020617 70%);
-    color:#e5e7eb;
-    border:1px solid rgba(75,85,99,0.65);
-  }
-  .timeline-axis{
-    background: rgba(2,6,23,0.92);
-    border-bottom:1px solid rgba(75,85,99,0.55);
-  }
-  .timeline-axis-left{
-    background: rgba(2,6,23,0.92);
-    color:#f9fafb;
-    border-right:1px solid rgba(75,85,99,0.55);
-  }
-  .timeline-axis-cell{
-    border-left:1px solid rgba(75,85,99,0.35);
-    color: rgba(203,213,225,0.9);
-  }
-  .timeline-row{ border-bottom:1px solid rgba(75,85,99,0.22); }
-  .timeline-horse{
-    background: rgba(2,6,23,0.92);
-    border-right:1px solid rgba(75,85,99,0.55);
-    color:#f9fafb;
-  }
-  .timeline-card{
-    background: rgba(17,24,39,0.92);
-    border:1px solid rgba(75,85,99,0.65);
-    color:#f9fafb;
-    box-shadow: 0 8px 18px rgba(0,0,0,0.35);
-  }
-  .timeline-card-ring{ color: rgba(203,213,225,0.9); }
-  .timeline-card-mid{ color: rgba(203,213,225,0.85); }
-</style>
+    .timeline-cell--time{ font-weight:800; color: rgba(203,213,225,0.95); }
+    .timeline-cell--ring{ color: rgba(203,213,225,0.85); }
+    .timeline-cell--go{ color: rgba(203,213,225,0.85); }
+    .timeline-cell--oog{ text-align:right; font-weight:900; color: rgba(226,232,240,0.95); }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <!-- Header -->
     <header class="app-header">
       <button class="header-back" id="header-back" type="button">
         <span>&larr;</span>
@@ -395,12 +392,10 @@
       <div class="header-spacer" aria-hidden="true"></div>
     </header>
 
-    <!-- Main content -->
     <main class="app-main" id="app-main">
       <div id="screen-root" class="list-column"></div>
     </main>
 
-    <!-- Bottom nav -->
     <nav class="app-nav">
       <div class="nav-scroller">
         <div class="nav-row" id="nav-row">

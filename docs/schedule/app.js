@@ -4,19 +4,12 @@
 //   ./data/latest/watch_schedule.json (context scaffold)
 //   ./data/latest/watch_trips.json    (truth overlay)
 //
-// Rules implemented (per your notes):
-// - NO follow/unfollow functionality anywhere.
-// - Schedule bottom-nav always renders FULL (no “ACTIVE” mode).
-// - Schedule interactions:
-//    • click CLASS line => class detail
-//    • click HORSE chip => horse detail
-//    • click TIME (group line left column) => timeline screen (also sets #timeline hash)
-// - Peakbar anchor/scroll offset fixed (ring headers not hidden under peakbar).
-// - “Next” button removed/disabled (header action is always hidden).
-// - Schedule tab stays highlighted while viewing schedule details.
-//
-// Required DOM ids in index.html:
-//   app-main, screen-root, header-title, header-back, header-action, nav-row
+// Fixes in this drop:
+// 1) Schedule click rules kept: class line -> class detail, horse -> horse detail, time -> timeline (#timeline)
+// 2) Peakbar hash scroll offset increased so ring headers land BELOW peakbar
+// 3) Bottom-nav “Schedule” stays active even when you open horse/rider detail FROM schedule
+// 4) Schedule rollups are now WRAPPED grid (3 across) instead of horizontal scroller
+// 5) Timeline gutter/horse column reduced to 60px + ellipsis; timeline cards de-dupe by same startMin
 
 (function () {
   'use strict';
@@ -38,7 +31,7 @@
   const screenRoot = document.getElementById('screen-root');
   const headerTitle = document.getElementById('header-title');
   const headerBack = document.getElementById('header-back');
-  const headerAction = document.getElementById('header-action'); // always hidden
+  const headerAction = document.getElementById('header-action'); // always hidden (may not exist)
   const navRow = document.getElementById('nav-row');
 
   // ----------------------------
@@ -120,17 +113,6 @@
       .replace(/-+$/, '');
   }
 
-  function uniqStrings(list) {
-    const out = [];
-    const seen = new Set();
-    for (const v of list) {
-      if (v == null) continue;
-      const s = String(v);
-      if (!seen.has(s)) { seen.add(s); out.push(s); }
-    }
-    return out;
-  }
-
   function clearRoot() {
     if (screenRoot) screenRoot.innerHTML = '';
   }
@@ -138,7 +120,7 @@
   function setHeader(title) {
     if (headerTitle) headerTitle.textContent = title || '';
     if (headerBack) headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
-    if (headerAction) headerAction.hidden = true; // ✅ remove Next always
+    if (headerAction) headerAction.hidden = true; // ✅ always hidden
   }
 
   function setNavActive(primaryScreen) {
@@ -277,7 +259,8 @@
     if (!target) return;
 
     const peakbar = appMain.querySelector('.peakbar');
-    const offset = (peakbar ? peakbar.offsetHeight : 0) + 10;
+    // ✅ increased offset so ring headers land below peakbar reliably
+    const offset = (peakbar ? peakbar.offsetHeight : 0) + 16;
 
     const mainRect = appMain.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
@@ -582,6 +565,7 @@
     body.appendChild(line);
   }
 
+  // ✅ wrapped 3-across rollup grid (click chip => horse detail)
   function addEntryRollup(card, bestTrips) {
     if (!bestTrips || bestTrips.length === 0) return;
 
@@ -591,7 +575,7 @@
     line.appendChild(el('div', 'c-time', ''));
 
     const mid = el('div', 'c-name');
-    const roll = el('div', 'entry-rollup');
+    const roll = el('div', 'entry-rollup-grid');
 
     bestTrips.forEach((t) => {
       const horse = (t && t.horseName) ? String(t.horseName).trim() : '';
@@ -625,10 +609,14 @@
     render();
   }
 
+  // ✅ preserve originating primary tab for details opened from schedule
   function pushDetail(screen, detail) {
+    const fromPrimary = getPrimaryForScreen(state.screen);
+    const d = Object.assign({}, detail || {}, { _fromPrimary: fromPrimary });
+
     state.history.push({ screen: state.screen, detail: state.detail });
     state.screen = screen;
-    state.detail = detail;
+    state.detail = d;
     render();
   }
 
@@ -641,7 +629,6 @@
   }
 
   function gotoTimeline() {
-    // sets hash request, and ensures timeline is top
     history.replaceState(null, '', '#timeline');
     state.pendingScrollId = null;
     state.history = [];
@@ -652,9 +639,14 @@
   }
 
   function getPrimaryForScreen(screen) {
-    // ✅ schedule stays active for rings and all schedule details
+    // ✅ if a detail was opened FROM schedule, keep schedule tab active
+    if (screen && /Detail$/.test(screen) && state.detail && state.detail._fromPrimary) {
+      return state.detail._fromPrimary;
+    }
+
     const map = {
       start: 'start',
+
       horses: 'horses',
       horseDetail: 'horses',
 
@@ -675,7 +667,7 @@
   // ----------------------------
   // AGGS (truth only)
   // ----------------------------
-  function renderAggs(sIdx, tIdx) {
+  function renderAggs(_sIdx, tIdx) {
     setAgg('horses', tIdx.byHorse.size);
     setAgg('rings', tIdx.byRing.size);
     setAgg('classes', tIdx.byGroup.size);
@@ -774,7 +766,6 @@
         return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
       });
 
-    // Detail card target hook
     const card = makeCard(horse, bestTrips.length, true, null);
     card.id = 'detail-card';
     card.dataset.detail = 'horse';
@@ -855,15 +846,13 @@
         const gKeys = tIdx.byGroup.get(gid) || [];
         if (gKeys.length === 0) continue;
 
-        // GROUP LINE:
-        // - time click => timeline
-        // - group name click => group detail
         addCardLine(
           card,
           fmtTimeShort(g.latestStart || ''),
           String(g.group_name),
           (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
           {
+            // ✅ time -> timeline (sets #timeline)
             onLeft: () => gotoTimeline(),
             onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
           }
@@ -875,7 +864,6 @@
           const cKeys = tIdx.byClass.get(cid) || [];
           if (cKeys.length === 0) continue;
 
-          // CLASS LINE: click anywhere => class detail
           addCardLine(
             card,
             (c.class_number != null ? String(c.class_number) : ''),
@@ -902,7 +890,6 @@
       screenRoot.appendChild(card);
     }
 
-    // If user landed with a hash (e.g., from peakbar history), apply once after render.
     applyPendingScroll();
   }
 
@@ -1118,7 +1105,6 @@
         return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
       });
 
-    // For class detail, rollup is the main content (horse chips go to horse detail)
     addEntryRollup(card, bestTrips.slice(0, 60));
     screenRoot.appendChild(card);
   }
@@ -1130,7 +1116,7 @@
     clearRoot();
     setHeader('Timeline');
 
-    // timeline anchor hook (for your “#timeline” request)
+    // timeline anchor hook
     const anchor = el('div', { id: 'timeline' });
     screenRoot.appendChild(anchor);
 
@@ -1145,7 +1131,9 @@
     const SLOT_MIN = 30;
 
     const PX_PER_MIN = 4;
-    const GUTTER_PX = 180;
+
+    // ✅ horse column max 60px
+    const GUTTER_PX = 60;
 
     const root = el('div', 'screen');
 
@@ -1210,22 +1198,31 @@
         .filter(Boolean)
         .sort((a, b) => (a.startMin - b.startMin) || (safeNum(a.it.lastOOG, 999999) - safeNum(b.it.lastOOG, 999999)));
 
+      // ✅ de-dupe: only first card if same startMin
+      const seenStart = new Set();
       cards.forEach(({ it, startMin, endMin }) => {
+        if (seenStart.has(startMin)) return;
+        seenStart.add(startMin);
+
         const c = el('div', 'timeline-card');
         c.style.left = `${(startMin - DAY_START_MIN) * PX_PER_MIN}px`;
-        c.style.width = `${Math.max(70, (endMin - startMin) * PX_PER_MIN)}px`;
+        c.style.width = `${Math.max(120, (endMin - startMin) * PX_PER_MIN)}px`;
 
-        const top = el('div', 'timeline-card-top');
-        top.appendChild(el('span', 'timeline-card-class', (it.class_number != null ? String(it.class_number) : '—')));
-        top.appendChild(el('span', 'timeline-card-ring', String(it.ringName || (it.ring_number != null ? `R${it.ring_number}` : ''))));
-        c.appendChild(top);
+        // compact grid-like content
+        const r1 = el('div', 'timeline-card-row');
+        r1.appendChild(el('span', 'timeline-cell timeline-cell--num', (it.class_number != null ? String(it.class_number) : '—')));
+        r1.appendChild(el('span', 'timeline-cell timeline-cell--name', String(it.class_name || '').trim()));
+        r1.appendChild(el('span', 'timeline-cell timeline-cell--sp', ''));
+        r1.appendChild(el('span', 'timeline-cell timeline-cell--st', fmtStatus4(it.latestStatus)));
+        c.appendChild(r1);
 
-        const mid = el('div', 'timeline-card-mid');
-        const timeTxt = fmtTimeShort(it.latestGO || it.latestStart || '');
-        if (timeTxt) mid.appendChild(el('span', 'timeline-card-time', timeTxt));
-        const stTxt = fmtStatus4(it.latestStatus);
-        if (stTxt) mid.appendChild(el('span', 'timeline-card-status', stTxt));
-        c.appendChild(mid);
+        const r2 = el('div', 'timeline-card-row');
+        r2.appendChild(el('span', 'timeline-cell timeline-cell--time', fmtTimeShort(it.latestStart || it.latestGO || '')));
+        const ringTxt = String(it.ringName || (it.ring_number != null ? `Ring ${it.ring_number}` : '')).slice(0, 6);
+        r2.appendChild(el('span', 'timeline-cell timeline-cell--ring', ringTxt));
+        r2.appendChild(el('span', 'timeline-cell timeline-cell--go', fmtTimeShort(it.latestGO || '')));
+        r2.appendChild(el('span', 'timeline-cell timeline-cell--oog', (it.lastOOG != null ? String(it.lastOOG) : '')));
+        c.appendChild(r2);
 
         c.addEventListener('click', () => {
           if (it.class_id != null) pushDetail('classDetail', { kind: 'class', key: String(it.class_id) });
@@ -1261,15 +1258,10 @@
     if (headerBack) headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
     if (headerAction) headerAction.hidden = true;
 
-    // Apply hash scroll only on schedule screen, and only if the hash matches a ring id.
-    // Example: #ring-5
     if (state.screen === 'schedule') {
       const hash = (location.hash || '').replace('#', '');
-      if (hash && /^ring-\d+$/i.test(hash)) {
-        state.pendingScrollId = hash;
-      } else {
-        state.pendingScrollId = null;
-      }
+      if (hash && /^ring-\d+$/i.test(hash)) state.pendingScrollId = hash;
+      else state.pendingScrollId = null;
     } else {
       state.pendingScrollId = null;
     }
@@ -1297,7 +1289,6 @@
   // ----------------------------
   if (headerBack) headerBack.addEventListener('click', goBack);
 
-  // Bottom nav clicks
   if (navRow) {
     navRow.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-screen]');
@@ -1308,9 +1299,8 @@
       state.history = [];
       state.detail = null;
 
-      // Alias: schedule button always renders schedule (full)
       if (tapped === 'schedule') state.screen = 'schedule';
-      else if (tapped === 'rings') state.screen = 'schedule'; // tolerate older markup
+      else if (tapped === 'rings') state.screen = 'schedule';
       else state.screen = tapped;
 
       render();
