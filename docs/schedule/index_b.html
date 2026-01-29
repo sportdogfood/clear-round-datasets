@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 
   <style>
-:root {
+    :root {
       --bg: #020617;
       --bg-alt: #0b1120;
       --border: #374151;
@@ -358,8 +358,8 @@
     }
 
     .card-line4{
-      display: grid;
-      grid-template-columns: 60px 35px 1fr 60px;
+      display:grid;
+      grid-template-columns: 72px 56px 1fr 56px;
       gap:10px;
       align-items:center;
       padding: 8px 12px;
@@ -443,117 +443,52 @@
       color:#f9fafb;
       box-shadow: 0 8px 18px rgba(0,0,0,0.35);
     }
-
-    /* Canonical contract additions ------------------------------------------ */
-    .app{ position: relative; }
-    .app-header, .app-nav{ transition: height .18s ease, transform .18s ease, opacity .18s ease; }
-
-    .app.hide-header .app-header{
-      height: 0 !important;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      border: 0 !important;
-      transform: translateY(-100%);
-      opacity: 0;
-      overflow: hidden;
-    }
-    .app.hide-nav .app-nav{
-      height: 0 !important;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      border: 0 !important;
-      transform: translateY(100%);
-      opacity: 0;
-      overflow: hidden;
-    }
-
-    /* filterbottom (peakbottom) */
-    .filterbottom{
-      position: sticky;
-      bottom: 0;
-      z-index: 12;
-      background: rgba(2, 6, 23, 0.98);
-      border-top: 1px solid rgba(31, 41, 55, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 10px 12px;
-    }
-    .filterbottom-row{
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 2px;
-    }
-    .filterbottom-row::-webkit-scrollbar{ display: none; }
-    .chip{
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      height: 30px;
-      padding: 0 12px;
-      border-radius: var(--pill-radius);
-      border: 1px solid var(--border-soft);
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 12px;
-      line-height: 1;
-      white-space: nowrap;
-      cursor: pointer;
-      user-select: none;
-    }
-    .chip.is-active{
-      background: rgba(37, 99, 235, 0.22);
-      border-color: rgba(37, 99, 235, 0.6);
-      color: #f9fafb;
-    }
-
-    /* Row depth + striping */
-    .row--class{ font-size: 13px; }
-    .row--entry{ font-size: 12px; opacity: 0.98; }
-    .row--trip{  font-size: 11px; opacity: 0.92; }
-
-    .row-alt{ background: rgba(255,255,255,0.03); border-radius: 12px; }
-    .row-wrap{ padding: 2px 6px; }
-
-    /* Badges */
-    .badge{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 18px;
-      height: 18px;
-      padding: 0 6px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.35);
-      background: rgba(148,163,184,0.12);
-      color: #e5e7eb;
-      font-size: 11px;
-      line-height: 1;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    .badge--status{ min-width: 22px; }
-    .badge--type{ font-weight: 800; }
-    .badge--seq{ font-weight: 800; }
-
-    /* Status tints (applied to group wrapper) */
-    .tint-L{ background: rgba(220,38,38,0.10); }
-    .tint-S{ background: rgba(245,158,11,0.10); }
-    .tint-C{ background: rgba(34,197,94,0.10); }
-    .group-wrap{
-      padding: 8px 8px 10px;
-      border-radius: 18px;
-      border: 1px solid rgba(148,163,184,0.14);
-      margin-top: 10px;
-    }
-
-
   </style>
 </head>
 
 <body>
-  <div class="app" id="app"></div>
+  <div class="app">
+    <header class="app-header">
+      <button class="header-back" id="header-back" type="button">
+        <span>&larr;</span>
+      </button>
+      <h1 class="header-title" id="header-title">Start</h1>
+      <div class="header-spacer" aria-hidden="true"></div>
+    </header>
+
+    <main class="app-main" id="app-main">
+      <div id="screen-root" class="list-column"></div>
+    </main>
+
+    <nav class="app-nav">
+      <div class="nav-scroller">
+        <div class="nav-row" id="nav-row">
+          <button class="nav-btn" type="button" data-screen="start">
+            <span class="nav-label">Start</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="horses">
+            <span class="nav-label">Horses</span>
+            <span class="nav-agg" data-nav-agg="horses">0</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="riders">
+            <span class="nav-label">Riders</span>
+            <span class="nav-agg" data-nav-agg="riders">0</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="schedule">
+            <span class="nav-label">Schedule</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="timeline">
+            <span class="nav-label">Timeline</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

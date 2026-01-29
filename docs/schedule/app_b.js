@@ -32,121 +32,12 @@
   // ----------------------------
   // DOM
   // ----------------------------
-    let appEl, appMain, screenRoot, headerTitle, headerBack, headerAction, navRow;
-
-  function mountShell() {
-    const mount = document.getElementById('app');
-    if (!mount) throw new Error('Missing #app mount');
-
-    // Clear (idempotent)
-    mount.innerHTML = '';
-
-    // Header
-    const header = document.createElement('header');
-    header.className = 'app-header';
-
-    const backBtn = document.createElement('button');
-    backBtn.className = 'header-back';
-    backBtn.id = 'header-back';
-    backBtn.type = 'button';
-    backBtn.innerHTML = '<span>&larr;</span>';
-
-    const title = document.createElement('h1');
-    title.className = 'header-title';
-    title.id = 'header-title';
-    title.textContent = 'Start';
-
-    const spacer = document.createElement('div');
-    spacer.className = 'header-spacer';
-    spacer.setAttribute('aria-hidden', 'true');
-
-    header.appendChild(backBtn);
-    header.appendChild(title);
-    header.appendChild(spacer);
-
-    // Main
-    const main = document.createElement('main');
-    main.className = 'app-main';
-    main.id = 'app-main';
-
-    const root = document.createElement('div');
-    root.id = 'screen-root';
-    root.className = 'list-column';
-    main.appendChild(root);
-
-    // Nav
-    const nav = document.createElement('nav');
-    nav.className = 'app-nav';
-
-    const navScroller = document.createElement('div');
-    navScroller.className = 'nav-scroller';
-
-    const navRowEl = document.createElement('div');
-    navRowEl.className = 'nav-row';
-    navRowEl.id = 'nav-row';
-
-    navRowEl.innerHTML = [
-      '<button class="nav-btn" type="button" data-screen="start"><span class="nav-label">Start</span></button>',
-      '<button class="nav-btn" type="button" data-screen="horses"><span class="nav-label">Horses</span><span class="nav-agg" data-nav-agg="horses">0</span></button>',
-      '<button class="nav-btn" type="button" data-screen="riders"><span class="nav-label">Riders</span><span class="nav-agg" data-nav-agg="riders">0</span></button>',
-      '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span></button>',
-      '<button class="nav-btn" type="button" data-screen="timeline"><span class="nav-label">Timeline</span></button>'
-    ].join('');
-
-    navScroller.appendChild(navRowEl);
-    nav.appendChild(navScroller);
-
-    mount.appendChild(header);
-    mount.appendChild(main);
-    mount.appendChild(nav);
-
-    // Refs
-    appEl = mount;
-    appMain = main;
-    screenRoot = root;
-    headerTitle = title;
-    headerBack = backBtn;
-    headerAction = document.getElementById('header-action'); // optional
-    navRow = navRowEl;
-  }
-
-  mountShell();
-  bindChromeScroll();
-
-  function bindChromeScroll() {
-    let lastTop = 0;
-    const THRESH = 8;
-    let ticking = false;
-
-    function apply(dir, top) {
-      if (top <= 4) {
-        appEl.classList.remove('hide-header');
-        appEl.classList.remove('hide-nav');
-        return;
-      }
-      if (dir === 'down') {
-        appEl.classList.add('hide-header');
-        appEl.classList.add('hide-nav');
-      } else if (dir === 'up') {
-        appEl.classList.remove('hide-header');
-        appEl.classList.remove('hide-nav');
-      }
-    }
-
-    appMain.addEventListener('scroll', () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        const top = appMain.scrollTop || 0;
-        const delta = top - lastTop;
-        const dir = (delta > THRESH) ? 'down' : (delta < -THRESH) ? 'up' : null;
-        if (dir) apply(dir, top);
-        lastTop = top;
-        ticking = false;
-      });
-    }, { passive: true });
-  }
-
+  const appMain = document.getElementById('app-main');
+  const screenRoot = document.getElementById('screen-root');
+  const headerTitle = document.getElementById('header-title');
+  const headerBack = document.getElementById('header-back');
+  const headerAction = document.getElementById('header-action'); // always hidden (may not exist)
+  const navRow = document.getElementById('nav-row');
 
   // ----------------------------
   // STATE
@@ -169,10 +60,6 @@
       riders: '',
       schedule: '',
       timeline: ''
-    },
-
-    filter: {
-      horse: null
     },
 
     // optional: after render, scroll within main to an element id
@@ -629,86 +516,7 @@
     return root;
   }
 
-    // ----------------------------
-  // Filterbottom (horse chips) — schedule only
-  // ----------------------------
-  function buildHorseChips(qRing, sIdx) {
-    const q = normalizeStr(qRing || '');
-    const map = new Map();
-
-    for (const t of (state.trips || [])) {
-      if (!t) continue;
-      if (t.ring_number == null) continue;
-
-      const ringName = (t.ringName ? String(t.ringName) : (sIdx && sIdx.ringMap && sIdx.ringMap.get(String(t.ring_number)) ? String(sIdx.ringMap.get(String(t.ring_number)).ringName || '') : `Ring ${t.ring_number}`));
-      if (q && !normalizeStr(ringName).includes(q)) continue;
-
-      const key = (t.entry_id != null) ? String(t.entry_id) : (t.horseName ? String(t.horseName) : null);
-      if (!key) continue;
-
-      const label = t.horseName ? String(t.horseName) : key;
-      map.set(key, label);
-    }
-
-    const items = [...map.entries()].map(([key, label]) => ({ key, label }));
-    items.sort((a, b) => a.label.localeCompare(b.label));
-    return items;
-  }
-
-  function clearFilterBottom() {
-    const existing = document.getElementById('filterbottom');
-    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-  }
-
-  function renderFilterBottom(items, activeKey) {
-    // Only for schedule screen
-    if (state.screen !== 'schedule') {
-      clearFilterBottom();
-      return;
-    }
-
-    clearFilterBottom();
-
-    const bar = document.createElement('div');
-    bar.className = 'filterbottom';
-    bar.id = 'filterbottom';
-
-    const row = document.createElement('div');
-    row.className = 'filterbottom-row';
-
-    function addChip(label, key) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'chip' + ((key === activeKey) ? ' is-active' : '');
-      btn.textContent = label;
-      btn.addEventListener('click', () => {
-        state.filter = state.filter || { horse: null };
-        state.filter.horse = key || null;
-        render();
-      });
-      row.appendChild(btn);
-    }
-
-    // All chip (always)
-    addChip('All', null);
-
-    // If a horse is active, only show that horse (plus All)
-    if (activeKey) {
-      const found = items.find(x => x.key === activeKey);
-      if (found) addChip(found.label, found.key);
-    } else {
-      items.forEach(it => addChip(it.label, it.key));
-    }
-
-    bar.appendChild(row);
-
-    // Insert above nav
-    const nav = appEl && appEl.querySelector('.app-nav');
-    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
-    else (appEl || document.body).appendChild(bar);
-  }
-
-function makeCard(title, aggValue, inverseHdr, onClick) {
+  function makeCard(title, aggValue, inverseHdr, onClick) {
     const card = el('div', 'card' + (onClick ? ' card--tap' : ''));
     if (onClick) card.addEventListener('click', onClick);
 
@@ -1163,343 +971,96 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   // ----------------------------
   // SCREEN: SCHEDULE (rings)
   // ----------------------------
-    function renderSchedule(sIdx, tIdx) {
+  function renderSchedule(sIdx, tIdx) {
     clearRoot();
     setHeader('Schedule');
 
-    // page-level controls
     screenRoot.appendChild(renderSearch('rings', 'Search rings...'));
 
-    const qRing = normalizeStr(state.search.rings);
-    const horseFilter = state.filter && state.filter.horse ? String(state.filter.horse) : null;
+    const ringsAll = [...sIdx.ringMap.values()]
+      .sort((a, b) => (a.ring_number || 0) - (b.ring_number || 0));
 
-    // ----------------------------
-    // Build hierarchy from watch_trips (flat -> dimensions)
-    // ring_number -> group_id -> class_id -> class_number -> entry_id -> trips
-    // ----------------------------
-    const ringMap = new Map();
+    const q = normalizeStr(state.search.rings);
 
-    function ringSortKey(rn) { return safeNum(rn, 999999); }
-
-    function statusRank(statusText) {
-      const s = String(statusText || '').toLowerCase();
-      if (s.includes('underway')) return 3;
-      if (s.includes('upcoming')) return 2;
-      if (s.includes('complete')) return 1;
-      return 0;
-    }
-
-    function statusLetter(statusText) {
-      const s = String(statusText || '').toLowerCase();
-      if (s.includes('underway')) return 'L';
-      if (s.includes('upcoming')) return 'S';
-      if (s.includes('complete')) return 'C';
-      return '';
-    }
-
-    function statusTintClass(statusText) {
-      const s = String(statusText || '').toLowerCase();
-      if (s.includes('underway')) return 'tint-L';
-      if (s.includes('upcoming')) return 'tint-S';
-      if (s.includes('complete')) return 'tint-C';
-      return '';
-    }
-
-    function getRingNameFromTrip(t) {
-      if (t && t.ringName) return String(t.ringName);
-      const rn = t && t.ring_number != null ? String(t.ring_number) : null;
-      const rObj = rn && sIdx && sIdx.ringMap ? sIdx.ringMap.get(rn) : null;
-      if (rObj && rObj.ringName) return String(rObj.ringName);
-      return rn ? `Ring ${rn}` : 'Ring';
-    }
-
-    function getOrInit(map, key, factory) {
-      if (!map.has(key)) map.set(key, factory());
-      return map.get(key);
-    }
-
-    for (const t of (state.trips || [])) {
-      if (!t) continue;
-      if (t.ring_number == null) continue;
-      if (t.class_id == null) continue;
-
-      // ring search filter
-      const rnStr = String(t.ring_number);
-      const ringName = getRingNameFromTrip(t);
-      if (qRing && !normalizeStr(ringName).includes(qRing)) continue;
-
-      // horse filter (entry_id preferred; fallback horseName)
-      const entryKey = (t.entry_id != null) ? String(t.entry_id) : (t.horseName ? String(t.horseName) : null);
-      if (!entryKey) continue;
-      if (horseFilter && entryKey !== horseFilter) continue;
-
-      const ringObj = getOrInit(ringMap, rnStr, () => ({
-        ring_number: t.ring_number,
-        ringName,
-        classIdSet: new Set(),
-        groups: new Map()
-      }));
-
-      ringObj.classIdSet.add(String(t.class_id));
-
-      const gid = (t.class_group_id != null) ? String(t.class_group_id) : '__nogroup__';
-      const groupObj = getOrInit(ringObj.groups, gid, () => ({
-        class_group_id: gid,
-        group_name: t.group_name ? String(t.group_name) : '',
-        statusRank: 0,
-        latestStatus: '',
-        classes: new Map()
-      }));
-
-      // group status (max rank)
-      const rnk = statusRank(t.latestStatus);
-      if (rnk > groupObj.statusRank) {
-        groupObj.statusRank = rnk;
-        groupObj.latestStatus = t.latestStatus || '';
-      }
-
-      const cid = String(t.class_id);
-      const classObj = getOrInit(groupObj.classes, cid, () => ({
-        class_id: cid,
-        class_name: t.class_name ? String(t.class_name) : '',
-        class_type: t.class_type ? String(t.class_type) : '',
-        schedule_sequencetype: t.schedule_sequencetype ? String(t.schedule_sequencetype) : '',
-        classNumbers: new Map()
-      }));
-
-      const classNumKey = (t.class_number != null) ? String(t.class_number) : '';
-      const cn = (t.class_number != null) ? Number(t.class_number) : null;
-
-      const classNumObj = getOrInit(classObj.classNumbers, classNumKey, () => ({
-        class_number: cn,
-        latestStart: t.latestStart || '',
-        latestStatus: t.latestStatus || '',
-        statusRank: statusRank(t.latestStatus),
-        total_trips: t.total_trips != null ? t.total_trips : null,
-        entries: new Map()
-      }));
-
-      // prefer stronger status for classNum
-      const cnRank = statusRank(t.latestStatus);
-      if (cnRank > classNumObj.statusRank) {
-        classNumObj.statusRank = cnRank;
-        classNumObj.latestStatus = t.latestStatus || '';
-      }
-      if (!classNumObj.latestStart && t.latestStart) classNumObj.latestStart = t.latestStart;
-
-      const entryObj = getOrInit(classNumObj.entries, entryKey, () => ({
-        entry_id: entryKey,
-        entryNumber: t.entryNumber != null ? String(t.entryNumber) : '',
-        horseName: t.horseName ? String(t.horseName) : '',
-        trips: []
-      }));
-
-      if (!entryObj.entryNumber && t.entryNumber != null) entryObj.entryNumber = String(t.entryNumber);
-      if (!entryObj.horseName && t.horseName) entryObj.horseName = String(t.horseName);
-
-      entryObj.trips.push(t);
-    }
-
-    const ringsAll = [...ringMap.values()].sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
-
-    // Peakbar (anchors)
     const peakItems = ringsAll.map(r => {
       const rk = String(r.ring_number);
+      const entryKeys = tIdx.byRing.get(rk) || [];
       return {
         key: rk,
         label: String(r.ringName),
-        agg: (r.classIdSet ? r.classIdSet.size : 0),
+        agg: entryKeys.length,
         href: `#ring-${rk}`
       };
     });
+
     screenRoot.appendChild(renderPeakBar(peakItems));
-
-    // Ring cards
-    const ringContainer = el('div', 'list-column');
-    ringContainer.dataset.kind = 'ringContainer';
-
-    let stripe = 0;
-
-    function addLine4(parent, a, b, cNode, dNode, rowClass, extraClass, onClick) {
-      const line = el('div', 'card-line4' + (rowClass ? (' ' + rowClass) : '') + (extraClass ? (' ' + extraClass) : ''));
-      const cA = el('div', 'c4-a', a || '');
-      const cB = el('div', 'c4-b', b || '');
-      const cC = el('div', 'c4-c');
-      const cD = el('div', 'c4-d');
-
-      if (cNode) cC.appendChild(cNode);
-      if (typeof dNode === 'string') cD.textContent = dNode;
-      else if (dNode) cD.appendChild(dNode);
-
-      line.appendChild(cA);
-      line.appendChild(cB);
-      line.appendChild(cC);
-      line.appendChild(cD);
-
-      if (onClick) {
-        line.style.cursor = 'pointer';
-        line.addEventListener('click', onClick);
-      }
-
-      parent.appendChild(line);
-    }
-
-    function makeBadge(txt, cls) {
-      const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
-      return b;
-    }
-
-    function nodeWithBadges(badges, text) {
-      const wrap = el('div', '');
-      for (const b of badges) wrap.appendChild(b);
-      if (badges.length) wrap.appendChild(el('span', '', ' '));
-      wrap.appendChild(document.createTextNode(text || ''));
-      return wrap;
-    }
 
     for (const r of ringsAll) {
       const rk = String(r.ring_number);
-      if (!r.groups || r.groups.size === 0) continue;
+      const ringEntryKeys = tIdx.byRing.get(rk) || [];
+      if (ringEntryKeys.length === 0) continue;
 
-      const card = el('div', 'card');
+      if (q && !normalizeStr(r.ringName).includes(q)) continue;
+
+      const card = makeCard(String(r.ringName), ringEntryKeys.length, true, () => {
+        pushDetail('ringDetail', { kind: 'ring', key: rk });
+      });
       card.id = `ring-${rk}`;
-      const body = el('div', 'card-body');
-      card.appendChild(body);
 
-      // Ring header row (ringName | | | agg)
-      addLine4(
-        body,
-        String(r.ringName),
-        '',
-        document.createTextNode(''),
-        String(r.classIdSet ? r.classIdSet.size : 0),
-        'row--class',
-        '',
-        null
-      );
-
-      // groups
       const groups = [...r.groups.values()].sort((a, b) => {
-        // stable: status rank desc then name
-        if (a.statusRank !== b.statusRank) return b.statusRank - a.statusRank;
-        return String(a.group_name || '').localeCompare(String(b.group_name || ''));
+        const ta = timeToMinutes(a.latestStart) ?? 999999;
+        const tb = timeToMinutes(b.latestStart) ?? 999999;
+        if (ta !== tb) return ta - tb;
+        return String(a.group_name).localeCompare(String(b.group_name));
       });
 
       for (const g of groups) {
-        if (!g.classes || g.classes.size === 0) continue;
+        const gid = String(g.class_group_id);
+        const gKeys = tIdx.byGroup.get(gid) || [];
+        if (gKeys.length === 0) continue;
 
-        const gWrap = el('div', 'group-wrap ' + statusTintClass(g.latestStatus));
-        body.appendChild(gWrap);
-
-        const classes = [...g.classes.values()].sort((a, b) => {
-          // sort by lowest class_number present, then name
-          const aMin = Math.min(...[...a.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
-          const bMin = Math.min(...[...b.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
-          if (aMin !== bMin) return aMin - bMin;
-          return String(a.class_name || '').localeCompare(String(b.class_name || ''));
-        });
-
-        for (const c of classes) {
-          const classNums = [...c.classNumbers.values()].sort((a, b) => safeNum(a.class_number, 999999) - safeNum(b.class_number, 999999));
-
-          for (const cn of classNums) {
-            if (!cn.entries || cn.entries.size === 0) continue;
-
-            // CLASS ROW
-            const badges = [];
-            if (c.class_type) badges.push(makeBadge(String(c.class_type).slice(0, 1).toUpperCase(), 'badge--type'));
-            if (c.schedule_sequencetype) badges.push(makeBadge(String(c.schedule_sequencetype).slice(0, 1).toUpperCase(), 'badge--seq'));
-
-            const statusL = statusLetter(cn.latestStatus);
-            const statusNode = statusL ? makeBadge(statusL, 'badge--status') : document.createTextNode('');
-
-            const classNameText = String(c.class_name || '').trim();
-            const classNode = nodeWithBadges(badges, classNameText);
-
-            stripe++;
-            addLine4(
-              gWrap,
-              fmtTimeShort(cn.latestStart || ''),
-              (cn.class_number != null ? String(cn.class_number) : ''),
-              classNode,
-              statusNode,
-              'row--class',
-              (stripe % 2 === 0 ? 'row-alt' : ''),
-              null
-            );
-
-            // ENTRIES
-            const entries = [...cn.entries.values()].sort((a, b) => {
-              const ea = safeNum(a.entryNumber, 999999);
-              const eb = safeNum(b.entryNumber, 999999);
-              if (ea !== eb) return ea - eb;
-              return String(a.horseName || '').localeCompare(String(b.horseName || ''));
-            });
-
-            for (const eObj of entries) {
-              const best = pickBestTrip(eObj.trips || []);
-              const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? (best.latestGO || '') : '';
-              const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
-
-              const oogText =
-                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
-                (lastOog != null) ? String(lastOog) :
-                (totalTrips) ? `/${totalTrips}` : '';
-
-              stripe++;
-              addLine4(
-                gWrap,
-                fmtTimeShort(go),
-                entryNo,
-                document.createTextNode(eObj.horseName || ''),
-                oogText,
-                'row--entry',
-                (stripe % 2 === 0 ? 'row-alt' : ''),
-                null
-              );
-
-              // TRIPS (child)
-              const trips = (eObj.trips || []).slice().sort((a, b) => {
-                const oa = safeNum(a.lastOOG, 999999);
-                const ob = safeNum(b.lastOOG, 999999);
-                if (oa !== ob) return oa - ob;
-                return String(a.riderName || '').localeCompare(String(b.riderName || ''));
-              });
-
-              for (const t of trips) {
-                const back = t.backNumber != null ? String(t.backNumber) : (t.entryNumber != null ? String(t.entryNumber) : '');
-                const rider = t.riderName ? String(t.riderName) : '';
-                const score = (t.latestScore != null && String(t.latestScore) !== '') ? String(t.latestScore) : '';
-                const placing = (t.latestPlacing != null && String(t.latestPlacing) !== '') ? String(t.latestPlacing) : '';
-                const right = score || placing || '';
-
-                stripe++;
-                addLine4(
-                  gWrap,
-                  '',
-                  back,
-                  document.createTextNode(rider),
-                  right,
-                  'row--trip',
-                  (stripe % 2 === 0 ? 'row-alt' : ''),
-                  null
-                );
-              }
-            }
+        addCardLine(
+          card,
+          fmtTimeShort(g.latestStart || ''),
+          String(g.group_name),
+          (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
+          {
+            onLeft: () => gotoTimeline(),
+            onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
           }
+        );
+
+        const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
+        for (const c of classes) {
+          const cid = String(c.class_id);
+          const cKeys = tIdx.byClass.get(cid) || [];
+          if (cKeys.length === 0) continue;
+
+          addCardLine(
+            card,
+            (c.class_number != null ? String(c.class_number) : ''),
+            String(c.class_name || '').trim(),
+            makeTagCount(cKeys.length),
+            { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
+          );
+
+          const bestTrips = cKeys
+            .map(k => tIdx.entryBest.get(k))
+            .filter(Boolean)
+            .sort((a, b) => {
+              const oa = safeNum(a.lastOOG, 999999);
+              const ob = safeNum(b.lastOOG, 999999);
+              if (oa !== ob) return oa - ob;
+              return String(a.horseName || '').localeCompare(String(b.horseName || ''));
+            })
+            .slice(0, 14);
+
+          addHorseChipsRollup(card, bestTrips);
         }
       }
 
-      ringContainer.appendChild(card);
+      screenRoot.appendChild(card);
     }
-
-    screenRoot.appendChild(ringContainer);
-
-    // Filterbottom (horse chips) OUTSIDE app-main, above nav
-    const chips = buildHorseChips(state.search.rings, sIdx);
-    renderFilterBottom(chips, horseFilter);
 
     applyPendingScroll();
   }
@@ -2026,9 +1587,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   function render() {
     if (!screenRoot || !headerTitle) return;
 
-    
-    clearFilterBottom();
-const sIdx = buildScheduleIndex();
+    const sIdx = buildScheduleIndex();
     const tIdx = buildTruthIndex();
 
     renderAggs(sIdx, tIdx);
