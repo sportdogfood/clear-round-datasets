@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-01-29T10:12:05-05:00",
+    "generated_at": "2026-01-29T14:22:37-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 101,
@@ -18,7 +18,10 @@
       "class_type",
       "latestStart",
       "latestStatus",
-      "total_trips"
+      "total_trips",
+      "rollup_entries",
+      "rollup_trips",
+      "rollup_horses"
     ]
   },
   "records": [
@@ -37,7 +40,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
-      "total_trips": 43
+      "total_trips": 43,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "reczhT716Z9WineFy",
@@ -53,8 +59,11 @@
       "class_name": "$2,500 1.40m Amateur Jumper II2d",
       "class_type": null,
       "latestStart": "10:30 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 36
+      "latestStatus": "Completed",
+      "total_trips": 36,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rectYLcUiK5HZ2ZGB",
@@ -70,8 +79,11 @@
       "class_name": "$6,150 1.40m Open Jumper II.1",
       "class_type": null,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 62
+      "latestStatus": "Underway",
+      "total_trips": 62,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "receA9oaohGNV32x1",
@@ -88,7 +100,10 @@
       "class_type": null,
       "latestStart": "7:50 AM",
       "latestStatus": null,
-      "total_trips": 16
+      "total_trips": 16,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec8QqSg0C9Pvj3R6",
@@ -105,7 +120,10 @@
       "class_type": null,
       "latestStart": "8:05 AM",
       "latestStatus": "Completed",
-      "total_trips": 15
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec4gznOKQDsjr4UU",
@@ -122,7 +140,10 @@
       "class_type": null,
       "latestStart": "8:05 AM",
       "latestStatus": "Completed",
-      "total_trips": 15
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recMQVZXoeJ9wmhFC",
@@ -138,8 +159,11 @@
       "class_name": "$630 Green Conformation Hunter",
       "class_type": null,
       "latestStart": "9:40 AM",
-      "latestStatus": "Underway",
-      "total_trips": 7
+      "latestStatus": "Completed",
+      "total_trips": 7,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recECzujTmpW85mGV",
@@ -155,8 +179,11 @@
       "class_name": "$850 Green Conformation Hunter Stake",
       "class_type": null,
       "latestStart": "9:40 AM",
-      "latestStatus": "Underway",
-      "total_trips": 7
+      "latestStatus": "Completed",
+      "total_trips": 7,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recLhhzDYCDEuSNiz",
@@ -171,9 +198,12 @@
       "class_number": 2204,
       "class_name": "$630 Green Hunter 3'9\" ",
       "class_type": null,
-      "latestStart": "10:30 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 8
+      "latestStart": "10:35 AM",
+      "latestStatus": "Completed",
+      "total_trips": 8,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recLBFrH7gS8uIdDp",
@@ -188,9 +218,12 @@
       "class_number": 2205,
       "class_name": "$850 Green Hunter 3'9\" Stake",
       "class_type": null,
-      "latestStart": "10:30 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 8
+      "latestStart": "10:35 AM",
+      "latestStatus": "Completed",
+      "total_trips": 8,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec8vAcOh57NHtDV4",
@@ -206,8 +239,11 @@
       "class_name": "$630 High Performance Conformation Hunter",
       "class_type": null,
       "latestStart": "11:15 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 3
+      "latestStatus": "Completed",
+      "total_trips": 3,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recW1efDSSmZF2wBE",
@@ -223,8 +259,11 @@
       "class_name": "$850 High Performance Conformation Hunter Stake",
       "class_type": null,
       "latestStart": "11:15 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 3
+      "latestStatus": "Completed",
+      "total_trips": 3,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recK204gcmk7pF5EQ",
@@ -241,7 +280,10 @@
       "class_type": null,
       "latestStart": "11:45 AM",
       "latestStatus": null,
-      "total_trips": 6
+      "total_trips": 6,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recx2ByN4iBqCrcCT",
@@ -256,9 +298,12 @@
       "class_number": 2009,
       "class_name": "$900 High Performance Hunter",
       "class_type": null,
-      "latestStart": "12:00 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 7
+      "latestStart": "12:10 PM",
+      "latestStatus": "Completed",
+      "total_trips": 7,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec5qcxFIdkPAsGGi",
@@ -273,9 +318,12 @@
       "class_number": 2010,
       "class_name": "$900 High Performance Hunter Stake",
       "class_type": null,
-      "latestStart": "12:00 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 6
+      "latestStart": "12:10 PM",
+      "latestStatus": "Completed",
+      "total_trips": 6,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec7bWU8Q4XmXw9fK",
@@ -292,7 +340,10 @@
       "class_type": null,
       "latestStart": "12:45 PM",
       "latestStatus": null,
-      "total_trips": 12
+      "total_trips": 12,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recwkVm1G6KRkABmQ",
@@ -307,9 +358,12 @@
       "class_number": 2015,
       "class_name": "$850 Performance Hunter 3'6\" Stake CALI @ 38+",
       "class_type": null,
-      "latestStart": "1:00 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 42
+      "latestStart": "1:15 PM",
+      "latestStatus": "Underway",
+      "total_trips": 42,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recQRr2KLdrQCP2nG",
@@ -326,7 +380,16 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
-      "total_trips": 14
+      "total_trips": 14,
+      "rollup_entries": [
+        "200151042"
+      ],
+      "rollup_trips": [
+        "B33B07F9C964471BACF9FD5637E4AD6D"
+      ],
+      "rollup_horses": [
+        "Hurricane"
+      ]
     },
     {
       "record_id": "recy5eQJV4gmqmF96",
@@ -343,7 +406,16 @@
       "class_type": null,
       "latestStart": "8:55 AM",
       "latestStatus": null,
-      "total_trips": 7
+      "total_trips": 7,
+      "rollup_entries": [
+        "200151042"
+      ],
+      "rollup_trips": [
+        "2BDC4D64F5A14E7C99F357932EFE99E2"
+      ],
+      "rollup_horses": [
+        "Hurricane"
+      ]
     },
     {
       "record_id": "recU0pNOHIZ3h03yu",
@@ -359,8 +431,11 @@
       "class_name": "$630 Adult Amateur Hunter 55 & Over (Sec A)",
       "class_type": null,
       "latestStart": "9:05 AM",
-      "latestStatus": "Underway",
-      "total_trips": 16
+      "latestStatus": "Completed",
+      "total_trips": 16,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recqRIDp37huJT8om",
@@ -376,8 +451,11 @@
       "class_name": "$630 Adult Amateur Hunter 55 & Over (Sec A)",
       "class_type": null,
       "latestStart": "9:05 AM",
-      "latestStatus": "Underway",
-      "total_trips": 15
+      "latestStatus": "Completed",
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recdTk5D27PKRqOSZ",
@@ -393,8 +471,11 @@
       "class_name": "$630 Adult Amateur Hunter 36-54 (Sec A)",
       "class_type": null,
       "latestStart": "10:50 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 15
+      "latestStatus": "Completed",
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recNKLITriRsTo3Yy",
@@ -410,8 +491,11 @@
       "class_name": "$630 Adult Amateur Hunter 36-54 (Sec A)",
       "class_type": null,
       "latestStart": "10:50 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 15
+      "latestStatus": "Completed",
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recyQG0wFZSEcHgIk",
@@ -426,9 +510,12 @@
       "class_number": 2702,
       "class_name": "$630 Adult Amateur Hunter 18-35 (Sec A)",
       "class_type": null,
-      "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 14
+      "latestStart": "12:05 PM",
+      "latestStatus": "Completed",
+      "total_trips": 14,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "reckaEoco6kZhJBTO",
@@ -443,9 +530,12 @@
       "class_number": 2703,
       "class_name": "$630 Adult Amateur Hunter 18-35 (Sec A)",
       "class_type": null,
-      "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 14
+      "latestStart": "12:05 PM",
+      "latestStatus": "Completed",
+      "total_trips": 14,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recsMEgJmsUGpeEl4",
@@ -460,9 +550,12 @@
       "class_number": 2014,
       "class_name": "$630 Performance Hunter 3'6\" CALI @ 38+",
       "class_type": null,
-      "latestStart": "1:45 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 41
+      "latestStart": "1:50 PM",
+      "latestStatus": "Underway",
+      "total_trips": 41,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recAhJ9wAR7FD9ISS",
@@ -479,7 +572,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": null,
-      "total_trips": 0
+      "total_trips": 0,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recyLPVscXDb7nHHM",
@@ -496,7 +592,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
-      "total_trips": 8
+      "total_trips": 8,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recwGus8HPSoTckgK",
@@ -513,7 +612,10 @@
       "class_type": null,
       "latestStart": "8:35 AM",
       "latestStatus": "Completed",
-      "total_trips": 12
+      "total_trips": 12,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recUKz0MaQxCmDs78",
@@ -529,8 +631,20 @@
       "class_name": "1.15m Schooling Jumper (Table II)",
       "class_type": null,
       "latestStart": "9:35 AM",
-      "latestStatus": "Underway",
-      "total_trips": 90
+      "latestStatus": "Completed",
+      "total_trips": 90,
+      "rollup_entries": [
+        "200149917",
+        "200214031"
+      ],
+      "rollup_trips": [
+        "C75B9828FA70412181646343953E2881",
+        "E3FFAC167B304AF69F7FFF717D23C2FA"
+      ],
+      "rollup_horses": [
+        "Dottie",
+        "Kindly"
+      ]
     },
     {
       "record_id": "recEPuVLBfoGHB9wz",
@@ -546,8 +660,11 @@
       "class_name": "$2,000 1.30m Open Jumper II2b",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 57
+      "latestStatus": "Completed",
+      "total_trips": 57,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recwmpz9ix4SYEuM1",
@@ -562,9 +679,12 @@
       "class_number": 1007,
       "class_name": "$2,600 1.35m Open Jumper II2b",
       "class_type": null,
-      "latestStart": "11:00 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 40
+      "latestStart": "11:15 AM",
+      "latestStatus": "Completed",
+      "total_trips": 40,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recZM69fHJQzM3eLm",
@@ -579,9 +699,12 @@
       "class_number": 1096,
       "class_name": "1.25m Schooling Jumper (Table II) Can do Either Denemethy or Ring 7 NOT Both",
       "class_type": null,
-      "latestStart": "1:45 PM",
+      "latestStart": "1:20 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 101
+      "total_trips": 101,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec48QgdQY3sKM4l1",
@@ -598,7 +721,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": null,
-      "total_trips": 3
+      "total_trips": 3,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recTU86S2ReKFlcc6",
@@ -615,7 +741,10 @@
       "class_type": null,
       "latestStart": "8:15 AM",
       "latestStatus": "Completed",
-      "total_trips": 3
+      "total_trips": 3,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rechNiAR4I91qzjgC",
@@ -631,8 +760,11 @@
       "class_name": "$210 Young Hunter 2'9\"/3' (6 & Under)",
       "class_type": null,
       "latestStart": "8:40 AM",
-      "latestStatus": "Underway",
-      "total_trips": 15
+      "latestStatus": "Completed",
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recwIBrKJSChYEJhb",
@@ -648,8 +780,11 @@
       "class_name": "$210 Young Hunter 2'9\"/3' (6 & Under)",
       "class_type": null,
       "latestStart": "8:40 AM",
-      "latestStatus": "Underway",
-      "total_trips": 15
+      "latestStatus": "Completed",
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recfd6Fy8lSDj0tvn",
@@ -665,8 +800,11 @@
       "class_name": "$630 Green Hunter 3'",
       "class_type": null,
       "latestStart": "10:25 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 20
+      "latestStatus": "Completed",
+      "total_trips": 20,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recXelioa7Xhpzk5r",
@@ -682,8 +820,11 @@
       "class_name": "$850 Green Hunter 3' Stake",
       "class_type": null,
       "latestStart": "10:25 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 20
+      "latestStatus": "Completed",
+      "total_trips": 20,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recPhFxdIoLxMV5Pc",
@@ -700,7 +841,10 @@
       "class_type": null,
       "latestStart": "11:55 AM",
       "latestStatus": null,
-      "total_trips": 19
+      "total_trips": 19,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recRlmymquShrKFFS",
@@ -715,9 +859,12 @@
       "class_number": 2024,
       "class_name": "$630 Green Hunter 3'3\"",
       "class_type": null,
-      "latestStart": "12:20 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 19
+      "latestStart": "12:40 PM",
+      "latestStatus": "Completed",
+      "total_trips": 19,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "reckiCDi7O1dJjUp3",
@@ -732,9 +879,12 @@
       "class_number": 2025,
       "class_name": "$850 Green Hunter 3'3\"",
       "class_type": null,
-      "latestStart": "12:20 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 19
+      "latestStart": "12:40 PM",
+      "latestStatus": "Completed",
+      "total_trips": 19,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "receBscvGpQGkr6hz",
@@ -749,9 +899,12 @@
       "class_number": 2117,
       "class_name": "$210 Young Hunter 3'3\" (7 & Under)",
       "class_type": null,
-      "latestStart": "2:00 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 12
+      "latestStart": "2:15 PM",
+      "latestStatus": "Underway",
+      "total_trips": 12,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recDnP56Tsxy3KW2O",
@@ -766,9 +919,12 @@
       "class_number": 2118,
       "class_name": "$210 Young Hunter 3'3\" (7 & Under)",
       "class_type": null,
-      "latestStart": "2:00 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 12
+      "latestStart": "2:15 PM",
+      "latestStatus": "Underway",
+      "total_trips": 12,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recJK1vw3m6EJXFQx",
@@ -784,8 +940,20 @@
       "class_name": "1.10m Schooling Jumper (Table II)",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 79
+      "latestStatus": "Completed",
+      "total_trips": 79,
+      "rollup_entries": [
+        "200149917",
+        "200150172"
+      ],
+      "rollup_trips": [
+        "9BC49A6F01074EA2B7C2C9F605C825AC",
+        "5DF224B854F14D78AB922A03E03C5CFE"
+      ],
+      "rollup_horses": [
+        "Dottie",
+        "Q"
+      ]
     },
     {
       "record_id": "rec63bdeMKaYlICIn",
@@ -800,9 +968,12 @@
       "class_number": 1221,
       "class_name": "1.10m Young Jumper (Table II)",
       "class_type": null,
-      "latestStart": "11:20 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 13
+      "latestStart": "11:25 AM",
+      "latestStatus": "Completed",
+      "total_trips": 13,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recD6Yf8QrpuhOiQp",
@@ -817,9 +988,12 @@
       "class_number": 1096,
       "class_name": "1.25m Schooling Jumper (Table II) Can do Either Denemethy or Ring 7 NOT Both",
       "class_type": null,
-      "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 101
+      "latestStart": "12:20 PM",
+      "latestStatus": "Underway",
+      "total_trips": 101,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recVPxjCV5xkg5G8Z",
@@ -835,8 +1009,11 @@
       "class_name": "$1,000 Green Hunter Incentive 3'",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 5
+      "latestStatus": "Completed",
+      "total_trips": 5,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec0D11EH9SDHA4do",
@@ -851,9 +1028,12 @@
       "class_number": 915,
       "class_name": "$1,000 Green Hunter Incentive 3'3\"",
       "class_type": null,
-      "latestStart": "8:15 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 12
+      "latestStart": "10:56 AM",
+      "latestStatus": "Completed",
+      "total_trips": 12,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recxI1rhPUxX6fgE8",
@@ -869,8 +1049,11 @@
       "class_name": "$1,000 Green Hunter Incentive 3'6\"",
       "class_type": null,
       "latestStart": "8:45 AM",
-      "latestStatus": "Underway",
-      "total_trips": 15
+      "latestStatus": "Completed",
+      "total_trips": 15,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recizQ2ffRjAtAv1L",
@@ -885,9 +1068,12 @@
       "class_number": 917,
       "class_name": "$1,000 Green Hunter Incentive 3'9\"",
       "class_type": null,
-      "latestStart": "10:06 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 4
+      "latestStart": "11:00 AM",
+      "latestStatus": "Completed",
+      "total_trips": 4,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recpJrII3i3jz5Mlr",
@@ -903,8 +1089,20 @@
       "class_name": "1.0m Training Jumper (Table II)",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 105
+      "latestStatus": "Completed",
+      "total_trips": 105,
+      "rollup_entries": [
+        "200149837",
+        "200150696"
+      ],
+      "rollup_trips": [
+        "85953600EF8248C080CA598850890585",
+        "10BD7D3AE0DC4E9AB4D5EF5B6BB05F6C"
+      ],
+      "rollup_horses": [
+        "Indy",
+        "Lenny"
+      ]
     },
     {
       "record_id": "rec2PSBBkNRULre3v",
@@ -920,8 +1118,11 @@
       "class_name": "Take2 Thoroughbred Jumper (1.0m) II.1",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 2
+      "latestStatus": "Completed",
+      "total_trips": 2,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recePBt53jb976sRI",
@@ -937,8 +1138,11 @@
       "class_name": "1.0m Young Jumper (Table II)",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 4
+      "latestStatus": "Completed",
+      "total_trips": 4,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recu76KjozILYjGPB",
@@ -953,9 +1157,12 @@
       "class_number": 1211,
       "class_name": ".90m Young Jumper (Table II)",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 3
+      "latestStart": "12:40 PM",
+      "latestStatus": "Underway",
+      "total_trips": 3,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "reclcyPxYC8RKmFy4",
@@ -970,9 +1177,18 @@
       "class_number": 1108,
       "class_name": ".90m Training Jumper (Table II)",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 24
+      "latestStart": "12:40 PM",
+      "latestStatus": "Underway",
+      "total_trips": 24,
+      "rollup_entries": [
+        "200204805"
+      ],
+      "rollup_trips": [
+        "7350C4D5C6EF4429BF1BF5C4C8BD1986"
+      ],
+      "rollup_horses": [
+        "Winnie"
+      ]
     },
     {
       "record_id": "rec25QmVHeTUNPWWQ",
@@ -987,9 +1203,18 @@
       "class_number": 1111,
       "class_name": "Low Child/Adult Amateur Training Jumper 39 & Under .90m II2d",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 21
+      "latestStart": "12:40 PM",
+      "latestStatus": "Underway",
+      "total_trips": 21,
+      "rollup_entries": [
+        "200150997"
+      ],
+      "rollup_trips": [
+        "0502BB8845FF444B874B8CA7A339B8FA"
+      ],
+      "rollup_horses": [
+        "Munster"
+      ]
     },
     {
       "record_id": "recLE4RMJKXaeWhZG",
@@ -1005,8 +1230,11 @@
       "class_name": ".90m Training Jumper (Table II)",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 34
+      "latestStatus": "Completed",
+      "total_trips": 34,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recNIbhnXpFyCVaaX",
@@ -1022,8 +1250,11 @@
       "class_name": "Low Adult Amateur Training Jumper 40 & Over .90m II2d",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 14
+      "latestStatus": "Completed",
+      "total_trips": 14,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recIB6yu4S3jBAsfe",
@@ -1038,9 +1269,12 @@
       "class_number": 1114,
       "class_name": ".80m Training Jumper (Table II)",
       "class_type": null,
-      "latestStart": "10:30 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 50
+      "latestStart": "10:35 AM",
+      "latestStatus": "Completed",
+      "total_trips": 50,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec6uMss6x8MKSyLr",
@@ -1055,9 +1289,12 @@
       "class_number": 1117,
       "class_name": "Low Child/Adult Amateur Training Jumper .80m II2d",
       "class_type": null,
-      "latestStart": "10:30 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 43
+      "latestStart": "10:35 AM",
+      "latestStatus": "Completed",
+      "total_trips": 43,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recazOit9BBBq8PBW",
@@ -1074,7 +1311,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
-      "total_trips": 10
+      "total_trips": 10,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recpNt47nk1mBmnnX",
@@ -1091,7 +1331,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
-      "total_trips": 10
+      "total_trips": 10,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec5OwELro7deRsmW",
@@ -1108,7 +1351,10 @@
       "class_type": null,
       "latestStart": "9:05 AM",
       "latestStatus": null,
-      "total_trips": 9
+      "total_trips": 9,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recVMl8KY1uWF2nCW",
@@ -1125,7 +1371,16 @@
       "class_type": null,
       "latestStart": "9:15 AM",
       "latestStatus": "Underway",
-      "total_trips": 49
+      "total_trips": 49,
+      "rollup_entries": [
+        "200142641"
+      ],
+      "rollup_trips": [
+        "D87D921C2DD04224817B3CF913D7CC2B"
+      ],
+      "rollup_horses": [
+        "Pedro"
+      ]
     },
     {
       "record_id": "recfOjBmXtbVvYkfe",
@@ -1142,7 +1397,16 @@
       "class_type": null,
       "latestStart": "9:15 AM",
       "latestStatus": "Underway",
-      "total_trips": 39
+      "total_trips": 39,
+      "rollup_entries": [
+        "200142641"
+      ],
+      "rollup_trips": [
+        "21E50B0565664D0999151A640EEE15A4"
+      ],
+      "rollup_horses": [
+        "Pedro"
+      ]
     },
     {
       "record_id": "reco2knZv1dbiTbkM",
@@ -1159,7 +1423,10 @@
       "class_type": null,
       "latestStart": "9:15 AM",
       "latestStatus": "Underway",
-      "total_trips": 32
+      "total_trips": 32,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec1gAuHzyBJDJltS",
@@ -1176,7 +1443,10 @@
       "class_type": null,
       "latestStart": "9:15 AM",
       "latestStatus": "Underway",
-      "total_trips": 32
+      "total_trips": 32,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recyyv2BcOPfn4vcx",
@@ -1193,7 +1463,10 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": null,
-      "total_trips": 19
+      "total_trips": 19,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recmDC157MEJuL7Oa",
@@ -1209,8 +1482,11 @@
       "class_name": "USHJA Hunter 3' CALI @ 30+",
       "class_type": null,
       "latestStart": "8:15 AM",
-      "latestStatus": "Underway",
-      "total_trips": 31
+      "latestStatus": "Completed",
+      "total_trips": 31,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recdHU7rHiZZmKUqY",
@@ -1226,8 +1502,11 @@
       "class_name": "USHJA Hunter 3' CALI @ 30+",
       "class_type": null,
       "latestStart": "8:15 AM",
-      "latestStatus": "Underway",
-      "total_trips": 31
+      "latestStatus": "Completed",
+      "total_trips": 31,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recE7KyYfVD0F1wbH",
@@ -1243,8 +1522,11 @@
       "class_name": "$210 Take2 Thoroughbred Hunter",
       "class_type": null,
       "latestStart": "8:15 AM",
-      "latestStatus": "Underway",
-      "total_trips": 1
+      "latestStatus": "Completed",
+      "total_trips": 1,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "reciFwA6kQ3nsx2lO",
@@ -1260,8 +1542,11 @@
       "class_name": "$210 Take2 Thoroughbred Hunter",
       "class_type": null,
       "latestStart": "8:15 AM",
-      "latestStatus": "Underway",
-      "total_trips": 1
+      "latestStatus": "Completed",
+      "total_trips": 1,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rectGR1UtuFYdNWee",
@@ -1278,7 +1563,10 @@
       "class_type": null,
       "latestStart": "11:00 AM",
       "latestStatus": null,
-      "total_trips": 1
+      "total_trips": 1,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec6sM5fQf6aEQCdp",
@@ -1295,7 +1583,10 @@
       "class_type": null,
       "latestStart": "11:00 AM",
       "latestStatus": null,
-      "total_trips": 7
+      "total_trips": 7,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recir60wusW053LFw",
@@ -1311,8 +1602,11 @@
       "class_name": "USHJA Hunter 2'9\" (First Year Shown)",
       "class_type": null,
       "latestStart": "11:15 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 8
+      "latestStatus": "Completed",
+      "total_trips": 8,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recY7LIbRwLbLHbXC",
@@ -1328,8 +1622,11 @@
       "class_name": "USHJA Hunter 2'9\" (First Year Shown)",
       "class_type": null,
       "latestStart": "11:15 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 8
+      "latestStatus": "Completed",
+      "total_trips": 8,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recEoUhBnYBrTw2cP",
@@ -1346,7 +1643,10 @@
       "class_type": null,
       "latestStart": "12:15 PM",
       "latestStatus": null,
-      "total_trips": 11
+      "total_trips": 11,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "receAdW7HPBgHLSUG",
@@ -1361,9 +1661,12 @@
       "class_number": 4089,
       "class_name": "USHJA Hunter 2'9\"",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 21
+      "latestStart": "12:45 PM",
+      "latestStatus": "Underway",
+      "total_trips": 21,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recBQPqXWpXIWcKZ9",
@@ -1378,9 +1681,12 @@
       "class_number": 4090,
       "class_name": "USHJA Hunter 2'9\"",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 20
+      "latestStart": "12:45 PM",
+      "latestStatus": "Underway",
+      "total_trips": 20,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rechPLVCs6KUrpvtH",
@@ -1395,9 +1701,12 @@
       "class_number": 2753,
       "class_name": "Adult Amateur Hunter 2'9\"",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 10
+      "latestStart": "12:45 PM",
+      "latestStatus": "Underway",
+      "total_trips": 10,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recCURWgWIQoYmlZE",
@@ -1412,9 +1721,12 @@
       "class_number": 2754,
       "class_name": "Adult Amateur Hunter 2'9\"",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 10
+      "latestStart": "12:45 PM",
+      "latestStatus": "Underway",
+      "total_trips": 10,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recfeMioODsX5gPBt",
@@ -1431,7 +1743,10 @@
       "class_type": null,
       "latestStart": "3:00 PM",
       "latestStatus": null,
-      "total_trips": 4
+      "total_trips": 4,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recOzNNfXECfR0MMW",
@@ -1448,7 +1763,10 @@
       "class_type": null,
       "latestStart": "3:05 PM",
       "latestStatus": null,
-      "total_trips": 9
+      "total_trips": 9,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "reczXdi3GMaZByIML",
@@ -1463,9 +1781,12 @@
       "class_number": 3105,
       "class_name": "USHJA Hunter 2' Junior/Amateur",
       "class_type": null,
-      "latestStart": "3:20 PM",
+      "latestStart": "3:30 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 10
+      "total_trips": 10,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec5nKL7HR6PhXtFs",
@@ -1480,9 +1801,12 @@
       "class_number": 3106,
       "class_name": "USHJA Hunter 2' Junior/Amateur",
       "class_type": null,
-      "latestStart": "3:20 PM",
+      "latestStart": "3:30 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 10
+      "total_trips": 10,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recSsox5uDLj6ZOZX",
@@ -1497,9 +1821,12 @@
       "class_number": 4074,
       "class_name": "ESP Hunter 3'3\"",
       "class_type": null,
-      "latestStart": "8:06 AM",
-      "latestStatus": "Underway",
-      "total_trips": 24
+      "latestStart": "8:00 AM",
+      "latestStatus": "Completed",
+      "total_trips": 24,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec8CvusmDtPmPYRh",
@@ -1514,9 +1841,12 @@
       "class_number": 4075,
       "class_name": "ESP Hunter 3'3\"",
       "class_type": null,
-      "latestStart": "8:06 AM",
-      "latestStatus": "Underway",
-      "total_trips": 23
+      "latestStart": "8:00 AM",
+      "latestStatus": "Completed",
+      "total_trips": 23,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recc97Dacf22g6LA0",
@@ -1533,7 +1863,10 @@
       "class_type": null,
       "latestStart": "10:37 AM",
       "latestStatus": null,
-      "total_trips": 14
+      "total_trips": 14,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "receyNwip5FU0OWcD",
@@ -1548,9 +1881,12 @@
       "class_number": 2019,
       "class_name": "$630 Performance Hunter 3'3\"",
       "class_type": null,
-      "latestStart": "10:55 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 25
+      "latestStart": "11:10 AM",
+      "latestStatus": "Completed",
+      "total_trips": 25,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recgk4SYZe0KNaSr6",
@@ -1565,9 +1901,12 @@
       "class_number": 2020,
       "class_name": "$850 Performance Hunter 3'3\" Stake",
       "class_type": null,
-      "latestStart": "10:55 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 25
+      "latestStart": "11:10 AM",
+      "latestStatus": "Completed",
+      "total_trips": 25,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recaNlRW7FmnryTxf",
@@ -1584,7 +1923,10 @@
       "class_type": null,
       "latestStart": "1:20 PM",
       "latestStatus": null,
-      "total_trips": 0
+      "total_trips": 0,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec4aMtF5IAqEXbeG",
@@ -1601,7 +1943,10 @@
       "class_type": null,
       "latestStart": "1:30 PM",
       "latestStatus": null,
-      "total_trips": 9
+      "total_trips": 9,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recGw3UlJBB2Ak8ka",
@@ -1616,9 +1961,12 @@
       "class_number": 2129,
       "class_name": "USHJA Hunter 2'3\"",
       "class_type": null,
-      "latestStart": "1:40 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 12
+      "latestStart": "1:45 PM",
+      "latestStatus": "Underway",
+      "total_trips": 12,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recnxdoR3L4zwcpdB",
@@ -1633,9 +1981,12 @@
       "class_number": 2130,
       "class_name": "USHJA Hunter 2'3\"",
       "class_type": null,
-      "latestStart": "1:40 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 13
+      "latestStart": "1:45 PM",
+      "latestStatus": "Underway",
+      "total_trips": 13,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recmhDkcCu3vC4Yje",
@@ -1650,9 +2001,12 @@
       "class_number": 3124,
       "class_name": "USHJA Hunter 2' (First Year Shown)",
       "class_type": null,
-      "latestStart": "2:50 PM",
+      "latestStart": "2:40 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 5
+      "total_trips": 5,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recqzYCbUZYWlxiVq",
@@ -1667,9 +2021,12 @@
       "class_number": 3125,
       "class_name": "USHJA Hunter 2' (First Year Shown)",
       "class_type": null,
-      "latestStart": "2:50 PM",
+      "latestStart": "2:40 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 5
+      "total_trips": 5,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recy3PeeCqSnhJ8ne",
@@ -1684,9 +2041,12 @@
       "class_number": 2124,
       "class_name": "USHJA Hunter 2'",
       "class_type": null,
-      "latestStart": "2:50 PM",
+      "latestStart": "2:40 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 4
+      "total_trips": 4,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recQItJlv6cfMWlpK",
@@ -1701,9 +2061,12 @@
       "class_number": 2125,
       "class_name": "USHJA Hunter 2'",
       "class_type": null,
-      "latestStart": "2:50 PM",
+      "latestStart": "2:40 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 4
+      "total_trips": 4,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recjVzgtTwjSHGEkN",
@@ -1719,8 +2082,11 @@
       "class_name": "CSI2* $6,000 1.45m  Griffis Residential 220.2.1.1 (Speed)",
       "class_type": null,
       "latestStart": "10:00 AM",
-      "latestStatus": "Underway",
-      "total_trips": 18
+      "latestStatus": "Completed",
+      "total_trips": 18,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec6IKY3LjKcyhNDB",
@@ -1736,8 +2102,11 @@
       "class_name": "CSI4* $116,100 Adequan WEF Challenge Cup 221.4.3 (Top 12 Return)",
       "class_type": null,
       "latestStart": "12:00 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 22
+      "latestStatus": "Completed",
+      "total_trips": 22,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     }
   ]
 }
