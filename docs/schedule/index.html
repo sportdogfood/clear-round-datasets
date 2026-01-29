@@ -44,7 +44,7 @@
       overflow: hidden;
     }
 
-    /* Header */
+    /* Header ----------------------------------------------------- */
     .app-header{
       height: var(--header-h);
       flex-shrink: 0;
@@ -93,7 +93,7 @@
       text-overflow: ellipsis;
     }
 
-    /* Main content */
+    /* Main content ---------------------------------------------- */
     .app-main {
       flex: 1;
       overflow-y: auto;
@@ -103,7 +103,7 @@
 
     .list-column { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
 
-    /* Start logo */
+    /* Start logo ------------------------------------------------- */
     .start-logo {
       display: flex; flex-direction: column; align-items: center;
       gap: 8px; margin: 10px 0 18px;
@@ -111,7 +111,7 @@
     .start-logo-title { font-size: 18px; font-weight: 600; letter-spacing: 0.04em; text-align: center; }
     .start-logo-subtitle { font-size: 12px; color: #d1d5db; opacity: 0.9; }
 
-    /* Rows */
+    /* Rows ------------------------------------------------------- */
     .row {
       width: 100%;
       min-height: 46px;
@@ -139,7 +139,7 @@
     .row--tap { cursor: pointer; user-select: none; transition: transform 0.08s ease-out; }
     .row--tap:active { transform: translateY(1px) scale(0.995); }
 
-    /* Search */
+    /* Search ----------------------------------------------------- */
     .state-search { margin: 4px 2px 10px; }
     .state-search-input {
       width: 100%;
@@ -154,7 +154,7 @@
     }
     .state-search-input::placeholder { color: rgba(156, 163, 175, 0.95); }
 
-    /* Bottom nav */
+    /* Bottom nav ------------------------------------------------ */
     .app-nav {
       height: var(--nav-h);
       flex-shrink: 0;
@@ -196,6 +196,7 @@
       box-shadow: 0 0 0 1px #020617, 0 3px 10px rgba(15, 23, 42, 0.8);
     }
     .nav-btn:active { transform: translateY(1px) scale(0.98); }
+    a.nav-btn { color: inherit; }
 
     .nav-agg {
       min-width: 22px; padding: 2px 8px; border-radius: 999px;
@@ -205,7 +206,7 @@
     }
     .nav-agg--positive { border-color: #22c55e; background: #14532d; color: #f9fafb; }
 
-    /* Peak bar */
+    /* Peak bar --------------------------------------------------- */
     .peakbar {
       position: sticky;
       top: 0;
@@ -216,7 +217,7 @@
       margin: -8px 0 6px;
     }
 
-    /* Cards */
+    /* Cards ------------------------------------------------------ */
     .card {
       border-radius: 18px;
       border: 1px solid rgba(75, 85, 99, 0.9);
@@ -224,7 +225,7 @@
       overflow: hidden;
       box-shadow: 0 0 0 1px rgba(2, 6, 23, 0.9), 0 10px 24px rgba(0,0,0,0.45);
     }
-    .card--tap { cursor: pointer; user-select: none; transition: transform 0.08s ease-out; }
+    .card--tap { cursor: pointer; user-select: none; }
     .card--tap:active { transform: translateY(1px) scale(0.998); }
 
     .card-hdr{
@@ -259,19 +260,19 @@
     .c-name{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .c-agg{ justify-self: end; display: inline-flex; align-items: center; justify-content: center; }
 
-    /* Wrapped rollup grid */
-    .entry-rollup-grid{
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .entry-rollup{
+      display: flex;
       gap: 8px;
-      padding: 2px 0;
-      width: 100%;
+      padding: 8px 12px 10px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-top: 1px solid rgba(55,65,81,0.35);
     }
     .entry-chip{
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 6px 10px;
+      padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid rgba(75,85,99,0.75);
       background: rgba(2,6,23,0.55);
@@ -279,130 +280,187 @@
       font-size: 12px;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       box-shadow: 0 0 0 1px rgba(2,6,23,0.75);
-      width: 100%;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.08s ease-out;
     }
-    .entry-chip:active { transform: translateY(1px) scale(0.98); }
 
-    /* Timeline (dark theme + 60px horse col) */
+    /* Timeline (base) -------------------------------------- */
     .timeline-viewport{
       height: calc(100vh - var(--header-h) - var(--nav-h) - 24px);
       overflow:auto;
-      border:1px solid rgba(75,85,99,0.65);
+      border:1px solid var(--border);
       border-radius:12px;
-      background: radial-gradient(circle at top, #111827 0, #020617 70%);
-      color:#e5e7eb;
+      background:#fff;
+      color:#111;
     }
     .timeline-grid{position:relative;min-height:100%}
-
     .timeline-axis{
-      position:sticky;top:0;z-index:20;
+      position:sticky;top:0;z-index:10;
       display:flex;align-items:stretch;
-      background: rgba(2,6,23,0.92);
-      border-bottom:1px solid rgba(75,85,99,0.55);
+      background:#fff;border-bottom:1px solid var(--border);
       height:42px;
     }
     .timeline-axis-left{
-      position:sticky;left:0;z-index:22;
-      width:60px;min-width:60px;max-width:60px;
-      padding:10px 8px;
+      position:sticky;left:0;z-index:12;
+      width:180px;min-width:180px;
+      padding:10px 12px;
       font-weight:800;
-      background: rgba(2,6,23,0.92);
-      border-right:1px solid rgba(75,85,99,0.55);
-      color:#f9fafb;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      background:#fff;
+      border-right:1px solid var(--border);
+      color:#111;
     }
     .timeline-axis-right{position:relative;height:42px}
     .timeline-axis-cell{
       position:absolute;top:0;bottom:0;
-      border-left:1px solid rgba(75,85,99,0.35);
+      border-left:1px solid #eee;
       padding:10px 8px;
-      font-size:12px;color: rgba(203,213,225,0.9);
+      font-size:12px;color:#555;
       background:transparent;
       font-variant-numeric: tabular-nums;
       text-transform: uppercase;
       letter-spacing: 0.03em;
-      z-index:21;
     }
-
     .timeline-rows{position:relative}
-    .timeline-row{display:flex;min-height:54px;border-bottom:1px solid rgba(75,85,99,0.22)}
+    .timeline-row{display:flex;min-height:54px;border-bottom:1px solid #f0f0f0}
     .timeline-horse{
-      position:sticky;left:0;z-index:18;
-      width:60px;min-width:60px;max-width:60px;
-      padding:10px 8px;
-      background: rgba(2,6,23,0.92);
-      border-right:1px solid rgba(75,85,99,0.55);
+      position:sticky;left:0;z-index:9;
+      width:180px;min-width:180px;
+      padding:10px 12px;
+      background:#fff;border-right:1px solid var(--border);
       cursor:pointer;
-      color:#f9fafb;
     }
-    .timeline-horse-name{
-      font-weight:800;font-size:12px;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis
-    }
+    .timeline-horse-name{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .timeline-lane{position:relative}
-
     .timeline-card{
-      position:absolute;top:8px;height:44px;
-      border:1px solid rgba(75,85,99,0.65);
-      border-radius:12px;
-      background: rgba(17,24,39,0.92);
+      position:absolute;top:8px;height:38px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fafafa;
       padding:6px 8px;
       cursor:pointer;
       overflow:hidden;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.35);
-      color:#f9fafb;
+    }
+    .timeline-card-top{display:flex;justify-content:space-between;gap:10px}
+    .timeline-card-class{font-weight:900;font-size:12px}
+    .timeline-card-ring{font-weight:700;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-card-mid{display:flex;gap:10px;margin-top:2px;font-size:11px;color:#555}
+    .timeline-card-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    /* Added (discussed): wrapped rollup grid + 4-col detail lines + timeline updates */
+    .entry-rollup-grid{
+      display: grid;
+      grid-template-columns: repeat(3, max-content);
+      gap: 8px;
+      align-content: start;
+      justify-content: start;
+    }
+    .entry-rollup-grid .entry-chip{
+      max-width: 100%;
+    }
+
+    .card-line4{
+      display:grid;
+      grid-template-columns: 72px 56px 1fr 56px;
+      gap:10px;
+      align-items:center;
+      padding: 8px 12px;
+      border-top: 1px solid rgba(55,65,81,0.45);
+      font-size: 13px;
+      color: #e5e7eb;
+    }
+    .card-line4:first-child{ border-top: none; }
+    .c4-a{ font-variant-numeric: tabular-nums; color: rgba(209,213,219,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .c4-b{ font-variant-numeric: tabular-nums; color: rgba(209,213,219,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .c4-c{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .c4-d{ justify-self: end; display:inline-flex; align-items:center; justify-content:flex-end; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; min-width:0; }
+
+    .timeline-axis{ z-index: 30; }
+    .timeline-axis-left{ z-index: 32; }
+    .timeline-horse{ z-index: 20; }
+    .timeline-card{ z-index: 1; }
+
+    .timeline-axis-left,
+    .timeline-horse{
+      width:60px;
+      min-width:60px;
+      padding:10px 8px;
+    }
+
+    .timeline-card{
+      height:auto;
+      padding:6px 8px;
     }
     .timeline-card-row{
       display:grid;
-      grid-template-columns: 34px 1fr 10px 44px;
+      grid-template-columns: 52px 1fr 28px 46px;
       gap:8px;
       align-items:center;
-      line-height: 1.1;
+      line-height: 1.05;
     }
+    .timeline-card-row + .timeline-card-row{ margin-top: 4px; }
+
     .timeline-cell{
-      font-size:11px;
-      white-space: nowrap;
-      overflow: hidden;
+      display:block;
+      overflow:hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
       font-variant-numeric: tabular-nums;
     }
-    .timeline-cell--num{ font-weight:900; }
-    .timeline-cell--name{ font-weight:700; color: rgba(226,232,240,0.92); }
-    .timeline-cell--st{ text-align:right; font-weight:800; color: rgba(203,213,225,0.95); }
+    .timeline-cell--num{ font-weight: 900; }
+    .timeline-cell--name{ font-weight: 800; }
+    .timeline-cell--st{ text-transform: uppercase; letter-spacing: 0.03em; font-weight: 900; text-align:right; }
+    .timeline-cell--time{ color: rgba(203,213,225,0.9); font-weight: 800; }
+    .timeline-cell--ring{ color: rgba(203,213,225,0.9); font-weight: 800; }
+    .timeline-cell--go{ color: rgba(203,213,225,0.9); font-weight: 800; text-align:left; }
+    .timeline-cell--oog{ color: rgba(203,213,225,0.9); font-weight: 900; text-align:right; }
 
-    .timeline-cell--time{ font-weight:800; color: rgba(203,213,225,0.95); }
-    .timeline-cell--ring{ color: rgba(203,213,225,0.85); }
-    .timeline-cell--go{ color: rgba(203,213,225,0.85); }
-    .timeline-cell--oog{ text-align:right; font-weight:900; color: rgba(226,232,240,0.95); }
-
-    /* App.js expects these classes/ids to exist */
-    #screen-root{ min-height: 1px; }
+    .timeline-viewport{
+      background: radial-gradient(circle at top, #111827 0, #020617 70%);
+      color:#e5e7eb;
+      border:1px solid rgba(75,85,99,0.65);
+    }
+    .timeline-axis{
+      background: rgba(2,6,23,0.92);
+      border-bottom:1px solid rgba(75,85,99,0.55);
+    }
+    .timeline-axis-left{
+      background: rgba(2,6,23,0.92);
+      color:#f9fafb;
+      border-right:1px solid rgba(75,85,99,0.55);
+    }
+    .timeline-axis-cell{
+      border-left:1px solid rgba(75,85,99,0.35);
+      color: rgba(203,213,225,0.9);
+    }
+    .timeline-row{ border-bottom:1px solid rgba(75,85,99,0.22); }
+    .timeline-horse{
+      background: rgba(2,6,23,0.92);
+      border-right:1px solid rgba(75,85,99,0.55);
+      color:#f9fafb;
+    }
+    .timeline-card{
+      background: rgba(17,24,39,0.92);
+      border:1px solid rgba(75,85,99,0.65);
+      color:#f9fafb;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+    }
   </style>
 </head>
 
 <body>
   <div class="app">
     <header class="app-header">
-      <button class="header-back" id="header-back" type="button" aria-label="Back">
+      <button class="header-back" id="header-back" type="button">
         <span>&larr;</span>
       </button>
       <h1 class="header-title" id="header-title">Start</h1>
-      <button id="header-action" type="button" hidden>Action</button>
+      <div class="header-spacer" aria-hidden="true"></div>
     </header>
 
     <main class="app-main" id="app-main">
-      <div id="screen-root"></div>
+      <div id="screen-root" class="list-column"></div>
     </main>
 
-    <nav class="app-nav" aria-label="Primary">
+    <nav class="app-nav">
       <div class="nav-scroller">
         <div class="nav-row" id="nav-row">
           <button class="nav-btn" type="button" data-screen="start">
@@ -414,19 +472,17 @@
             <span class="nav-agg" data-nav-agg="horses">0</span>
           </button>
 
-          <button class="nav-btn" type="button" data-screen="schedule">
-            <span class="nav-label">Schedule</span>
-            <span class="nav-agg" data-nav-agg="rings">0</span>
-          </button>
-
           <button class="nav-btn" type="button" data-screen="riders">
             <span class="nav-label">Riders</span>
             <span class="nav-agg" data-nav-agg="riders">0</span>
           </button>
 
+          <button class="nav-btn" type="button" data-screen="schedule">
+            <span class="nav-label">Schedule</span>
+          </button>
+
           <button class="nav-btn" type="button" data-screen="timeline">
             <span class="nav-label">Timeline</span>
-            <span class="nav-agg" data-nav-agg="classes">0</span>
           </button>
         </div>
       </div>

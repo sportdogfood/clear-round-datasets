@@ -4,14 +4,17 @@
 //   ./data/latest/watch_schedule.json (context scaffold)
 //   ./data/latest/watch_trips.json    (truth overlay)
 //
-// This drop implements the detail rules discussed:
-// - Global "next upcoming" selection (Completed-insensitive, earliest by latestStart else latestGO, tie: lastOOG, tie: ring_number)
-// - Horse detail renders like Schedule, but rollups are RIDERS (wrapped grid)
-// - Class detail renders like Schedule, but rollup replaced by ENTRY + RIDER line blocks
-// - Rider detail renders like Schedule, but rollup replaced by ENTRY + RIDER line blocks
-// - Horse/Rider list rows show next time tag + count tag
-// - Keeps existing schedule click rules + peakbar scroll offset + schedule-tab retention from schedule-origin details
-// - Timeline stays 60px horse col + de-dupe by startMin
+// Fixes in this drop:
+// 1) Schedule click rules kept: class line -> class detail, horse -> horse detail, time -> timeline (#timeline)
+// 2) Peakbar hash scroll offset increased so ring headers land BELOW peakbar
+// 3) Bottom-nav “Schedule” stays active even when you open horse/rider detail FROM schedule
+// 4) Schedule rollups are now WRAPPED grid (3 across) instead of horizontal scroller
+// 5) Timeline gutter/horse column reduced to 60px + ellipsis; timeline cards de-dupe by same startMin
+//
+// Spec implemented:
+// - Horse detail: schedule-style card scoped to horse; group rows + class rows + rider chips rollup
+// - Class detail: schedule-style ring card scoped to class; entry blocks (2-line) per entry
+// - Rider detail: same as class detail but scoped to rider; grouped by group/class; entry blocks
 
 (function () {
   'use strict';
@@ -122,7 +125,7 @@
   function setHeader(title) {
     if (headerTitle) headerTitle.textContent = title || '';
     if (headerBack) headerBack.style.visibility = state.history.length ? 'visible' : 'hidden';
-    if (headerAction) headerAction.hidden = true; // ✅ always hidden
+    if (headerAction) headerAction.hidden = true;
   }
 
   function setNavActive(primaryScreen) {
@@ -149,12 +152,11 @@
     const s0 = String(t).trim();
     if (!s0) return null;
 
-    // "9:05A" / "9:05AM" / "9:05 AM"
     let m = s0.match(/^(\d{1,2}):(\d{2})\s*([AaPp])\s*([Mm])?$/);
     if (m) {
       let hh = parseInt(m[1], 10);
       const mm = parseInt(m[2], 10);
-      const ap = m[3].toUpperCase(); // A or P
+      const ap = m[3].toUpperCase();
       if (ap === 'A') {
         if (hh === 12) hh = 0;
       } else {
@@ -163,7 +165,6 @@
       return hh * 60 + mm;
     }
 
-    // "HH:mm:ss" / "HH:mm"
     m = s0.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
     if (m) {
       const hh = parseInt(m[1], 10);
@@ -221,65 +222,6 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  function isCompletedStatus(v) {
-    return normalizeStr(v) === 'completed';
-  }
-
-  // "Next upcoming" ordering:
-  // - upcoming if latestStatus !== "Completed" (case-insensitive)
-  // - sort key: latestStart (if present) else latestGO
-  // - tie: lastOOG asc
-  // - tie: ring_number asc
-  function nextKeyMinutes(trip) {
-    const hasStart = trip && trip.latestStart != null && String(trip.latestStart).trim() !== '';
-    const t = hasStart ? trip.latestStart : (trip ? trip.latestGO : null);
-    return timeToMinutes(t) ?? 999999;
-  }
-
-  function nextTieOOG(trip) {
-    return safeNum(trip && trip.lastOOG, 999999);
-  }
-
-  function nextTieRing(trip) {
-    return safeNum(trip && trip.ring_number, 999999);
-  }
-
-  function chooseNextTrip(tripsList) {
-    if (!tripsList || tripsList.length === 0) return null;
-
-    const upcoming = [];
-    const all = [];
-
-    for (const t of tripsList) {
-      if (!t) continue;
-      all.push(t);
-      if (!isCompletedStatus(t.latestStatus)) upcoming.push(t);
-    }
-
-    function pick(list) {
-      let best = null;
-      let bestK = 999999;
-      let bestO = 999999;
-      let bestR = 999999;
-
-      for (const t of list) {
-        const k = nextKeyMinutes(t);
-        const o = nextTieOOG(t);
-        const r = nextTieRing(t);
-
-        if (!best) { best = t; bestK = k; bestO = o; bestR = r; continue; }
-
-        if (k < bestK) { best = t; bestK = k; bestO = o; bestR = r; continue; }
-        if (k === bestK && o < bestO) { best = t; bestK = k; bestO = o; bestR = r; continue; }
-        if (k === bestK && o === bestO && r < bestR) { best = t; bestK = k; bestO = o; bestR = r; continue; }
-      }
-
-      return best;
-    }
-
-    return pick(upcoming.length ? upcoming : all);
-  }
-
   function roundUpTo5Minutes(d) {
     const ms = 5 * 60 * 1000;
     return new Date(Math.ceil(d.getTime() / ms) * ms);
@@ -290,14 +232,14 @@
     if (mins == null) return null;
     const hh = Math.floor(mins / 60);
     const mm = mins % 60;
-    return new Date(`${dt}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+    return new Date(`${dt}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00`);
   }
 
   function parseTripStartEnd(trip, opts) {
     const dt = (opts && opts.dt) ? opts.dt : (trip && trip.dt) ? String(trip.dt) : state.meta.dt;
 
-    const startLabel = (trip && (trip.latestGO || trip.latestStart || trip.estimated_start_time))
-      ? String(trip.latestGO || trip.latestStart || trip.estimated_start_time).trim()
+    const startLabel = (trip && (trip.latestStart || trip.latestGO || trip.estimated_start_time))
+      ? String(trip.latestStart || trip.latestGO || trip.estimated_start_time).trim()
       : '';
     if (!dt || !startLabel) return { start: null, end: null };
 
@@ -381,14 +323,14 @@
     render();
   }
 
-  setInterval(() => { loadAll().catch(() => { }); }, REFRESH_MS);
+  setInterval(() => { loadAll().catch(() => {}); }, REFRESH_MS);
 
   // ----------------------------
   // INDEXES (schedule scaffold + trips truth)
   // ----------------------------
   function buildScheduleIndex() {
-    const ringMap = new Map();   // ring_number string -> { ring_number, ringName, groups: Map }
-    const classMap = new Map();  // class_id string -> scheduleRec (first)
+    const ringMap = new Map();
+    const classMap = new Map();
 
     for (const r of (state.schedule || [])) {
       if (!r) continue;
@@ -436,22 +378,38 @@
     return { ringMap, classMap };
   }
 
-  // Truth index:
-  // - entryKey = `${class_id}|${horseName}` (dedupe per horse per class)
-  // - entryTrips: all trip records for that entryKey
-  // - entryNext: chosen by global next-upcoming rule
-  function buildTruthIndex() {
-    const entryTrips = new Map(); // entryKey -> trips[]
-    const entryNext = new Map();  // entryKey -> chosen trip
+  function pickBestTrip(tripsList) {
+    if (!tripsList || tripsList.length === 0) return null;
 
-    const byHorse = new Map();    // horseName -> entryKeys[]
-    const byRing = new Map();     // ring_number string -> entryKeys[]
-    const byGroup = new Map();    // class_group_id string -> entryKeys[]
-    const byClass = new Map();    // class_id string -> entryKeys[]
-    const byRider = new Map();    // riderName -> entryKeys[]
+    let best = null;
+    let bestT = 999999;
+    let bestO = 999999;
+
+    for (const t of tripsList) {
+      const goM = timeToMinutes(t && (t.latestGO || t.latestStart)) ?? 999999;
+      const oog = (t && t.lastOOG != null) ? safeNum(t.lastOOG, 999999) : 999999;
+
+      if (!best) {
+        best = t; bestT = goM; bestO = oog;
+        continue;
+      }
+
+      if (goM < bestT) { best = t; bestT = goM; bestO = oog; continue; }
+      if (goM === bestT && oog < bestO) { best = t; bestT = goM; bestO = oog; continue; }
+    }
+
+    return best;
+  }
+
+  function buildTruthIndex() {
+    const byEntryKey = new Map();
+    const byHorse = new Map();
+    const byRing = new Map();
+    const byGroup = new Map();
+    const byClass = new Map();
+    const byRider = new Map();
 
     function pushKey(map, k, entryKey) {
-      if (!k) return;
       if (!map.has(k)) map.set(k, []);
       map.get(k).push(entryKey);
     }
@@ -459,30 +417,29 @@
     for (const t of (state.trips || [])) {
       if (!t) continue;
 
-      const horse = t.horseName ? String(t.horseName).trim() : '';
+      const horse = t.horseName ? String(t.horseName) : null;
       const cid = t.class_id != null ? String(t.class_id) : null;
       if (!horse || !cid) continue;
 
       const entryKey = `${cid}|${horse}`;
 
-      if (!entryTrips.has(entryKey)) entryTrips.set(entryKey, []);
-      entryTrips.get(entryKey).push(t);
+      if (!byEntryKey.has(entryKey)) byEntryKey.set(entryKey, []);
+      byEntryKey.get(entryKey).push(t);
 
       pushKey(byHorse, horse, entryKey);
-      pushKey(byClass, cid, entryKey);
-
       if (t.ring_number != null) pushKey(byRing, String(t.ring_number), entryKey);
       if (t.class_group_id != null) pushKey(byGroup, String(t.class_group_id), entryKey);
+      pushKey(byClass, cid, entryKey);
 
       if (t.riderName) pushKey(byRider, String(t.riderName), entryKey);
     }
 
-    // choose next per entryKey
-    for (const [k, list] of entryTrips.entries()) {
-      entryNext.set(k, chooseNextTrip(list));
+    const entryBest = new Map();
+    for (const [k, list] of byEntryKey.entries()) {
+      entryBest.set(k, pickBestTrip(list));
     }
 
-    function uniq(arr) {
+    function uniqKeys(arr) {
       const out = [];
       const seen = new Set();
       for (const k of (arr || [])) {
@@ -491,13 +448,13 @@
       return out;
     }
 
-    for (const [k, arr] of byHorse.entries()) byHorse.set(k, uniq(arr));
-    for (const [k, arr] of byRing.entries()) byRing.set(k, uniq(arr));
-    for (const [k, arr] of byGroup.entries()) byGroup.set(k, uniq(arr));
-    for (const [k, arr] of byClass.entries()) byClass.set(k, uniq(arr));
-    for (const [k, arr] of byRider.entries()) byRider.set(k, uniq(arr));
+    for (const [k, arr] of byHorse.entries()) byHorse.set(k, uniqKeys(arr));
+    for (const [k, arr] of byRing.entries()) byRing.set(k, uniqKeys(arr));
+    for (const [k, arr] of byGroup.entries()) byGroup.set(k, uniqKeys(arr));
+    for (const [k, arr] of byClass.entries()) byClass.set(k, uniqKeys(arr));
+    for (const [k, arr] of byRider.entries()) byRider.set(k, uniqKeys(arr));
 
-    return { entryTrips, entryNext, byHorse, byRing, byGroup, byClass, byRider };
+    return { byEntryKey, entryBest, byHorse, byRing, byGroup, byClass, byRider };
   }
 
   // ----------------------------
@@ -507,19 +464,6 @@
     const t = el('div', 'row-tag row-tag--count', String(n));
     if (Number(n) > 0) t.classList.add('row-tag--positive');
     return t;
-  }
-
-  function makeTagText(txt) {
-    return el('div', 'row-tag row-tag--count', String(txt || '').trim());
-  }
-
-  function makeRightTags(...nodes) {
-    const wrap = el('div', null);
-    wrap.style.display = 'inline-flex';
-    wrap.style.gap = '6px';
-    wrap.style.alignItems = 'center';
-    nodes.filter(Boolean).forEach(n => wrap.appendChild(n));
-    return wrap;
   }
 
   function renderSearch(screenKey, placeholder) {
@@ -588,8 +532,6 @@
     return card;
   }
 
-  // Split-click line:
-  // handlers: { onLeft, onMid, onRight, onRow }
   function addCardLine(card, leftTxt, midTxt, rightNode, handlers) {
     const body = card.querySelector('.card-body');
     const line = el('div', 'card-line');
@@ -622,9 +564,51 @@
     body.appendChild(line);
   }
 
-  // ✅ wrapped 3-across rollup grid (click chip => detail)
-  function addChipRollup(card, chips, onChipClick) {
-    if (!chips || chips.length === 0) return;
+  function addCardLine4(card, aTxt, bTxt, cTxt, dNodeOrTxt, handlers) {
+    const body = card.querySelector('.card-body');
+    const line = el('div', 'card-line4');
+
+    const a = el('div', 'c4-a', aTxt || '');
+    const b = el('div', 'c4-b', bTxt || '');
+    const c = el('div', 'c4-c', cTxt || '');
+    const d = el('div', 'c4-d');
+
+    if (dNodeOrTxt && typeof dNodeOrTxt === 'object' && dNodeOrTxt.nodeType) {
+      d.appendChild(dNodeOrTxt);
+    } else if (dNodeOrTxt != null) {
+      d.textContent = String(dNodeOrTxt);
+    }
+
+    if (handlers && handlers.onA) {
+      a.style.cursor = 'pointer';
+      a.addEventListener('click', (e) => { e.stopPropagation(); handlers.onA(); });
+    }
+    if (handlers && handlers.onB) {
+      b.style.cursor = 'pointer';
+      b.addEventListener('click', (e) => { e.stopPropagation(); handlers.onB(); });
+    }
+    if (handlers && handlers.onC) {
+      c.style.cursor = 'pointer';
+      c.addEventListener('click', (e) => { e.stopPropagation(); handlers.onC(); });
+    }
+    if (handlers && handlers.onD) {
+      d.style.cursor = 'pointer';
+      d.addEventListener('click', (e) => { e.stopPropagation(); handlers.onD(); });
+    }
+    if (handlers && handlers.onRow) {
+      line.style.cursor = 'pointer';
+      line.addEventListener('click', () => handlers.onRow());
+    }
+
+    line.appendChild(a);
+    line.appendChild(b);
+    line.appendChild(c);
+    line.appendChild(d);
+    body.appendChild(line);
+  }
+
+  function addEntryRollup(card, bestTrips, onChipClick) {
+    if (!bestTrips || bestTrips.length === 0) return;
 
     const body = card.querySelector('.card-body');
     const line = el('div', 'card-line');
@@ -634,17 +618,12 @@
     const mid = el('div', 'c-name');
     const roll = el('div', 'entry-rollup-grid');
 
-    chips.forEach((txt) => {
-      const label = String(txt || '').trim();
-      if (!label) return;
+    bestTrips.forEach((t) => {
+      const label = (typeof onChipClick === 'function')
+        ? onChipClick(t, roll, card)
+        : null;
 
-      const chip = el('button', { className: 'entry-chip', type: 'button', text: label });
-      chip.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (onChipClick) onChipClick(label);
-      });
-
-      roll.appendChild(chip);
+      if (label === null) return;
     });
 
     if (!roll.childNodes.length) return;
@@ -655,16 +634,65 @@
     body.appendChild(line);
   }
 
-  function entryKeyHorse(entryKey) {
-    const parts = String(entryKey || '').split('|');
-    return parts.length > 1 ? parts.slice(1).join('|') : '';
+  function addHorseChipsRollup(card, trips) {
+    if (!trips || trips.length === 0) return;
+
+    const sorted = trips.slice().sort((a, b) => {
+      const oa = safeNum(a.lastOOG, 999999);
+      const ob = safeNum(b.lastOOG, 999999);
+      if (oa !== ob) return oa - ob;
+      return String(a.horseName || '').localeCompare(String(b.horseName || ''));
+    });
+
+    addEntryRollup(card, sorted, (t, roll) => {
+      const horse = (t && t.horseName) ? String(t.horseName).trim() : '';
+      const oog = (t && t.lastOOG != null && String(t.lastOOG).trim() !== '') ? String(t.lastOOG).trim() : '';
+      if (!horse || !oog) return null;
+
+      const chip = el('button', { className: 'entry-chip', type: 'button', text: `${horse} - ${oog}` });
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pushDetail('horseDetail', { kind: 'horse', key: horse });
+      });
+
+      roll.appendChild(chip);
+      return '';
+    });
   }
 
-  function getNextForEntryKeys(tIdx, entryKeys) {
-    const trips = (entryKeys || [])
-      .map(k => tIdx.entryNext.get(k))
-      .filter(Boolean);
-    return chooseNextTrip(trips);
+  function addRiderChipsRollup(card, trips) {
+    if (!trips || trips.length === 0) return;
+
+    const bestByRider = new Map();
+    for (const t of trips) {
+      const rn = t && t.riderName ? String(t.riderName).trim() : '';
+      if (!rn) continue;
+      const oog = safeNum(t.lastOOG, 999999);
+      if (!bestByRider.has(rn) || oog < bestByRider.get(rn).oog) {
+        bestByRider.set(rn, { riderName: rn, oog: oog, raw: t });
+      }
+    }
+
+    const list = [...bestByRider.values()].sort((a, b) => {
+      if (a.oog !== b.oog) return a.oog - b.oog;
+      return String(a.riderName).localeCompare(String(b.riderName));
+    });
+
+    addEntryRollup(card, list, (it, roll) => {
+      const riderName = it && it.riderName ? String(it.riderName).trim() : '';
+      if (!riderName) return null;
+      const oogTxt = (Number.isFinite(it.oog) && it.oog !== 999999) ? String(it.oog) : '';
+      const chipTxt = oogTxt ? `${riderName} - ${oogTxt}` : riderName;
+
+      const chip = el('button', { className: 'entry-chip', type: 'button', text: chipTxt });
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pushDetail('riderDetail', { kind: 'rider', key: riderName });
+      });
+
+      roll.appendChild(chip);
+      return '';
+    });
   }
 
   // ----------------------------
@@ -677,7 +705,6 @@
     render();
   }
 
-  // ✅ preserve originating primary tab for details opened from schedule
   function pushDetail(screen, detail) {
     const fromPrimary = getPrimaryForScreen(state.screen);
     const d = Object.assign({}, detail || {}, { _fromPrimary: fromPrimary });
@@ -736,8 +763,6 @@
   // ----------------------------
   function renderAggs(_sIdx, tIdx) {
     setAgg('horses', tIdx.byHorse.size);
-    setAgg('rings', tIdx.byRing.size);
-    setAgg('classes', tIdx.byGroup.size);
     setAgg('riders', tIdx.byRider.size);
   }
 
@@ -769,7 +794,7 @@
     btn.appendChild(el('div', 'row-tag row-tag--count', 'GO'));
     btn.addEventListener('click', async () => {
       if (!state.loaded) {
-        try { await loadAll(); } catch (_) { }
+        try { await loadAll(); } catch (_) {}
       }
       goto('schedule');
     });
@@ -795,19 +820,11 @@
       const keys = tIdx.byHorse.get(String(h)) || [];
       if (keys.length === 0) continue;
 
-      const next = getNextForEntryKeys(tIdx, keys);
-      const nextTime = next ? fmtTimeShort(next.latestGO || next.latestStart || '') : '';
-
       const row = el('div', 'row row--tap');
       row.id = `horse-${idify(h)}`;
 
       row.appendChild(el('div', 'row-title', String(h)));
-
-      const right = makeRightTags(
-        nextTime ? makeTagText(nextTime) : null,
-        makeTagCount(keys.length)
-      );
-      row.appendChild(right);
+      row.appendChild(makeTagCount(keys.length));
 
       row.addEventListener('click', () => {
         pushDetail('horseDetail', { kind: 'horse', key: String(h) });
@@ -817,148 +834,138 @@
     }
   }
 
-  // Horse detail: Schedule-like, but rollups are RIDERS (wrapped grid).
+  function findGroupInSchedule(sIdx, gid) {
+    const gidStr = String(gid);
+    for (const r of sIdx.ringMap.values()) {
+      if (r.groups.has(gidStr)) {
+        return { ring: r, group: r.groups.get(gidStr) };
+      }
+    }
+    return null;
+  }
+
+  function findClassInSchedule(sIdx, classId) {
+    const cidStr = String(classId);
+    for (const r of sIdx.ringMap.values()) {
+      for (const g of r.groups.values()) {
+        if (g.classes.has(cidStr)) {
+          return { ring: r, group: g, cls: g.classes.get(cidStr) };
+        }
+      }
+    }
+    return null;
+  }
+
   function renderHorseDetail(sIdx, tIdx) {
     const horse = state.detail && state.detail.key ? String(state.detail.key) : null;
 
     clearRoot();
     setHeader(horse || 'Horse');
+
     if (!horse) return;
 
     const entryKeys = (tIdx.byHorse.get(horse) || []).slice();
     if (!entryKeys.length) return;
 
-    // ring buckets
-    const ringBuckets = new Map(); // rk -> entryKeys[]
-    for (const k of entryKeys) {
-      const t = tIdx.entryNext.get(k);
-      const rk = (t && t.ring_number != null) ? String(t.ring_number) : '—';
-      if (!ringBuckets.has(rk)) ringBuckets.set(rk, []);
-      ringBuckets.get(rk).push(k);
+    const bestTrips = entryKeys
+      .map(k => tIdx.entryBest.get(k))
+      .filter(Boolean);
+
+    const card = makeCard(horse, entryKeys.length, true, null);
+    card.id = 'detail-card';
+    card.dataset.detail = 'horse';
+
+    const groupsMap = new Map();
+    const classMap = new Map();
+
+    for (const t of bestTrips) {
+      const gid = t && t.class_group_id != null ? String(t.class_group_id) : null;
+      const cid = t && t.class_id != null ? String(t.class_id) : null;
+      if (gid) {
+        if (!groupsMap.has(gid)) {
+          const sg = findGroupInSchedule(sIdx, gid);
+          groupsMap.set(gid, sg ? sg.group : {
+            class_group_id: gid,
+            group_name: (t.group_name || t.class_name || '(Group)'),
+            latestStart: t.latestStart || null,
+            latestStatus: t.latestStatus || null,
+            classes: new Map()
+          });
+        }
+      }
+      if (cid) {
+        if (!classMap.has(cid)) {
+          const sc = findClassInSchedule(sIdx, cid);
+          classMap.set(cid, sc ? sc.cls : {
+            class_id: cid,
+            class_number: t.class_number,
+            class_name: t.class_name || '(Class)',
+            latestStart: t.latestStart || null,
+            latestStatus: t.latestStatus || null
+          });
+        }
+      }
     }
 
-    const ringOrder = [...ringBuckets.keys()].sort((a, b) => {
-      const na = safeNum(a, 999999);
-      const nb = safeNum(b, 999999);
-      return na - nb;
+    const groups = [...groupsMap.values()].sort((a, b) => {
+      const ta = timeToMinutes(a.latestStart) ?? 999999;
+      const tb = timeToMinutes(b.latestStart) ?? 999999;
+      if (ta !== tb) return ta - tb;
+      return String(a.group_name || '').localeCompare(String(b.group_name || ''));
     });
 
-    for (const rk of ringOrder) {
-      const ringObj = sIdx.ringMap.get(rk);
-      const ringName = ringObj ? ringObj.ringName : (rk === '—' ? 'Ring' : `Ring ${rk}`);
+    for (const g of groups) {
+      const gid = String(g.class_group_id);
 
-      const keysInRing = ringBuckets.get(rk) || [];
-      const card = makeCard(ringName, keysInRing.length, true, () => {
-        if (rk !== '—') pushDetail('ringDetail', { kind: 'ring', key: rk });
-      });
-      card.id = `horse-ring-${rk === '—' ? 'x' : rk}`;
-
-      if (!ringObj) {
-        // No scaffold for this ring: show entry blocks only
-        const trips = keysInRing.map(k => tIdx.entryNext.get(k)).filter(Boolean).sort((a, b) => {
-          const ka = nextKeyMinutes(a);
-          const kb = nextKeyMinutes(b);
-          if (ka !== kb) return ka - kb;
-          const oa = nextTieOOG(a);
-          const ob = nextTieOOG(b);
-          if (oa !== ob) return oa - ob;
-          return nextTieRing(a) - nextTieRing(b);
-        });
-
-        for (const t of trips) {
-          const entryLineLeft = fmtTimeShort(t.latestGO || t.latestStart || '');
-          const entryLineMid = `${t.class_number != null ? t.class_number : ''} • ${t.class_name || ''}`.trim();
-          const right = fmtStatus4(t.latestStatus);
-
-          addCardLine(card, entryLineLeft, entryLineMid, right ? makeTagText(right) : null, {
-            onLeft: () => gotoTimeline(),
-            onMid: () => { if (t.class_id != null) pushDetail('classDetail', { kind: 'class', key: String(t.class_id) }); }
-          });
-
-          if (t.riderName) {
-            addCardLine(card, '', String(t.riderName), (t.lastOOG != null ? makeTagText(String(t.lastOOG)) : null), {
-              onMid: () => pushDetail('riderDetail', { kind: 'rider', key: String(t.riderName) })
-            });
-          }
+      addCardLine(
+        card,
+        fmtTimeShort(g.latestStart || ''),
+        String(g.group_name || ''),
+        (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
+        {
+          onLeft: () => gotoTimeline(),
+          onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
         }
+      );
 
-        screenRoot.appendChild(card);
-        continue;
+      const classIdsForGroup = new Map();
+      for (const k of entryKeys) {
+        const t = tIdx.entryBest.get(k);
+        if (!t) continue;
+        if (t.class_group_id == null) continue;
+        if (String(t.class_group_id) !== gid) continue;
+        if (t.class_id == null) continue;
+        const cid = String(t.class_id);
+        if (!classIdsForGroup.has(cid)) classIdsForGroup.set(cid, 0);
+        classIdsForGroup.set(cid, classIdsForGroup.get(cid) + 1);
       }
 
-      // For each scaffold group in this ring, render only if horse has entries in that group
-      const groups = [...ringObj.groups.values()].sort((a, b) => {
-        const ta = timeToMinutes(a.latestStart) ?? 999999;
-        const tb = timeToMinutes(b.latestStart) ?? 999999;
-        if (ta !== tb) return ta - tb;
-        return String(a.group_name).localeCompare(String(b.group_name));
-      });
-
-      for (const g of groups) {
-        const gid = String(g.class_group_id);
-
-        // entryKeys for this horse in this group
-        const inGroup = keysInRing.filter((k) => {
-          const t = tIdx.entryNext.get(k);
-          return t && t.class_group_id != null && String(t.class_group_id) === gid;
+      const clsList = [...classIdsForGroup.entries()]
+        .map(([cid, cnt]) => {
+          const c = classMap.get(cid);
+          return { cid, cnt, c };
+        })
+        .sort((a, b) => {
+          const na = (a.c && a.c.class_number != null) ? Number(a.c.class_number) : 999999;
+          const nb = (b.c && b.c.class_number != null) ? Number(b.c.class_number) : 999999;
+          if (na !== nb) return na - nb;
+          return String((a.c && a.c.class_name) || '').localeCompare(String((b.c && b.c.class_name) || ''));
         });
-        if (!inGroup.length) continue;
 
-        const gNext = getNextForEntryKeys(tIdx, inGroup);
-        const gLeft = gNext ? fmtTimeShort(gNext.latestGO || gNext.latestStart || g.latestStart || '') : fmtTimeShort(g.latestStart || '');
-        const gStatus = fmtStatus4((gNext && gNext.latestStatus) || g.latestStatus);
-
+      for (const it of clsList) {
+        const c = it.c || {};
         addCardLine(
           card,
-          gLeft,
-          String(g.group_name),
-          gStatus ? makeTagText(gStatus) : null,
-          {
-            onLeft: () => gotoTimeline(),
-            onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
-          }
+          (c.class_number != null ? String(c.class_number) : ''),
+          String(c.class_name || ''),
+          makeTagCount(it.cnt),
+          { onRow: () => pushDetail('classDetail', { kind: 'class', key: String(it.cid) }) }
         );
-
-        const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
-        for (const c of classes) {
-          const cid = String(c.class_id);
-
-          const inClass = inGroup.filter((k) => {
-            const t = tIdx.entryNext.get(k);
-            return t && t.class_id != null && String(t.class_id) === cid;
-          });
-          if (!inClass.length) continue;
-
-          addCardLine(
-            card,
-            (c.class_number != null ? String(c.class_number) : ''),
-            String(c.class_name || '').trim(),
-            makeTagCount(inClass.length),
-            { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
-          );
-
-          // Rider rollup chips for this horse+class (may be 1, but handle multiple)
-          const riders = inClass
-            .map(k => tIdx.entryNext.get(k))
-            .filter(Boolean)
-            .map(t => {
-              const rn = t.riderName ? String(t.riderName).trim() : '';
-              const oog = (t.lastOOG != null && String(t.lastOOG).trim() !== '') ? String(t.lastOOG).trim() : '';
-              if (!rn) return '';
-              return oog ? `${rn} - ${oog}` : rn;
-            })
-            .filter(Boolean)
-            .sort((a, b) => String(a).localeCompare(String(b)));
-
-          addChipRollup(card, riders, (label) => {
-            const name = String(label).split(' - ')[0].trim();
-            if (name) pushDetail('riderDetail', { kind: 'rider', key: name });
-          });
-        }
       }
-
-      screenRoot.appendChild(card);
     }
+
+    addRiderChipsRollup(card, bestTrips);
+    screenRoot.appendChild(card);
   }
 
   // ----------------------------
@@ -1016,7 +1023,7 @@
           card,
           fmtTimeShort(g.latestStart || ''),
           String(g.group_name),
-          (fmtStatus4(g.latestStatus) ? makeTagText(fmtStatus4(g.latestStatus)) : null),
+          (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
           {
             onLeft: () => gotoTimeline(),
             onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
@@ -1038,30 +1045,17 @@
           );
 
           const bestTrips = cKeys
-            .map(k => tIdx.entryNext.get(k))
+            .map(k => tIdx.entryBest.get(k))
             .filter(Boolean)
             .sort((a, b) => {
-              const ka = nextKeyMinutes(a);
-              const kb = nextKeyMinutes(b);
-              if (ka !== kb) return ka - kb;
-              const oa = nextTieOOG(a);
-              const ob = nextTieOOG(b);
+              const oa = safeNum(a.lastOOG, 999999);
+              const ob = safeNum(b.lastOOG, 999999);
               if (oa !== ob) return oa - ob;
-              return nextTieRing(a) - nextTieRing(b);
+              return String(a.horseName || '').localeCompare(String(b.horseName || ''));
             })
-            .slice(0, 14)
-            .map(t => {
-              const horse = (t && t.horseName) ? String(t.horseName).trim() : '';
-              const oog = (t && t.lastOOG != null && String(t.lastOOG).trim() !== '') ? String(t.lastOOG).trim() : '';
-              if (!horse || !oog) return '';
-              return `${horse} - ${oog}`;
-            })
-            .filter(Boolean);
+            .slice(0, 14);
 
-          addChipRollup(card, bestTrips, (label) => {
-            const horse = String(label).split(' - ')[0].trim();
-            if (horse) pushDetail('horseDetail', { kind: 'horse', key: horse });
-          });
+          addHorseChipsRollup(card, bestTrips);
         }
       }
 
@@ -1103,7 +1097,7 @@
         card,
         fmtTimeShort(g.latestStart || ''),
         String(g.group_name),
-        (fmtStatus4(g.latestStatus) ? makeTagText(fmtStatus4(g.latestStatus)) : null),
+        (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
         {
           onLeft: () => gotoTimeline(),
           onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
@@ -1124,31 +1118,18 @@
           { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
         );
 
-        const chips = cKeys
-          .map(k => tIdx.entryNext.get(k))
+        const bestTrips = cKeys
+          .map(k => tIdx.entryBest.get(k))
           .filter(Boolean)
           .sort((a, b) => {
-            const ka = nextKeyMinutes(a);
-            const kb = nextKeyMinutes(b);
-            if (ka !== kb) return ka - kb;
-            const oa = nextTieOOG(a);
-            const ob = nextTieOOG(b);
+            const oa = safeNum(a.lastOOG, 999999);
+            const ob = safeNum(b.lastOOG, 999999);
             if (oa !== ob) return oa - ob;
-            return nextTieRing(a) - nextTieRing(b);
+            return String(a.horseName || '').localeCompare(String(b.horseName || ''));
           })
-          .slice(0, 20)
-          .map(t => {
-            const horse = (t && t.horseName) ? String(t.horseName).trim() : '';
-            const oog = (t && t.lastOOG != null && String(t.lastOOG).trim() !== '') ? String(t.lastOOG).trim() : '';
-            if (!horse || !oog) return '';
-            return `${horse} - ${oog}`;
-          })
-          .filter(Boolean);
+          .slice(0, 20);
 
-        addChipRollup(card, chips, (label) => {
-          const horse = String(label).split(' - ')[0].trim();
-          if (horse) pushDetail('horseDetail', { kind: 'horse', key: horse });
-        });
+        addHorseChipsRollup(card, bestTrips);
       }
     }
 
@@ -1190,31 +1171,18 @@
         { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
       );
 
-      const chips = cKeys
-        .map(k => tIdx.entryNext.get(k))
+      const bestTrips = cKeys
+        .map(k => tIdx.entryBest.get(k))
         .filter(Boolean)
         .sort((a, b) => {
-          const ka = nextKeyMinutes(a);
-          const kb = nextKeyMinutes(b);
-          if (ka !== kb) return ka - kb;
-          const oa = nextTieOOG(a);
-          const ob = nextTieOOG(b);
+          const oa = safeNum(a.lastOOG, 999999);
+          const ob = safeNum(b.lastOOG, 999999);
           if (oa !== ob) return oa - ob;
-          return nextTieRing(a) - nextTieRing(b);
+          return String(a.horseName || '').localeCompare(String(b.horseName || ''));
         })
-        .slice(0, 20)
-        .map(t => {
-          const horse = (t && t.horseName) ? String(t.horseName).trim() : '';
-          const oog = (t && t.lastOOG != null && String(t.lastOOG).trim() !== '') ? String(t.lastOOG).trim() : '';
-          if (!horse || !oog) return '';
-          return `${horse} - ${oog}`;
-        })
-        .filter(Boolean);
+        .slice(0, 20);
 
-      addChipRollup(card, chips, (label) => {
-        const horse = String(label).split(' - ')[0].trim();
-        if (horse) pushDetail('horseDetail', { kind: 'horse', key: horse });
-      });
+      addHorseChipsRollup(card, bestTrips);
     }
 
     screenRoot.appendChild(card);
@@ -1237,19 +1205,10 @@
       if (keys.length === 0) continue;
       if (q && !normalizeStr(name).includes(q)) continue;
 
-      const next = getNextForEntryKeys(tIdx, keys);
-      const nextTime = next ? fmtTimeShort(next.latestGO || next.latestStart || '') : '';
-
       const row = el('div', 'row row--tap');
       row.id = `rider-${idify(name)}`;
       row.appendChild(el('div', 'row-title', String(name)));
-
-      const right = makeRightTags(
-        nextTime ? makeTagText(nextTime) : null,
-        makeTagCount(keys.length)
-      );
-      row.appendChild(right);
-
+      row.appendChild(makeTagCount(keys.length));
       row.addEventListener('click', () => {
         pushDetail('riderDetail', { kind: 'rider', key: String(name) });
       });
@@ -1257,156 +1216,133 @@
     }
   }
 
-  // Rider detail: Schedule-like, but under each class show ENTRY + RIDER line blocks (no rollup chips).
   function renderRiderDetail(sIdx, tIdx) {
     const rider = state.detail && state.detail.key ? String(state.detail.key) : null;
     clearRoot();
     setHeader(rider || 'Rider');
+
     if (!rider) return;
 
-    const entryKeys = (tIdx.byRider.get(rider) || []).slice();
-    if (!entryKeys.length) return;
+    const keys = tIdx.byRider.get(rider) || [];
+    if (keys.length === 0) return;
 
-    // ring buckets
-    const ringBuckets = new Map();
-    for (const k of entryKeys) {
-      const t = tIdx.entryNext.get(k);
-      const rk = (t && t.ring_number != null) ? String(t.ring_number) : '—';
-      if (!ringBuckets.has(rk)) ringBuckets.set(rk, []);
-      ringBuckets.get(rk).push(k);
+    const bestTrips = keys
+      .map(k => tIdx.entryBest.get(k))
+      .filter(Boolean);
+
+    const card = makeCard(rider, keys.length, true, null);
+    card.id = 'detail-card';
+    card.dataset.detail = 'rider';
+
+    const byGroup = new Map();
+    for (const t of bestTrips) {
+      const gid = (t && t.class_group_id != null) ? String(t.class_group_id) : '';
+      const cid = (t && t.class_id != null) ? String(t.class_id) : '';
+      if (!gid || !cid) continue;
+      if (!byGroup.has(gid)) byGroup.set(gid, new Map());
+      const byClass = byGroup.get(gid);
+      if (!byClass.has(cid)) byClass.set(cid, []);
+      byClass.get(cid).push(t);
     }
 
-    const ringOrder = [...ringBuckets.keys()].sort((a, b) => safeNum(a, 999999) - safeNum(b, 999999));
-
-    for (const rk of ringOrder) {
-      const ringObj = sIdx.ringMap.get(rk);
-      const ringName = ringObj ? ringObj.ringName : (rk === '—' ? 'Ring' : `Ring ${rk}`);
-
-      const keysInRing = ringBuckets.get(rk) || [];
-      const card = makeCard(ringName, keysInRing.length, true, () => {
-        if (rk !== '—') pushDetail('ringDetail', { kind: 'ring', key: rk });
-      });
-      card.id = `rider-ring-${rk === '—' ? 'x' : rk}`;
-
-      if (!ringObj) {
-        // No scaffold: just entry blocks
-        const trips = keysInRing.map(k => tIdx.entryNext.get(k)).filter(Boolean).sort((a, b) => {
-          const ka = nextKeyMinutes(a);
-          const kb = nextKeyMinutes(b);
-          if (ka !== kb) return ka - kb;
-          const oa = nextTieOOG(a);
-          const ob = nextTieOOG(b);
-          if (oa !== ob) return oa - ob;
-          return nextTieRing(a) - nextTieRing(b);
-        });
-
-        for (const t of trips) {
-          addEntryBlock(card, t, { showRiderLine: true, riderName: rider });
-        }
-
-        screenRoot.appendChild(card);
-        continue;
-      }
-
-      const groups = [...ringObj.groups.values()].sort((a, b) => {
-        const ta = timeToMinutes(a.latestStart) ?? 999999;
-        const tb = timeToMinutes(b.latestStart) ?? 999999;
-        if (ta !== tb) return ta - tb;
-        return String(a.group_name).localeCompare(String(b.group_name));
-      });
-
-      for (const g of groups) {
-        const gid = String(g.class_group_id);
-
-        const inGroup = keysInRing.filter((k) => {
-          const t = tIdx.entryNext.get(k);
-          return t && t.class_group_id != null && String(t.class_group_id) === gid;
-        });
-        if (!inGroup.length) continue;
-
-        const gNext = getNextForEntryKeys(tIdx, inGroup);
-        const gLeft = gNext ? fmtTimeShort(gNext.latestGO || gNext.latestStart || g.latestStart || '') : fmtTimeShort(g.latestStart || '');
-        const gStatus = fmtStatus4((gNext && gNext.latestStatus) || g.latestStatus);
-
-        addCardLine(card, gLeft, String(g.group_name), gStatus ? makeTagText(gStatus) : null, {
-          onLeft: () => gotoTimeline(),
-          onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
-        });
-
-        const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
-        for (const c of classes) {
-          const cid = String(c.class_id);
-
-          const inClass = inGroup.filter((k) => {
-            const t = tIdx.entryNext.get(k);
-            return t && t.class_id != null && String(t.class_id) === cid;
-          });
-          if (!inClass.length) continue;
-
-          addCardLine(
-            card,
-            (c.class_number != null ? String(c.class_number) : ''),
-            String(c.class_name || '').trim(),
-            makeTagCount(inClass.length),
-            { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
-          );
-
-          // entry blocks
-          const trips = inClass
-            .map(k => tIdx.entryNext.get(k))
-            .filter(Boolean)
-            .sort((a, b) => {
-              const ka = nextKeyMinutes(a);
-              const kb = nextKeyMinutes(b);
-              if (ka !== kb) return ka - kb;
-              const oa = nextTieOOG(a);
-              const ob = nextTieOOG(b);
-              if (oa !== ob) return oa - ob;
-              return nextTieRing(a) - nextTieRing(b);
-            });
-
-          for (const t of trips) {
-            addEntryBlock(card, t, { showRiderLine: true, riderName: rider });
-          }
-        }
-      }
-
-      screenRoot.appendChild(card);
-    }
-  }
-
-  // ----------------------------
-  // ENTRY BLOCKS (for Class/Rider details)
-  // ----------------------------
-  function addEntryBlock(card, trip, opts) {
-    if (!trip) return;
-
-    // Entry row: time | horse • rider | status4
-    const timeTxt = fmtTimeShort(trip.latestGO || trip.latestStart || '');
-    const horse = (trip.horseName != null) ? String(trip.horseName).trim() : '';
-    const rider = (trip.riderName != null) ? String(trip.riderName).trim() : '';
-    const status4 = fmtStatus4(trip.latestStatus);
-
-    const mid = `${horse}${(horse && rider) ? ' • ' : ''}${rider}`.trim();
-
-    addCardLine(card, timeTxt, mid, status4 ? makeTagText(status4) : null, {
-      onLeft: () => gotoTimeline(),
-      onMid: () => { if (horse) pushDetail('horseDetail', { kind: 'horse', key: horse }); },
-      onRight: () => { if (trip.class_id != null) pushDetail('classDetail', { kind: 'class', key: String(trip.class_id) }); }
+    const groupOrder = [...byGroup.keys()].sort((a, b) => {
+      const ga = findGroupInSchedule(sIdx, a);
+      const gb = findGroupInSchedule(sIdx, b);
+      const ta = timeToMinutes(ga && ga.group && ga.group.latestStart) ?? 999999;
+      const tb = timeToMinutes(gb && gb.group && gb.group.latestStart) ?? 999999;
+      if (ta !== tb) return ta - tb;
+      return String((ga && ga.group && ga.group.group_name) || '').localeCompare(String((gb && gb.group && gb.group.group_name) || ''));
     });
 
-    if (opts && opts.showRiderLine) {
-      const rn = (opts.riderName || rider || '').trim();
-      if (rn) {
-        const tag = (trip.backNumber != null && String(trip.backNumber).trim() !== '')
-          ? makeTagText(String(trip.backNumber).trim())
-          : (trip.lastOOG != null && String(trip.lastOOG).trim() !== '') ? makeTagText(String(trip.lastOOG).trim()) : null;
+    for (const gid of groupOrder) {
+      const sg = findGroupInSchedule(sIdx, gid);
+      const gObj = sg ? sg.group : null;
 
-        addCardLine(card, '', rn, tag, {
-          onMid: () => pushDetail('riderDetail', { kind: 'rider', key: rn })
+      const gTitle = gObj ? String(gObj.group_name || '') : 'Group';
+      const gTime = gObj ? fmtTimeShort(gObj.latestStart || '') : '';
+      const gStatus = gObj ? fmtStatus4(gObj.latestStatus) : '';
+
+      addCardLine(
+        card,
+        gTime,
+        gTitle,
+        (gStatus ? el('div', 'row-tag row-tag--count', gStatus) : null),
+        {
+          onLeft: () => gotoTimeline(),
+          onMid: () => pushDetail('groupDetail', { kind: 'group', key: String(gid) })
+        }
+      );
+
+      const byClass = byGroup.get(gid);
+      const classIds = [...byClass.keys()].sort((a, b) => {
+        const ca = findClassInSchedule(sIdx, a);
+        const cb = findClassInSchedule(sIdx, b);
+        const na = (ca && ca.cls && ca.cls.class_number != null) ? Number(ca.cls.class_number) : 999999;
+        const nb = (cb && cb.cls && cb.cls.class_number != null) ? Number(cb.cls.class_number) : 999999;
+        if (na !== nb) return na - nb;
+        return String((ca && ca.cls && ca.cls.class_name) || '').localeCompare(String((cb && cb.cls && cb.cls.class_name) || ''));
+      });
+
+      for (const cid of classIds) {
+        const sc = findClassInSchedule(sIdx, cid);
+        const ringName = sc ? sc.ring.ringName : '';
+        const clsNum = sc && sc.cls && sc.cls.class_number != null ? String(sc.cls.class_number) : '';
+        const clsName = sc && sc.cls && sc.cls.class_name ? String(sc.cls.class_name) : '';
+        const agg = (byClass.get(cid) || []).length;
+
+        addCardLine(
+          card,
+          clsNum,
+          clsName,
+          makeTagCount(agg),
+          { onRow: () => pushDetail('classDetail', { kind: 'class', key: String(cid) }) }
+        );
+
+        const entries = (byClass.get(cid) || []).slice().sort((a, b) => {
+          const ga = timeToMinutes(a.latestGO) ?? 999999;
+          const gbm = timeToMinutes(b.latestGO) ?? 999999;
+          if (ga !== gbm) return ga - gbm;
+          return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
         });
+
+        for (const t of entries) {
+          const col1 = fmtTimeShort(t.latestGO || t.latestStart || '');
+          const col2 = (t.lastOOG != null ? String(t.lastOOG) : '');
+          const col3 = String(t.horseName || '');
+          const col4 = fmtStatus4(t.latestStatus);
+
+          addCardLine4(
+            card,
+            col1,
+            col2,
+            col3,
+            col4,
+            {
+              onA: () => gotoTimeline(),
+              onC: () => pushDetail('horseDetail', { kind: 'horse', key: String(t.horseName || '') })
+            }
+          );
+
+          const riderLine = String(t.riderName || rider);
+          const team = t.teamName ? String(t.teamName) : '';
+          const riderTxt = team ? `${riderLine} • ${team}` : riderLine;
+          const backNum = (t.backNumber != null && String(t.backNumber).trim() !== '') ? String(t.backNumber).trim() : '';
+
+          addCardLine4(
+            card,
+            '',
+            '',
+            riderTxt,
+            backNum,
+            {
+              onC: () => pushDetail('riderDetail', { kind: 'rider', key: riderLine })
+            }
+          );
+        }
       }
     }
+
+    screenRoot.appendChild(card);
   }
 
   // ----------------------------
@@ -1419,49 +1355,87 @@
 
     if (!classId) return;
 
-    const schedRec = sIdx.classMap.get(classId);
-
-    const ringLabel = schedRec && schedRec.ringName ? String(schedRec.ringName) : '';
-    const groupLabel = schedRec && schedRec.group_name ? String(schedRec.group_name) : '';
-    const classNum = schedRec && schedRec.class_number != null ? String(schedRec.class_number) : '';
-    const className = schedRec && schedRec.class_name ? String(schedRec.class_name) : `Class ${classId}`;
-
     const cKeys = tIdx.byClass.get(classId) || [];
     if (cKeys.length === 0) return;
 
-    const title = `${classNum ? classNum + ' • ' : ''}${className}`.trim();
+    const sc = findClassInSchedule(sIdx, classId);
+    const ringName = sc ? sc.ring.ringName : '';
+    const groupName = sc ? (sc.group.group_name || '') : '';
+    const clsNum = sc && sc.cls && sc.cls.class_number != null ? String(sc.cls.class_number) : '';
+    const clsName = sc && sc.cls && sc.cls.class_name ? String(sc.cls.class_name) : '';
+
+    const title = (ringName && groupName)
+      ? `${ringName} • ${groupName}`
+      : (sc && sc.cls && sc.cls.class_name ? String(sc.cls.class_name) : `Class ${classId}`);
+
     const card = makeCard(title, cKeys.length, true, null);
     card.id = 'detail-card';
     card.dataset.detail = 'class';
 
-    // Add a schedule-like "context" line (ring/group)
-    const ctx = `${ringLabel}${(ringLabel && groupLabel) ? ' • ' : ''}${groupLabel}`.trim();
-    if (ctx) {
-      addCardLine(card, '', ctx, null, {
-        onMid: () => {
-          const rk = (schedRec && schedRec.ring_number != null) ? String(schedRec.ring_number) : null;
-          if (rk) pushDetail('ringDetail', { kind: 'ring', key: rk });
+    if (sc && sc.group) {
+      addCardLine(
+        card,
+        fmtTimeShort(sc.group.latestStart || ''),
+        String(sc.group.group_name || ''),
+        (fmtStatus4(sc.group.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(sc.group.latestStatus)) : null),
+        {
+          onLeft: () => gotoTimeline(),
+          onMid: () => pushDetail('groupDetail', { kind: 'group', key: String(sc.group.class_group_id) })
         }
-      });
+      );
     }
 
-    // Entries sorted by next-upcoming
-    const trips = cKeys
-      .map(k => tIdx.entryNext.get(k))
+    addCardLine(
+      card,
+      clsNum,
+      clsName,
+      makeTagCount(cKeys.length),
+      {}
+    );
+
+    const bestTrips = cKeys
+      .map(k => tIdx.entryBest.get(k))
       .filter(Boolean)
       .sort((a, b) => {
-        const ka = nextKeyMinutes(a);
-        const kb = nextKeyMinutes(b);
-        if (ka !== kb) return ka - kb;
-        const oa = nextTieOOG(a);
-        const ob = nextTieOOG(b);
-        if (oa !== ob) return oa - ob;
-        return nextTieRing(a) - nextTieRing(b);
+        const ga = timeToMinutes(a.latestGO) ?? 999999;
+        const gb = timeToMinutes(b.latestGO) ?? 999999;
+        if (ga !== gb) return ga - gb;
+        return safeNum(a.lastOOG, 999999) - safeNum(b.lastOOG, 999999);
       });
 
-    // Replace rollup with ENTRY + RIDER line blocks
-    for (const t of trips) {
-      addEntryBlock(card, t, { showRiderLine: true });
+    for (const t of bestTrips) {
+      const col1 = fmtTimeShort(t.latestGO || t.latestStart || '');
+      const col2 = (t.lastOOG != null ? String(t.lastOOG) : '');
+      const col3 = String(t.horseName || '');
+      const col4 = fmtStatus4(t.latestStatus);
+
+      addCardLine4(
+        card,
+        col1,
+        col2,
+        col3,
+        col4,
+        {
+          onA: () => gotoTimeline(),
+          onC: () => pushDetail('horseDetail', { kind: 'horse', key: String(t.horseName || '') })
+        }
+      );
+
+      const riderLine = String(t.riderName || '');
+      const team = t.teamName ? String(t.teamName) : '';
+      const riderTxt = team ? `${riderLine} • ${team}` : riderLine;
+      const backNum = (t.backNumber != null && String(t.backNumber).trim() !== '') ? String(t.backNumber).trim() : '';
+
+      addCardLine4(
+        card,
+        '',
+        '',
+        riderTxt,
+        backNum,
+        {
+          onC: () => pushDetail('riderDetail', { kind: 'rider', key: riderLine })
+        }
+      );
     }
 
     screenRoot.appendChild(card);
@@ -1474,7 +1448,6 @@
     clearRoot();
     setHeader('Timeline');
 
-    // timeline anchor hook
     const anchor = el('div', { id: 'timeline' });
     screenRoot.appendChild(anchor);
 
@@ -1490,7 +1463,6 @@
 
     const PX_PER_MIN = 4;
 
-    // ✅ horse column max 60px
     const GUTTER_PX = 60;
 
     const root = el('div', 'screen');
@@ -1538,7 +1510,7 @@
       lane.style.width = `${dayWidth}px`;
 
       const cards = entryKeys
-        .map((k) => tIdx.entryNext.get(k))
+        .map((k) => tIdx.entryBest.get(k))
         .filter(Boolean)
         .map((it) => {
           const t = parseTripStartEnd(it, { dt });
@@ -1551,12 +1523,23 @@
           const endMin = Math.min(DAY_END_MIN, Math.max(startMin + 5, en));
 
           if (endMin <= DAY_START_MIN || startMin >= DAY_END_MIN) return null;
-          return { it, startMin, endMin };
+
+          const goMin = timeToMinutes(it.latestGO) ?? 999999;
+          const oog = safeNum(it.lastOOG, 999999);
+          const cn = (it.class_number != null) ? Number(it.class_number) : 999999;
+          const cname = String(it.class_name || '');
+
+          return { it, startMin, endMin, goMin, oog, cn, cname };
         })
         .filter(Boolean)
-        .sort((a, b) => (a.startMin - b.startMin) || (safeNum(a.it.lastOOG, 999999) - safeNum(b.it.lastOOG, 999999)));
+        .sort((a, b) => {
+          if (a.startMin !== b.startMin) return a.startMin - b.startMin;
+          if (a.goMin !== b.goMin) return a.goMin - b.goMin;
+          if (a.oog !== b.oog) return a.oog - b.oog;
+          if (a.cn !== b.cn) return a.cn - b.cn;
+          return a.cname.localeCompare(b.cname);
+        });
 
-      // ✅ de-dupe: only first card if same startMin
       const seenStart = new Set();
       cards.forEach(({ it, startMin, endMin }) => {
         if (seenStart.has(startMin)) return;
@@ -1566,7 +1549,6 @@
         c.style.left = `${(startMin - DAY_START_MIN) * PX_PER_MIN}px`;
         c.style.width = `${Math.max(120, (endMin - startMin) * PX_PER_MIN)}px`;
 
-        // compact grid-like content
         const r1 = el('div', 'timeline-card-row');
         r1.appendChild(el('span', 'timeline-cell timeline-cell--num', (it.class_number != null ? String(it.class_number) : '—')));
         r1.appendChild(el('span', 'timeline-cell timeline-cell--name', String(it.class_name || '').trim()));
@@ -1668,6 +1650,6 @@
   // ----------------------------
   // BOOT
   // ----------------------------
-  loadAll().catch(() => { });
+  loadAll().catch(() => {});
   render();
 })();
