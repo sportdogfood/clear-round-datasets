@@ -89,9 +89,7 @@
       '<button class="nav-btn" type="button" data-screen="start"><span class="nav-label">Start</span></button>',
       '<button class="nav-btn" type="button" data-screen="horses"><span class="nav-label">Horses</span><span class="nav-agg" data-nav-agg="horses">0</span></button>',
       '<button class="nav-btn" type="button" data-screen="riders"><span class="nav-label">Riders</span><span class="nav-agg" data-nav-agg="riders">0</span></button>',
-      '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span></button>',
-      '<button class="nav-btn" type="button" data-screen="timeline"><span class="nav-label">Timeline</span></button>'
-    ].join('');
+      '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span></button>',    ].join('');
 
     navScroller.appendChild(navRowEl);
     nav.appendChild(navScroller);
@@ -168,7 +166,6 @@
       classes: '',
       riders: '',
       schedule: '',
-      timeline: ''
     },
 
     filter: {
@@ -712,7 +709,7 @@
   // ----------------------------
   // FILTERBOTTOM (time buckets) — detail + timeline screens
   // ----------------------------
-  const BUCKET_FILTER_SCREENS = new Set(['timeline', 'horseDetail', 'riderDetail', 'classDetail']);
+  const BUCKET_FILTER_SCREENS = new Set(['horseDetail','riderDetail','classDetail']);
 
   function getTripStartMinutes(t) {
     if (!t) return null;
@@ -1012,16 +1009,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     render();
   }
 
-  function gotoTimeline() {
-    history.replaceState(null, '', '#timeline');
-    state.pendingScrollId = null;
-    state.history = [];
-    state.detail = null;
-    state.screen = 'timeline';
-    render();
-    if (appMain) appMain.scrollTop = 0;
-  }
-
   function getPrimaryForScreen(screen) {
     if (screen && /Detail$/.test(screen) && state.detail && state.detail._fromPrimary) {
       return state.detail._fromPrimary;
@@ -1041,8 +1028,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
       riders: 'riders',
       riderDetail: 'riders',
-
-      timeline: 'timeline'
     };
     return map[screen] || 'start';
   }
@@ -1897,7 +1882,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(g.group_name),
         (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
         {
-          onLeft: () => gotoTimeline(),
           onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
         }
       );
@@ -2127,8 +2111,6 @@ const sIdx = buildScheduleIndex();
     if (state.screen === 'start') return renderStart();
     if (state.screen === 'horses') return renderHorses(sIdx, tIdx);
     if (state.screen === 'schedule' || state.screen === 'rings') return renderSchedule(sIdx, tIdx);
-    if (state.screen === 'timeline') return renderTimeline(sIdx, tIdx);
-
     if (state.screen === 'ringDetail') return renderRingDetail(sIdx, tIdx);
     if (state.screen === 'groupDetail') return renderGroupDetail(sIdx, tIdx);
     if (state.screen === 'classDetail') return renderClassDetail(sIdx, tIdx);
