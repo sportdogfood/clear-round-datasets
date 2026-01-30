@@ -1527,6 +1527,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     const qRing = normalizeStr(state.search.rings);
     const horseFilter = state.filter && state.filter.horse ? String(state.filter.horse) : null;
+    const canClassNav = true; // schedule allows class nav
+
 
     // ----------------------------
     // Build hierarchy from watch_trips (flat -> dimensions)
