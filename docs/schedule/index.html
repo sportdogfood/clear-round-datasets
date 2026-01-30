@@ -503,7 +503,36 @@
     .group-wrap.tint-C{ border-left: 3px solid rgba(16,185,129,0.6); }
     .group-wrap.tint-S{ border-left: 3px solid rgba(59,130,246,0.6); }
     .group-wrap.tint-L{ border-left: 3px solid rgba(245,158,11,0.65); }
-</style>
+
+    /* Auto-hide header/nav on scroll (toggled by app.js) ---------- */
+    .app-header,
+    .app-nav{
+      transform: translateY(0);
+      transition: transform 160ms ease, height 160ms ease, opacity 120ms ease;
+      will-change: transform, height;
+    }
+
+    .app.hide-header .app-header{
+      height: 0 !important;
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--header-h)));
+      border-bottom: 0;
+      padding: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .app.hide-nav .app-nav{
+      height: 0 !important;
+      opacity: 0;
+      transform: translateY(var(--nav-h));
+      border-top: 0;
+      padding: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+  </style>
 </head>
 
 <body>
