@@ -443,52 +443,35 @@
       color:#f9fafb;
       box-shadow: 0 8px 18px rgba(0,0,0,0.35);
     }
-  </style>
+  
+
+    /* Chrome collapse states (added) */
+    .app-header, .app-nav{
+      overflow: hidden;
+      transition: height 180ms ease, padding 180ms ease, opacity 180ms ease, border-color 180ms ease;
+      will-change: height, opacity;
+    }
+    .app.hide-header .app-header{
+      height: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      border-bottom-color: transparent !important;
+      opacity: 0;
+    }
+    .app.hide-nav .app-nav{
+      height: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      border-top-color: transparent !important;
+      opacity: 0;
+    }
+
+</style>
 </head>
 
+
 <body>
-  <div class="app">
-    <header class="app-header">
-      <button class="header-back" id="header-back" type="button">
-        <span>&larr;</span>
-      </button>
-      <h1 class="header-title" id="header-title">Start</h1>
-      <div class="header-spacer" aria-hidden="true"></div>
-    </header>
-
-    <main class="app-main" id="app-main">
-      <div id="screen-root" class="list-column"></div>
-    </main>
-
-    <nav class="app-nav">
-      <div class="nav-scroller">
-        <div class="nav-row" id="nav-row">
-          <button class="nav-btn" type="button" data-screen="start">
-            <span class="nav-label">Start</span>
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="horses">
-            <span class="nav-label">Horses</span>
-            <span class="nav-agg" data-nav-agg="horses">0</span>
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="riders">
-            <span class="nav-label">Riders</span>
-            <span class="nav-agg" data-nav-agg="riders">0</span>
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="schedule">
-            <span class="nav-label">Schedule</span>
-          </button>
-
-          <button class="nav-btn" type="button" data-screen="timeline">
-            <span class="nav-label">Timeline</span>
-          </button>
-        </div>
-      </div>
-    </nav>
-  </div>
-
+  <div id="app" class="app"></div>
   <script src="app.js"></script>
 </body>
 </html>

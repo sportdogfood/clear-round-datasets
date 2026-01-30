@@ -35,7 +35,7 @@
     let appEl, appMain, screenRoot, headerTitle, headerBack, headerAction, navRow;
 
   function mountShell() {
-    const mount = document.getElementById('app');
+    const mount = document.getElementById('app') || document.querySelector('.app');
     if (!mount) throw new Error('Missing #app mount');
 
     // Clear (idempotent)
