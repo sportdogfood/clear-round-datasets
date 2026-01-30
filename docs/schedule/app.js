@@ -1299,7 +1299,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       screenRoot.appendChild(renderPeakBar(peakItems));
     }
 
-    const ringContainer = el('div', 'rings');
+    const ringContainer = el('div', 'list-column');
+    ringContainer.dataset.kind = 'ringContainer';
 
     // Local helpers (matching schedule layout)
     let stripe = 0;
@@ -1308,32 +1309,37 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     const canHorseNav = state.screen !== 'horseDetail';
     const canRiderNav = state.screen !== 'riderDetail';
 
-    function addLine4(parent, a, b, cNode, dNode, rowCls, altCls, onRow) {
-      const line = el('div', 'row4 ' + (rowCls || '') + (altCls ? (' ' + altCls) : ''));
-      const cA = el('div', 'c a', a || '');
-      const cB = el('div', 'c b', b || '');
-      const cC = el('div', 'c c');
-      const cD = el('div', 'c d');
+    function addLine4(parent, a, b, cNode, dNode, rowCls, extraCls, onClick) {
+      const line = el(
+        'div',
+        'card-line4' +
+          (rowCls ? (' ' + rowCls) : '') +
+          (extraCls ? (' ' + extraCls) : '')
+      );
+
+      const cA = el('div', 'c4-a', a || '');
+      const cB = el('div', 'c4-b', b || '');
+      const cC = el('div', 'c4-c');
+      const cD = el('div', 'c4-d');
+
       if (cNode) cC.appendChild(cNode);
-      if (dNode != null) {
-        if (typeof dNode === 'string') cD.textContent = dNode;
-        else cD.appendChild(dNode);
-      }
+      if (typeof dNode === 'string') cD.textContent = dNode;
+      else if (dNode) cD.appendChild(dNode);
+
       line.appendChild(cA);
       line.appendChild(cB);
       line.appendChild(cC);
       line.appendChild(cD);
 
-      if (onRow) {
-        line.classList.add('tap');
+      if (onClick) {
+        line.style.cursor = 'pointer';
         line.addEventListener('click', (e) => {
           e.preventDefault();
-          onRow();
+          onClick();
         });
       }
 
       parent.appendChild(line);
-      return line;
     }
 
     function makeBadge(txt, cls) {
