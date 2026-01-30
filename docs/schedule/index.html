@@ -359,7 +359,7 @@
 
     .card-line4{
       display:grid;
-      grid-template-columns: 60px 35px 1fr 60px;
+      grid-template-columns: 72px 56px 1fr 56px;
       gap:10px;
       align-items:center;
       padding: 8px 12px;
@@ -444,66 +444,70 @@
       box-shadow: 0 8px 18px rgba(0,0,0,0.35);
     }
   
-    /* --- Canonical additions (Schedule) --- */
+    /* Contract additions: filterbottom + row/badge styling */
     .filterbottom{
       position: sticky;
       bottom: 0;
       z-index: 6;
-      background: linear-gradient(to top, rgba(2,6,23,0.95), rgba(2,6,23,0.75));
+      border-top: 1px solid #27272f;
+      background: #020617;
+      box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(55,65,81,0.55);
-      padding: 10px 12px;
-      margin-top: 10px;
+      padding: 6px 6px 10px;
     }
-    .filterchips{
+    .filterbottom-row{
       display:flex;
-      gap:10px;
+      gap:8px;
       overflow-x:auto;
-      padding-bottom: 2px;
       -webkit-overflow-scrolling: touch;
+      padding: 0;
     }
-    .filterchips::-webkit-scrollbar{ height: 8px; }
-    .filterchips::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.25); border-radius: 999px; }
-
-    .entry-chip.is-active{
-      background: rgba(11,93,71,0.95);
-      border-color: rgba(11,93,71,1);
-      color: #fff;
+    .nav-btn.is-active{
+      border-color: #e5e7eb;
+      background: rgba(229,231,235,0.12);
     }
 
-    .badge-stack{
-      display:flex;
-      justify-content:flex-end;
-      gap:6px;
-      flex-wrap:wrap;
-    }
     .badge{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 7px;
+      min-width: 22px;
+      height: 18px;
+      padding: 0 6px;
       border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.75);
+      background: rgba(2,6,23,0.55);
+      color:#f9fafb;
       font-size: 11px;
-      line-height: 1;
-      border: 1px solid rgba(148,163,184,0.35);
-      background: rgba(24,24,27,0.9);
-      color: #e5e7eb;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      box-shadow: 0 0 0 1px rgba(2,6,23,0.75);
     }
-    .badge--status{ border-color: rgba(59,130,246,0.35); }
-    .badge--type{ border-color: rgba(236,72,153,0.35); }
-    .badge--seq{ border-color: rgba(250,204,21,0.35); }
+    .badge-wrap{ display:inline-flex; gap:6px; align-items:center; justify-content:flex-end; }
+    .badge--status-C{ background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.5); }
+    .badge--status-S{ background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.5); }
+    .badge--status-L{ background: rgba(245,158,11,0.16); border-color: rgba(245,158,11,0.55); }
 
-    .row--class{ font-size: 13px; }
+    .badge--type-J{ background: rgba(244,63,94,0.14); border-color: rgba(244,63,94,0.55); }
+    .badge--type-E{ background: rgba(168,85,247,0.14); border-color: rgba(168,85,247,0.55); }
+    .badge--type-H{ background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.55); }
 
+    .badge--seq-O{ background: rgba(14,165,233,0.14); border-color: rgba(14,165,233,0.55); }
+    .badge--seq-U{ background: rgba(148,163,184,0.14); border-color: rgba(148,163,184,0.55); }
+
+    .card-line4.row--class{ font-size: 13px; font-weight: 600; }
+    .card-line4.row--entry{ font-size: 12px; font-weight: 500; }
+    .card-line4.row--trip{  font-size: 11px; font-weight: 500; opacity: 0.95; }
+
+    .row-alt{ background: rgba(255,255,255,0.03); }
+    .group-wrap.tint-C{ border-left: 3px solid rgba(16,185,129,0.6); }
+    .group-wrap.tint-S{ border-left: 3px solid rgba(59,130,246,0.6); }
+    .group-wrap.tint-L{ border-left: 3px solid rgba(245,158,11,0.65); }
 </style>
 </head>
 
 <body>
-  <div class="app">
+  <div id="app" class="app">
     <header class="app-header">
       <button class="header-back" id="header-back" type="button">
         <span>&larr;</span>

@@ -35,7 +35,7 @@
     let appEl, appMain, screenRoot, headerTitle, headerBack, headerAction, navRow;
 
   function mountShell() {
-    const mount = document.getElementById('app') || document.querySelector('.app');
+    const mount = document.getElementById('app');
     if (!mount) throw new Error('Missing #app mount');
 
     // Clear (idempotent)
@@ -679,20 +679,11 @@
     function addChip(label, key) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'chip' + ((key === activeKey) ? ' is-active' : '');
+      btn.className = 'nav-btn' + ((key === activeKey) ? ' is-active' : '');
       btn.textContent = label;
       btn.addEventListener('click', () => {
         state.filter = state.filter || { horse: null };
-
-        // toggle: clicking the active chip clears the filter
-        if (!key) {
-          state.filter.horse = null;
-        } else if (activeKey && String(activeKey) === String(key)) {
-          state.filter.horse = null;
-        } else {
-          state.filter.horse = String(key);
-        }
-
+        state.filter.horse = (key === activeKey) ? null : (key || null);
         render();
       });
       row.appendChild(btn);
@@ -1329,46 +1320,26 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     let stripe = 0;
 
-    function addLine4(parent, a, b, cNode, dNode, rowClass, extraClass, handlers) {
+    function addLine4(parent, a, b, cNode, dNode, rowClass, extraClass, onClick) {
       const line = el('div', 'card-line4' + (rowClass ? (' ' + rowClass) : '') + (extraClass ? (' ' + extraClass) : ''));
       const cA = el('div', 'c4-a', a || '');
       const cB = el('div', 'c4-b', b || '');
       const cC = el('div', 'c4-c');
       const cD = el('div', 'c4-d');
 
-      if (cNode instanceof Node) cC.appendChild(cNode);
-      else if (cNode != null) cC.textContent = String(cNode);
-
-      if (dNode instanceof Node) cD.appendChild(dNode);
-      else if (dNode != null) cD.textContent = String(dNode);
+      if (cNode) cC.appendChild(cNode);
+      if (typeof dNode === 'string') cD.textContent = dNode;
+      else if (dNode) cD.appendChild(dNode);
 
       line.appendChild(cA);
       line.appendChild(cB);
       line.appendChild(cC);
       line.appendChild(cD);
 
-      let h = handlers;
-      if (typeof h === 'function') h = { onRow: h };
-      if (!h) h = {};
-
-      const any = !!(h.onRow || h.onA || h.onB || h.onC || h.onD);
-      if (any) line.style.cursor = 'pointer';
-
-      if (h.onRow) line.addEventListener('click', h.onRow);
-
-      function bindCell(cell, fn) {
-        if (!fn) return;
-        cell.style.cursor = 'pointer';
-        cell.addEventListener('click', (e) => {
-          e.stopPropagation();
-          fn();
-        });
+      if (onClick) {
+        line.style.cursor = 'pointer';
+        line.addEventListener('click', onClick);
       }
-
-      bindCell(cA, h.onA);
-      bindCell(cB, h.onB);
-      bindCell(cC, h.onC);
-      bindCell(cD, h.onD);
 
       parent.appendChild(line);
     }
@@ -1404,7 +1375,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.classIdSet ? r.classIdSet.size : 0),
         'row--class',
         '',
-        { onRow: () => pushDetail('ringDetail', { kind: 'ring', key: rk }) }
+        null
       );
 
       // groups
@@ -1435,33 +1406,31 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             if (!cn.entries || cn.entries.size === 0) continue;
 
             // CLASS ROW
-            const typeBadge = c.class_type ? makeBadge(String(c.class_type).slice(0, 1).toUpperCase(), 'badge--type') : null;
-            const seqBadge = c.schedule_sequencetype ? makeBadge(String(c.schedule_sequencetype).slice(0, 1).toUpperCase(), 'badge--seq') : null;
+            const badges = [];
+            if (c.class_type) badges.push(makeBadge(String(c.class_type).slice(0, 1).toUpperCase(), 'badge--type'));
+            if (c.schedule_sequencetype) badges.push(makeBadge(String(c.schedule_sequencetype).slice(0, 1).toUpperCase(), 'badge--seq'));
 
             const statusL = statusLetter(cn.latestStatus);
-            const statusBadge = statusL ? makeBadge(statusL, 'badge--status') : null;
+            const statusNode = statusL ? makeBadge(statusL, 'badge--status') : document.createTextNode('');
 
             const classNameText = String(c.class_name || '').trim();
+            const classNode = document.createTextNode(classNameText);
 
-            // col C = name only; col D = ALL badges (status + type + seq)
-            const badges = document.createDocumentFragment();
-            if (statusBadge) badges.appendChild(statusBadge);
-            if (typeBadge) badges.appendChild(typeBadge);
-            if (seqBadge) badges.appendChild(seqBadge);
+            // ALL badges in column D (status + type + seq)
+            const badgeWrap = el('div', 'badge-wrap');
+            if (statusNode) badgeWrap.appendChild(statusNode);
+            for (const b of badges) badgeWrap.appendChild(b);
 
             stripe++;
             addLine4(
               gWrap,
               fmtTimeShort(cn.latestStart || ''),
-              String(cn.class_number || ''),
-              classNameText,
-              badges,
+              (cn.class_number != null ? String(cn.class_number) : ''),
+              classNode,
+              badgeWrap,
               'row--class',
               (stripe % 2 === 0 ? 'row-alt' : ''),
-              {
-                onA: () => gotoTimeline(),
-                onRow: () => pushDetail('classDetail', { kind: 'class', key: String(c.class_id) })
-              }
+              () => pushDetail('classDetail', { key: cn.class_id })
             );
 
             // ENTRIES
@@ -1493,14 +1462,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 oogText,
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
-                {
-                  onA: () => gotoTimeline(),
-                  onRow: () => pushDetail('horseDetail', {
-                    kind: 'horse',
-                    key: String(eObj.horseName || eObj.entry_id || ''),
-                    entry_id: (eObj.entry_id != null ? String(eObj.entry_id) : null)
-                  })
-                }
+                () => pushDetail('horseDetail', { key: String(eObj.horseName || '') })
               );
 
               // TRIPS (child)
@@ -1527,9 +1489,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                   right,
                   'row--trip',
                   (stripe % 2 === 0 ? 'row-alt' : ''),
-                  {
-                    onRow: () => pushDetail('riderDetail', { kind: 'rider', key: String(rider || '') })
-                  }
+                  () => pushDetail('riderDetail', { key: String(rider || '') })
                 );
               }
             }
