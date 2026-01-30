@@ -716,7 +716,8 @@
 
   function getTripStartMinutes(t) {
     if (!t) return null;
-    return timeToMinutes(t.latestStart || t.latestGO || t.estimated_start_time || '');
+    // tolerate legacy typos (lastest*) and fallbacks
+    return timeToMinutes(t.latestStart || t.lastestStart || t.latestGO || t.lastestGO || t.estimated_start_time || '');
   }
 
   function getTripBucketKey(t, bucketSizeMins) {
@@ -772,46 +773,36 @@
     const row = document.createElement('div');
     row.className = 'filterbottom-row';
 
-    function addChip(label, key, agg) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'filterbottom-chip';
-      chip.textContent = label;
-      chip.dataset.key = key == null ? '' : String(key);
+    function addChip(label, key) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
 
-      const isOn = (key == null && (activeKey == null || activeKey === '')) || (key != null && String(activeKey) === String(key));
-      if (isOn) chip.classList.add('filterbottom-chip--active');
+      const k = (key == null || key === '') ? null : String(key);
+      const a = (activeKey == null || activeKey === '') ? null : String(activeKey);
 
-      if (agg != null) {
-        const s = document.createElement('span');
-        s.className = 'filterbottom-chip-agg';
-        s.textContent = String(agg);
-        chip.appendChild(s);
-      }
+      const isOn = (k == null && a == null) || (k != null && a != null && k === a);
+      btn.className = 'nav-btn' + (isOn ? ' is-active' : '');
+      btn.textContent = String(label || '');
 
-      chip.addEventListener('click', () => {
-        const next = (key == null) ? null : String(key);
-        state.filter.bucket = (String(activeKey || '') === String(next || '')) ? null : next;
+      btn.addEventListener('click', () => {
+        state.filter = state.filter || { horse: null, bucket: null };
+        state.filter.bucket = (isOn ? null : k);
         render();
       });
 
-      row.appendChild(chip);
+      row.appendChild(btn);
     }
 
     for (const it of (items || [])) {
-      addChip(it.label, it.key, it.agg);
+      addChip(it.label, it.key);
     }
 
     bar.appendChild(row);
 
-    if (appRoot) {
-      const nav = document.getElementById('app-nav');
-      if (nav && nav.parentElement === appRoot) {
-        appRoot.insertBefore(bar, nav);
-      } else {
-        appRoot.appendChild(bar);
-      }
-    }
+    // Insert above nav (same as schedule bottom filter)
+    const nav = appEl && appEl.querySelector('.app-nav');
+    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
+    else (appEl || document.body).appendChild(bar);
   }
 
 function makeCard(title, aggValue, inverseHdr, onClick) {
@@ -1365,8 +1356,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.ringName),
         '',
         document.createTextNode(''),
-        makeTagCount(r.classIdSet ? r.classIdSet.size : 0),
-        'row--header',
+        String(r.classIdSet ? r.classIdSet.size : 0),
+        'row--class',
         '',
         null
       );
