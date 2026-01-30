@@ -359,7 +359,7 @@
 
     .card-line4{
       display:grid;
-      grid-template-columns: 72px 56px 1fr 56px;
+      grid-template-columns: 60px 35px 1fr 60px;
       gap:10px;
       align-items:center;
       padding: 8px 12px;
@@ -371,7 +371,7 @@
     .c4-a{ font-variant-numeric: tabular-nums; color: rgba(209,213,219,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .c4-b{ font-variant-numeric: tabular-nums; color: rgba(209,213,219,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .c4-c{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-    .c4-d{ justify-self: end; display:inline-flex;gap:6px; align-items:center; justify-content:flex-end; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; min-width:0; }
+    .c4-d{ justify-self: end; display:inline-flex; align-items:center; justify-content:flex-end; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; min-width:0; }
 
     .timeline-axis{ z-index: 30; }
     .timeline-axis-left{ z-index: 32; }
@@ -443,7 +443,63 @@
       color:#f9fafb;
       box-shadow: 0 8px 18px rgba(0,0,0,0.35);
     }
-  </style>
+  
+    /* --- Canonical additions (Schedule) --- */
+    .filterbottom{
+      position: sticky;
+      bottom: 0;
+      z-index: 6;
+      background: linear-gradient(to top, rgba(2,6,23,0.95), rgba(2,6,23,0.75));
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(55,65,81,0.55);
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    .filterchips{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filterchips::-webkit-scrollbar{ height: 8px; }
+    .filterchips::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.25); border-radius: 999px; }
+
+    .entry-chip.is-active{
+      background: rgba(11,93,71,0.95);
+      border-color: rgba(11,93,71,1);
+      color: #fff;
+    }
+
+    .badge-stack{
+      display:flex;
+      justify-content:flex-end;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      line-height: 1;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: rgba(24,24,27,0.9);
+      color: #e5e7eb;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .badge--status{ border-color: rgba(59,130,246,0.35); }
+    .badge--type{ border-color: rgba(236,72,153,0.35); }
+    .badge--seq{ border-color: rgba(250,204,21,0.35); }
+
+    .row--class{ font-size: 13px; }
+
+</style>
 </head>
 
 <body>
