@@ -322,6 +322,18 @@
     return s.toUpperCase().slice(0, 4);
   }
 
+  // ----------------------------
+  // UTIL (status)
+  // ----------------------------
+  function statusRank(statusText) {
+    const s = String(statusText || '').toLowerCase();
+    if (s.includes('underway')) return 3;
+    if (s.includes('upcoming')) return 2;
+    if (s.includes('complete')) return 1;
+    return 0;
+  }
+
+
   function safeNum(v, fallback) {
     const n = Number(v);
     return Number.isFinite(n) ? n : (fallback ?? null);
