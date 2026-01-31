@@ -112,33 +112,88 @@
   bindChromeScroll();
 
   function bindChromeScroll() {
+    // Hide/show header+nav on scroll without jitter on short pages.
+    // Guard rails:
+    //  - Do not toggle on short scroll ranges (prevents clamp flip-flop).
+    //  - Add hysteresis so a layout-induced scrollTop change does not reverse direction.
     let lastTop = 0;
-    const THRESH = 8;
-    let ticking = false;
+    let hidden = false;
+    let anchorTop = 0;
 
-    function apply(dir, top) {
+    const THRESH_DOWN = 10;
+    const THRESH_UP = 10;
+    const HYSTERESIS = 48;      // px required in opposite direction before reversing
+    const MIN_SCROLLABLE = 220; // px of scroll range required before we ever hide
+
+    let ticking = false;
+    let suppress = false;
+
+    function showChrome() {
+      appEl.classList.remove('hide-header');
+      appEl.classList.remove('hide-nav');
+      hidden = false;
+      anchorTop = appMain.scrollTop || 0;
+
+      // After layout changes, scrollTop may clamp; re-sync on next frame.
+      suppress = true;
+      window.requestAnimationFrame(() => {
+        lastTop = appMain.scrollTop || 0;
+        suppress = false;
+      });
+    }
+
+    function hideChrome() {
+      appEl.classList.add('hide-header');
+      appEl.classList.add('hide-nav');
+      hidden = true;
+      anchorTop = appMain.scrollTop || 0;
+
+      suppress = true;
+      window.requestAnimationFrame(() => {
+        lastTop = appMain.scrollTop || 0;
+        suppress = false;
+      });
+    }
+
+    function apply(top, delta) {
+      // Always show at the very top.
       if (top <= 4) {
-        appEl.classList.remove('hide-header');
-        appEl.classList.remove('hide-nav');
+        if (hidden) showChrome();
+        else {
+          appEl.classList.remove('hide-header');
+          appEl.classList.remove('hide-nav');
+        }
         return;
       }
-      if (dir === 'down') {
-        appEl.classList.add('hide-header');
-        appEl.classList.add('hide-nav');
-      } else if (dir === 'up') {
-        appEl.classList.remove('hide-header');
-        appEl.classList.remove('hide-nav');
+
+      const scrollable = (appMain.scrollHeight || 0) - (appMain.clientHeight || 0);
+      if (scrollable < MIN_SCROLLABLE) {
+        // Short pages: never hide; prevents oscillation near top/bottom.
+        if (hidden) showChrome();
+        return;
+      }
+
+      if (!hidden) {
+        if (delta > THRESH_DOWN) hideChrome();
+      } else {
+        // Require meaningful upward movement since the last toggle.
+        const movedUp = (anchorTop - top);
+        if (delta < -THRESH_UP && movedUp > HYSTERESIS) showChrome();
       }
     }
 
     appMain.addEventListener('scroll', () => {
-      if (ticking) return;
+      if (ticking || suppress) return;
       ticking = true;
       window.requestAnimationFrame(() => {
         const top = appMain.scrollTop || 0;
         const delta = top - lastTop;
-        const dir = (delta > THRESH) ? 'down' : (delta < -THRESH) ? 'up' : null;
-        if (dir) apply(dir, top);
+
+        // Ignore tiny deltas; helps stability around clamp.
+        if (delta !== 0 && (Math.abs(delta) > 2)) {
+          apply(top, delta);
+        }
+
         lastTop = top;
         ticking = false;
       });
