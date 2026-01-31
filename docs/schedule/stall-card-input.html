@@ -1,0 +1,320 @@
+<!-- Save as: stall-card-input.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stall Card (6x4) - Input</title>
+
+  <style>
+    :root{
+      --w: 6in;
+      --h: 4in;
+
+      /* Border color (match screenshot) */
+      --frame: #a9cdf2;
+
+      --bg: #fff;
+      --fg: #111;
+
+      /* Emergency label color */
+      --em: #8b3d1f;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#f2f2f2;
+      color:#111;
+    }
+
+    /* Screen layout */
+    .app{
+      display:grid;
+      gap:14px;
+      padding:16px;
+      justify-content:start;
+    }
+
+    .panel{
+      width: calc(var(--w) + 0.44in); /* card outer frame width approx */
+      background:#fff;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:12px;
+      display:grid;
+      gap:10px;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 140px 1fr;
+      gap:10px;
+      align-items:center;
+    }
+    label{
+      font-size:12px;
+      color:#555;
+    }
+    input{
+      width:100%;
+      padding:10px 10px;
+      border:1px solid #ccc;
+      border-radius:10px;
+      font-size:14px;
+    }
+    .btns{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    button{
+      appearance:none;
+      border:1px solid #111;
+      background:#111;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{
+      background:#fff;
+      color:#111;
+    }
+    .hint{
+      font-size:12px;
+      color:#555;
+      line-height:1.35;
+    }
+    .hint code{
+      background:#f1f1f1;
+      padding:2px 6px;
+      border-radius:6px;
+    }
+
+    /* 6x4 canvas with blue frame */
+    .page{
+      width: var(--w);
+      height: var(--h);
+      background: var(--frame);
+      padding: 0.22in; /* blue band thickness */
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .card{
+      width:100%;
+      height:100%;
+      background: var(--bg);
+      padding: 0.34in 0.30in;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      color: var(--fg);
+    }
+
+    .logoWrap{
+      height: 0.70in;
+      display:grid;
+      place-items:center;
+      margin-top: 0.02in;
+    }
+    .logoWrap img{
+      height:100%;
+      width:auto;
+      display:block;
+    }
+
+    .main{ margin-top: 0.10in; }
+    .barn{
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-size: 92px;
+      font-weight: 400;
+      line-height: 1.02;
+      word-break: break-word;
+    }
+    .show, .meta{
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-weight: 400;
+      line-height: 1.1;
+      word-break: break-word;
+    }
+    .show{ font-size: 40px; margin-top: 0.10in; }
+    .meta{ font-size: 40px; margin-top: 0.22in; }
+
+    .emergency{
+      margin-top:auto;
+      padding-top: 0.18in;
+    }
+    .emLabel{
+      font-size: 38px;
+      font-weight: 800;
+      font-style: italic;
+      color: var(--em);
+      line-height: 1.05;
+    }
+    .emName, .emPhone{
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1.15;
+      margin-top: 0.12in;
+    }
+    .emPhone{ margin-top: 0.08in; }
+
+    /* Print */
+    @media print{
+      @page { size: 6in 4in; margin: 0; }
+      html, body { width: var(--w); height: var(--h); margin:0; background:#fff; }
+      .panel { display:none !important; }
+      .app { padding:0; gap:0; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- Editor panel (hidden when printing) -->
+    <div class="panel">
+      <div class="row">
+        <label for="inpBarn">barnName</label>
+        <input id="inpBarn" type="text" placeholder="e.g., Cervin" />
+      </div>
+      <div class="row">
+        <label for="inpShow">showName</label>
+        <input id="inpShow" type="text" placeholder="e.g., Oddur Van Beaugaarde" />
+      </div>
+      <div class="row">
+        <label for="inpMeta">colorGender</label>
+        <input id="inpMeta" type="text" placeholder="e.g., Bay Gelding" />
+      </div>
+
+      <div class="btns">
+        <button id="btnPrint" type="button">Print</button>
+        <button id="btnUrl" type="button" class="secondary">Update URL</button>
+        <button id="btnCopy" type="button" class="secondary">Copy Link</button>
+      </div>
+
+      <div class="hint">
+        URL params:
+        <code>?barnName=...</code>
+        <code>&showName=...</code>
+        <code>&colorGender=...</code>
+        <code>&autoprint=1</code>
+        <br />
+        Logo: place <code>logo.png</code> next to this HTML (or change the <code>src</code>).
+      </div>
+    </div>
+
+    <!-- Printable card -->
+    <div class="page">
+      <div class="card">
+        <div class="logoWrap">
+          <img src="./logo.png" alt="Farm logo" />
+        </div>
+
+        <div class="main">
+          <div id="barnName" class="barn">Cervin</div>
+          <div id="showName" class="show">Oddur Van Beaugaarde</div>
+          <div id="colorGender" class="meta">Bay Gelding</div>
+        </div>
+
+        <!-- Fixed block (not dynamic) -->
+        <div class="emergency">
+          <div class="emLabel">*Emergency Contact*</div>
+          <div class="emName">Kirsty Korotkin</div>
+          <div class="emPhone">561-722-5033</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const elBarn = document.getElementById('barnName');
+      const elShow = document.getElementById('showName');
+      const elMeta = document.getElementById('colorGender');
+
+      const inpBarn = document.getElementById('inpBarn');
+      const inpShow = document.getElementById('inpShow');
+      const inpMeta = document.getElementById('inpMeta');
+
+      const btnPrint = document.getElementById('btnPrint');
+      const btnUrl = document.getElementById('btnUrl');
+      const btnCopy = document.getElementById('btnCopy');
+
+      function qp(name){
+        const url = new URL(window.location.href);
+        const v = url.searchParams.get(name);
+        return v == null ? '' : v;
+      }
+
+      function apply(){
+        const b = (inpBarn.value || '').trim();
+        const s = (inpShow.value || '').trim();
+        const m = (inpMeta.value || '').trim();
+
+        elBarn.textContent = b || 'Cervin';
+        elShow.textContent = s || 'Oddur Van Beaugaarde';
+        elMeta.textContent = m || 'Bay Gelding';
+      }
+
+      function setInputsFromQuery(){
+        inpBarn.value = qp('barnName');
+        inpShow.value = qp('showName');
+        inpMeta.value = qp('colorGender');
+        apply();
+      }
+
+      function updateUrlFromInputs(){
+        const url = new URL(window.location.href);
+        url.searchParams.set('barnName', (inpBarn.value || '').trim());
+        url.searchParams.set('showName', (inpShow.value || '').trim());
+        url.searchParams.set('colorGender', (inpMeta.value || '').trim());
+        // keep autoprint if already present; don't force it
+        window.history.replaceState({}, '', url.toString());
+        return url.toString();
+      }
+
+      inpBarn.addEventListener('input', apply);
+      inpShow.addEventListener('input', apply);
+      inpMeta.addEventListener('input', apply);
+
+      btnUrl.addEventListener('click', function(){
+        updateUrlFromInputs();
+      });
+
+      btnCopy.addEventListener('click', async function(){
+        const link = updateUrlFromInputs();
+        try{
+          await navigator.clipboard.writeText(link);
+          btnCopy.textContent = 'Copied';
+          setTimeout(() => (btnCopy.textContent = 'Copy Link'), 900);
+        }catch(e){
+          // fallback
+          prompt('Copy this link:', link);
+        }
+      });
+
+      btnPrint.addEventListener('click', function(){
+        updateUrlFromInputs();
+        window.print();
+      });
+
+      // init from URL
+      setInputsFromQuery();
+
+      // optional autoprint
+      const ap = (qp('autoprint') || '').toLowerCase();
+      if (ap === '1' || ap === 'true' || ap === 'yes') {
+        setTimeout(() => window.print(), 200);
+      }
+    })();
+  </script>
+</body>
+</html>

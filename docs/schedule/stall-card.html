@@ -3,270 +3,155 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stall Card (6x4)</title>
+  <title>Stall Card 6x4</title>
 
   <style>
-    /* Screen */
-    :root {
+    :root{
       --w: 6in;
       --h: 4in;
-      --pad: 0.25in;
-      --border: 0.03in;
-      --fg: #111;
-      --muted: #444;
-      --line: #111;
+
+      /* Border color (match screenshot) */
+      --frame: #a9cdf2;
+
       --bg: #fff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--fg);
-      background: #f3f3f3;
+      --fg: #111;
+
+      /* Emergency label color */
+      --em: #8b3d1f;
     }
 
-    .wrap {
+    *{ box-sizing:border-box; }
+    html, body { margin:0; padding:0; background:#eee; }
+
+    /* Screen centering */
+    .screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
       padding: 16px;
-      display: grid;
-      gap: 12px;
-      justify-content: start;
     }
 
-    .controls {
-      width: calc(var(--w) + 2 * var(--border));
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 12px;
-      display: grid;
-      gap: 10px;
-    }
-    .row {
-      display: grid;
-      grid-template-columns: 130px 1fr;
-      gap: 10px;
-      align-items: center;
-    }
-    label { font-size: 12px; color: var(--muted); }
-    input {
-      width: 100%;
-      padding: 10px 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    .btns {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    button {
-      appearance: none;
-      border: 1px solid #111;
-      background: #111;
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button.secondary {
-      background: #fff;
-      color: #111;
-    }
-    .hint {
-      font-size: 12px;
-      color: #555;
-      line-height: 1.35;
-    }
-    .hint code { background: #f1f1f1; padding: 2px 6px; border-radius: 6px; }
-
-    /* Card */
-    .card {
+    /* 6x4 canvas with blue frame */
+    .page {
       width: var(--w);
       height: var(--h);
+      background: var(--frame);
+      padding: 0.22in; /* blue band thickness */
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
       background: var(--bg);
-      border: var(--border) solid var(--line);
-      padding: var(--pad);
+      padding: 0.34in 0.30in;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      align-items: center;
+      text-align: center;
+      color: var(--fg);
     }
-    .top {
-      font-size: 18px;
-      font-weight: 700;
+
+    .logoWrap{
+      height: 0.70in;
+      display: grid;
+      place-items: center;
+      margin-top: 0.02in;
+    }
+    .logoWrap img{
+      height: 100%;
+      width: auto;
+      display: block;
+    }
+
+    .main { margin-top: 0.10in; }
+    .barn {
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-size: 92px;
+      font-weight: 400;
+      line-height: 1.02;
+      word-break: break-word;
+    }
+    .show, .meta {
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-weight: 400;
       line-height: 1.1;
       word-break: break-word;
     }
-    .mid {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 8px 0;
+    .show { font-size: 40px; margin-top: 0.10in; }
+    .meta { font-size: 40px; margin-top: 0.22in; }
+
+    .emergency {
+      margin-top: auto;
+      padding-top: 0.18in;
     }
-    .barn {
-      font-size: 56px;
+    .emLabel{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 38px;
       font-weight: 800;
-      line-height: 0.95;
-      letter-spacing: -0.02em;
-      word-break: break-word;
+      font-style: italic;
+      color: var(--em);
+      line-height: 1.05;
     }
-    .bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 10px;
+    .emName, .emPhone{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1.15;
+      margin-top: 0.12in;
     }
-    .meta {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--fg);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .small {
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .emPhone{ margin-top: 0.08in; }
 
     /* Print */
-    @media print {
+    @media print{
       @page { size: 6in 4in; margin: 0; }
-      html, body { width: 6in; height: 4in; margin: 0; background: #fff; }
-      .wrap { padding: 0; }
-      .controls, .hint, .btns { display: none !important; }
-      .card { border-radius: 0; }
+      html, body { width: var(--w); height: var(--h); background:#fff; }
+      .screen { padding: 0; display:block; }
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <!-- Controls (hidden when printing) -->
-    <div class="controls">
-      <div class="row">
-        <label for="inpBarn">barnName</label>
-        <input id="inpBarn" type="text" placeholder="e.g., Oddur hurricane" />
-      </div>
-      <div class="row">
-        <label for="inpShow">showName</label>
-        <input id="inpShow" type="text" placeholder="e.g., Oddur Van Beaugaarde" />
-      </div>
-      <div class="row">
-        <label for="inpMeta">color | gender</label>
-        <input id="inpMeta" type="text" placeholder="e.g., Bay Gelding" />
-      </div>
+  <div class="screen">
+    <div class="page">
+      <div class="card">
+        <!-- Put your logo file in the same folder as this HTML -->
+        <div class="logoWrap">
+          <img src="./logo.png" alt="Farm logo" />
+        </div>
 
-      <div class="btns">
-        <button id="btnPrint" type="button">Print</button>
-        <button id="btnLink" type="button" class="secondary">Update URL</button>
-      </div>
+        <div class="main">
+          <div id="barnName" class="barn">Cervin</div>
+          <div id="showName" class="show">Oddur Van Beaugaarde</div>
+          <div id="colorGender" class="meta">Bay Gelding</div>
+        </div>
 
-      <div class="hint">
-        URL params supported:
-        <code>?barnName=...</code>
-        <code>&showName=...</code>
-        <code>&colorGender=...</code>
-        <code>&autoprint=1</code>
-      </div>
-    </div>
-
-    <!-- The printable card -->
-    <div class="card" role="document" aria-label="Stall Card">
-      <div class="top" id="showName">Show Name</div>
-
-      <div class="mid">
-        <div class="barn" id="barnName">Barn Name</div>
-      </div>
-
-      <div class="bottom">
-        <div class="meta" id="colorGender">Color | Gender</div>
-        <div class="small" id="stamp"></div>
+        <!-- Fixed block (not dynamic) -->
+        <div class="emergency">
+          <div class="emLabel">*Emergency Contact*</div>
+          <div class="emName">Kirsty Korotkin</div>
+          <div class="emPhone">561-722-5033</div>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
     (function () {
-      'use strict';
+      const p = new URLSearchParams(window.location.search);
 
-      const elBarn = document.getElementById('barnName');
-      const elShow = document.getElementById('showName');
-      const elMeta = document.getElementById('colorGender');
-      const elStamp = document.getElementById('stamp');
+      const barnName = (p.get('barnName') || '').trim();
+      const showName = (p.get('showName') || '').trim();
+      const colorGender = (p.get('colorGender') || '').trim();
 
-      const inpBarn = document.getElementById('inpBarn');
-      const inpShow = document.getElementById('inpShow');
-      const inpMeta = document.getElementById('inpMeta');
+      if (barnName) document.getElementById('barnName').textContent = barnName;
+      if (showName) document.getElementById('showName').textContent = showName;
+      if (colorGender) document.getElementById('colorGender').textContent = colorGender;
 
-      const btnPrint = document.getElementById('btnPrint');
-      const btnLink = document.getElementById('btnLink');
-
-      function qp(name) {
-        const url = new URL(window.location.href);
-        const v = url.searchParams.get(name);
-        return v == null ? '' : v;
-      }
-
-      function setTextSafe(el, v, fallback) {
-        const s = (v || '').trim();
-        el.textContent = s ? s : fallback;
-      }
-
-      function applyFromInputs() {
-        setTextSafe(elBarn, inpBarn.value, 'Barn Name');
-        setTextSafe(elShow, inpShow.value, 'Show Name');
-        setTextSafe(elMeta, inpMeta.value, 'Color | Gender');
-      }
-
-      function applyFromQuery() {
-        const barnName = qp('barnName');
-        const showName = qp('showName');
-        const colorGender = qp('colorGender');
-
-        inpBarn.value = barnName;
-        inpShow.value = showName;
-        inpMeta.value = colorGender;
-
-        applyFromInputs();
-      }
-
-      function updateUrlFromInputs() {
-        const url = new URL(window.location.href);
-        url.searchParams.set('barnName', inpBarn.value || '');
-        url.searchParams.set('showName', inpShow.value || '');
-        url.searchParams.set('colorGender', inpMeta.value || '');
-        // keep autoprint if present
-        window.history.replaceState({}, '', url.toString());
-      }
-
-      // Wire up live updates
-      inpBarn.addEventListener('input', applyFromInputs);
-      inpShow.addEventListener('input', applyFromInputs);
-      inpMeta.addEventListener('input', applyFromInputs);
-
-      btnPrint.addEventListener('click', function () {
-        updateUrlFromInputs();
-        window.print();
-      });
-
-      btnLink.addEventListener('click', function () {
-        updateUrlFromInputs();
-      });
-
-      // Optional timestamp (screen only)
-      elStamp.textContent = '';
-
-      // Init
-      applyFromQuery();
-
-      // Optional autoprint
-      const ap = (qp('autoprint') || '').toLowerCase();
+      const ap = (p.get('autoprint') || '').toLowerCase();
       if (ap === '1' || ap === 'true' || ap === 'yes') {
-        // let layout settle
-        setTimeout(() => window.print(), 250);
+        setTimeout(() => window.print(), 200);
       }
     })();
   </script>
