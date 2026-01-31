@@ -401,38 +401,61 @@
   }
 
   async function loadAll() {
-    const [sched, trips] = await Promise.all([
-      fetchJson(DATA_SCHEDULE_URL),
-      fetchJson(DATA_TRIPS_URL)
-    ]);
+  // Decoupled loads:
+  // - watch_trips.json must be able to refresh even if watch_schedule.json fails
+  // - watch_schedule.json is optional scaffold for Schedule view
+  let sched = null;
+  let trips = null;
+  let schedOk = false;
+  let tripsOk = false;
 
-    const nextGenerated =
-      (sched && sched.meta && sched.meta.generated_at) ||
-      (trips && trips.meta && trips.meta.generated_at) ||
-      null;
-
-    if (state.loaded && nextGenerated && state.meta.generated_at === nextGenerated) return;
-
-    state.schedule = Array.isArray(sched && sched.records) ? sched.records : [];
-    state.trips = Array.isArray(trips && trips.records) ? trips.records : [];
-
-    const dtScope =
-      (sched && sched.meta && sched.meta.dt) ||
-      (state.schedule[0] && state.schedule[0].dt) ||
-      (state.trips[0] && state.trips[0].dt) ||
-      null;
-
-    const sidScope =
-      (sched && sched.meta && sched.meta.sid) ||
-      (state.schedule[0] && state.schedule[0].sid) ||
-      (state.trips[0] && state.trips[0].sid) ||
-      null;
-
-    state.meta = { dt: dtScope, sid: sidScope, generated_at: nextGenerated };
-    state.loaded = true;
-
-    render();
+  try {
+    trips = await fetchJson(DATA_TRIPS_URL);
+    tripsOk = true;
+  } catch (e) {
+    // Keep prior state.trips on failure
+    console.warn('load failed: watch_trips.json', e);
   }
+
+  try {
+    sched = await fetchJson(DATA_SCHEDULE_URL);
+    schedOk = true;
+  } catch (e) {
+    // Keep prior state.schedule on failure
+    console.warn('load failed: watch_schedule.json', e);
+  }
+
+  const nextGenerated =
+    (schedOk && sched && sched.meta && sched.meta.generated_at) ||
+    (tripsOk && trips && trips.meta && trips.meta.generated_at) ||
+    null;
+
+  if (state.loaded && nextGenerated && state.meta.generated_at === nextGenerated) return;
+
+  if (schedOk) state.schedule = Array.isArray(sched && sched.records) ? sched.records : [];
+  if (tripsOk) state.trips = Array.isArray(trips && trips.records) ? trips.records : [];
+
+  const dtScope =
+    (schedOk && sched && sched.meta && sched.meta.dt) ||
+    (state.schedule[0] && state.schedule[0].dt) ||
+    (tripsOk && trips && trips.meta && trips.meta.dt) ||
+    (state.trips[0] && state.trips[0].dt) ||
+    state.meta.dt ||
+    null;
+
+  const sidScope =
+    (schedOk && sched && sched.meta && sched.meta.sid) ||
+    (state.schedule[0] && state.schedule[0].sid) ||
+    (tripsOk && trips && trips.meta && trips.meta.sid) ||
+    (state.trips[0] && state.trips[0].sid) ||
+    state.meta.sid ||
+    null;
+
+  state.meta = { dt: dtScope, sid: sidScope, generated_at: nextGenerated || state.meta.generated_at || null };
+  state.loaded = state.loaded || schedOk || tripsOk;
+
+  render();
+}
 
   setInterval(() => { loadAll().catch(() => {}); }, REFRESH_MS);
 
