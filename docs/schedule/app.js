@@ -87,9 +87,10 @@
 
     navRowEl.innerHTML = [
       '<button class="nav-btn" type="button" data-screen="start"><span class="nav-label">Start</span></button>',
+      '<button class="nav-btn" type="button" data-screen="summary"><span class="nav-label">Summary</span></button>',
       '<button class="nav-btn" type="button" data-screen="horses"><span class="nav-label">Horses</span><span class="nav-agg" data-nav-agg="horses">0</span></button>',
       '<button class="nav-btn" type="button" data-screen="riders"><span class="nav-label">Riders</span><span class="nav-agg" data-nav-agg="riders">0</span></button>',
-      '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span></button>',    ].join('');
+      '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span><span class="nav-agg" data-nav-agg="schedule">0</span></button>',    ].join('');
 
     navScroller.appendChild(navRowEl);
     nav.appendChild(navScroller);
@@ -112,88 +113,33 @@
   bindChromeScroll();
 
   function bindChromeScroll() {
-    // Hide/show header+nav on scroll without jitter on short pages.
-    // Guard rails:
-    //  - Do not toggle on short scroll ranges (prevents clamp flip-flop).
-    //  - Add hysteresis so a layout-induced scrollTop change does not reverse direction.
     let lastTop = 0;
-    let hidden = false;
-    let anchorTop = 0;
-
-    const THRESH_DOWN = 10;
-    const THRESH_UP = 10;
-    const HYSTERESIS = 48;      // px required in opposite direction before reversing
-    const MIN_SCROLLABLE = 220; // px of scroll range required before we ever hide
-
+    const THRESH = 8;
     let ticking = false;
-    let suppress = false;
 
-    function showChrome() {
-      appEl.classList.remove('hide-header');
-      appEl.classList.remove('hide-nav');
-      hidden = false;
-      anchorTop = appMain.scrollTop || 0;
-
-      // After layout changes, scrollTop may clamp; re-sync on next frame.
-      suppress = true;
-      window.requestAnimationFrame(() => {
-        lastTop = appMain.scrollTop || 0;
-        suppress = false;
-      });
-    }
-
-    function hideChrome() {
-      appEl.classList.add('hide-header');
-      appEl.classList.add('hide-nav');
-      hidden = true;
-      anchorTop = appMain.scrollTop || 0;
-
-      suppress = true;
-      window.requestAnimationFrame(() => {
-        lastTop = appMain.scrollTop || 0;
-        suppress = false;
-      });
-    }
-
-    function apply(top, delta) {
-      // Always show at the very top.
+    function apply(dir, top) {
       if (top <= 4) {
-        if (hidden) showChrome();
-        else {
-          appEl.classList.remove('hide-header');
-          appEl.classList.remove('hide-nav');
-        }
+        appEl.classList.remove('hide-header');
+        appEl.classList.remove('hide-nav');
         return;
       }
-
-      const scrollable = (appMain.scrollHeight || 0) - (appMain.clientHeight || 0);
-      if (scrollable < MIN_SCROLLABLE) {
-        // Short pages: never hide; prevents oscillation near top/bottom.
-        if (hidden) showChrome();
-        return;
-      }
-
-      if (!hidden) {
-        if (delta > THRESH_DOWN) hideChrome();
-      } else {
-        // Require meaningful upward movement since the last toggle.
-        const movedUp = (anchorTop - top);
-        if (delta < -THRESH_UP && movedUp > HYSTERESIS) showChrome();
+      if (dir === 'down') {
+        appEl.classList.add('hide-header');
+        appEl.classList.add('hide-nav');
+      } else if (dir === 'up') {
+        appEl.classList.remove('hide-header');
+        appEl.classList.remove('hide-nav');
       }
     }
 
     appMain.addEventListener('scroll', () => {
-      if (ticking || suppress) return;
+      if (ticking) return;
       ticking = true;
       window.requestAnimationFrame(() => {
         const top = appMain.scrollTop || 0;
         const delta = top - lastTop;
-
-        // Ignore tiny deltas; helps stability around clamp.
-        if (delta !== 0 && (Math.abs(delta) > 2)) {
-          apply(top, delta);
-        }
-
+        const dir = (delta > THRESH) ? 'down' : (delta < -THRESH) ? 'up' : null;
+        if (dir) apply(dir, top);
         lastTop = top;
         ticking = false;
       });
@@ -227,6 +173,10 @@
       horse: null,
       bucket: null
     },
+
+
+    // list modes
+    ridersMode: null,
 
     // optional: after render, scroll within main to an element id
     pendingScrollId: null
@@ -654,6 +604,45 @@
     if (Number(n) > 0) t.classList.add('row-tag--positive');
     return t;
   }
+  function fmtNextUpFromEntryKeys(entryKeys, tIdx) {
+    const list = [];
+    for (const k of (entryKeys || [])) {
+      const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
+      if (best) list.push(best);
+    }
+    const best = pickBestTrip(list);
+    if (!best) return '';
+
+    const parts = [];
+
+    if (best.ring_number != null && String(best.ring_number) !== '') {
+      parts.push(`R${String(best.ring_number)}`);
+    }
+
+    const t = best.latestGO || best.latestStart || '';
+    if (t) parts.push(fmtTimeShort(t));
+
+    if (best.lastOOG != null && String(best.lastOOG) !== '') {
+      const n = safeNum(best.lastOOG, null);
+      if (n != null) parts.push(String(n));
+    }
+
+    return parts.join(' - ');
+  }
+
+  function ribbonCountFromEntryKeys(entryKeys, tIdx) {
+    let c = 0;
+    for (const k of (entryKeys || [])) {
+      const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
+      if (!best) continue;
+      const pRaw = (best.latestPlacing != null ? best.latestPlacing : best.lastestPlacing);
+      const p = safeNum(pRaw, null);
+      if (p != null && p >= 1 && p <= 8) c++;
+    }
+    return c;
+  }
+
+
 
   function renderSearch(screenKey, placeholder) {
     const wrap = el('div', 'state-search');
@@ -1095,6 +1084,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     const map = {
       start: 'start',
 
+
+      summary: 'summary',
       horses: 'horses',
       horseDetail: 'horses',
 
@@ -1116,9 +1107,95 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   function renderAggs(_sIdx, tIdx) {
     setAgg('horses', tIdx.byHorse.size);
     setAgg('riders', tIdx.byRider.size);
+    setAgg('schedule', tIdx.byClass.size);
   }
 
+  
   // ----------------------------
+  // SCREEN: SUMMARY
+  // ----------------------------
+  function renderSummary(_sIdx, tIdx) {
+    clearRoot();
+    setHeader('Summary');
+
+    // Classes: completed vs not completed (truth-only)
+    let completed = 0;
+    let notCompleted = 0;
+
+    for (const [cid, entryKeys] of tIdx.byClass.entries()) {
+      let maxRank = 0;
+      for (const k of (entryKeys || [])) {
+        const best = tIdx.entryBest.get(k);
+        if (!best) continue;
+        const r = statusRank(best.latestStatus);
+        if (r > maxRank) maxRank = r;
+      }
+      if (maxRank === 1) completed++;
+      else notCompleted++;
+    }
+
+    // Ribbons: count placings 1..8 (truth-only, per entryKey best)
+    const ribbonByPlace = { 1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0 };
+    for (const best of tIdx.entryBest.values()) {
+      if (!best) continue;
+      const pRaw = (best.latestPlacing != null ? best.latestPlacing : best.lastestPlacing);
+      const p = safeNum(pRaw, null);
+      if (p != null && p >= 1 && p <= 8) ribbonByPlace[p] = (ribbonByPlace[p] || 0) + 1;
+    }
+    const ribbonsTotal = Object.values(ribbonByPlace).reduce((a,b)=>a+b, 0);
+
+    const grid = el('div', 'summary-grid');
+
+    function tile(title, lines, onClick) {
+      const card = el('div', 'card summary-tile');
+      if (typeof onClick === 'function') {
+        card.classList.add('summary-tile--tap');
+        card.addEventListener('click', onClick);
+      }
+      const body = el('div', 'card-body summary-body');
+      card.appendChild(body);
+
+      body.appendChild(el('div', 'summary-title', title));
+
+      const wrap = el('div', 'summary-lines');
+      for (const line of (lines || [])) {
+        const row = el('div', 'summary-line');
+        row.appendChild(el('div', 'summary-k', String(line.k || '')));
+        row.appendChild(el('div', 'summary-v', String(line.v || '')));
+        wrap.appendChild(row);
+      }
+      body.appendChild(wrap);
+      return card;
+    }
+
+    grid.appendChild(tile('Classes', [
+      { k: 'Completed', v: completed },
+      { k: 'Not Completed', v: notCompleted },
+    ], () => { state.ridersMode = null; goto('schedule'); }));
+
+    grid.appendChild(tile('Horses', [
+      { k: 'Unique', v: tIdx.byHorse.size },
+    ], () => { state.ridersMode = null; goto('horses'); }));
+
+    grid.appendChild(tile('Riders', [
+      { k: 'Unique', v: tIdx.byRider.size },
+    ], () => { state.ridersMode = null; goto('riders'); }));
+
+    const ribbonLines = [
+      { k: 'Total', v: ribbonsTotal },
+      { k: '1-4', v: (ribbonByPlace[1]+ribbonByPlace[2]+ribbonByPlace[3]+ribbonByPlace[4]) },
+      { k: '5-8', v: (ribbonByPlace[5]+ribbonByPlace[6]+ribbonByPlace[7]+ribbonByPlace[8]) },
+    ];
+
+    grid.appendChild(tile('Ribbons (1-8)', ribbonLines, () => {
+      state.ridersMode = 'ribbons';
+      goto('riders');
+    }));
+
+    screenRoot.appendChild(grid);
+  }
+
+// ----------------------------
   // SCREEN: START
   // ----------------------------
   function renderStart() {
@@ -1172,10 +1249,13 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       const keys = tIdx.byHorse.get(String(h)) || [];
       if (keys.length === 0) continue;
 
+      const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
+      const title = nextup ? `${String(h)}  ${nextup}` : String(h);
+
       const row = el('div', 'row row--tap');
       row.id = `horse-${idify(h)}`;
 
-      row.appendChild(el('div', 'row-title', String(h)));
+      row.appendChild(el('div', 'row-title', title));
       row.appendChild(makeTagCount(keys.length));
 
       row.addEventListener('click', () => {
@@ -2058,17 +2138,42 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     screenRoot.appendChild(renderSearch('riders', 'Search riders...'));
 
     const q = normalizeStr(state.search.riders);
-    const ridersAll = [...tIdx.byRider.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+
+    const mode = state.ridersMode || null; // null | 'ribbons'
+
+    let ridersAll = [...tIdx.byRider.keys()];
+    if (mode === 'ribbons') {
+      ridersAll = ridersAll.filter((name) => {
+        const keys = tIdx.byRider.get(name) || [];
+        return ribbonCountFromEntryKeys(keys, tIdx) > 0;
+      });
+      ridersAll.sort((a, b) => {
+        const ak = tIdx.byRider.get(a) || [];
+        const bk = tIdx.byRider.get(b) || [];
+        const ac = ribbonCountFromEntryKeys(ak, tIdx);
+        const bc = ribbonCountFromEntryKeys(bk, tIdx);
+        if (bc !== ac) return bc - ac;
+        return String(a).localeCompare(String(b));
+      });
+    } else {
+      ridersAll.sort((a, b) => String(a).localeCompare(String(b)));
+    }
 
     for (const name of ridersAll) {
       const keys = tIdx.byRider.get(name) || [];
       if (keys.length === 0) continue;
       if (q && !normalizeStr(name).includes(q)) continue;
 
+      const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
+      const title = nextup ? `${String(name)}  ${nextup}` : String(name);
+
       const row = el('div', 'row row--tap');
       row.id = `rider-${idify(name)}`;
-      row.appendChild(el('div', 'row-title', String(name)));
-      row.appendChild(makeTagCount(keys.length));
+      row.appendChild(el('div', 'row-title', title));
+
+      const rightCount = (mode === 'ribbons') ? ribbonCountFromEntryKeys(keys, tIdx) : keys.length;
+      row.appendChild(makeTagCount(rightCount));
+
       row.addEventListener('click', () => {
         pushDetail('riderDetail', { kind: 'rider', key: String(name) });
       });
@@ -2187,6 +2292,7 @@ const sIdx = buildScheduleIndex();
     }
 
     if (state.screen === 'start') return renderStart();
+    if (state.screen === 'summary') return renderSummary(sIdx, tIdx);
     if (state.screen === 'horses') return renderHorses(sIdx, tIdx);
     if (state.screen === 'schedule' || state.screen === 'rings') return renderSchedule(sIdx, tIdx);
     if (state.screen === 'ringDetail') return renderRingDetail(sIdx, tIdx);
@@ -2216,6 +2322,8 @@ const sIdx = buildScheduleIndex();
 
       state.history = [];
       state.detail = null;
+
+      state.ridersMode = null;
 
       if (tapped === 'schedule') state.screen = 'schedule';
       else if (tapped === 'rings') state.screen = 'schedule';

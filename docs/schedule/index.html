@@ -532,6 +532,27 @@
       pointer-events: none;
     }
 
+  
+    /* Summary ------------------------------------------------- */
+    .summary-grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+      width: 100%;
+      padding-bottom: 12px;
+    }
+    .summary-tile{ grid-column: span 6; }
+    .summary-tile--tap{ cursor:pointer; }
+    .summary-body{ display:flex; flex-direction:column; gap:10px; }
+    .summary-title{ font-weight:700; letter-spacing:0.2px; }
+    .summary-lines{ display:flex; flex-direction:column; gap:6px; }
+    .summary-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .summary-k{ opacity:0.9; font-size:12px; }
+    .summary-v{ font-weight:700; }
+    @media (max-width: 520px){
+      .summary-tile{ grid-column: span 12; }
+    }
+
   </style>
 </head>
 
