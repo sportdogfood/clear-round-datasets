@@ -1,113 +1,113 @@
+<!-- stall-card.html (URL params + optional autoprint) -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stall Card 6x4</title>
+  <title>Stall Card (5.5x3.75)</title>
 
   <style>
     :root{
-      --w: 6in;
-      --h: 4in;
+      --w: 5.5in;
+      --h: 3.75in;
 
-      /* Border color (match screenshot) */
-      --frame: #a9cdf2;
-
+      --frame: #a9cdf2;     /* border color (optional) */
+      --framePad: 0.18in;   /* blue band thickness */
       --bg: #fff;
       --fg: #111;
-
-      /* Emergency label color */
-      --em: #8b3d1f;
     }
 
     *{ box-sizing:border-box; }
     html, body { margin:0; padding:0; background:#eee; }
 
-    /* Screen centering */
-    .screen {
+    .screen{
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 16px;
+      display:grid;
+      place-items:center;
+      padding:16px;
     }
 
-    /* 6x4 canvas with blue frame */
-    .page {
+    .page{
       width: var(--w);
       height: var(--h);
       background: var(--frame);
-      padding: 0.22in; /* blue band thickness */
+      padding: var(--framePad);
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
 
-    .card {
-      width: 100%;
-      height: 100%;
+    .card{
+      width:100%;
+      height:100%;
       background: var(--bg);
-      padding: 0.34in 0.30in;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
+      padding: 0.20in 0.20in 0.16in;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
       color: var(--fg);
     }
 
     .logoWrap{
-      height: 0.70in;
-      display: grid;
-      place-items: center;
+      height: 0.50in;
+      display:grid;
+      place-items:center;
       margin-top: 0.02in;
     }
     .logoWrap img{
-      height: 100%;
-      width: auto;
-      display: block;
+      height:100%;
+      width:auto;
+      display:block;
     }
 
-    .main { margin-top: 0.10in; }
-    .barn {
-      font-family: Georgia, "Times New Roman", Times, serif;
-      font-size: 92px;
+    .main{ margin-top: 0.06in; }
+    .barn, .show, .meta{
+      font-family: "Times New Roman", Times, serif;
       font-weight: 400;
+      word-break: break-word;
+    }
+
+    /* From PDF */
+    .barn{
+      font-size: 42pt;
       line-height: 1.02;
-      word-break: break-word;
     }
-    .show, .meta {
-      font-family: Georgia, "Times New Roman", Times, serif;
-      font-weight: 400;
+    .show{
+      font-size: 16pt;
       line-height: 1.1;
-      word-break: break-word;
+      margin-top: 0.06in;
     }
-    .show { font-size: 40px; margin-top: 0.10in; }
-    .meta { font-size: 40px; margin-top: 0.22in; }
+    .meta{
+      font-size: 14pt;
+      line-height: 1.1;
+      margin-top: 0.10in;
+    }
 
-    .emergency {
-      margin-top: auto;
-      padding-top: 0.18in;
+    /* Fixed emergency block (approx CanvaSans via system sans) */
+    .emergency{
+      margin-top:auto;
+      padding-top: 0.10in;
     }
     .emLabel{
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size: 38px;
+      font-family: "Avenir Next", Avenir, Helvetica, Arial, sans-serif;
+      font-size: 14pt;
       font-weight: 800;
       font-style: italic;
-      color: var(--em);
       line-height: 1.05;
     }
     .emName, .emPhone{
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size: 34px;
+      font-family: "Avenir Next", Avenir, Helvetica, Arial, sans-serif;
+      font-size: 12pt;
       font-weight: 500;
       line-height: 1.15;
-      margin-top: 0.12in;
+      margin-top: 0.06in;
     }
-    .emPhone{ margin-top: 0.08in; }
+    .emPhone{ margin-top: 0.04in; }
 
-    /* Print */
     @media print{
-      @page { size: 6in 4in; margin: 0; }
+      @page { size: 5.5in 3.75in; margin: 0; }
       html, body { width: var(--w); height: var(--h); background:#fff; }
-      .screen { padding: 0; display:block; }
+      .screen{ padding:0; display:block; }
     }
   </style>
 </head>
@@ -116,9 +116,8 @@
   <div class="screen">
     <div class="page">
       <div class="card">
-        <!-- Put your logo file in the same folder as this HTML -->
         <div class="logoWrap">
-          <img src="./logo.png" alt="Farm logo" />
+          <img src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
         </div>
 
         <div class="main">
@@ -127,7 +126,6 @@
           <div id="colorGender" class="meta">Bay Gelding</div>
         </div>
 
-        <!-- Fixed block (not dynamic) -->
         <div class="emergency">
           <div class="emLabel">*Emergency Contact*</div>
           <div class="emName">Kirsty Korotkin</div>
@@ -139,6 +137,7 @@
 
   <script>
     (function () {
+      'use strict';
       const p = new URLSearchParams(window.location.search);
 
       const barnName = (p.get('barnName') || '').trim();
