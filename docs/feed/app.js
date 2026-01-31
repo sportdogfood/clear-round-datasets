@@ -1,304 +1,607 @@
-// docs/feed/app.js
+// app.js — FeedBoard UI on TackLists shell (no deps)
+// Data: ./data/latest/{board}.json
+// Default board: feedboard_test (=> ./data/latest/feedboard_test.json)
+
 (function () {
   'use strict';
 
-  // ---------------------------
+  // -----------------------------
   // CONFIG
-  // ---------------------------
+  // -----------------------------
+  const DEFAULT_BOARD = 'feedboard_test'; // without .json
+  const DATA_BASE = './data/latest/';
+  const REFRESH_MS = 60 * 1000;
 
-  const DEFAULT_BOARD_ID = 'feedboard_test';
-  const DATA_DIR = './data/latest/';      // docs/feed/data/latest/
-  const REFRESH_MS = 60 * 1000;          // 1 minute
-  const FETCH_TIMEOUT_MS = 10 * 1000;
-
-  // ---------------------------
-  // DOM
-  // ---------------------------
-
-  const elTitle = document.getElementById('pageTitle');
-  const elMeta = document.getElementById('pageMeta');
-  const elCards = document.getElementById('cards');
-
-  const elBoardInput = document.getElementById('boardInput');
-  const elBtnLoad = document.getElementById('btnLoad');
-  const elBtnRefresh = document.getElementById('btnRefresh');
-
-  const elDot = document.getElementById('dot');
-  const elStatusText = document.getElementById('statusText');
-
-  // ---------------------------
-  // STATE
-  // ---------------------------
-
-  const state = {
-    boardId: DEFAULT_BOARD_ID,
-    timer: null,
-    lastOkAt: null,
-    lastErr: null,
-    data: null
+  // Map existing nav screens to card type filters (list1..list8)
+  const TYPE_FILTER_BY_SCREEN = {
+    list1: 'note',
+    list2: 'task',
+    list3: 'alert',
+    list4: 'event',
+    list5: 'link',
+    list6: 'image',
+    list7: 'status',
+    list8: 'other'
   };
 
-  // ---------------------------
-  // HELPERS
-  // ---------------------------
+  // -----------------------------
+  // DOM
+  // -----------------------------
+  const $root = document.getElementById('screen-root');
+  const $title = document.getElementById('header-title');
+  const $back = document.getElementById('header-back');
+  const $action = document.getElementById('header-action');
+  const $navRow = document.getElementById('nav-row');
 
-  function qs(name) {
-    const u = new URL(window.location.href);
-    const v = u.searchParams.get(name);
-    return v && String(v).trim() ? String(v).trim() : '';
-  }
+  // -----------------------------
+  // STATE
+  // -----------------------------
+  const state = {
+    screen: 'start',
+    history: [],
+    boardParam: null,
+    dataUrl: null,
 
-  function setStatus(kind, text) {
-    elDot.classList.remove('ok', 'bad');
-    if (kind === 'ok') elDot.classList.add('ok');
-    if (kind === 'bad') elDot.classList.add('bad');
-    elStatusText.innerHTML = `<b>${escapeHtml(text)}</b>`;
-  }
+    board_id: null,
+    title: null,
+    generated_at: null,
+    cards: [],
 
-  function escapeHtml(s) {
-    return String(s ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
-  }
+    lastLoadedAt: null,
+    loadError: null,
 
-  function fmtTs(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return String(iso);
-    return d.toLocaleString(undefined, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+    // detail
+    activeCard: null
+  };
+
+  // -----------------------------
+  // INIT
+  // -----------------------------
+  function init() {
+    state.boardParam = getBoardParam();
+    state.dataUrl = buildDataUrl(state.boardParam);
+
+    bindUI();
+    loadBoard({ silent: true }).then(() => {
+      updateNavAggs();
+      render();
+      startAutoRefresh();
+    }).catch(() => {
+      updateNavAggs();
+      render();
+      startAutoRefresh();
     });
   }
 
-  function dataUrl(boardId) {
-    // boardId => docs/feed/data/latest/<boardId>.json
-    return `${DATA_DIR}${encodeURIComponent(boardId)}.json`;
+  function bindUI() {
+    // bottom nav
+    $navRow.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('button[data-screen]') : null;
+      if (!btn) return;
+      const screen = btn.getAttribute('data-screen');
+      goto(screen);
+    });
+
+    // header back
+    $back.addEventListener('click', () => {
+      goBack();
+    });
+
+    // header action
+    $action.addEventListener('click', async () => {
+      const label = ($action.textContent || '').trim().toLowerCase();
+      if (label === 'refresh') {
+        await loadBoard({ silent: false });
+        updateNavAggs();
+        render();
+        return;
+      }
+      if (label === 'copy' && state.activeCard && state.activeCard.body) {
+        try {
+          await navigator.clipboard.writeText(String(state.activeCard.body));
+          // tiny feedback without changing styling: just swap text briefly
+          const prev = $action.textContent;
+          $action.textContent = 'Copied';
+          setTimeout(() => { $action.textContent = prev; }, 750);
+        } catch (_) {
+          // ignore
+        }
+        return;
+      }
+    });
   }
 
-  function persistCache(boardId, data) {
-    try {
-      localStorage.setItem(`crt_feed_cache_${boardId}`, JSON.stringify({
-        saved_at: new Date().toISOString(),
-        data
-      }));
-    } catch { /* ignore */ }
+  function startAutoRefresh() {
+    setInterval(async () => {
+      // do not auto-refresh when user is on a detail screen (avoid jumpiness)
+      if (state.screen === 'detail') return;
+      await loadBoard({ silent: true });
+      updateNavAggs();
+      // only rerender list-like screens
+      if (state.screen !== 'start') render();
+    }, REFRESH_MS);
   }
 
-  function readCache(boardId) {
+  // -----------------------------
+  // DATA
+  // -----------------------------
+  function getBoardParam() {
     try {
-      const raw = localStorage.getItem(`crt_feed_cache_${boardId}`);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      return obj && obj.data ? obj.data : null;
-    } catch {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('board') || sp.get('board_id') || null;
+    } catch (_) {
       return null;
     }
   }
 
-  async function fetchJson(url) {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  function buildDataUrl(boardParam) {
+    let b = (boardParam || DEFAULT_BOARD).trim();
+    if (!b) b = DEFAULT_BOARD;
+    if (!/\.json$/i.test(b)) b = b + '.json';
+    return DATA_BASE + b;
+  }
+
+  async function loadBoard(opts) {
+    state.loadError = null;
+
+    const cacheBust = (Date.now()).toString(36);
+    const url = state.dataUrl + (state.dataUrl.includes('?') ? '&' : '?') + 'v=' + cacheBust;
 
     try {
-      const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
-      const text = await r.text();
-      if (!r.ok) {
-        const msg = text && text.length < 500 ? text : `HTTP ${r.status}`;
-        throw new Error(msg);
+      const r = await fetch(url, { method: 'GET', cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const json = await r.json();
+
+      state.board_id = json.board_id || json.boardId || null;
+      state.title = json.title || 'FeedBoard';
+      state.generated_at = json.generated_at || json.generatedAt || null;
+
+      const cards = Array.isArray(json.cards) ? json.cards : [];
+      state.cards = normalizeCards(cards);
+
+      state.lastLoadedAt = new Date().toISOString();
+      if (!opts || !opts.silent) {
+        // no-op (kept for future)
       }
-      if (!text) throw new Error('empty_body');
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        throw new Error(`invalid_json: ${e.message}`);
-      }
-    } finally {
-      clearTimeout(t);
+    } catch (e) {
+      state.loadError = String(e && e.message ? e.message : e);
+      // keep existing data if any
     }
   }
 
-  function normalizeBoard(obj) {
-    // Expected shape:
-    // {
-    //   board_id, generated_at, title,
-    //   cards: [{ card_id, type, title, body, ts, ... }]
-    // }
-    if (!obj || typeof obj !== 'object') return null;
-
-    const board_id = String(obj.board_id || '').trim() || null;
-    const generated_at = obj.generated_at || obj.generatedAt || null;
-    const title = String(obj.title || '').trim() || (board_id ? board_id : 'FeedBoard');
-    const cardsRaw = Array.isArray(obj.cards) ? obj.cards : [];
-
-    const cards = cardsRaw
-      .filter(Boolean)
-      .map((c, idx) => ({
-        card_id: c.card_id || c.id || `card_${idx + 1}`,
-        type: String(c.type || 'note'),
-        title: String(c.title || c.subject || c.card_id || `Card ${idx + 1}`),
-        body: c.body != null ? String(c.body) : (c.text != null ? String(c.text) : ''),
-        ts: c.ts || c.time || c.created_at || null,
-        _raw: c
-      }));
-
-    return { board_id, generated_at, title, cards, _raw: obj };
+  function normalizeCards(cards) {
+    const out = [];
+    for (const c of cards) {
+      if (!c) continue;
+      const card = {
+        card_id: c.card_id || c.id || null,
+        type: normalizeType(c.type),
+        title: String(c.title || c.name || '(untitled)'),
+        body: c.body == null ? '' : String(c.body),
+        ts: c.ts || c.timestamp || c.created_at || null
+      };
+      out.push(card);
+    }
+    out.sort((a, b) => safeTime(b.ts) - safeTime(a.ts));
+    return out;
   }
 
-  function render(board) {
-    const b = board || { title: 'CRT Feed', cards: [] };
+  function normalizeType(t) {
+    const s = String(t || '').toLowerCase().trim();
+    if (!s) return 'other';
+    if (s === 'note' || s === 'notes') return 'note';
+    if (s === 'task' || s === 'todo' || s === 'to-do') return 'task';
+    if (s === 'alert' || s === 'warning') return 'alert';
+    if (s === 'event') return 'event';
+    if (s === 'link' || s === 'url') return 'link';
+    if (s === 'image' || s === 'photo') return 'image';
+    if (s === 'status') return 'status';
+    return 'other';
+  }
 
-    const title = b.title || 'CRT Feed';
-    elTitle.textContent = title;
+  function safeTime(ts) {
+    if (!ts) return 0;
+    const d = new Date(ts);
+    const n = d.getTime();
+    return Number.isFinite(n) ? n : 0;
+  }
 
-    const parts = [];
-    if (b.board_id) parts.push(`board: ${b.board_id}`);
-    if (b.generated_at) parts.push(`generated: ${fmtTs(b.generated_at)}`);
-    if (state.lastOkAt) parts.push(`last ok: ${fmtTs(state.lastOkAt)}`);
-    elMeta.textContent = parts.length ? parts.join(' • ') : '—';
+  // -----------------------------
+  // NAV + ROUTING
+  // -----------------------------
+  function goto(screen) {
+    if (!screen) return;
 
-    const cards = Array.isArray(b.cards) ? b.cards : [];
-
-    if (!cards.length) {
-      elCards.innerHTML = `<div class="empty">No cards.</div>`;
+    // if user taps the current primary section, just render
+    if (state.screen === screen) {
+      render();
       return;
     }
 
-    // newest-first if ts present
-    cards.sort((a, b) => {
-      const at = a.ts ? new Date(a.ts).getTime() : 0;
-      const bt = b.ts ? new Date(b.ts).getTime() : 0;
-      return bt - at;
+    // push history (except when going to start)
+    state.history.push({
+      screen: state.screen,
+      activeCard: state.activeCard
     });
 
-    elCards.innerHTML = cards.map((c) => {
-      const t = escapeHtml(c.title || '');
-      const ty = escapeHtml(c.type || 'note');
-      const ts = c.ts ? escapeHtml(fmtTs(c.ts)) : '';
-      const body = escapeHtml(c.body || '');
+    state.screen = screen;
+    state.activeCard = null;
 
-      return `
-        <div class="card" data-card-id="${escapeHtml(c.card_id)}">
-          <div class="cardTop">
-            <div style="min-width:0">
-              <div class="cardTitle">${t}</div>
-            </div>
-            <div class="cardMeta">
-              <span class="tag">${ty}</span>
-              ${ts ? `<span class="ts mono">${ts}</span>` : ``}
-            </div>
-          </div>
-          ${body ? `<div class="body">${body}</div>` : ``}
-        </div>
-      `;
-    }).join('');
+    render();
   }
 
-  function renderError(msg, hint) {
-    const m = escapeHtml(msg || 'error');
-    const h = hint ? `<div class="body mono" style="margin-top:10px">${escapeHtml(hint)}</div>` : '';
-    elCards.innerHTML = `<div class="error"><div class="mono">${m}</div>${h}</div>`;
+  function goBack() {
+    const last = state.history.pop();
+    if (!last) {
+      // default back target
+      state.screen = 'start';
+      state.activeCard = null;
+      render();
+      return;
+    }
+    state.screen = last.screen || 'start';
+    state.activeCard = last.activeCard || null;
+    render();
   }
 
-  async function loadBoard(boardId, opts) {
-    const board = String(boardId || '').trim() || DEFAULT_BOARD_ID;
-    state.boardId = board;
-    elBoardInput.value = board;
+  // -----------------------------
+  // RENDER HELPERS
+  // -----------------------------
+  function clearRoot() {
+    while ($root.firstChild) $root.removeChild($root.firstChild);
+  }
 
-    const url = dataUrl(board);
+  function setHeader(title, opts) {
+    $title.textContent = title || '';
 
-    setStatus('idle', 'loading');
-    state.lastErr = null;
+    const canBack = !!(opts && opts.canBack);
+    $back.hidden = !canBack;
 
-    try {
-      const raw = await fetchJson(url);
-      const normalized = normalizeBoard(raw);
-      if (!normalized) throw new Error('unexpected_shape');
-
-      // if file doesn't include board_id, inject from request
-      if (!normalized.board_id) normalized.board_id = board;
-
-      state.data = normalized;
-      state.lastOkAt = new Date().toISOString();
-      persistCache(board, normalized);
-
-      setStatus('ok', 'ok');
-      render(normalized);
-
-      if (opts && opts.updateUrl) {
-        const u = new URL(window.location.href);
-        u.searchParams.set('board', board);
-        history.replaceState({}, '', u.toString());
-      }
-    } catch (e) {
-      state.lastErr = e && e.message ? e.message : String(e);
-
-      // fallback to cache
-      const cached = readCache(board);
-      if (cached) {
-        setStatus('bad', 'error (cached)');
-        render(cached);
-        renderError(
-          `Fetch failed; showing cached board.`,
-          `board=${board}\nurl=${url}\nerror=${state.lastErr}`
-        );
-      } else {
-        setStatus('bad', 'error');
-        renderError(
-          `Fetch failed.`,
-          `board=${board}\nurl=${url}\nerror=${state.lastErr}`
-        );
-      }
+    if (opts && opts.actionLabel) {
+      $action.textContent = opts.actionLabel;
+      $action.hidden = false;
+    } else {
+      $action.textContent = '';
+      $action.hidden = true;
     }
   }
 
-  function startAutoRefresh() {
-    if (state.timer) clearInterval(state.timer);
-    state.timer = setInterval(() => {
-      loadBoard(state.boardId, { updateUrl: false });
-    }, REFRESH_MS);
+  function setNavActive(screen) {
+    const btns = $navRow.querySelectorAll('button[data-screen]');
+    btns.forEach((b) => {
+      const s = b.getAttribute('data-screen');
+      if (s === screen) b.classList.add('nav-btn--primary');
+      else b.classList.remove('nav-btn--primary');
+    });
   }
 
-  // ---------------------------
-  // EVENTS
-  // ---------------------------
+  function addGroupLabel(text) {
+    const div = document.createElement('div');
+    div.className = 'list-group-label';
+    div.textContent = text;
+    $root.appendChild(div);
+  }
 
-  elBtnLoad.addEventListener('click', () => {
-    const b = String(elBoardInput.value || '').trim();
-    loadBoard(b || DEFAULT_BOARD_ID, { updateUrl: true });
-  });
+  function addDivider() {
+    const div = document.createElement('div');
+    div.className = 'list-group-divider';
+    $root.appendChild(div);
+  }
 
-  elBtnRefresh.addEventListener('click', () => {
-    loadBoard(state.boardId, { updateUrl: false });
-  });
+  function addRow(opts) {
+    const row = document.createElement('div');
+    row.className = 'row';
 
-  elBoardInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      elBtnLoad.click();
+    if (opts && opts.tap) row.classList.add('row--tap');
+    if (opts && opts.active) row.classList.add('row--active');
+
+    const title = document.createElement('div');
+    title.className = 'row-title';
+    title.textContent = opts && opts.title ? opts.title : '';
+
+    const tag = document.createElement('div');
+    tag.className = 'row-tag';
+    tag.textContent = opts && opts.tag != null ? String(opts.tag) : '';
+
+    if (opts && opts.tagPositive) tag.classList.add('row-tag--positive');
+    if (opts && opts.tagIsCount) tag.classList.add('row-tag--count');
+
+    row.appendChild(title);
+    row.appendChild(tag);
+
+    if (opts && opts.tap && typeof opts.onClick === 'function') {
+      row.addEventListener('click', opts.onClick);
     }
-  });
 
-  // ---------------------------
-  // INIT
-  // ---------------------------
+    $root.appendChild(row);
+  }
 
-  (function init() {
-    const fromQs = qs('board');
-    const board = fromQs || DEFAULT_BOARD_ID;
+  function addStartLogo() {
+    const wrap = document.createElement('div');
+    wrap.className = 'start-logo';
 
-    elBoardInput.value = board;
-    setStatus('idle', 'idle');
+    const title = document.createElement('div');
+    title.className = 'start-logo-title';
+    title.textContent = state.title || 'FeedBoard';
 
-    loadBoard(board, { updateUrl: true });
-    startAutoRefresh();
-  })();
+    const sub = document.createElement('div');
+    sub.className = 'start-logo-subtitle';
+    sub.textContent = buildStartSubtitle();
+
+    wrap.appendChild(title);
+    wrap.appendChild(sub);
+    $root.appendChild(wrap);
+  }
+
+  function buildStartSubtitle() {
+    const parts = [];
+    const boardFile = (state.dataUrl || '').split('/').pop() || '';
+    if (boardFile) parts.push(boardFile);
+    if (state.generated_at) parts.push('generated ' + fmtDateTime(state.generated_at));
+    if (state.loadError) parts.push('load error: ' + state.loadError);
+    return parts.join(' • ');
+  }
+
+  function fmtDateKey(ts) {
+    if (!ts) return 'Unknown date';
+    const d = new Date(ts);
+    if (!Number.isFinite(d.getTime())) return 'Unknown date';
+    // YYYY-MM-DD in local time
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${da}`;
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (!Number.isFinite(d.getTime())) return '';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function fmtDateTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (!Number.isFinite(d.getTime())) return '';
+    return d.toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // -----------------------------
+  // SCREEN RENDERERS
+  // -----------------------------
+  function render() {
+    setNavActive(state.screen);
+
+    if (state.screen === 'detail' && state.activeCard) {
+      renderDetail(state.activeCard);
+      return;
+    }
+
+    if (state.screen === 'start') {
+      renderStart();
+      return;
+    }
+
+    if (state.screen === 'summary') {
+      renderSummary();
+      return;
+    }
+
+    // list screens
+    if (state.screen === 'state') {
+      renderFeedList({ title: 'Feed', cards: state.cards, canBack: true, actionLabel: 'Refresh' });
+      return;
+    }
+
+    if (/^list[1-8]$/.test(state.screen)) {
+      const type = TYPE_FILTER_BY_SCREEN[state.screen] || 'other';
+      const filtered = state.cards.filter(c => c.type === type);
+      renderFeedList({ title: type.toUpperCase(), cards: filtered, canBack: true, actionLabel: 'Refresh' });
+      return;
+    }
+
+    // fallback
+    renderStart();
+  }
+
+  function renderStart() {
+    clearRoot();
+    setHeader('Start', { canBack: false, actionLabel: 'Refresh' });
+
+    addStartLogo();
+
+    addRow({
+      title: 'Open Feed',
+      tag: String(state.cards.length),
+      tagIsCount: true,
+      tap: true,
+      onClick: () => goto('state')
+    });
+
+    addRow({
+      title: 'Board file',
+      tag: (state.dataUrl || '').split('/').pop() || '',
+      tap: false
+    });
+
+    addRow({
+      title: 'Generated',
+      tag: state.generated_at ? fmtDateTime(state.generated_at) : '—',
+      tap: false
+    });
+
+    addRow({
+      title: 'Last loaded',
+      tag: state.lastLoadedAt ? fmtDateTime(state.lastLoadedAt) : '—',
+      tap: false
+    });
+
+    if (state.loadError) {
+      addDivider();
+      addRow({
+        title: 'Load error',
+        tag: '!',
+        tagPositive: false,
+        tap: false
+      });
+      addRow({
+        title: state.loadError,
+        tag: '',
+        tap: false
+      });
+    }
+  }
+
+  function renderFeedList(opts) {
+    clearRoot();
+    setHeader(opts.title || 'Feed', { canBack: true, actionLabel: 'Refresh' });
+
+    const cards = Array.isArray(opts.cards) ? opts.cards : [];
+    if (!cards.length) {
+      addRow({ title: 'No cards', tag: '0', tap: false });
+      return;
+    }
+
+    // group by date key
+    let lastKey = null;
+    for (const c of cards) {
+      const key = fmtDateKey(c.ts);
+      if (key !== lastKey) {
+        if (lastKey !== null) addDivider();
+        addGroupLabel(key);
+        lastKey = key;
+      }
+
+      const time = fmtTime(c.ts);
+      const left = (time ? (time + '  ') : '') + c.title;
+
+      addRow({
+        title: left,
+        tag: c.type,
+        tap: true,
+        onClick: () => openCard(c)
+      });
+    }
+  }
+
+  function openCard(card) {
+    state.history.push({
+      screen: state.screen,
+      activeCard: null
+    });
+    state.screen = 'detail';
+    state.activeCard = card;
+    render();
+  }
+
+  function renderDetail(card) {
+    clearRoot();
+    setHeader(card.title || 'Card', { canBack: true, actionLabel: (card.body ? 'Copy' : null) });
+
+    addRow({ title: 'Type', tag: card.type || '—', tap: false });
+    addRow({ title: 'Time', tag: card.ts ? fmtDateTime(card.ts) : '—', tap: false });
+
+    addDivider();
+
+    // body as multi-line: use multiple rows to keep the same pill style
+    const body = String(card.body || '').trim();
+    if (!body) {
+      addRow({ title: '(no body)', tag: '', tap: false });
+      return;
+    }
+
+    const lines = body.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!lines.length) {
+      addRow({ title: '(no body)', tag: '', tap: false });
+      return;
+    }
+
+    addGroupLabel('Body');
+    for (const line of lines.slice(0, 40)) {
+      addRow({ title: line, tag: '', tap: false });
+    }
+    if (lines.length > 40) {
+      addRow({ title: '…', tag: String(lines.length - 40), tap: false });
+    }
+  }
+
+  function renderSummary() {
+    clearRoot();
+    setHeader('Summary', { canBack: true, actionLabel: 'Refresh' });
+
+    const total = state.cards.length;
+    const byType = countByType(state.cards);
+
+    addRow({ title: 'Total cards', tag: String(total), tagIsCount: true, tap: false });
+
+    addRow({ title: 'Generated', tag: state.generated_at ? fmtDateTime(state.generated_at) : '—', tap: false });
+    addRow({ title: 'Board', tag: state.board_id || state.boardParam || DEFAULT_BOARD, tap: false });
+
+    addDivider();
+    addGroupLabel('By type');
+
+    const keys = Object.keys(byType).sort((a, b) => byType[b] - byType[a]);
+    if (!keys.length) {
+      addRow({ title: '—', tag: '0', tap: false });
+      return;
+    }
+
+    for (const k of keys) {
+      addRow({ title: k, tag: String(byType[k]), tagIsCount: true, tap: true, onClick: () => goto(screenForType(k)) });
+    }
+  }
+
+  function countByType(cards) {
+    const m = Object.create(null);
+    for (const c of cards) {
+      const k = c.type || 'other';
+      m[k] = (m[k] || 0) + 1;
+    }
+    return m;
+  }
+
+  function screenForType(type) {
+    // reverse lookup into TYPE_FILTER_BY_SCREEN
+    const t = normalizeType(type);
+    for (const k of Object.keys(TYPE_FILTER_BY_SCREEN)) {
+      if (TYPE_FILTER_BY_SCREEN[k] === t) return k;
+    }
+    return 'list8';
+  }
+
+  // -----------------------------
+  // NAV AGGS
+  // -----------------------------
+  function updateNavAggs() {
+    const total = state.cards.length;
+
+    // state = total
+    setAgg('state', total);
+
+    // list1..list8 = by type filter
+    const byType = countByType(state.cards);
+    for (const screen of Object.keys(TYPE_FILTER_BY_SCREEN)) {
+      const t = TYPE_FILTER_BY_SCREEN[screen];
+      setAgg(screen, byType[t] || 0);
+    }
+
+    // summary = total
+    setAgg('summary', total);
+  }
+
+  function setAgg(key, value) {
+    const el = document.querySelector(`[data-nav-agg="${key}"]`);
+    if (!el) return;
+    const n = Number.isFinite(value) ? value : 0;
+    el.textContent = String(n);
+    if (n > 0) el.classList.add('nav-agg--positive');
+    else el.classList.remove('nav-agg--positive');
+  }
+
+  // -----------------------------
+  // BOOT
+  // -----------------------------
+  init();
 
 })();
