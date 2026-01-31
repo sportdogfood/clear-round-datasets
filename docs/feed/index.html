@@ -1,0 +1,233 @@
+<!-- docs/feed/index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>CRT Feed</title>
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    :root{
+      --bg:#ffffff;
+      --fg:#111111;
+      --muted:#666666;
+      --border:#d0d0d0;
+      --card:#f7f7f7;
+      --pill:#efefef;
+      --ok:#0b5d47;
+      --bad:#b00020;
+
+      --max: 980px;
+      --pad: 14px;
+      --radius: 14px;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0b0c0f;
+        --fg:#f2f2f2;
+        --muted:#a7a7a7;
+        --border:#262a33;
+        --card:#13151b;
+        --pill:#1b1f2a;
+        --shadow: 0 10px 28px rgba(0,0,0,.35);
+      }
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg);
+      color:var(--fg);
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding: var(--pad)}
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .toprow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px var(--pad);
+      max-width: var(--max);
+      margin: 0 auto;
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 0;
+    }
+    .brand h1{
+      font-size: 16px;
+      line-height: 1.1;
+      margin:0;
+      font-weight: 700;
+      letter-spacing: .2px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 52vw;
+    }
+    .brand .meta{
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 52vw;
+    }
+    .controls{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .input, .btn{
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--fg);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 13px;
+      line-height: 1;
+      outline: none;
+    }
+    .input{ width: 220px; }
+    .btn{
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--pill);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .pill b{ color: var(--fg); font-weight: 700; }
+    .statusDot{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: var(--muted);
+      flex: 0 0 auto;
+    }
+    .statusDot.ok{ background: var(--ok); }
+    .statusDot.bad{ background: var(--bad); }
+
+    .cards{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      padding: 14px 0 24px;
+    }
+    .card{
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px 12px 10px;
+    }
+    .cardTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .cardTitle{
+      font-weight: 800;
+      font-size: 14px;
+      margin:0;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .cardMeta{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      text-align:right;
+    }
+    .tag{
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--pill);
+      color: var(--muted);
+      text-transform: lowercase;
+      letter-spacing: .2px;
+    }
+    .ts{
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .body{
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+      color: color-mix(in srgb, var(--fg) 92%, var(--muted));
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .empty, .error{
+      border: 1px dashed var(--border);
+      background: color-mix(in srgb, var(--card) 72%, transparent);
+      border-radius: var(--radius);
+      padding: 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .error{
+      border-style: solid;
+      border-color: color-mix(in srgb, var(--bad) 55%, var(--border));
+      color: color-mix(in srgb, var(--bad) 70%, var(--fg));
+    }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="toprow">
+      <div class="brand">
+        <h1 id="pageTitle">CRT Feed</h1>
+        <div class="meta" id="pageMeta">Loading…</div>
+      </div>
+
+      <div class="controls">
+        <span class="pill" title="Fetch status">
+          <span id="dot" class="statusDot"></span>
+          <span id="statusText"><b>idle</b></span>
+        </span>
+
+        <input id="boardInput" class="input mono" type="text" placeholder="board_id (e.g. feedboard_test)" />
+        <button id="btnLoad" class="btn">Load</button>
+        <button id="btnRefresh" class="btn">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="cards" class="cards"></div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
