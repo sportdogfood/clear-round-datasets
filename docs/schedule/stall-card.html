@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stall Card (6x4)</title>
+
+  <style>
+    /* Screen */
+    :root {
+      --w: 6in;
+      --h: 4in;
+      --pad: 0.25in;
+      --border: 0.03in;
+      --fg: #111;
+      --muted: #444;
+      --line: #111;
+      --bg: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--fg);
+      background: #f3f3f3;
+    }
+
+    .wrap {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      justify-content: start;
+    }
+
+    .controls {
+      width: calc(var(--w) + 2 * var(--border));
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    label { font-size: 12px; color: var(--muted); }
+    input {
+      width: 100%;
+      padding: 10px 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      appearance: none;
+      border: 1px solid #111;
+      background: #111;
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: #fff;
+      color: #111;
+    }
+    .hint {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.35;
+    }
+    .hint code { background: #f1f1f1; padding: 2px 6px; border-radius: 6px; }
+
+    /* Card */
+    .card {
+      width: var(--w);
+      height: var(--h);
+      background: var(--bg);
+      border: var(--border) solid var(--line);
+      padding: var(--pad);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .top {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.1;
+      word-break: break-word;
+    }
+    .mid {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8px 0;
+    }
+    .barn {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      word-break: break-word;
+    }
+    .bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .meta {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--fg);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Print */
+    @media print {
+      @page { size: 6in 4in; margin: 0; }
+      html, body { width: 6in; height: 4in; margin: 0; background: #fff; }
+      .wrap { padding: 0; }
+      .controls, .hint, .btns { display: none !important; }
+      .card { border-radius: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <!-- Controls (hidden when printing) -->
+    <div class="controls">
+      <div class="row">
+        <label for="inpBarn">barnName</label>
+        <input id="inpBarn" type="text" placeholder="e.g., Oddur hurricane" />
+      </div>
+      <div class="row">
+        <label for="inpShow">showName</label>
+        <input id="inpShow" type="text" placeholder="e.g., Oddur Van Beaugaarde" />
+      </div>
+      <div class="row">
+        <label for="inpMeta">color | gender</label>
+        <input id="inpMeta" type="text" placeholder="e.g., Bay Gelding" />
+      </div>
+
+      <div class="btns">
+        <button id="btnPrint" type="button">Print</button>
+        <button id="btnLink" type="button" class="secondary">Update URL</button>
+      </div>
+
+      <div class="hint">
+        URL params supported:
+        <code>?barnName=...</code>
+        <code>&showName=...</code>
+        <code>&colorGender=...</code>
+        <code>&autoprint=1</code>
+      </div>
+    </div>
+
+    <!-- The printable card -->
+    <div class="card" role="document" aria-label="Stall Card">
+      <div class="top" id="showName">Show Name</div>
+
+      <div class="mid">
+        <div class="barn" id="barnName">Barn Name</div>
+      </div>
+
+      <div class="bottom">
+        <div class="meta" id="colorGender">Color | Gender</div>
+        <div class="small" id="stamp"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const elBarn = document.getElementById('barnName');
+      const elShow = document.getElementById('showName');
+      const elMeta = document.getElementById('colorGender');
+      const elStamp = document.getElementById('stamp');
+
+      const inpBarn = document.getElementById('inpBarn');
+      const inpShow = document.getElementById('inpShow');
+      const inpMeta = document.getElementById('inpMeta');
+
+      const btnPrint = document.getElementById('btnPrint');
+      const btnLink = document.getElementById('btnLink');
+
+      function qp(name) {
+        const url = new URL(window.location.href);
+        const v = url.searchParams.get(name);
+        return v == null ? '' : v;
+      }
+
+      function setTextSafe(el, v, fallback) {
+        const s = (v || '').trim();
+        el.textContent = s ? s : fallback;
+      }
+
+      function applyFromInputs() {
+        setTextSafe(elBarn, inpBarn.value, 'Barn Name');
+        setTextSafe(elShow, inpShow.value, 'Show Name');
+        setTextSafe(elMeta, inpMeta.value, 'Color | Gender');
+      }
+
+      function applyFromQuery() {
+        const barnName = qp('barnName');
+        const showName = qp('showName');
+        const colorGender = qp('colorGender');
+
+        inpBarn.value = barnName;
+        inpShow.value = showName;
+        inpMeta.value = colorGender;
+
+        applyFromInputs();
+      }
+
+      function updateUrlFromInputs() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('barnName', inpBarn.value || '');
+        url.searchParams.set('showName', inpShow.value || '');
+        url.searchParams.set('colorGender', inpMeta.value || '');
+        // keep autoprint if present
+        window.history.replaceState({}, '', url.toString());
+      }
+
+      // Wire up live updates
+      inpBarn.addEventListener('input', applyFromInputs);
+      inpShow.addEventListener('input', applyFromInputs);
+      inpMeta.addEventListener('input', applyFromInputs);
+
+      btnPrint.addEventListener('click', function () {
+        updateUrlFromInputs();
+        window.print();
+      });
+
+      btnLink.addEventListener('click', function () {
+        updateUrlFromInputs();
+      });
+
+      // Optional timestamp (screen only)
+      elStamp.textContent = '';
+
+      // Init
+      applyFromQuery();
+
+      // Optional autoprint
+      const ap = (qp('autoprint') || '').toLowerCase();
+      if (ap === '1' || ap === 'true' || ap === 'yes') {
+        // let layout settle
+        setTimeout(() => window.print(), 250);
+      }
+    })();
+  </script>
+</body>
+</html>
