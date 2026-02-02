@@ -73,94 +73,6 @@
   };
 
   // ----------------------------
-  // NAV COMPAT
-  // ----------------------------
-  // Normalize whatever bottom-nav tabs exist into canonical FeedBoard screens.
-  // New shells should have: state, list1, summary, list8, (optional: start)
-  // Legacy shells often have: list1, list2, list3, summary (with unrelated labels).
-  const navCompat = {
-    initialized: false,
-    canonicalToActual: { state: 'state', list1: 'list1', summary: 'summary', list8: 'list8', start: 'start' },
-    actualToCanonical: { state: 'state', list1: 'list1', summary: 'summary', list8: 'list8', start: 'start' }
-  };
-
-  function setNavLabel(btn, text) {
-    if (!btn) return;
-    const el = btn.querySelector('.nav-label');
-    if (el) el.textContent = text;
-  }
-
-  function initNavCompat() {
-    if (navCompat.initialized) return;
-    navCompat.initialized = true;
-
-    const btns = Array.from(document.querySelectorAll('.nav-btn[data-screen]'));
-    if (!btns.length) return;
-
-    const hasState = !!document.querySelector('.nav-btn[data-screen="state"]');
-    const hasList8 = !!document.querySelector('.nav-btn[data-screen="list8"]');
-
-    // New shell: just relabel.
-    if (hasState && hasList8) {
-      navCompat.canonicalToActual = { state: 'state', list1: 'list1', summary: 'summary', list8: 'list8', start: 'start' };
-      navCompat.actualToCanonical = { state: 'state', list1: 'list1', summary: 'summary', list8: 'list8', start: 'start' };
-
-      btns.forEach(btn => {
-        const s = btn.getAttribute('data-screen');
-        if (s === 'state') setNavLabel(btn, 'Horse List');
-        else if (s === 'list1') setNavLabel(btn, 'Active List');
-        else if (s === 'summary') setNavLabel(btn, 'Summary');
-        else if (s === 'list8') setNavLabel(btn, 'Text');
-        else if (s === 'start') setNavLabel(btn, 'Restart');
-      });
-      return;
-    }
-
-    // Legacy shell: pick the first 3 non-summary/non-start tabs in DOM order
-    // and map them to Horse List, Active List, Text.
-    const summaryBtn = btns.find(b => (b.getAttribute('data-screen') || '') === 'summary') || null;
-    const startBtn = btns.find(b => (b.getAttribute('data-screen') || '') === 'start') || null;
-
-    const candidates = btns.filter(b => {
-      const ds = (b.getAttribute('data-screen') || '').trim();
-      return ds && ds !== 'summary' && ds !== 'start';
-    });
-
-    const actualState = (candidates[0] && candidates[0].getAttribute('data-screen')) || 'list1';
-    const actualActive = (candidates[1] && candidates[1].getAttribute('data-screen')) || (candidates[0] && candidates[0].getAttribute('data-screen')) || 'list2';
-    const actualText = (candidates[2] && candidates[2].getAttribute('data-screen')) || (candidates[1] && candidates[1].getAttribute('data-screen')) || 'list3';
-
-    navCompat.canonicalToActual = {
-      state: actualState,
-      list1: actualActive,
-      summary: summaryBtn ? (summaryBtn.getAttribute('data-screen') || 'summary') : 'summary',
-      list8: actualText,
-      start: startBtn ? (startBtn.getAttribute('data-screen') || 'start') : 'start'
-    };
-
-    navCompat.actualToCanonical = {};
-    Object.keys(navCompat.canonicalToActual).forEach(k => {
-      const actual = navCompat.canonicalToActual[k];
-      if (actual) navCompat.actualToCanonical[actual] = k;
-    });
-
-    // Relabel mapped tabs; hide any extra tabs.
-    btns.forEach(btn => {
-      const ds = (btn.getAttribute('data-screen') || '').trim();
-      const canon = navCompat.actualToCanonical[ds] || null;
-      if (!canon) {
-        btn.style.display = 'none';
-        return;
-      }
-      if (canon === 'state') setNavLabel(btn, 'Horse List');
-      else if (canon === 'list1') setNavLabel(btn, 'Active List');
-      else if (canon === 'summary') setNavLabel(btn, 'Summary');
-      else if (canon === 'list8') setNavLabel(btn, 'Text');
-      else if (canon === 'start') setNavLabel(btn, 'Restart');
-    });
-  }
-
-  // ----------------------------
   // HELPERS
   // ----------------------------
   function qs(name) {
@@ -363,38 +275,20 @@
   }
 
   function updateNavUI(activeScreen) {
-    const activeActual = (navCompat.canonicalToActual && navCompat.canonicalToActual[activeScreen]) || activeScreen;
-
     const btns = document.querySelectorAll('.nav-btn[data-screen]');
     btns.forEach(btn => {
-      const s = (btn.getAttribute('data-screen') || '').trim();
-      btn.classList.toggle('nav-btn--primary', s === activeActual);
+      const s = btn.getAttribute('data-screen');
+      btn.classList.toggle('nav-btn--primary', s === activeScreen);
     });
 
     const sel = selectedCount();
-    const keep = new Set();
+    setNavAgg('state', sel);
+    setNavAgg('list1', sel);
+    setNavAgg('summary', sel);
+    setNavAgg('list8', sel);
 
-    // Show the same selection count on the mapped tabs.
-    ['state', 'list1', 'summary', 'list8'].forEach(canon => {
-      const actual = (navCompat.canonicalToActual && navCompat.canonicalToActual[canon]) || canon;
-      if (actual) {
-        keep.add(actual);
-        setNavAgg(actual, sel);
-      }
-    });
-
-    // Start/Restart (if present) shows no count.
-    const startActual = navCompat.canonicalToActual && navCompat.canonicalToActual.start;
-    if (startActual) {
-      keep.add(startActual);
-      setNavAgg(startActual, 0);
-    }
-
-    // Quiet any other legacy tabs that are still in the DOM.
-    document.querySelectorAll('.nav-agg[data-nav-agg]').forEach(el => {
-      const k = (el.getAttribute('data-nav-agg') || '').trim();
-      if (k && !keep.has(k)) el.textContent = '0';
-    });
+    // keep legacy others quiet
+    for (let i = 2; i <= 7; i++) setNavAgg(`list${i}`, 0);
   }
 
   function mkRowTap(title, tagsHtml, onClick, isActive) {
@@ -461,21 +355,18 @@
   }
 
   function resolveSaveUrl(json) {
+    // FeedBoard Save must always target the canonical server.
+    // Only accept an explicit override if it is already on the ITEMS origin.
     const qp = String(qs('save_url') || qs('saveUrl') || qs('save') || qs('endpoint') || '').trim();
     const meta = (json && (json.meta || json._meta)) || null;
     const fromJson = String(json && (json.save_url || json.saveUrl || json.save_endpoint) || '').trim();
     const fromMeta = String(meta && (meta.save_url || meta.saveUrl || meta.save_endpoint) || '').trim();
     const picked = String(qp || fromJson || fromMeta || '').trim();
 
-    // Only accept endpoints that resolve to the canonical server + route.
-    // This prevents accidental relative URLs like "/feed/commit" on a non-server origin.
-    if (picked) {
-      try {
-        const u = /^https?:\/\//i.test(picked) ? new URL(picked) : new URL(picked, ITEMS_ORIGIN);
-        if (u.origin === ITEMS_ORIGIN && u.pathname === '/feed/commit') return u.toString();
-      } catch (_) {}
-    }
+    if (picked && picked.startsWith(ITEMS_ORIGIN)) return picked;
+    if (picked === '/feed/commit') return DEFAULT_SAVE_URL;
 
+    // Default: always use the canonical server endpoint (works cross-origin).
     return DEFAULT_SAVE_URL;
   }
 
@@ -524,70 +415,6 @@
       }
     };
     return row;
-  }
-
-  function applyDraftToExistingRow(row, horseId, draft, changes) {
-    const next = Object.assign({}, row || {});
-
-    // Ensure stable identifiers
-    if (horseId != null) next.horseId = horseId;
-
-    const touchFeed = () => {
-      if (!next.feed || typeof next.feed !== 'object') next.feed = {};
-      if (!next.feed.feed_display || typeof next.feed.feed_display !== 'object') next.feed.feed_display = { raw: '', value: '' };
-    };
-    const touchSupp = () => {
-      if (!next.supplements || typeof next.supplements !== 'object') next.supplements = {};
-      ['EEMix', 'Positude', 'OM3GA'].forEach(k => {
-        if (!next.supplements[k] || typeof next.supplements[k] !== 'object') next.supplements[k] = { raw: '', value: false };
-      });
-    };
-    const touchNote = () => {
-      if (!next.note || typeof next.note !== 'object') next.note = {};
-      if (!next.note.horse_feed_note || typeof next.note.horse_feed_note !== 'object') next.note.horse_feed_note = { raw: '', value: '' };
-    };
-
-    if (changes && Object.prototype.hasOwnProperty.call(changes, 'horseName')) {
-      const v = String(changes.horseName == null ? '' : changes.horseName).trim();
-      next.horseName = v;
-    }
-
-    if (changes && Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
-      next.boardNumber = (changes.boardNumber == null || changes.boardNumber === '') ? null : Number(changes.boardNumber);
-    }
-
-    if (changes && Object.prototype.hasOwnProperty.call(changes, 'feed_display')) {
-      const v = String(changes.feed_display == null ? '' : changes.feed_display).trim();
-      next.feed_display = v;
-      touchFeed();
-      next.feed.feed_display.raw = v;
-      next.feed.feed_display.value = v;
-    }
-
-    ['EEMix', 'Positude', 'OM3GA'].forEach(k => {
-      if (changes && Object.prototype.hasOwnProperty.call(changes, k)) {
-        const raw = changes[k];
-        next[k] = raw;
-        touchSupp();
-        next.supplements[k].raw = raw;
-        next.supplements[k].value = normalizeSupplementValue(raw);
-      }
-    });
-
-    if (changes && Object.prototype.hasOwnProperty.call(changes, 'horse_feed_note')) {
-      const v = String(changes.horse_feed_note == null ? '' : changes.horse_feed_note).trim();
-      next.horse_feed_note = v;
-      touchNote();
-      next.note.horse_feed_note.raw = v;
-      next.note.horse_feed_note.value = v;
-    }
-
-    // If we didn't touch nested objects but the draft exists for a new-ish row, still keep them consistent.
-    if (draft && isNewHorseId(horseId)) {
-      return buildRowFromDraft(horseId, draft);
-    }
-
-    return next;
   }
 
   function buildLocalNewRowsFromSession(session) {
@@ -653,10 +480,7 @@
   function normalizeNavTarget(raw) {
     const s = String(raw || '').trim();
     if (!s) return 'state';
-
-    // If a legacy tab is clicked (e.g., list2/list3), map it to a canonical screen.
-    const mapped = (navCompat.actualToCanonical && navCompat.actualToCanonical[s]) || s;
-    if (mapped === 'state' || mapped === 'list1' || mapped === 'summary' || mapped === 'detail' || mapped === 'list8' || mapped === 'start') return mapped;
+    if (s === 'state' || s === 'list1' || s === 'summary' || s === 'detail' || s === 'list8') return s;
     return 'state';
   }
 
@@ -1028,19 +852,15 @@
     const changes = draftChanges(horseId);
     if (!Object.keys(changes).length) return;
 
-    const draft = ensureDraft(horseId);
-
     // local uniqueness guard (current in-memory board)
     if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
       const used = computeUsedSlots(horseId);
-      const slotLocal = toInt(changes.boardNumber);
-      if (slotLocal != null && used.has(slotLocal)) {
-        throw new Error(`Board slot ${slotLocal} is already used.`);
+      if (changes.boardNumber != null && used.has(changes.boardNumber)) {
+        throw new Error(`Board slot ${changes.boardNumber} is already used.`);
       }
     }
 
-    // Always pin to the canonical endpoint (never current-origin /feed/commit).
-    state.saveUrl = resolveSaveUrl(state.boardJson || {});
+    if (!state.saveUrl) state.saveUrl = resolveSaveUrl(state.boardJson);
 
     setHeaderAction('Saving…', null);
 
@@ -1061,41 +881,34 @@
     const latestJson = await latestRes.json();
 
     // Extract rows (supports array boards or object boards with rows/board/data).
-    let rows = extractRowsFromBoardJson(latestJson) || [];
-    rows = rows.slice();
-
+    let rows = null;
     let containerKey = null;
-    if (!Array.isArray(latestJson) && latestJson && typeof latestJson === 'object') {
-      if (Array.isArray(latestJson.rows)) containerKey = 'rows';
-      else if (Array.isArray(latestJson.board)) containerKey = 'board';
-      else if (Array.isArray(latestJson.data)) containerKey = 'data';
-      else containerKey = 'rows'; // default if wrapper exists without a rows array
+
+    if (Array.isArray(latestJson)) {
+      rows = latestJson.slice();
+      containerKey = null;
+    } else if (latestJson && typeof latestJson === 'object') {
+      if (Array.isArray(latestJson.rows)) { rows = latestJson.rows.slice(); containerKey = 'rows'; }
+      else if (Array.isArray(latestJson.board)) { rows = latestJson.board.slice(); containerKey = 'board'; }
+      else if (Array.isArray(latestJson.data)) { rows = latestJson.data.slice(); containerKey = 'data'; }
     }
 
-    const horseKey = String(horseId);
-    let idx = rows.findIndex(r => String(getAny(r, FIELD.horse_id) || '') === horseKey);
-    const isNew = idx < 0;
+    if (!rows || !rows.length) throw new Error('Board rows missing or empty');
 
-    if (isNew && !String(draft && draft.horseName ? draft.horseName : '').trim()) {
-      throw new Error('Horse name is required for a new horse.');
-    }
+    const idx = rows.findIndex(r => String(getAny(r, FIELD.horse_id) || '') === String(horseId));
+    if (idx < 0) throw new Error(`Horse not found on board: ${horseId}`);
 
     // Extra uniqueness guard (latest board, for concurrency).
     if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
-      const slot = toInt(changes.boardNumber);
-      if (slot != null) {
-        const conflict = rows.find((r, i) => i !== idx && toInt(getAny(r, FIELD.boardNumber)) === slot);
+      const slot = changes.boardNumber;
+      if (slot != null && slot !== '') {
+        const conflict = rows.find((r, i) => i !== idx && String(getAny(r, FIELD.boardNumber) || '') === String(slot));
         if (conflict) throw new Error(`Board slot ${slot} is already used. Refresh and pick another slot.`);
       }
     }
 
-    // Apply patch (or add a new row).
-    if (isNew) {
-      rows.push(buildRowFromDraft(horseId, draft));
-      idx = rows.length - 1;
-    } else {
-      rows[idx] = applyDraftToExistingRow(rows[idx], horseId, draft, changes);
-    }
+    // Apply patch.
+    rows[idx] = { ...(rows[idx] || {}), ...changes };
 
     // Rebuild board envelope preserving meta fields.
     let updatedBoard = null;
@@ -1114,21 +927,18 @@
       overwrite: true
     };
 
-    const url = String(state.saveUrl || DEFAULT_SAVE_URL);
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(commitPayload)
-    });
+    async function postCommit(url) {
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(commitPayload)
+      });
+    }
+
+    let res = await postCommit(state.saveUrl);
 
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
-      if (res.status === 409) {
-        throw new Error('Duplicate board slot. Pick another slot and try Save again.');
-      }
-      if (res.status === 405) {
-        throw new Error(`Save endpoint rejected (405). Expected POST ${DEFAULT_SAVE_URL}. You are posting to: ${url}`);
-      }
       throw new Error(`Save failed (${res.status})${txt ? ': ' + txt : ''}`);
     }
 
@@ -1337,11 +1147,9 @@
           return;
         }
         // from any main screen -> Start
-        gotoScreen('start');
+        gotoScreen('state');
       };
     }
-
-    if (state.screen === 'start') return renderStart();
     if (state.screen === 'state') return renderActiveHorses();
     if (state.screen === 'list1') return renderFeedList();
     if (state.screen === 'summary') return renderSummary();
@@ -1355,6 +1163,47 @@
   // ----------------------------
   // EVENTS
   // ----------------------------
+
+  // ----------------------------
+  // NAV COMPAT: legacy bottom nav -> FeedBoard mapping
+  // - relabel first 4 tabs
+  // - hide extras
+  // ----------------------------
+  function initNavCompat() {
+    try {
+      const row = document.getElementById('nav-row') || document.querySelector('.nav-row');
+      if (!row) return;
+
+      const btns = Array.from(row.querySelectorAll('.nav-btn'));
+      if (!btns.length) return;
+
+      const map = [
+        { screen: 'state',   label: 'Horse List',  agg: 'state' },
+        { screen: 'list1',   label: 'Active List', agg: 'list1' },
+        { screen: 'summary', label: 'Summary',     agg: 'summary' },
+        { screen: 'list8',   label: 'Text',        agg: 'list8' }
+      ];
+
+      btns.forEach((btn, i) => {
+        if (i < map.length) {
+          btn.hidden = false;
+          btn.setAttribute('data-screen', map[i].screen);
+
+          const lbl = btn.querySelector('.nav-label');
+          if (lbl) lbl.textContent = map[i].label;
+
+          const agg = btn.querySelector('.nav-agg');
+          if (agg) agg.setAttribute('data-nav-agg', map[i].agg);
+
+          btn.classList.remove('nav-btn--primary');
+        } else {
+          btn.hidden = true;
+          btn.setAttribute('data-screen', 'state');
+        }
+      });
+    } catch (_) {}
+  }
+
   function bindNav() {
     elNavRow.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('.nav-btn[data-screen]') : null;
@@ -1368,8 +1217,7 @@
       }
 
       const target = normalizeNavTarget(raw);
-      if (target === 'start') gotoScreen('start');
-      else gotoScreen(target);
+      gotoScreen(target);
     });
   }
 
@@ -1381,7 +1229,7 @@
       initNavCompat();
       bindNav();
       await loadBoard();
-      gotoScreen('start');
+      gotoScreen('state');
     } catch (err) {
       setMessage(err && err.message ? err.message : String(err));
     }
