@@ -67,7 +67,7 @@
       "horseId": "200000163",
       "boardNumber": 1,
       "horseName": "BB",
-      "feed_display": "Fiber - 1 scp",
+      "feed_display": "Fiber - 2 scp",
       "EEMix": "AM  |  PM",
       "Positude": "",
       "OM3GA": "",
@@ -77,7 +77,10 @@
         "size_select": "1",
         "feed_uom": "scp",
         "feed_calc_amounts": 5,
-        "feed_display": "Fiber - 1 scp"
+        "feed_display": {
+          "raw": "Fiber - 2 scp",
+          "value": "Fiber - 2 scp"
+        }
       },
       "supplements": {
         "EEMix": {
