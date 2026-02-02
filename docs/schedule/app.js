@@ -417,6 +417,95 @@
     return await res.json();
   }
 
+
+  function pickFirst(obj, keys) {
+    if (!obj) return null;
+    for (const k of keys) {
+      if (obj[k] == null) continue;
+      const v = obj[k];
+      if (typeof v === 'string') {
+        const s = v.trim();
+        if (s) return s;
+        continue;
+      }
+      return v;
+    }
+    return null;
+  }
+
+  function normalizeTripRecord(r) {
+    if (!r || typeof r !== 'object') return null;
+    const o = { ...r };
+
+    const entryId = pickFirst(r, ['entry_id','entryId','entryID','entry']);
+    if (entryId != null) o.entry_id = entryId;
+
+    const horse = pickFirst(r, ['horseName','horse_name','horse','horse_display','horse_name_display','horse_label']);
+    if (horse != null) o.horseName = String(horse).trim();
+    else if (entryId != null && String(entryId).trim()) o.horseName = `horse - ${String(entryId).trim()}`;
+
+    const rider = pickFirst(r, ['riderName','rider_name','rider','rider_display','rider_full_name','riderFullName','rider_label']);
+    const riderId = pickFirst(r, ['rider_id','riderId','riderID']);
+    if (rider != null) o.riderName = String(rider).trim();
+    else if (riderId != null && String(riderId).trim()) o.riderName = `rider - ${String(riderId).trim()}`;
+
+    const classId = pickFirst(r, ['class_id','classId','classID','class']);
+    if (classId != null) o.class_id = safeNumber(classId) ?? classId;
+
+    const groupId = pickFirst(r, ['class_group_id','classGroupId','classGroupID','group_id','groupId','groupID']);
+    if (groupId != null) o.class_group_id = safeNumber(groupId) ?? groupId;
+
+    const classNum = pickFirst(r, ['class_number','classNumber']);
+    if (classNum != null) o.class_number = safeNumber(classNum) ?? classNum;
+
+    const className = pickFirst(r, ['class_name','className','class_title']);
+    if (className != null) o.class_name = String(className).trim();
+
+    const groupName = pickFirst(r, ['group_name','class_group_name','groupName','division_name','group_title']);
+    if (groupName != null) o.group_name = String(groupName).trim();
+
+    const ringNum = pickFirst(r, ['ring_number','ringNumber','ring','ring_no','ringnum']);
+    if (ringNum != null) o.ring_number = safeNumber(ringNum) ?? ringNum;
+
+    const ringName = pickFirst(r, ['ringName','ring_name','ring_title','ringLabel']);
+    if (ringName != null) o.ringName = String(ringName).trim();
+
+    const latestStart = pickFirst(r, ['latestStart','latest_start','latest_start_time','estimated_start_time','estimatedStart24','estimatedStart','estimated_start','estimatedStartTime','start_time']);
+    if (latestStart != null) o.latestStart = latestStart;
+
+    const latestGO = pickFirst(r, ['latestGO','latest_go','latest_go_time','go_time','estimated_go_time','estimatedGo']);
+    if (latestGO != null) o.latestGO = latestGO;
+
+    const latestStatus = pickFirst(r, ['latestStatus','latest_status','status']);
+    if (latestStatus != null) o.latestStatus = latestStatus;
+
+    const lastOOG = pickFirst(r, ['lastOOG','last_oog','oog_last','last_oog_position','oog']);
+    if (lastOOG != null) o.lastOOG = safeNumber(lastOOG) ?? lastOOG;
+
+    const placing = pickFirst(r, ['latestPlacing','latest_placing','placing','place']);
+    if (placing != null) o.latestPlacing = safeNumber(placing) ?? placing;
+
+    const tripsCt = pickFirst(r, ['total_trips','trip_count','trips','totalTrips']);
+    if (tripsCt != null) o.total_trips = safeNumber(tripsCt) ?? tripsCt;
+
+    const dt = pickFirst(r, ['dt','date','sql_date','base_sql_date']);
+    if (dt != null) o.dt = dt;
+
+    const sid = pickFirst(r, ['sid','show_id','showId']);
+    if (sid != null) o.sid = sid;
+
+    return o;
+  }
+
+  async function fetchJsonFirst(urls) {
+    let lastErr = null;
+    for (const u of urls) {
+      try { return await fetchJson(u); } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('fetch failed');
+  }
+
+
   async function loadAll() {
   // Decoupled loads:
   // - watch_trips.json must be able to refresh even if watch_schedule.json fails
@@ -427,7 +516,7 @@
   let tripsOk = false;
 
   try {
-    trips = await fetchJson(DATA_TRIPS_URL);
+    trips = await fetchJsonFirst([DATA_TRIPS_URL, '/schedule/data/latest/watch_trips.json', '../data/latest/watch_trips.json']);
     tripsOk = true;
   } catch (e) {
     // Keep prior state.trips on failure
@@ -435,7 +524,7 @@
   }
 
   try {
-    sched = await fetchJson(DATA_SCHEDULE_URL);
+    sched = await fetchJsonFirst([DATA_SCHEDULE_URL, '/schedule/data/latest/watch_schedule.json', '../data/latest/watch_schedule.json']);
     schedOk = true;
   } catch (e) {
     // Keep prior state.schedule on failure
@@ -450,7 +539,10 @@
   if (state.loaded && nextGenerated && state.meta.generated_at === nextGenerated) return;
 
   if (schedOk) state.schedule = Array.isArray(sched && sched.records) ? sched.records : [];
-  if (tripsOk) state.trips = Array.isArray(trips && trips.records) ? trips.records : [];
+  if (tripsOk) {
+    const raw = Array.isArray(trips && trips.records) ? trips.records : [];
+    state.trips = raw.map(normalizeTripRecord).filter(Boolean);
+  }
 
   const dtScope =
     (schedOk && sched && sched.meta && sched.meta.dt) ||
