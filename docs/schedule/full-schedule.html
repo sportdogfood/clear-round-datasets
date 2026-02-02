@@ -576,18 +576,16 @@
   (function() {
     'use strict';
 
-    const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
-    const DATA_TRIPS_URL    = './data/latest/watch_trips.json';
+    const DATA_SCHEDULE_URL = '/schedule/data/latest/watch_schedule.json';
+    const DATA_TRIPS_URL    = '/schedule/data/latest/watch_trips.json';
 
-    // Only highlight these "watch" horses
-    const WATCH_NUMBERS = new Set(['22','23']);
-
+    // watch_trips.json is expected to already be filtered to your watch horses.
     const root = document.getElementById('screen-root');
     const homeBtn = document.getElementById('fs-home');
 
     if (homeBtn) {
       homeBtn.addEventListener('click', function() {
-        window.location.href = './';
+        window.location.href = '/schedule/';
       });
     }
 
@@ -702,19 +700,15 @@
 
     function coerceArray(payload) {
       if (Array.isArray(payload)) return payload;
-      if (!payload || typeof payload !== 'object') return [];
-      if (Array.isArray(payload.records)) return payload.records;
-      if (payload.data && Array.isArray(payload.data.records)) return payload.data.records;
-      if (Array.isArray(payload.items)) return payload.items;
-      if (Array.isArray(payload.rows)) return payload.rows;
-      if (Array.isArray(payload.schedule)) return payload.schedule;
+      if (payload && Array.isArray(payload.items)) return payload.items;
+      if (payload && Array.isArray(payload.rows)) return payload.rows;
+      if (payload && Array.isArray(payload.schedule)) return payload.schedule;
       return [];
     }
 
     function isWatchTrip(t) {
-      const bn = t && t.backNumber != null ? String(t.backNumber) : '';
-      const en = t && t.entryNumber != null ? String(t.entryNumber) : '';
-      return WATCH_NUMBERS.has(bn) || WATCH_NUMBERS.has(en);
+      // Treat every row in watch_trips.json as "watch".
+      return true;
     }
 
     async function fetchJson(url) {
@@ -735,11 +729,13 @@
       for (const t of (tripsRows || [])) {
         if (!isWatchTrip(t)) continue;
         const rn = (t && t.ring_number != null) ? String(t.ring_number) : '';
-        const gid = (t && t.class_group_id != null) ? String(t.class_group_id) : '';
+        const gid = (t && t.class_group_id != null) ? String(t.class_group_id) :
+                    (t && t.class_groupxclasses_id != null) ? String(t.class_groupxclasses_id) :
+                    '';
         if (!rn || !gid) continue;
 
         const key = rn + '|' + gid;
-        if (!watchByGroup.has(key)) watchByGroup.set(key, { entries: new Set(), nums: new Set(), trips: 0 });
+        if (!watchByGroup.has(key)) watchByGroup.set(key, { entries: new Set(), horses: new Set(), trips: 0 });
         const w = watchByGroup.get(key);
 
         const eKey = (t.entryxclasses_uuid != null ? String(t.entryxclasses_uuid) :
@@ -750,10 +746,7 @@
 
         if (eKey) w.entries.add(eKey);
 
-        const bn2 = t.backNumber != null ? String(t.backNumber) : null;
-        const en2 = t.entryNumber != null ? String(t.entryNumber) : null;
-        if (bn2 && WATCH_NUMBERS.has(bn2)) w.nums.add(bn2);
-        if (en2 && WATCH_NUMBERS.has(en2)) w.nums.add(en2);
+        if (t && t.horseName) w.horses.add(String(t.horseName));
 
         w.trips++;
       }
@@ -862,9 +855,19 @@
 
           let dNode = badge;
           if (hasWatch) {
-            const nums = Array.from(w.nums).sort((a,b)=>safeNum(a,0)-safeNum(b,0));
-            const numsTxt = nums.join(', ');
-            dNode = el('span', 'fs-muted', numsTxt ? `22/23: ${numsTxt} • ${w.entries.size}` : String(w.entries.size));
+            const horses = w && w.horses ? Array.from(w.horses).sort((a,b)=>String(a).localeCompare(String(b))) : [];
+            let horseTxt = '';
+            if (horses.length === 1) horseTxt = horses[0];
+            else if (horses.length === 2) horseTxt = horses[0] + ', ' + horses[1];
+            else if (horses.length > 2) horseTxt = horses[0] + ', ' + horses[1] + ' +' + String(horses.length - 2);
+
+            const parts = [];
+            parts.push('watch: ' + String(w.entries.size));
+            parts.push('trips: ' + String(w.trips));
+            if (horseTxt) parts.push(horseTxt);
+            dNode = el('span', 'fs-muted', parts.join(' • '));
+          }
+• ${w.entries.size}` : String(w.entries.size));
           }
 
           addLine4(gWrap, gStart, '', nameNode, dNode, 'row--class', hasWatch ? 'fs-watch' : '');

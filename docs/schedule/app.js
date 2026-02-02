@@ -339,6 +339,18 @@
     return Number.isFinite(n) ? n : (fallback ?? null);
   }
 
+  function fmtOogPair(lastOog, totalTrips) {
+    const last = safeNum(lastOog, null);
+    const total = safeNum(totalTrips, null);
+    if (last == null) return '';
+    if (total != null && total > 0) {
+      if (last >= 1 && last <= total) return `${last}/${total}`;
+      return '';
+    }
+    if (last >= 1) return String(last);
+    return '';
+  }
+
   function safeNumber(v) {
     if (v === null || v === undefined) return null;
     if (typeof v === 'number') return Number.isFinite(v) ? v : null;
@@ -759,27 +771,97 @@
     return t;
   }
   function fmtNextUpFromEntryKeys(entryKeys, tIdx) {
-    const list = [];
+    const now = new Date();
+    const nowM = now.getHours() * 60 + now.getMinutes();
+
+    const candidates = [];
     for (const k of (entryKeys || [])) {
-      const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
-      if (best) list.push(best);
+      const list = (tIdx && tIdx.byEntryKey) ? (tIdx.byEntryKey.get(k) || []) : [];
+      if (!list || list.length === 0) continue;
+
+      // eligible: exclude underway/complete
+      const eligible = list.filter((t) => {
+        const s = String(t && t.latestStatus ? t.latestStatus : t && t.status ? t.status : '').toLowerCase();
+        if (s.includes('underway')) return false;
+        if (s.includes('complete')) return false;
+        return true;
+      });
+      if (!eligible.length) continue;
+
+      // split by time relative to now
+      let bestFuture = null;
+      let bestFutureT = 999999;
+      let bestFutureO = 999999;
+
+      let bestPast = null;
+      let bestPastT = -1;
+      let bestPastO = -1;
+
+      for (const t of eligible) {
+        const goM = timeToMinutes(t && (t.latestGO || t.latestStart)) ?? -1;
+        const oog = (t && t.lastOOG != null) ? safeNum(t.lastOOG, 999999) : 999999;
+
+        if (goM >= nowM) {
+          if (!bestFuture || goM < bestFutureT || (goM === bestFutureT && oog < bestFutureO)) {
+            bestFuture = t; bestFutureT = goM; bestFutureO = oog;
+          }
+        } else if (goM >= 0) {
+          // closest past (largest time)
+          if (!bestPast || goM > bestPastT || (goM === bestPastT && oog > bestPastO)) {
+            bestPast = t; bestPastT = goM; bestPastO = oog;
+          }
+        } else {
+          // no parsable time: treat as future-ish fallback
+          if (!bestFuture) bestFuture = t;
+        }
+      }
+
+      candidates.push(bestFuture || bestPast);
     }
-    const best = pickBestTrip(list);
-    if (!best) return '';
+
+    if (!candidates.length) return '';
+
+    // choose earliest future across candidates; fallback to closest past
+    let chosen = null;
+    let chosenFuture = false;
+
+    let bestT = 999999;
+    let bestO = 999999;
+
+    let bestPastT = -1;
+    let bestPastO = -1;
+    let bestPastTrip = null;
+
+    for (const t of candidates) {
+      if (!t) continue;
+      const goM = timeToMinutes(t && (t.latestGO || t.latestStart)) ?? -1;
+      const oog = (t && t.lastOOG != null) ? safeNum(t.lastOOG, 999999) : 999999;
+
+      if (goM >= nowM) {
+        if (!chosenFuture || goM < bestT || (goM === bestT && oog < bestO)) {
+          chosenFuture = true;
+          chosen = t; bestT = goM; bestO = oog;
+        }
+      } else if (!chosenFuture && goM >= 0) {
+        if (!bestPastTrip || goM > bestPastT || (goM === bestPastT && oog > bestPastO)) {
+          bestPastTrip = t; bestPastT = goM; bestPastO = oog;
+        }
+      } else if (!chosenFuture && !bestPastTrip) {
+        bestPastTrip = t;
+      }
+    }
+
+    if (!chosen && bestPastTrip) chosen = bestPastTrip;
+    if (!chosen) return '';
 
     const parts = [];
-
-    if (best.ring_number != null && String(best.ring_number) !== '') {
-      parts.push(`R${String(best.ring_number)}`);
+    if (chosen.ring_number != null && String(chosen.ring_number) !== '') {
+      parts.push(`R${String(chosen.ring_number)}`);
     }
-
-    const t = best.latestGO || best.latestStart || '';
+    const t = chosen.latestGO || chosen.latestStart || '';
     if (t) parts.push(fmtTimeShort(t));
-
-    if (best.lastOOG != null && String(best.lastOOG) !== '') {
-      const n = safeNum(best.lastOOG, null);
-      if (n != null) parts.push(String(n));
-    }
+    const n = safeNum(chosen.lastOOG, null);
+    if (n != null && n >= 1) parts.push(String(n));
 
     return parts.join(' - ');
   }
@@ -1404,12 +1486,12 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (keys.length === 0) continue;
 
       const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
-      const title = nextup ? `${String(h)}  ${nextup}` : String(h);
 
-      const row = el('div', 'row row--tap');
+      const row = el('div', 'row row--tap row--3col');
       row.id = `horse-${idify(h)}`;
 
-      row.appendChild(el('div', 'row-title', title));
+      row.appendChild(el('div', 'row-title', String(h)));
+      row.appendChild(el('div', 'row-mid', nextup || ''));
       row.appendChild(makeTagCount(keys.length));
 
       row.addEventListener('click', () => {
@@ -1640,8 +1722,14 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
 
     function makeBadge(txt, cls) {
-      const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
-      return b;
+      const letter = String(txt || '').trim();
+      const base = String(cls || '').trim();
+      const classes = ['badge'];
+      if (base) classes.push(base);
+      if (letter && base.includes('badge--status')) classes.push(`badge--status-${letter}`);
+      if (letter && base.includes('badge--type')) classes.push(`badge--type-${letter}`);
+      if (letter && base.includes('badge--seq')) classes.push(`badge--seq-${letter}`);
+      return el('span', classes.join(' '), letter);
     }
 
     for (const r of ringsAll) {
@@ -1659,9 +1747,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.ringName),
         '',
         document.createTextNode(''),
-        String(r.classIdSet ? r.classIdSet.size : 0),
-        'row--class',
-        '',
+        el('span', 'nav-agg nav-agg--positive', String(r.classIdSet ? r.classIdSet.size : 0)),
+        'row--class row--ring-peak',
+        'row-alt',
         null
       );
 
@@ -1724,56 +1812,29 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
-              const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? (best.latestGO || '') : '';
+                            const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
+              const go = best ? String(best.latestGO || best.latestStart || '') : '';
+              const timeText = go ? fmtTimeShort(go) : '';
               const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
-
-              const oogText =
-                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
-                (lastOog != null) ? String(lastOog) :
-                (totalTrips) ? `/${totalTrips}` : '';
+              const totalTrips = cn.total_trips;
+              const oogText = fmtOogPair(lastOog, totalTrips);
+              const rider = (best && best.riderName) ? String(best.riderName) : '';
+              const horseName = eObj.horseName ? String(eObj.horseName) : '';
+              const lineText = [horseName, rider, oogText, timeText].filter(Boolean).join(' - ');
 
               stripe++;
               addLine4(
                 gWrap,
-                fmtTimeShort(go),
+                '',
                 entryNo,
-                document.createTextNode(eObj.horseName || ''),
-                oogText,
+                document.createTextNode(lineText),
+                '',
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
                 canHorseNav ? (() => pushDetail('horseDetail', { kind: 'horse', key: String(eObj.horseName || '') })) : null
               );
-
-              // TRIPS (child)
-              const childTrips = (eObj.trips || []).slice().sort((a, b) => {
-                const oa = safeNum(a.lastOOG, 999999);
-                const ob = safeNum(b.lastOOG, 999999);
-                if (oa !== ob) return oa - ob;
-                return String(a.riderName || '').localeCompare(String(b.riderName || ''));
-              });
-
-              for (const tt of childTrips) {
-                const back = tt.backNumber != null ? String(tt.backNumber) : (tt.entryNumber != null ? String(tt.entryNumber) : '');
-                const rider = tt.riderName ? String(tt.riderName) : '';
-                const score = (tt.latestScore != null && String(tt.latestScore) !== '') ? String(tt.latestScore) : '';
-                const placing = (tt.latestPlacing != null && String(tt.latestPlacing) !== '') ? String(tt.latestPlacing) : '';
-                const right = score || placing || '';
-
-                stripe++;
-                addLine4(
-                  gWrap,
-                  '',
-                  back,
-                  document.createTextNode(rider),
-                  right,
-                  'row--trip',
-                  (stripe % 2 === 0 ? 'row-alt' : ''),
-                  canRiderNav ? (() => pushDetail('riderDetail', { kind: 'rider', key: String(rider || '') })) : null
-                );
-              }
-            }
+                            // TRIPS (child) removed per UI contract
+}
           }
         }
       }
@@ -1996,15 +2057,20 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
 
     function makeBadge(txt, cls) {
-      const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
-      return b;
+      const letter = String(txt || '').trim();
+      const base = String(cls || '').trim();
+      const classes = ['badge'];
+      if (base) classes.push(base);
+      if (letter && base.includes('badge--status')) classes.push(`badge--status-${letter}`);
+      if (letter && base.includes('badge--type')) classes.push(`badge--type-${letter}`);
+      if (letter && base.includes('badge--seq')) classes.push(`badge--seq-${letter}`);
+      return el('span', classes.join(' '), letter);
     }
 
     function nodeWithBadges(badges, text) {
-      const wrap = el('div', '');
-      for (const b of badges) wrap.appendChild(b);
-      if (badges.length) wrap.appendChild(el('span', '', ' '));
-      wrap.appendChild(document.createTextNode(text || ''));
+      const wrap = el('div', 'badge-wrap');
+      for (const b of (badges || [])) wrap.appendChild(b);
+      if (text) wrap.appendChild(document.createTextNode(text));
       return wrap;
     }
 
@@ -2023,9 +2089,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.ringName),
         '',
         document.createTextNode(''),
-        String(r.classIdSet ? r.classIdSet.size : 0),
-        'row--class',
-        '',
+        el('span', 'nav-agg nav-agg--positive', String(r.classIdSet ? r.classIdSet.size : 0)),
+        'row--class row--ring-peak',
+        'row-alt',
         null
       );
 
@@ -2094,56 +2160,29 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
-              const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? (best.latestGO || '') : '';
+                            const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
+              const go = best ? String(best.latestGO || best.latestStart || '') : '';
+              const timeText = go ? fmtTimeShort(go) : '';
               const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
-
-              const oogText =
-                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
-                (lastOog != null) ? String(lastOog) :
-                (totalTrips) ? `/${totalTrips}` : '';
+              const totalTrips = cn.total_trips;
+              const oogText = fmtOogPair(lastOog, totalTrips);
+              const rider = (best && best.riderName) ? String(best.riderName) : '';
+              const horseName = eObj.horseName ? String(eObj.horseName) : '';
+              const lineText = [horseName, rider, oogText, timeText].filter(Boolean).join(' - ');
 
               stripe++;
               addLine4(
                 gWrap,
-                fmtTimeShort(go),
+                '',
                 entryNo,
-                document.createTextNode(eObj.horseName || ''),
-                oogText,
+                document.createTextNode(lineText),
+                '',
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
                 () => pushDetail('horseDetail', { key: String(eObj.horseName || '') })
               );
-
-              // TRIPS (child)
-              const trips = (eObj.trips || []).slice().sort((a, b) => {
-                const oa = safeNum(a.lastOOG, 999999);
-                const ob = safeNum(b.lastOOG, 999999);
-                if (oa !== ob) return oa - ob;
-                return String(a.riderName || '').localeCompare(String(b.riderName || ''));
-              });
-
-              for (const t of trips) {
-                const back = t.backNumber != null ? String(t.backNumber) : (t.entryNumber != null ? String(t.entryNumber) : '');
-                const rider = t.riderName ? String(t.riderName) : '';
-                const score = (t.latestScore != null && String(t.latestScore) !== '') ? String(t.latestScore) : '';
-                const placing = (t.latestPlacing != null && String(t.latestPlacing) !== '') ? String(t.latestPlacing) : '';
-                const right = score || placing || '';
-
-                stripe++;
-                addLine4(
-                  gWrap,
-                  '',
-                  back,
-                  document.createTextNode(rider),
-                  right,
-                  'row--trip',
-                  (stripe % 2 === 0 ? 'row-alt' : ''),
-                  () => pushDetail('riderDetail', { key: String(rider || '') })
-                );
-              }
-            }
+                            // TRIPS (child) removed per UI contract
+}
           }
         }
       }
@@ -2319,11 +2358,11 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (q && !normalizeStr(name).includes(q)) continue;
 
       const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
-      const title = nextup ? `${String(name)}  ${nextup}` : String(name);
 
-      const row = el('div', 'row row--tap');
+      const row = el('div', 'row row--tap row--3col');
       row.id = `rider-${idify(name)}`;
-      row.appendChild(el('div', 'row-title', title));
+      row.appendChild(el('div', 'row-title', String(name)));
+      row.appendChild(el('div', 'row-mid', nextup || ''));
 
       const rightCount = (mode === 'ribbons') ? ribbonCountFromEntryKeys(keys, tIdx) : keys.length;
       row.appendChild(makeTagCount(rightCount));

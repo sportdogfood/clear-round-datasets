@@ -139,6 +139,27 @@
     .row--tap { cursor: pointer; user-select: none; transition: transform 0.08s ease-out; }
     .row--tap:active { transform: translateY(1px) scale(0.995); }
 
+    /* 3-column list rows (name | next-up | agg) */
+    .row--3col{
+      display:grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items:center;
+      justify-content: initial;
+    }
+    .row--3col .row-title{
+      padding-right: 0;
+      min-width: 0;
+    }
+    .row-mid{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-variant-numeric: tabular-nums;
+      color: rgba(209,213,219,0.85);
+      font-size: 13px;
+    }
+
     /* Search ----------------------------------------------------- */
     .state-search { margin: 4px 2px 10px; }
     .state-search-input {
@@ -500,6 +521,7 @@
     .card-line4.row--trip{  font-size: 11px; font-weight: 500; opacity: 0.95; }
 
     .row-alt{ background: rgba(255,255,255,0.03); }
+    .card-line4.row--ring-peak{ background: rgba(255,255,255,0.06); }
     .group-wrap.tint-C{ border-left: 3px solid rgba(16,185,129,0.6); }
     .group-wrap.tint-S{ border-left: 3px solid rgba(59,130,246,0.6); }
     .group-wrap.tint-L{ border-left: 3px solid rgba(245,158,11,0.65); }
