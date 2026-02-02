@@ -1,14 +1,13 @@
 // app.js — FeedBoard (legacy shell compatible)
-// Data: ./data/latest/{board}.json (default board: feed_board)
+// Canonical read:  /docs/feed/data/latest/{board}.json (default board: feed_board)
+// Canonical write: POST https://items.clearroundtravel.com/feed/commit
 //
-// Screen mapping (no markup/CSS changes):
-//   start   -> Start / Restart
-//   state   -> Active Horses (toggle selection)
-//   list1   -> FeedList (selected horses only)
+// Screen mapping (bottom nav):
+//   state   -> Horse List (toggle selection)
+//   list1   -> Active List (selected horses only)
 //   detail  -> Horse Detail (edit + Save/Back)
 //   summary -> Summary (selected horses sorted by boardNumber)
 //   list8   -> Text/Share
-//   list2..list7 -> safe default route (Active Horses)
 
 (function () {
   'use strict';
@@ -26,7 +25,10 @@
   // CONFIG
   // ----------------------------
   const DEFAULT_BOARD_ID = 'feed_board';
-  const DATA_BASE = './data/latest/';
+
+  const ITEMS_ORIGIN = 'https://items.clearroundtravel.com';
+  const CANONICAL_READ_PATH = '/docs/feed/data/latest/';
+  const DEFAULT_SAVE_URL = `${ITEMS_ORIGIN}/feed/commit`;
 
   // Local session (selection + drafts only)
   const SESSION_VERSION = 'v1';
@@ -47,8 +49,7 @@
   // STATE
   // ----------------------------
   const state = {
-    screen: 'start',
-    lastNonStart: 'state',
+    screen: 'state',
     boardId: DEFAULT_BOARD_ID,
 
     boardJson: null,    // raw json
@@ -122,19 +123,47 @@
     if (v === true) return true;
     if (v === false) return false;
     if (v == null) return false;
+    if (typeof v === 'number') return v !== 0;
     const s = String(v).trim().toLowerCase();
     if (!s) return false;
-    return s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 'on' || s === '✓';
+    if (s === '0' || s === 'false' || s === 'no' || s === 'n' || s === 'off') return false;
+    // Non-empty strings like "PM" or "AM  |  PM" are treated as ON.
+    return true;
   }
 
-  function toggleLikeOriginal(original, currentBool) {
-    // Preserve original value type when possible
-    if (typeof original === 'boolean') return !!currentBool;
-    if (typeof original === 'number') return currentBool ? 1 : 0;
-    if (original == null) return !!currentBool;
+  const SUPP_DEFAULTS = {
+    EEMix: 'AM  |  PM',
+    Positude: 'PM',
+    OM3GA: 'PM'
+  };
 
-    // strings
-    return currentBool ? 'Y' : '';
+  function toggleLikeOriginal(original, nextBool, fieldKey) {
+    // Preserve original value type when possible
+    if (typeof original === 'boolean') return !!nextBool;
+    if (typeof original === 'number') return nextBool ? 1 : 0;
+    if (original == null) {
+      if (!nextBool) return '';
+      return SUPP_DEFAULTS[fieldKey] || 'Y';
+    }
+    if (typeof original === 'string') {
+      if (!nextBool) return '';
+      const s = original.trim();
+      return s ? original : (SUPP_DEFAULTS[fieldKey] || 'Y');
+    }
+    return nextBool ? (SUPP_DEFAULTS[fieldKey] || 'Y') : '';
+  }
+
+  function normalizeSupplementValue(raw) {
+    const s = String(raw == null ? '' : raw).toUpperCase();
+    if (!s.trim()) return '';
+    const hasAM = /\bAM\b/.test(s);
+    const hasPM = /\bPM\b/.test(s);
+    if (hasAM && hasPM) return 'AM_PM';
+    if (hasAM) return 'AM';
+    if (hasPM) return 'PM';
+    // Common “truthy” strings
+    if (s.trim() === 'Y' || s.trim() === 'YES' || s.trim() === 'TRUE') return 'Y';
+    return s.trim().replace(/\s+/g, '_');
   }
 
   function stableHorseIdFromRow(r) {
@@ -299,6 +328,11 @@
     return `<span class="${cls}" ${attrs}>${esc(text)}</span>`;
   }
 
+  // Minimal UI feedback helper (avoid introducing new markup/patterns)
+  function toast(message) {
+    try { console.log(message); } catch (_) {}
+  }
+
   function label(text) {
     return mk('div', 'list-group-label', esc(text));
   }
@@ -326,21 +360,102 @@
     return id.replace(/[^a-zA-Z0-9_\-]/g, '');
   }
 
-  function resolveSaveUrl(json) {
-    const qp = (qs('save_url') || qs('saveUrl') || qs('save') || qs('endpoint') || '').trim();
-    const meta = (json && (json.meta || json._meta)) || null;
-    const fromJson = (json && (json.save_url || json.saveUrl || json.save_endpoint)) || '';
-    const fromMeta = meta ? (meta.save_url || meta.saveUrl || meta.save_endpoint) : '';
-    const picked = String(qp || fromJson || fromMeta || '').trim();
-    if (picked) return picked;
+  function resolveReadBase() {
+    const qp = String(qs('read_url') || qs('readUrl') || qs('read') || '').trim();
+    if (qp) return qp.endsWith('/') ? qp : (qp + '/');
 
-    // Default: POST /feed/commit on the current origin.
-    try { return new URL('/feed/commit', window.location.origin).toString(); } catch (_) { return '/feed/commit'; }
+    // If running on the server domain, prefer relative paths.
+    try {
+      if (window.location.origin === ITEMS_ORIGIN) return CANONICAL_READ_PATH;
+    } catch (_) {}
+
+    return ITEMS_ORIGIN + CANONICAL_READ_PATH;
+  }
+
+  function resolveSaveUrl(json) {
+    // Only allow explicit overrides (for dev/testing). Do not infer from board JSON.
+    const qp = String(qs('save_url') || qs('saveUrl') || qs('save') || qs('endpoint') || '').trim();
+    return qp || DEFAULT_SAVE_URL;
+  }
+
+  function extractRowsFromBoardJson(json) {
+    if (Array.isArray(json)) return json;
+    if (!json || typeof json !== 'object') return [];
+    if (Array.isArray(json.rows)) return json.rows;
+    if (Array.isArray(json.board)) return json.board;
+    if (Array.isArray(json.data)) return json.data;
+    return [];
+  }
+
+  function isNewHorseId(horseId) {
+    return typeof horseId === 'string' && horseId.startsWith('new:');
+  }
+
+  function buildRowFromDraft(horseId, draft) {
+    const safeName = String(draft && draft.horseName ? draft.horseName : '').trim();
+    const feedDisplay = String(draft && draft.feed_display ? draft.feed_display : '').trim();
+    const note = String(draft && draft.horse_feed_note ? draft.horse_feed_note : '').trim();
+
+    // Keep both top-level fields (used by UI) and nested objects (matches production shape).
+    const EEMix = (draft && draft.EEMix != null) ? draft.EEMix : '';
+    const Positude = (draft && draft.Positude != null) ? draft.Positude : '';
+    const OM3GA = (draft && draft.OM3GA != null) ? draft.OM3GA : '';
+
+    const row = {
+      horseId,
+      horseName: safeName,
+      boardNumber: toInt(draft && draft.boardNumber != null ? draft.boardNumber : null),
+      feed_display: feedDisplay,
+      EEMix,
+      Positude,
+      OM3GA,
+      horse_feed_note: note,
+      feed: {
+        feed_display: feedDisplay
+      },
+      supplements: {
+        EEMix: { raw: String(EEMix == null ? '' : EEMix), value: normalizeSupplementValue(EEMix) },
+        Positude: { raw: String(Positude == null ? '' : Positude), value: normalizeSupplementValue(Positude) },
+        OM3GA: { raw: String(OM3GA == null ? '' : OM3GA), value: normalizeSupplementValue(OM3GA) }
+      },
+      note: {
+        text: note,
+        active: !!note
+      }
+    };
+    return row;
+  }
+
+  function buildLocalNewRowsFromSession(session) {
+    const drafts = session && session.drafts ? session.drafts : {};
+    return Object.keys(drafts)
+      .filter(isNewHorseId)
+      .map((horseId) => buildRowFromDraft(horseId, drafts[horseId]));
+  }
+
+  function mergeRowsUniqueByHorseId(primaryRows, extraRows) {
+    const out = [];
+    const seen = new Set();
+
+    const push = (r) => {
+      const id = stableHorseIdFromRow(r);
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      out.push(r);
+    };
+
+    (primaryRows || []).forEach(push);
+    (extraRows || []).forEach(push);
+
+    return out;
   }
 
   async function loadBoard() {
     state.boardId = resolveBoardId();
-    state.dataUrl = `${DATA_BASE}${state.boardId}.json`;
+    state.dataUrl = `${resolveReadBase()}${state.boardId}.json`;
+
+    // load local session early so we can merge unsaved local "new" horses into the UI
+    loadSession();
 
     const cacheBust = `cb=${Date.now()}`;
     const url = state.dataUrl + (state.dataUrl.includes('?') ? '&' : '?') + cacheBust;
@@ -351,23 +466,20 @@
     const json = await res.json();
     state.boardJson = json;
 
-    let rows = [];
-    if (Array.isArray(json)) rows = json;
-    else if (Array.isArray(json.rows)) rows = json.rows;
-    else if (Array.isArray(json.board)) rows = json.board;
-    else if (Array.isArray(json.data)) rows = json.data;
-
-    state.rows = rows || [];
+    const canonicalRows = extractRowsFromBoardJson(json);
+    const localRows = buildLocalNewRowsFromSession(state.session);
+    state.rows = mergeRowsUniqueByHorseId(canonicalRows, localRows);
     state.horses = deriveHorses(state.rows);
     state.saveUrl = resolveSaveUrl(json);
 
-    // after board load, hydrate local session for this board
-    loadSession();
-
-    // prune selection/drafts for missing horses
+    // prune selection/drafts for missing horses (keep local "new:" drafts)
     const horseIds = new Set(state.horses.map(h => h.horse_id));
-    Object.keys(state.session.selected).forEach(id => { if (!horseIds.has(id)) delete state.session.selected[id]; });
-    Object.keys(state.session.drafts).forEach(id => { if (!horseIds.has(id)) delete state.session.drafts[id]; });
+    Object.keys(state.session.selected).forEach(id => {
+      if (!horseIds.has(id)) delete state.session.selected[id];
+    });
+    Object.keys(state.session.drafts).forEach(id => {
+      if (!horseIds.has(id) && !isNewHorseId(id)) delete state.session.drafts[id];
+    });
     persistSession();
   }
 
@@ -377,66 +489,13 @@
   function normalizeNavTarget(raw) {
     const s = String(raw || '').trim();
     if (!s) return 'state';
-    if (s === 'start' || s === 'state' || s === 'list1' || s === 'summary' || s === 'detail' || s === 'list8') return s;
-
-    // Legacy nav buttons in index.html use list2..list7; keep markup unchanged and normalize.
-    if (/^list[2-7]$/.test(s)) return 'list1';
-
+    if (s === 'state' || s === 'list1' || s === 'summary' || s === 'detail' || s === 'list8') return s;
     return 'state';
   }
 
   function gotoScreen(screen) {
-    if (screen !== 'start' && screen !== 'detail') state.lastNonStart = screen;
     state.screen = screen;
     render();
-  }
-
-  // ----------------------------
-  // RENDER: Start
-  // ----------------------------
-  function renderStart() {
-    clearRoot();
-    setHeader('Start');
-    showBack(false);
-    setHeaderAction(null);
-    updateNavUI('start');
-
-    // Logo block (existing CSS)
-    const logo = mk('div', 'start-logo');
-    logo.appendChild(mk('div', 'start-logo-title', esc('FeedBoard')));
-    const subtitle = `Board: ${state.boardId} · Selected: ${selectedCount()} / ${state.horses.length}`;
-    logo.appendChild(mk('div', 'start-logo-subtitle', esc(subtitle)));
-    elRoot.appendChild(logo);
-
-    // Restart
-    elRoot.appendChild(
-      mkRowTap('New session / Restart', tag('GO', true), async () => {
-        await restartFlow();
-      })
-    );
-
-    // Continue
-    elRoot.appendChild(
-      mkRowTap('Continue', tag('→', true), () => gotoScreen('state'))
-    );
-
-    elRoot.appendChild(divider());
-
-    // Load board (manual)
-    elRoot.appendChild(
-      mkRowTap('Refresh board', tag('↻', false), async () => {
-        try {
-          await loadBoard();
-          render();
-        } catch (e) {
-          setMessage(e && e.message ? e.message : String(e));
-        }
-      })
-    );
-
-    // Save endpoint status
-    const saveStatus = state.saveUrl ? 'Save OK' : 'Save OFF';
-    elRoot.appendChild(mkRowStatic('Save endpoint', tag(saveStatus, !!state.saveUrl)));
   }
 
   // ----------------------------
@@ -444,8 +503,8 @@
   // ----------------------------
   function renderActiveHorses() {
     clearRoot();
-    setHeader('Active Horses');
-    showBack(true);
+    setHeader('Horse List');
+    showBack(false);
     setHeaderAction(null);
     updateNavUI('state');
 
@@ -494,9 +553,9 @@
   // ----------------------------
   function renderFeedList() {
     clearRoot();
-    setHeader('Feed List');
-    showBack(true);
-    setHeaderAction(null);
+    setHeader('Active List');
+    showBack(false);
+    setHeaderAction('Add', createNewHorse);
     updateNavUI('list1');
 
     const sel = selectedHorses();
@@ -531,24 +590,68 @@
   function ensureDraft(horseId) {
     if (!state.session.drafts[horseId]) {
       const base = baseForHorse(horseId) || {};
-      state.session.drafts[horseId] = {
+      const baseFields = {
         boardNumber: toInt(getAny(base, FIELD.boardNumber)),
+        horseName: (getAny(base, FIELD.horseName) != null ? String(getAny(base, FIELD.horseName)) : ''),
         feed_display: (getAny(base, FIELD.feed_display) != null ? String(getAny(base, FIELD.feed_display)) : ''),
-        EEMix: getAny(base, FIELD.EEMix),
-        Positude: getAny(base, FIELD.Positude),
-        OM3GA: getAny(base, FIELD.OM3GA),
+        EEMix: (getAny(base, FIELD.EEMix) != null ? String(getAny(base, FIELD.EEMix)) : ''),
+        Positude: (getAny(base, FIELD.Positude) != null ? String(getAny(base, FIELD.Positude)) : ''),
+        OM3GA: (getAny(base, FIELD.OM3GA) != null ? String(getAny(base, FIELD.OM3GA)) : ''),
         horse_feed_note: (getAny(base, FIELD.horse_feed_note) != null ? String(getAny(base, FIELD.horse_feed_note)) : '')
       };
+      state.session.drafts[horseId] = Object.assign({ _base: Object.assign({}, baseFields) }, baseFields);
       persistSession();
     }
     return state.session.drafts[horseId];
   }
 
-  function discardDraft(horseId) {
+  function discardDraft(horseId, opts) {
+    const keepSelection = !!(opts && opts.keepSelection);
+    const keepLocalRow = !!(opts && opts.keepLocalRow);
     if (state.session.drafts[horseId]) {
       delete state.session.drafts[horseId];
+      if (isNewHorseId(horseId)) {
+        if (!keepSelection) {
+          delete state.session.selected[horseId];
+        }
+        if (!keepLocalRow) {
+          state.rows = (state.rows || []).filter(r => stableHorseIdFromRow(r) !== horseId);
+          state.horses = deriveHorses(state.rows);
+        }
+      }
       persistSession();
     }
+  }
+
+  function createNewHorse() {
+    const newId = `new:${Date.now()}`;
+    state.session.selected[newId] = true;
+    state.session.drafts[newId] = {
+      _base: {
+        boardNumber: null,
+        horseName: '',
+        feed_display: '',
+        EEMix: '',
+        Positude: '',
+        OM3GA: '',
+        horse_feed_note: ''
+      },
+      boardNumber: null,
+      horseName: '',
+      feed_display: '',
+      EEMix: '',
+      Positude: '',
+      OM3GA: '',
+      horse_feed_note: ''
+    };
+    persistSession();
+
+    const localRow = buildRowFromDraft(newId, state.session.drafts[newId]);
+    state.rows = mergeRowsUniqueByHorseId(state.rows || [], [localRow]);
+    state.horses = deriveHorses(state.rows);
+
+    state.detailHorseId = newId;
+    gotoScreen('detail');
   }
 
   function computeUsedSlots(exceptHorseId) {
@@ -573,16 +676,22 @@
   }
 
   function draftChanges(horseId) {
-    const base = baseForHorse(horseId) || {};
     const d = ensureDraft(horseId);
+    const base = (d && d._base) ? d._base : {};
 
     const out = {};
 
     const baseBoard = toInt(getAny(base, FIELD.boardNumber));
     if ((d.boardNumber || null) !== (baseBoard || null)) out.boardNumber = d.boardNumber;
 
+    const baseName = (getAny(base, FIELD.horseName) != null ? String(getAny(base, FIELD.horseName)) : '');
+    if (String(d.horseName || '') !== String(baseName || '')) out.horseName = d.horseName;
+
     const baseFeed = (getAny(base, FIELD.feed_display) != null ? String(getAny(base, FIELD.feed_display)) : '');
     if (String(d.feed_display || '') !== String(baseFeed || '')) out.feed_display = d.feed_display;
+
+    const baseNote = (getAny(base, FIELD.horse_feed_note) != null ? String(getAny(base, FIELD.horse_feed_note)) : '');
+    if (String(d.horse_feed_note || '') !== String(baseNote || '')) out.horse_feed_note = d.horse_feed_note;
 
     // toggles: compare via boolean interpretation
     const baseE = getAny(base, FIELD.EEMix);
@@ -597,10 +706,50 @@
     if (toBool(dP) !== toBool(baseP)) out.Positude = dP;
     if (toBool(dO) !== toBool(baseO)) out.OM3GA = dO;
 
-    const baseNote = (getAny(base, FIELD.horse_feed_note) != null ? String(getAny(base, FIELD.horse_feed_note)) : '');
-    if (String(d.horse_feed_note || '') !== String(baseNote || '')) out.horse_feed_note = d.horse_feed_note;
-
     return out;
+  }
+
+  function buildSavePatch(horseId, draft, baseRow) {
+    const base = baseRow || {};
+    const safeName = String((draft && draft.horseName) || getAny(base, FIELD.horseName) || '').trim();
+    const feedDisplay = String((draft && draft.feed_display) || '').trim();
+    const note = String((draft && draft.horse_feed_note) || '').trim();
+
+    const EEMix = (draft && draft.EEMix != null) ? draft.EEMix : (getAny(base, FIELD.EEMix) || '');
+    const Positude = (draft && draft.Positude != null) ? draft.Positude : (getAny(base, FIELD.Positude) || '');
+    const OM3GA = (draft && draft.OM3GA != null) ? draft.OM3GA : (getAny(base, FIELD.OM3GA) || '');
+
+    const boardNumber = toInt(draft && draft.boardNumber != null ? draft.boardNumber : getAny(base, FIELD.boardNumber));
+
+    const existingFeed = (base && typeof base.feed === 'object' && base.feed) ? base.feed : {};
+    const existingSupp = (base && typeof base.supplements === 'object' && base.supplements) ? base.supplements : {};
+    const existingNote = (base && typeof base.note === 'object' && base.note) ? base.note : {};
+
+    const patch = {
+      // Keep canonical identifiers
+      horseId: String(getAny(base, FIELD.horse_id) || horseId),
+      horseName: safeName,
+      boardNumber,
+
+      // UI fields
+      feed_display: feedDisplay,
+      EEMix,
+      Positude,
+      OM3GA,
+      horse_feed_note: note,
+
+      // Production-shaped nested objects
+      feed: { ...existingFeed, feed_display: feedDisplay },
+      supplements: {
+        ...existingSupp,
+        EEMix: { raw: String(EEMix == null ? '' : EEMix), value: normalizeSupplementValue(EEMix) },
+        Positude: { raw: String(Positude == null ? '' : Positude), value: normalizeSupplementValue(Positude) },
+        OM3GA: { raw: String(OM3GA == null ? '' : OM3GA), value: normalizeSupplementValue(OM3GA) }
+      },
+      note: { ...existingNote, text: note, active: !!note }
+    };
+
+    return patch;
   }
 
   // ----------------------------
@@ -614,11 +763,14 @@
       return;
     }
 
+    const isNew = isNewHorseId(horseId);
+
     const draft = ensureDraft(horseId);
     const base = baseForHorse(horseId) || {};
 
     clearRoot();
-    setHeader(horse.horseName);
+    const titleName = isNew ? (String(draft.horseName || '').trim() || 'New Horse') : horse.horseName;
+    setHeader(titleName);
     showBack(true);
 
     setHeaderAction('Save', async () => {
@@ -631,6 +783,21 @@
 
     // Highlight List tab while in detail (keeps bottom-nav cadence)
     updateNavUI('list1');
+
+    // Horse Name (new only)
+    if (isNew) {
+      elRoot.appendChild(label('Horse'));
+      elRoot.appendChild(
+        mkRowTap('Horse Name', tag(String(draft.horseName || '').trim() || '—', false), () => {
+          const next = prompt('Horse name:', draft.horseName || '');
+          if (next == null) return;
+          draft.horseName = String(next);
+          persistSession();
+          renderDetail();
+        })
+      );
+      elRoot.appendChild(divider());
+    }
 
     // Board Slot
     elRoot.appendChild(label('Board Slot'));
@@ -697,7 +864,7 @@
         mkRowTap(labelText, t, () => {
           const nextBool = !current;
           const orig = baseVal;
-          draft[fieldKey] = toggleLikeOriginal(orig, nextBool);
+          draft[fieldKey] = toggleLikeOriginal(orig, nextBool, fieldKey);
           persistSession();
           renderDetail();
         }, current)
@@ -740,18 +907,25 @@
   // SAVE
   // ----------------------------
   async function saveDraft(horseId) {
+    const isNew = isNewHorseId(horseId);
+    const draft = ensureDraft(horseId);
     const changes = draftChanges(horseId);
-    if (!Object.keys(changes).length) return;
+    if (!isNew && !Object.keys(changes).length) return;
 
-    // local uniqueness guard (current in-memory board)
-    if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
-      const used = computeUsedSlots(horseId);
-      if (changes.boardNumber != null && used.has(changes.boardNumber)) {
-        throw new Error(`Board slot ${changes.boardNumber} is already used.`);
-      }
+    // Basic validation for new rows
+    if (isNew) {
+      const nm = String(draft && draft.horseName ? draft.horseName : '').trim();
+      if (!nm) throw new Error('Horse name is required.');
     }
 
-    if (!state.saveUrl) state.saveUrl = resolveSaveUrl(state.boardJson);
+    // Local uniqueness guard (current in-memory board)
+    const localSlot = toInt((draft && draft.boardNumber != null) ? draft.boardNumber : changes.boardNumber);
+    if (localSlot != null) {
+      const used = computeUsedSlots(horseId);
+      if (used.has(localSlot)) throw new Error(`Board slot ${localSlot} is already used.`);
+    }
+
+    if (!state.saveUrl) state.saveUrl = resolveSaveUrl(null);
 
     setHeaderAction('Saving…', null);
 
@@ -782,24 +956,37 @@
       if (Array.isArray(latestJson.rows)) { rows = latestJson.rows.slice(); containerKey = 'rows'; }
       else if (Array.isArray(latestJson.board)) { rows = latestJson.board.slice(); containerKey = 'board'; }
       else if (Array.isArray(latestJson.data)) { rows = latestJson.data.slice(); containerKey = 'data'; }
+      else { rows = []; containerKey = 'rows'; }
+    } else {
+      rows = [];
+      containerKey = 'rows';
     }
 
-    if (!rows || !rows.length) throw new Error('Board rows missing or empty');
+    let idx = rows.findIndex(r => String(getAny(r, FIELD.horse_id) || '') === String(horseId));
+    if (idx < 0) {
+      if (!isNew) throw new Error(`Horse not found on board: ${horseId}`);
+      idx = rows.length;
+      rows.push({});
+    }
 
-    const idx = rows.findIndex(r => String(getAny(r, FIELD.horse_id) || '') === String(horseId));
-    if (idx < 0) throw new Error(`Horse not found on board: ${horseId}`);
+    const baseRow = rows[idx] || {};
+    const patch = buildSavePatch(horseId, draft, baseRow);
 
     // Extra uniqueness guard (latest board, for concurrency).
-    if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
-      const slot = changes.boardNumber;
-      if (slot != null && slot !== '') {
-        const conflict = rows.find((r, i) => i !== idx && String(getAny(r, FIELD.boardNumber) || '') === String(slot));
-        if (conflict) throw new Error(`Board slot ${slot} is already used. Refresh and pick another slot.`);
-      }
+    const slot = toInt(patch.boardNumber);
+    if (slot != null) {
+      const conflict = rows.find((r, i) => i !== idx && String(getAny(r, FIELD.boardNumber) || '') === String(slot));
+      if (conflict) throw new Error(`Board slot ${slot} is already used. Refresh and pick another slot.`);
     }
 
-    // Apply patch.
-    rows[idx] = { ...(rows[idx] || {}), ...changes };
+    // Apply patch (including nested structures)
+    rows[idx] = {
+      ...(baseRow || {}),
+      ...patch,
+      feed: patch.feed,
+      supplements: patch.supplements,
+      note: patch.note
+    };
 
     // Rebuild board envelope preserving meta fields.
     let updatedBoard = null;
@@ -818,29 +1005,11 @@
       overwrite: true
     };
 
-    async function postCommit(url) {
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(commitPayload)
-      });
-    }
-
-    let res = await postCommit(state.saveUrl);
-
-    // If an old/incorrect save_url is present (e.g. legacy patch endpoints), fall back once.
-    if ((res.status === 405 || res.status === 404)) {
-      let fallback = null;
-      try {
-        fallback = new URL('/feed/commit', window.location.origin).toString();
-      } catch (_) {
-        fallback = '/feed/commit';
-      }
-      if (fallback && fallback !== state.saveUrl) {
-        state.saveUrl = fallback;
-        res = await postCommit(state.saveUrl);
-      }
-    }
+    const res = await fetch(state.saveUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(commitPayload)
+    });
 
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
@@ -848,7 +1017,7 @@
     }
 
     // Success: clear draft, reload canonical board, return to list.
-    discardDraft(horseId);
+    discardDraft(horseId, isNew ? { keepSelection: true } : null);
     state.showSlotPicker = false;
     toast('Saved.');
     await loadBoard();
@@ -861,7 +1030,7 @@
   function renderSummary() {
     clearRoot();
     setHeader('Summary');
-    showBack(true);
+    showBack(false);
     setHeaderAction(null);
     updateNavUI('summary');
 
@@ -968,7 +1137,7 @@
   function renderText() {
     clearRoot();
     setHeader('Text');
-    showBack(true);
+    showBack(false);
     setHeaderAction(null);
     updateNavUI('list8');
 
@@ -1019,15 +1188,6 @@
   }
 
   // ----------------------------
-  // FLOW: Restart
-  // ----------------------------
-  async function restartFlow() {
-    clearSession();
-    await loadBoard();
-    gotoScreen('state');
-  }
-
-  // ----------------------------
   // DETAIL NAV
   // ----------------------------
   function openDetail(horseId) {
@@ -1051,12 +1211,11 @@
           gotoScreen('list1');
           return;
         }
-        // from any main screen -> Start
-        gotoScreen('start');
+        // from any main screen -> Horse List
+        gotoScreen('state');
       };
     }
 
-    if (state.screen === 'start') return renderStart();
     if (state.screen === 'state') return renderActiveHorses();
     if (state.screen === 'list1') return renderFeedList();
     if (state.screen === 'summary') return renderSummary();
@@ -1076,15 +1235,8 @@
       if (!btn) return;
 
       const raw = btn.getAttribute('data-screen');
-      if (raw === 'start' && state.screen === 'start') {
-        // Start/Restart behavior
-        restartFlow().catch(err => setMessage(err && err.message ? err.message : String(err)));
-        return;
-      }
-
       const target = normalizeNavTarget(raw);
-      if (target === 'start') gotoScreen('start');
-      else gotoScreen(target);
+      gotoScreen(target);
     });
   }
 
@@ -1095,7 +1247,7 @@
     try {
       bindNav();
       await loadBoard();
-      gotoScreen('start');
+      gotoScreen('state');
     } catch (err) {
       setMessage(err && err.message ? err.message : String(err));
     }

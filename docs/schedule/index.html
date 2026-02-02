@@ -1,3 +1,52 @@
+
+
+/* Summary v2 layout */
+.summary-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+}
+.summary-title{
+  font-size:26px;
+  line-height:1.05;
+}
+.summary-total{
+  font-size:54px;
+  font-weight:900;
+  line-height:1;
+}
+.summary-mini-grid,
+.summary-places{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin-top:14px;
+}
+.summary-mini{
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  border-radius:16px;
+  padding:12px 14px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+}
+.summary-mini .k{
+  font-size:14px;
+  font-weight:800;
+  opacity:.9;
+}
+.summary-mini .v{
+  font-size:26px;
+  font-weight:900;
+  line-height:1;
+}
+@media (max-width: 420px){
+  .summary-title{font-size:22px}
+  .summary-total{font-size:48px}
+  .summary-mini .v{font-size:24px}
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
