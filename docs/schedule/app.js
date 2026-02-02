@@ -114,78 +114,93 @@
 
   function bindChromeScroll() {
     let lastTop = 0;
-    const THRESH = 8;
+    let lastToggleTop = 0;
+    let hidden = false;
     let ticking = false;
-    let chromeHidden = false;
+    let suppressUntil = 0;
 
-    // These screens tend to have shorter lists; collapsing header/nav can cause
-    // scrollTop oscillation (jitter). Use a higher threshold + guardrails here.
-    const STABLE_SCREENS = new Set(['start', 'summary', 'horses', 'riders']);
+    const TOP_LOCK = 6;
+    const THRESH = 10;        // direction threshold
+    const HYST = 28;          // distance required to toggle back
+    const MIN_SCROLLABLE = 140; // if scroll range smaller than this, never hide
 
-    function showChrome() {
-      chromeHidden = false;
-      appEl.classList.remove('hide-header');
-      appEl.classList.remove('hide-nav');
-    }
-    function hideChrome() {
-      chromeHidden = true;
-      appEl.classList.add('hide-header');
-      appEl.classList.add('hide-nav');
+    function scrollRange() {
+      return Math.max(0, (appMain.scrollHeight || 0) - (appMain.clientHeight || 0));
     }
 
-    function apply(dir, top) {
-      const screen = (state && state.screen) ? state.screen : '';
+    function setChromeHidden(nextHidden, reasonTop) {
+      if (nextHidden === hidden) return;
 
-      // Keep the original behavior for schedule + detail screens (do not change schedule).
-      if (!STABLE_SCREENS.has(screen)) {
-        if (top <= 4) {
-          showChrome();
-        } else if (dir === 'down') {
-          hideChrome();
-        } else if (dir === 'up') {
-          showChrome();
-        }
-        return;
+      // Measure before changing layout
+      const prevTop = appMain.scrollTop || 0;
+
+      if (nextHidden) {
+        appEl.classList.add('hide-header');
+        appEl.classList.add('hide-nav');
+      } else {
+        appEl.classList.remove('hide-header');
+        appEl.classList.remove('hide-nav');
       }
 
-      // Stable behavior for list-style screens
-      const scrollable = appMain.scrollHeight - appMain.clientHeight;
+      hidden = nextHidden;
+      lastToggleTop = (typeof reasonTop === 'number') ? reasonTop : prevTop;
+      suppressUntil = Date.now() + 220;
 
-      // If there's not enough scrollable content, never collapse chrome.
-      if (scrollable < 120) {
-        showChrome();
-        return;
-      }
-
-      if (top <= 8) {
-        showChrome();
-        return;
-      }
-
-      // Only hide once the user is well into the list; show on any meaningful upward intent.
-      if (!chromeHidden && dir === 'down' && top > 96) {
-        hideChrome();
-        return;
-      }
-      if (chromeHidden && dir === 'up') {
-        showChrome();
-        return;
-      }
+      // After layout settles, resync lastTop to the clamped/actual scrollTop
+      window.requestAnimationFrame(() => {
+        const topNow = appMain.scrollTop || 0;
+        lastTop = topNow;
+      });
     }
 
     appMain.addEventListener('scroll', () => {
       if (ticking) return;
       ticking = true;
-      requestAnimationFrame(() => {
+
+      window.requestAnimationFrame(() => {
+        const now = Date.now();
         const top = appMain.scrollTop || 0;
-        const delta = top - lastTop;
-        if (Math.abs(delta) >= THRESH) {
-          apply(delta > 0 ? 'down' : 'up', top);
+        const range = scrollRange();
+
+        // Never hide on short pages; always show near top
+        if (range < MIN_SCROLLABLE) {
+          setChromeHidden(false, top);
           lastTop = top;
-        } else {
-          // still update lastTop near edges to avoid stale deltas
-          lastTop = top;
+          ticking = false;
+          return;
         }
+
+        if (top <= TOP_LOCK) {
+          setChromeHidden(false, top);
+          lastTop = top;
+          ticking = false;
+          return;
+        }
+
+        // Suppress oscillation immediately after a toggle (layout/scroll clamp)
+        if (now < suppressUntil) {
+          lastTop = top;
+          ticking = false;
+          return;
+        }
+
+        const delta = top - lastTop;
+        const dir = (delta > THRESH) ? 'down' : (delta < -THRESH) ? 'up' : null;
+
+        if (!dir) {
+          lastTop = top;
+          ticking = false;
+          return;
+        }
+
+        if (!hidden && dir === 'down') {
+          setChromeHidden(true, top);
+        } else if (hidden && dir === 'up') {
+          // Require meaningful upward travel from the point we hid at
+          if ((lastToggleTop - top) >= HYST) setChromeHidden(false, top);
+        }
+
+        lastTop = top;
         ticking = false;
       });
     }, { passive: true });
@@ -1395,136 +1410,131 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   // ----------------------------
   // SCREEN: SUMMARY
   // ----------------------------
-  function renderSummary() {
-    clearMain();
+  function renderSummary(_sIdx, tIdx) {
+    clearRoot();
     setHeader('Summary');
-    setActions([]);
 
-    const trips = Array.isArray(state.data.trips) ? state.data.trips : [];
-
-    // Unique counts
-    const horsesSet = new Set();
-    const ridersSet = new Set();
-
-    // Class completion (by class_id)
-    const classRank = new Map(); // class_id -> max rank
-    const placingCounts = new Map(); // 1..8
-
-    for (const t of trips) {
-      const horse = String(t.horseName || t.horse || '').trim();
-      const rider = String(t.rider || t.riderName || '').trim();
-      if (horse) horsesSet.add(horse);
-      if (rider) ridersSet.add(rider);
-
-      const classId = String(t.class_id || t.classId || '').trim();
-      if (classId) {
-        const r = statusRank(t.latest_status || t.status || '');
-        const prev = classRank.get(classId) || 0;
-        if (r > prev) classRank.set(classId, r);
-      }
-
-      const p = safeNum(t.placing ?? t.result_place ?? t.place ?? null, null);
-      if (p && p >= 1 && p <= 8) {
-        placingCounts.set(p, (placingCounts.get(p) || 0) + 1);
-      }
-    }
-
+    // Classes status: Completed vs To Go (not completed)
     let completed = 0;
     let toGo = 0;
-    for (const r of classRank.values()) {
-      if (r === 1) completed += 1;
-      else toGo += 1;
+
+    for (const entryKeys of (tIdx && tIdx.byClass ? tIdx.byClass.values() : [])) {
+      let bestRank = 0;
+      for (const key of (entryKeys || [])) {
+        const trip = tIdx.byEntry.get(key);
+        if (!trip) continue;
+        const r = statusRank(trip.status);
+        if (r > bestRank) bestRank = r;
+      }
+      if (bestRank >= 2) completed++;
+      else toGo++;
     }
+
     const totalClasses = completed + toGo;
+    const horsesUnique = tIdx && tIdx.byHorse ? tIdx.byHorse.size : 0;
+    const ridersUnique = tIdx && tIdx.byRider ? tIdx.byRider.size : 0;
 
-    const totalHorses = horsesSet.size;
-    const totalRiders = ridersSet.size;
-
-    let totalRibbons = 0;
-    for (let p = 1; p <= 8; p++) totalRibbons += (placingCounts.get(p) || 0);
+    // Ribbons 1-8 (place counts)
+    const placeCount = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0};
+    for (const entryKeys of (tIdx && tIdx.byEntryGroup ? tIdx.byEntryGroup.values() : [])) {
+      // Pick best trip for the entry (highest status rank, then latest start)
+      let best = null;
+      for (const key of (entryKeys || [])) {
+        const t = tIdx.byEntry.get(key);
+        if (!t) continue;
+        if (!best) { best = t; continue; }
+        const ar = statusRank(best.status);
+        const br = statusRank(t.status);
+        if (br > ar) { best = t; continue; }
+        if (br === ar) {
+          const at = safeNum(best.latestStartMin, safeNum(best.latestGoMin, 0));
+          const bt = safeNum(t.latestStartMin, safeNum(t.latestGoMin, 0));
+          if (bt > at) best = t;
+        }
+      }
+      const p = best ? safeNum(best.place, null) : null;
+      if (p != null && p >= 1 && p <= 8) placeCount[p] = (placeCount[p] || 0) + 1;
+    }
+    const ribbonsTotal = Object.values(placeCount).reduce((a,b)=>a+b, 0);
 
     const grid = el('div', 'summary-grid');
-    appMain.appendChild(grid);
 
-    function makeTile(title, onClick) {
-      const tile = el('div', 'card summary-tile' + (onClick ? ' summary-tile--tap' : ''));
-      if (onClick) {
-        tile.addEventListener('click', onClick);
+    function cardBase(title, big, onClick) {
+      const card = el('div', 'card summary-tile');
+      if (typeof onClick === 'function') {
+        card.classList.add('summary-tile--tap');
+        card.addEventListener('click', onClick);
       }
+      const body = el('div', 'card-body summary-body');
+      card.appendChild(body);
+
       const head = el('div', 'summary-head');
       head.appendChild(el('div', 'summary-title', title));
-      tile.appendChild(head);
-      return { tile, head };
+      head.appendChild(el('div', 'summary-big', String(big)));
+      body.appendChild(head);
+
+      return { card, body };
     }
 
-    function addTotal(head, value) {
-      head.appendChild(el('div', 'summary-total', String(value)));
-    }
-
-    function addMiniGrid(tile, items) {
-      const g = el('div', 'summary-mini-grid');
-      for (const it of items) {
-        const box = el('div', 'summary-mini');
-        box.appendChild(el('div', 'k', it.k));
-        box.appendChild(el('div', 'v', String(it.v)));
-        g.appendChild(box);
-      }
-      tile.appendChild(g);
-    }
-
-    // Classes tile (Completed / To Go + total)
+    // Classes tile: big total + two boxes
     {
-      const { tile, head } = makeTile('Classes');
-      addTotal(head, totalClasses);
-      addMiniGrid(tile, [
-        { k: 'Completed', v: completed },
-        { k: 'To Go', v: toGo },
-      ]);
-      grid.appendChild(tile);
+      const { card, body } = cardBase('Classes', totalClasses, null);
+      card.classList.add('summary-tile--classes');
+
+      const split = el('div', 'summary-split');
+      const a = el('div', 'summary-mini');
+      a.appendChild(el('div', 'summary-mini-k', 'Complete'));
+      a.appendChild(el('div', 'summary-mini-v', String(completed)));
+
+      const b = el('div', 'summary-mini');
+      b.appendChild(el('div', 'summary-mini-k', 'To Go'));
+      b.appendChild(el('div', 'summary-mini-v', String(toGo)));
+
+      split.appendChild(a);
+      split.appendChild(b);
+      body.appendChild(split);
+
+      grid.appendChild(card);
     }
 
-    // Horses tile
+    // Horses tile (tap -> horses)
     {
-      const { tile, head } = makeTile('Horses', () => {
-        state.screen = 'horses';
-        render();
-      });
-      addTotal(head, totalHorses);
-      grid.appendChild(tile);
+      const { card, body } = cardBase('Horses', horsesUnique, () => goto('horses'));
+      card.classList.add('summary-tile--one');
+      body.appendChild(el('div', 'summary-sub', 'Unique'));
+      grid.appendChild(card);
     }
 
-    // Riders tile
+    // Riders tile (tap -> riders)
     {
-      const { tile, head } = makeTile('Riders', () => {
-        state.screen = 'riders';
-        state.ridersMode = 'all';
-        render();
-      });
-      addTotal(head, totalRiders);
-      grid.appendChild(tile);
+      const { card, body } = cardBase('Riders', ridersUnique, () => goto('riders'));
+      card.classList.add('summary-tile--one');
+      body.appendChild(el('div', 'summary-sub', 'Unique'));
+      grid.appendChild(card);
     }
 
-    // Ribbons tile (1-8)
+    // Ribbons tile (tap -> riders ribbons mode)
     {
-      const { tile, head } = makeTile('Ribbons (1-8)', () => {
-        state.screen = 'riders';
+      const { card, body } = cardBase('Ribbons (1-8)', ribbonsTotal, () => {
         state.ridersMode = 'ribbons';
-        render();
+        goto('riders');
       });
-      addTotal(head, totalRibbons);
+      card.classList.add('summary-tile--ribbons');
 
-      const g = el('div', 'summary-places');
-      for (let p = 1; p <= 8; p++) {
-        const label = p === 1 ? '1st' : p === 2 ? '2nd' : p === 3 ? '3rd' : `${p}th`;
-        const box = el('div', 'summary-mini');
-        box.appendChild(el('div', 'k', label));
-        box.appendChild(el('div', 'v', String(placingCounts.get(p) || 0)));
-        g.appendChild(box);
+      const places = el('div', 'summary-places');
+      const labels = {1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th',6:'6th',7:'7th',8:'8th'};
+      for (let i = 1; i <= 8; i++) {
+        const row = el('div', 'summary-place');
+        row.appendChild(el('div', 'summary-place-k', labels[i]));
+        row.appendChild(el('div', 'summary-place-v', String(placeCount[i] || 0)));
+        places.appendChild(row);
       }
-      tile.appendChild(g);
+      body.appendChild(places);
 
-      grid.appendChild(tile);
+      grid.appendChild(card);
     }
+
+    screenRoot.appendChild(grid);
   }
 
 // ----------------------------
@@ -1909,29 +1919,43 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
                             const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-                    const go = best && best.latestGO ? new Date(best.latestGO) : null;
-      const timeText = go ? fmtTimeShort(go) : '';
-      const isHorseDetail = state.screen === 'horseDetail';
+              const go = best ? String(best.latestGO || best.latestStart || '') : '';
+              const timeText = go ? fmtTimeShort(go) : '';
+              const lastOog = best ? safeNum(best.lastOOG, null) : null;
+              const totalTrips = cn.total_trips;
+              const oogText = fmtOogPair(lastOog, totalTrips);
+              const rider = (best && best.riderName) ? String(best.riderName) : '';
+              const horseNameRaw = eObj.horseName ? String(eObj.horseName) : '';
+              const horseLabel =
+                (state.screen === 'horseDetail' && state.detail && state.detail.key) ?
+                  String(state.detail.key) :
+                  horseNameRaw;
 
-      // Entry row: schedule + rider screens link to horse; horse detail links to rider
-      const lineText = (isHorseDetail
-        ? [rider, horseName, oogText, timeText]
-        : [horseName, rider, oogText, timeText]).filter(Boolean).join(' - ');
+              // Horse detail: Rider-first label and tap goes to Rider detail
+              const isHorseDetail = (state.screen === 'horseDetail');
+              const lineText = (isHorseDetail
+                ? [rider, horseLabel, oogText, timeText]
+                : [horseLabel, rider, oogText, timeText]
+              ).filter(Boolean).join(' - ');
 
-      const entryClick = isHorseDetail
-        ? ((rider && canRiderNav) ? () => pushDetail('riderDetail', { kind: 'rider', key: String(rider) }) : null)
-        : (canHorseNav ? () => pushDetail('horseDetail', { kind: 'horse', key: String(horseName || '') }) : null);
+              let onEntryClick = null;
+              if (isHorseDetail) {
+                if (rider) onEntryClick = () => pushDetail('riderDetail', { kind: 'rider', key: rider });
+              } else if (canHorseNav && horseLabel) {
+                onEntryClick = () => pushDetail('horseDetail', { kind: 'horse', key: horseLabel });
+              }
 
-      addLine4(
-        gWrap,
-        '',
-        String(entryNo || ''),
-        document.createTextNode(lineText),
-        '',
-        'row--entry',
-        (stripe % 2 === 0 ? 'row-alt' : ''),
-        entryClick
-      );
+              stripe++;
+              addLine4(
+                gWrap,
+                '',
+                entryNo,
+                document.createTextNode(lineText),
+                '',
+                'row--entry',
+                (stripe % 2 === 0 ? 'row-alt' : ''),
+                onEntryClick
+              );
                             // TRIPS (child) removed per UI contract
 }
           }
@@ -2508,7 +2532,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         `${(c.class_number != null ? String(c.class_number) : '')} ${String(c.class_name || '').trim()}`.trim() :
         (classId ? `Class ${classId}` : 'Class');
 
-    setHeader(title);
+    const headerName = (c && c.class_name != null) ? String(c.class_name).trim() : '';
+    const headerTitle = headerName ? (headerName.length > 25 ? (headerName.slice(0, 25).trimEnd() + '...') : headerName) : title;
+    setHeader(headerTitle);
 
     const baseTrips = (state.trips || []).filter(t => String(t && t.class_id || '') === classId);
 
