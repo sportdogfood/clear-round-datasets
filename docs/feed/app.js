@@ -325,26 +325,20 @@
     // only safe chars
     return id.replace(/[^a-zA-Z0-9_\-]/g, '');
   }
-  function resolveSaveUrl(boardJson) {
-    const fromQS = getQueryParam('save') || getQueryParam('save_url');
-    if (fromQS) return fromQS;
 
-    const meta = document.querySelector('meta[name="app-save-url"]');
-    if (meta && meta.content) return meta.content.trim();
+  function resolveSaveUrl(json) {
+    const qp = (qs('save_url') || qs('saveUrl') || qs('save') || qs('endpoint') || '').trim();
+    const meta = (json && (json.meta || json._meta)) || null;
+    const fromJson = (json && (json.save_url || json.saveUrl || json.save_endpoint)) || '';
+    const fromMeta = meta ? (meta.save_url || meta.saveUrl || meta.save_endpoint) : '';
+    const picked = String(qp || fromJson || fromMeta || '').trim();
+    if (picked) return picked;
 
-    // Accept config only if it already points to /feed/commit; otherwise ignore it.
-    if (boardJson && typeof boardJson === 'object') {
-      const cfg = boardJson.save_url || (boardJson.meta && boardJson.meta.save_url);
-      if (cfg && typeof cfg === 'string') {
-        const u = cfg.trim();
-        if (/\/feed\/commit\/?$/.test(u)) return u;
-      }
-    }
-
-    return '/feed/commit';
+    // Default: POST /feed/commit on the current origin.
+    try { return new URL('/feed/commit', window.location.origin).toString(); } catch (_) { return '/feed/commit'; }
   }
 
-async function loadBoard() {
+  async function loadBoard() {
     state.boardId = resolveBoardId();
     state.dataUrl = `${DATA_BASE}${state.boardId}.json`;
 
@@ -381,9 +375,13 @@ async function loadBoard() {
   // ROUTING
   // ----------------------------
   function normalizeNavTarget(raw) {
-    const s = raw || 'state';
-    if (s === 'start' || s === 'state' || s === 'list1' || s === 'list8' || s === 'summary') return s;
-    if (s === 'list2' || s === 'list3' || s === 'list4' || s === 'list5' || s === 'list6' || s === 'list7') return 'state';
+    const s = String(raw || '').trim();
+    if (!s) return 'state';
+    if (s === 'start' || s === 'state' || s === 'list1' || s === 'summary' || s === 'detail' || s === 'list8') return s;
+
+    // Legacy nav buttons in index.html use list2..list7; keep markup unchanged and normalize.
+    if (/^list[2-7]$/.test(s)) return 'list1';
+
     return 'state';
   }
 
@@ -741,91 +739,120 @@ async function loadBoard() {
   // ----------------------------
   // SAVE
   // ----------------------------
-
   async function saveDraft(horseId) {
     const changes = draftChanges(horseId);
     if (!Object.keys(changes).length) return;
 
-    if (!state.dataUrl) throw new Error('Board data URL not configured.');
-
-    // Fetch latest board so we don't overwrite other updates.
-    const latest = await fetchJson(`${state.dataUrl}${state.dataUrl.includes('?') ? '&' : '?'}cb=${cacheBust()}`);
-
-    const rows = (() => {
-      if (Array.isArray(latest)) return latest;
-      if (latest && typeof latest === 'object') {
-        if (Array.isArray(latest.rows)) return latest.rows;
-        if (Array.isArray(latest.horses)) return latest.horses;
-        if (Array.isArray(latest.items)) return latest.items;
-        if (Array.isArray(latest.board)) return latest.board;
-        if (latest.board && typeof latest.board === 'object') {
-          if (Array.isArray(latest.board.rows)) return latest.board.rows;
-          if (Array.isArray(latest.board.horses)) return latest.board.horses;
-        }
-      }
-      return [];
-    })();
-
-    const idStr = String(horseId);
-    const target = rows.find(r => String(getAny(r, FIELD.horse_id)) === idStr);
-    if (!target) throw new Error('Horse not found in board.');
-
-    // Uniqueness guard (use latest board, not local state)
+    // local uniqueness guard (current in-memory board)
     if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
-      const next = changes.boardNumber == null ? null : toInt(changes.boardNumber);
-      if (next != null) {
-        const used = new Set();
-        rows.forEach(r => {
-          const rid = String(getAny(r, FIELD.horse_id));
-          if (rid === idStr) return;
-          const bn = toInt(getAny(r, FIELD.boardNumber));
-          if (Number.isFinite(bn)) used.add(bn);
-        });
-        if (used.has(next)) throw new Error(`Board slot ${next} is already used.`);
+      const used = computeUsedSlots(horseId);
+      if (changes.boardNumber != null && used.has(changes.boardNumber)) {
+        throw new Error(`Board slot ${changes.boardNumber} is already used.`);
       }
-      changes.boardNumber = next;
     }
 
-    // Apply patch to latest board (client-side merge).
-    Object.keys(changes).forEach(k => {
-      target[k] = changes[k];
-    });
-
-    // Save via /feed/commit (POST) — fallback to it if config points somewhere invalid.
-    const primary = state.saveUrl || '/feed/commit';
-    const candidates = [primary];
-    if (primary !== '/feed/commit') candidates.push('/feed/commit');
+    if (!state.saveUrl) state.saveUrl = resolveSaveUrl(state.boardJson);
 
     setHeaderAction('Saving…', null);
 
-    let lastErr = null;
-    for (let i = 0; i < candidates.length; i++) {
-      const url = candidates[i];
+    // Fetch latest board for a safe merge, then commit the full updated board.
+    const freshUrl = (() => {
       try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ board: latest })
-        });
+        const u = new URL(state.dataUrl, window.location.href);
+        u.searchParams.set('_ts', String(Date.now()));
+        return u.toString();
+      } catch (_) {
+        const sep = state.dataUrl.includes('?') ? '&' : '?';
+        return state.dataUrl + sep + '_ts=' + Date.now();
+      }
+    })();
 
-        if (!res.ok) {
-          const txt = await res.text().catch(() => '');
-          if (res.status === 405 && i + 1 < candidates.length) continue;
-          throw new Error(`Save failed (${res.status})${txt ? ': ' + txt : ''}`);
-        }
+    const latestRes = await fetch(freshUrl, { cache: 'no-store' });
+    if (!latestRes.ok) throw new Error(`Board fetch failed (${latestRes.status})`);
+    const latestJson = await latestRes.json();
 
-        // Success
-        await loadBoard();
-        discardDraft(horseId);
-        state.showSlotPicker = false;
-        gotoScreen('list1');
-        return;
-      } catch (e) {
-        lastErr = e;
+    // Extract rows (supports array boards or object boards with rows/board/data).
+    let rows = null;
+    let containerKey = null;
+
+    if (Array.isArray(latestJson)) {
+      rows = latestJson.slice();
+      containerKey = null;
+    } else if (latestJson && typeof latestJson === 'object') {
+      if (Array.isArray(latestJson.rows)) { rows = latestJson.rows.slice(); containerKey = 'rows'; }
+      else if (Array.isArray(latestJson.board)) { rows = latestJson.board.slice(); containerKey = 'board'; }
+      else if (Array.isArray(latestJson.data)) { rows = latestJson.data.slice(); containerKey = 'data'; }
+    }
+
+    if (!rows || !rows.length) throw new Error('Board rows missing or empty');
+
+    const idx = rows.findIndex(r => String(getAny(r, FIELD.horse_id) || '') === String(horseId));
+    if (idx < 0) throw new Error(`Horse not found on board: ${horseId}`);
+
+    // Extra uniqueness guard (latest board, for concurrency).
+    if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
+      const slot = changes.boardNumber;
+      if (slot != null && slot !== '') {
+        const conflict = rows.find((r, i) => i !== idx && String(getAny(r, FIELD.boardNumber) || '') === String(slot));
+        if (conflict) throw new Error(`Board slot ${slot} is already used. Refresh and pick another slot.`);
       }
     }
 
-    throw lastErr || new Error('Save failed.');
+    // Apply patch.
+    rows[idx] = { ...(rows[idx] || {}), ...changes };
+
+    // Rebuild board envelope preserving meta fields.
+    let updatedBoard = null;
+    if (Array.isArray(latestJson)) {
+      updatedBoard = rows;
+    } else if (latestJson && typeof latestJson === 'object') {
+      const key = containerKey || 'rows';
+      updatedBoard = { ...latestJson, [key]: rows };
+    } else {
+      updatedBoard = { rows };
+    }
+
+    const commitPayload = {
+      board: updatedBoard,
+      message: `feedboard: save ${horseId}`,
+      overwrite: true
+    };
+
+    async function postCommit(url) {
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(commitPayload)
+      });
+    }
+
+    let res = await postCommit(state.saveUrl);
+
+    // If an old/incorrect save_url is present (e.g. legacy patch endpoints), fall back once.
+    if ((res.status === 405 || res.status === 404)) {
+      let fallback = null;
+      try {
+        fallback = new URL('/feed/commit', window.location.origin).toString();
+      } catch (_) {
+        fallback = '/feed/commit';
+      }
+      if (fallback && fallback !== state.saveUrl) {
+        state.saveUrl = fallback;
+        res = await postCommit(state.saveUrl);
+      }
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Save failed (${res.status})${txt ? ': ' + txt : ''}`);
+    }
+
+    // Success: clear draft, reload canonical board, return to list.
+    discardDraft(horseId);
+    state.showSlotPicker = false;
+    toast('Saved.');
+    await loadBoard();
+    gotoScreen('list1');
   }
 
   // ----------------------------
