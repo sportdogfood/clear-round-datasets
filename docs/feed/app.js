@@ -1,5 +1,14 @@
-// app.js — FeedBoard (legacy shell, nav repurposed; no markup/CSS edits)
-// Data: ./data/latest/{board}.json (default board=feed_board)
+// app.js — FeedBoard (legacy shell compatible)
+// Data: ./data/latest/{board}.json (default board: feed_board)
+//
+// Screen mapping (no markup/CSS changes):
+//   start   -> Start / Restart
+//   state   -> Active Horses (toggle selection)
+//   list1   -> FeedList (selected horses only)
+//   detail  -> Horse Detail (edit + Save/Back)
+//   summary -> Summary (selected horses sorted by boardNumber)
+//   list8   -> Text/Share
+//   list2..list7 -> safe default route (Active Horses)
 
 (function () {
   'use strict';
@@ -7,88 +16,80 @@
   // ----------------------------
   // DOM
   // ----------------------------
+  const elTitle = document.getElementById('header-title');
+  const elBack = document.getElementById('header-back');
+  const elAction = document.getElementById('header-action');
   const elRoot = document.getElementById('screen-root');
-  const elHeaderTitle = document.getElementById('header-title');
-  const elHeaderBack = document.getElementById('header-back');
-  const elHeaderAction = document.getElementById('header-action');
-  const elNavRow = document.getElementById('nav-row');
-
-  if (!elRoot || !elHeaderTitle || !elHeaderBack || !elHeaderAction || !elNavRow) return;
+  const elNavRow = document.getElementById('nav-row') || document;
 
   // ----------------------------
   // CONFIG
   // ----------------------------
-  const DEFAULT_BOARD = 'feed_board';
-  const DEFAULT_DATA_DIR = './data/latest/';
+  const DEFAULT_BOARD_ID = 'feed_board';
+  const DATA_BASE = './data/latest/';
 
-  // Save endpoint discovery (only used when meta/query param is not provided)
-  const DEFAULT_SAVE_CANDIDATES = [
-    '/feed/save',
-    '/feed/patch',
-    '/api/feed/save',
-    '/api/feed/patch',
-    '/api/feedboard/save',
-    '/api/feedboard/patch'
-  ];
+  // Local session (selection + drafts only)
+  const SESSION_VERSION = 'v1';
+
+  // Field aliases (accepts multiple input keys; draft/save uses canonical keys)
+  const FIELD = {
+    horse_id: ['horse_id', 'horseId', 'horseID', 'id'],
+    horseName: ['horseName', 'horse_name', 'name', 'horse'],
+    boardNumber: ['boardNumber', 'board_number', 'board_no', 'boardSlot', 'slot'],
+    feed_display: ['feed_display', 'feedDisplay', 'feed', 'feed_name'],
+    EEMix: ['EEMix', 'eeMix', 'eemix', 'EE_Mix'],
+    Positude: ['Positude', 'positude'],
+    OM3GA: ['OM3GA', 'om3ga', 'omega3', 'Omega3'],
+    horse_feed_note: ['horse_feed_note', 'horseFeedNote', 'feed_note', 'note', 'notes']
+  };
 
   // ----------------------------
   // STATE
   // ----------------------------
   const state = {
-    board: DEFAULT_BOARD,
-    dataDir: DEFAULT_DATA_DIR,
-    rows: [],
-    meta: {},
+    screen: 'start',
+    lastNonStart: 'state',
+    boardId: DEFAULT_BOARD_ID,
 
-    // local session
-    session: {
-      selected: {},     // horse_id -> true
-      drafts: {},       // horse_id -> draft object
-      expanded: {}      // horse_id -> true (summary note expanded)
-    },
+    boardJson: null,    // raw json
+    rows: [],           // raw rows
+    horses: [],         // derived horses
 
-    // routing
-    screen: 'start',    // start | state | list1 | detail | summary | list8
-    currentHorseId: null,
+    // local-only
+    session: { selected: {}, drafts: {} },
+    expandedNotes: {},
 
-    // ui
-    errorMsg: '',
-    headerBack: null,
-    headerAction: null
+    // ui filters
+    searchText: '',
+
+    // detail
+    detailHorseId: null,
+    showSlotPicker: false,
+
+    // endpoints
+    dataUrl: '',
+    saveUrl: null
   };
 
   // ----------------------------
   // HELPERS
   // ----------------------------
-  function qs(key) {
-    const url = new URL(window.location.href);
-    const val = url.searchParams.get(key);
-    return val == null ? '' : String(val);
+  function qs(name) {
+    try {
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    } catch (_) {
+      return null;
+    }
   }
 
-  function sessionKey() {
-    return `feed_session_v1:${state.board}`;
-  }
-
-  function safeText(v) {
-    return v == null ? '' : String(v);
-  }
-
-  function toBool(v) {
-    if (v === true || v === false) return v;
-    const s = String(v ?? '').trim().toLowerCase();
-    if (!s) return false;
-    if (['1', 'true', 't', 'y', 'yes', 'on'].includes(s)) return true;
-    if (['0', 'false', 'f', 'n', 'no', 'off'].includes(s)) return false;
-    return Boolean(v);
-  }
-
-  function toIntOrNull(v) {
-    if (v == null || v === '') return null;
-    const n = Number(v);
-    if (!Number.isFinite(n)) return null;
-    const i = Math.trunc(n);
-    return i;
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   function mk(tag, className, html) {
@@ -99,874 +100,978 @@
   }
 
   function clearRoot() {
-    elRoot.innerHTML = '';
+    while (elRoot.firstChild) elRoot.removeChild(elRoot.firstChild);
   }
 
-  function setHeader({ title, backVisible, actionText, actionVisible, actionDisabled }) {
-    elHeaderTitle.textContent = title || '';
-
-    elHeaderBack.hidden = !backVisible;
-    elHeaderAction.hidden = !actionVisible;
-
-    if (actionVisible) {
-      elHeaderAction.textContent = actionText || '';
-      elHeaderAction.disabled = Boolean(actionDisabled);
-    }
-  }
-
-  function setNavAgg(screenKey, count, positive) {
-    const el = document.querySelector(`[data-nav-agg="${screenKey}"]`);
-    if (!el) return;
-    el.textContent = String(count);
-    el.classList.toggle('nav-agg--positive', Boolean(positive));
-  }
-
-  function updateNavAgg() {
-    const total = state.rows.length;
-    const sel = selectedHorseIds().length;
-
-    setNavAgg('state', total, total > 0);
-    setNavAgg('list1', sel, sel > 0);
-    setNavAgg('summary', sel, sel > 0);
-    setNavAgg('list8', sel, sel > 0);
-  }
-
-  function setActiveNavBtn(screenKey) {
-    const btns = elNavRow.querySelectorAll('.nav-btn[data-screen]');
-    btns.forEach((b) => b.classList.remove('nav-btn--primary'));
-
-    const b = elNavRow.querySelector(`.nav-btn[data-screen="${screenKey}"]`);
-    if (b) b.classList.add('nav-btn--primary');
-  }
-
-  function selectedHorseIds() {
-    return Object.keys(state.session.selected || {}).filter((k) => state.session.selected[k]);
-  }
-
-  function getHorseById(horseId) {
-    return state.rows.find((r) => String(r.horse_id) === String(horseId)) || null;
-  }
-
-  function normalizeBoard(json) {
-    let rows = [];
-    let meta = {};
-
-    if (Array.isArray(json)) {
-      rows = json;
-    } else if (json && typeof json === 'object') {
-      if (Array.isArray(json.rows)) rows = json.rows;
-      else if (Array.isArray(json.horses)) rows = json.horses;
-      else if (Array.isArray(json.board)) rows = json.board;
-      meta = json.meta && typeof json.meta === 'object' ? json.meta : {};
-      // also allow top-level meta-ish fields
-      ['dt', 'sid', 'generated_at', 'save_url'].forEach((k) => {
-        if (json[k] != null && meta[k] == null) meta[k] = json[k];
-      });
-    }
-
-    const out = [];
-    rows.forEach((raw) => {
-      if (!raw || typeof raw !== 'object') return;
-      const horse_id = raw.horse_id ?? raw.horseId ?? raw.id;
-      const horseName = raw.horseName ?? raw.horse_name ?? raw.name ?? raw.horse ?? '';
-
-      if (horse_id == null) return; // hard requirement for selection + save
-
-      const boardNumber =
-        raw.boardNumber ?? raw.board_number ?? raw.board_no ?? raw.slot ?? raw.board;
-
-      out.push({
-        horse_id: String(horse_id),
-        horseName: safeText(horseName),
-        boardNumber: toIntOrNull(boardNumber),
-        feed_display: safeText(raw.feed_display ?? raw.feedDisplay ?? raw.feed ?? ''),
-        EEMix: toBool(raw.EEMix ?? raw.eeMix ?? raw.ee_mix ?? false),
-        Positude: toBool(raw.Positude ?? raw.positude ?? false),
-        OM3GA: toBool(raw.OM3GA ?? raw.om3ga ?? false),
-        horse_feed_note: safeText(raw.horse_feed_note ?? raw.note ?? raw.horseNote ?? '')
-      });
-    });
-
-    return { rows: out, meta };
-  }
-
-  function saveSession() {
-    try {
-      localStorage.setItem(sessionKey(), JSON.stringify(state.session));
-    } catch (_) {}
-  }
-
-  function loadSession() {
-    try {
-      const raw = localStorage.getItem(sessionKey());
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        state.session.selected = parsed.selected && typeof parsed.selected === 'object' ? parsed.selected : {};
-        state.session.drafts = parsed.drafts && typeof parsed.drafts === 'object' ? parsed.drafts : {};
-        state.session.expanded = parsed.expanded && typeof parsed.expanded === 'object' ? parsed.expanded : {};
-
-        // drop selections that no longer exist
-        const valid = new Set(state.rows.map((r) => r.horse_id));
-        Object.keys(state.session.selected).forEach((k) => {
-          if (!valid.has(k)) delete state.session.selected[k];
-        });
-
-        // drop drafts that no longer exist
-        Object.keys(state.session.drafts).forEach((k) => {
-          if (!valid.has(k)) delete state.session.drafts[k];
-        });
-      }
-    } catch (_) {}
-  }
-
-  function clearSession() {
-    state.session = { selected: {}, drafts: {}, expanded: {} };
-    try { localStorage.removeItem(sessionKey()); } catch (_) {}
-  }
-
-  function sortByBoardThenName(list) {
-    return [...list].sort((a, b) => {
-      const an = a.boardNumber == null ? 1e9 : a.boardNumber;
-      const bn = b.boardNumber == null ? 1e9 : b.boardNumber;
-      if (an !== bn) return an - bn;
-      return String(a.horseName).localeCompare(String(b.horseName));
-    });
-  }
-
-  function buildTextBoard() {
-    const selected = sortByBoardThenName(state.rows.filter((r) => state.session.selected[r.horse_id]));
-    const lines = selected.map((h) => {
-      const slot = h.boardNumber == null ? '-' : String(h.boardNumber);
-      const supp = [h.EEMix ? 'EE' : '', h.Positude ? 'POS' : '', h.OM3GA ? 'OM' : ''].filter(Boolean).join(' ');
-      const feed = h.feed_display ? h.feed_display : '';
-      const note = h.horse_feed_note ? ` — ${h.horse_feed_note}` : '';
-      const mid = [feed, supp].filter(Boolean).join(' | ');
-      return `${slot}) ${h.horseName}${mid ? ' — ' + mid : ''}${note}`;
-    });
-    return lines.join('\n');
-  }
-
-  async function copyText(text) {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (_) {}
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  // ----------------------------
-  // DATA
-  // ----------------------------
-  function boardUrl() {
-    const dir = state.dataDir.endsWith('/') ? state.dataDir : state.dataDir + '/';
-    const file = `${state.board}.json`;
-    const bust = `v=${Date.now()}`;
-    return `${dir}${file}?${bust}`;
-  }
-
-  async function loadBoard() {
-    const res = await fetch(boardUrl(), { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Board GET failed (${res.status})`);
-    const json = await res.json();
-    const norm = normalizeBoard(json);
-    state.rows = norm.rows;
-    state.meta = norm.meta || {};
-  }
-
-  function getSaveUrlCandidates() {
-    const q = qs('save_url') || qs('saveUrl') || qs('save');
-    const m = state.meta && (state.meta.save_url || state.meta.saveUrl || state.meta.save);
-
-    const out = [];
-    if (q) out.push(q);
-    if (m && !out.includes(m)) out.push(m);
-
-    DEFAULT_SAVE_CANDIDATES.forEach((u) => {
-      if (!out.includes(u)) out.push(u);
-    });
-
-    return out;
-  }
-
-  function diffDraft(base, draft) {
-    const keys = ['boardNumber', 'feed_display', 'EEMix', 'Positude', 'OM3GA', 'horse_feed_note'];
-    const patch = {};
-    keys.forEach((k) => {
-      if (draft[k] !== base[k]) patch[k] = draft[k];
-    });
-    return patch;
-  }
-
-  function parseBoardFromResponse(json) {
-    if (Array.isArray(json)) return normalizeBoard(json);
-    if (json && typeof json === 'object') {
-      if (Array.isArray(json.rows) || Array.isArray(json.horses) || Array.isArray(json.board)) return normalizeBoard(json);
-      if (json.data && (Array.isArray(json.data.rows) || Array.isArray(json.data.horses))) return normalizeBoard(json.data);
+  function getAny(obj, keys) {
+    if (!obj || typeof obj !== 'object') return null;
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] != null) return obj[k];
     }
     return null;
   }
 
-  async function saveDraft(horseId) {
-    const base = getHorseById(horseId);
-    const draft = state.session.drafts[horseId];
-    if (!base || !draft) return;
+  function toInt(v) {
+    if (v == null) return null;
+    const n = Number(String(v).trim());
+    return Number.isFinite(n) ? Math.trunc(n) : null;
+  }
 
-    const patch = diffDraft(base, draft);
-    if (!Object.keys(patch).length) {
-      // nothing changed
-      delete state.session.drafts[horseId];
-      saveSession();
-      goto('list1');
+  function toBool(v) {
+    if (v === true) return true;
+    if (v === false) return false;
+    if (v == null) return false;
+    const s = String(v).trim().toLowerCase();
+    if (!s) return false;
+    return s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 'on' || s === '✓';
+  }
+
+  function toggleLikeOriginal(original, currentBool) {
+    // Preserve original value type when possible
+    if (typeof original === 'boolean') return !!currentBool;
+    if (typeof original === 'number') return currentBool ? 1 : 0;
+    if (original == null) return !!currentBool;
+
+    // strings
+    return currentBool ? 'Y' : '';
+  }
+
+  function stableHorseIdFromRow(r) {
+    const hid = getAny(r, FIELD.horse_id);
+    if (hid != null) return String(hid);
+    const name = getAny(r, FIELD.horseName);
+    if (name != null) return 'name:' + String(name).trim().toLowerCase();
+    return null;
+  }
+
+  function deriveHorses(rows) {
+    const byId = new Map();
+    (rows || []).forEach(r => {
+      const id = stableHorseIdFromRow(r);
+      if (!id) return;
+      if (!byId.has(id)) {
+        byId.set(id, {
+          horse_id: id,
+          horseName: (getAny(r, FIELD.horseName) != null ? String(getAny(r, FIELD.horseName)) : '(unknown)') ,
+          row: r
+        });
+      }
+    });
+
+    const list = Array.from(byId.values());
+
+    // prefer stable display name if later rows have better one
+    (rows || []).forEach(r => {
+      const id = stableHorseIdFromRow(r);
+      if (!id || !byId.has(id)) return;
+      const name = getAny(r, FIELD.horseName);
+      if (name != null && String(name).trim()) byId.get(id).horseName = String(name).trim();
+    });
+
+    // sort by boardNumber then name
+    list.sort((a, b) => {
+      const an = toInt(getAny(a.row, FIELD.boardNumber));
+      const bn = toInt(getAny(b.row, FIELD.boardNumber));
+      if (an != null && bn != null && an !== bn) return an - bn;
+      if (an != null && bn == null) return -1;
+      if (an == null && bn != null) return 1;
+      return String(a.horseName).localeCompare(String(b.horseName));
+    });
+
+    return list;
+  }
+
+  function storageKey() {
+    return `crt_feed_session_${SESSION_VERSION}:${state.boardId}`;
+  }
+
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(storageKey());
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        state.session.selected = (parsed.selected && typeof parsed.selected === 'object') ? parsed.selected : {};
+        state.session.drafts = (parsed.drafts && typeof parsed.drafts === 'object') ? parsed.drafts : {};
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  function persistSession() {
+    try {
+      localStorage.setItem(storageKey(), JSON.stringify({
+        selected: state.session.selected,
+        drafts: state.session.drafts
+      }));
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  function clearSession() {
+    state.session = { selected: {}, drafts: {} };
+    state.expandedNotes = {};
+    state.searchText = '';
+    try { localStorage.removeItem(storageKey()); } catch (_) {}
+  }
+
+  function selectedCount() {
+    let n = 0;
+    for (let i = 0; i < state.horses.length; i++) {
+      const hid = state.horses[i].horse_id;
+      if (state.session.selected[hid]) n++;
+    }
+    return n;
+  }
+
+  function selectedHorses() {
+    return state.horses.filter(h => state.session.selected[h.horse_id]);
+  }
+
+  function setHeader(titleText) {
+    if (elTitle) elTitle.textContent = titleText || '';
+  }
+
+  function setHeaderAction(label, onClick) {
+    if (!elAction) return;
+    if (!label) {
+      elAction.hidden = true;
+      elAction.textContent = '';
+      elAction.onclick = null;
       return;
     }
+    elAction.hidden = false;
+    elAction.textContent = label;
+    elAction.onclick = onClick;
+  }
 
-    const payload = {
-      board: state.board,
-      horse_id: horseId,
-      patch,
-      requestedBoardNumber: patch.boardNumber,
-      client_ts: new Date().toISOString()
-    };
+  function showBack(show) {
+    if (!elBack) return;
+    elBack.classList.toggle('is-hidden', !show);
+  }
 
-    const candidates = getSaveUrlCandidates();
-    const attempts = [];
+  function setNavAgg(screen, value) {
+    const el = document.querySelector(`.nav-agg[data-nav-agg="${screen}"]`);
+    if (el) el.textContent = String(value == null ? '0' : value);
+  }
 
-    for (const url of candidates) {
-      for (const method of ['PATCH', 'POST']) {
-        try {
-          const res = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
+  function updateNavUI(activeScreen) {
+    const btns = document.querySelectorAll('.nav-btn[data-screen]');
+    btns.forEach(btn => {
+      const s = btn.getAttribute('data-screen');
+      btn.classList.toggle('nav-btn--primary', s === activeScreen);
+    });
 
-          attempts.push(`${method} ${url} -> ${res.status}`);
+    const sel = selectedCount();
+    setNavAgg('state', sel);
+    setNavAgg('list1', sel);
+    setNavAgg('summary', sel);
+    setNavAgg('list8', sel);
 
-          if (res.status === 404) continue; // try next URL
-          if (res.status === 405) continue; // try next method/URL
+    // keep legacy others quiet
+    for (let i = 2; i <= 7; i++) setNavAgg(`list${i}`, 0);
+  }
 
-          if (!res.ok) {
-            let msg = `Save failed (${res.status})`;
-            try {
-              const j = await res.json();
-              if (j && (j.error || j.message)) msg += `: ${j.error || j.message}`;
-            } catch (_) {}
-            throw new Error(msg);
-          }
+  function mkRowTap(title, tagsHtml, onClick, isActive) {
+    const html = `
+      <div class="row-title">${esc(title)}</div>
+      <div>${tagsHtml || ''}</div>
+    `;
+    const row = mk('div', `row row--tap${isActive ? ' row--active' : ''}`, html);
+    row.addEventListener('click', onClick);
+    return row;
+  }
 
-          let nextJson = null;
-          try { nextJson = await res.json(); } catch (_) {}
+  function mkRowStatic(title, tagsHtml) {
+    const html = `
+      <div class="row-title">${esc(title)}</div>
+      <div>${tagsHtml || ''}</div>
+    `;
+    return mk('div', 'row', html);
+  }
 
-          const parsed = nextJson ? parseBoardFromResponse(nextJson) : null;
-          if (parsed) {
-            state.rows = parsed.rows;
-            state.meta = parsed.meta || state.meta;
-          } else {
-            // fallback: re-GET board
-            await loadBoard();
-          }
+  function tag(text, positive, extraAttrs) {
+    const cls = `row-tag${positive ? ' row-tag--positive' : ''}`;
+    const attrs = extraAttrs || '';
+    return `<span class="${cls}" ${attrs}>${esc(text)}</span>`;
+  }
 
-          // clear draft, persist session
-          delete state.session.drafts[horseId];
-          saveSession();
+  function label(text) {
+    return mk('div', 'list-group-label', esc(text));
+  }
 
-          goto('list1');
-          return;
-        } catch (err) {
-          // network / non-404 errors stop here
-          state.errorMsg = String(err && err.message ? err.message : err);
-          state.errorMsg += `\nTried: ${attempts.slice(-6).join(' | ')}`;
-          render();
-          return;
-        }
+  function divider() {
+    return mk('div', 'list-group-divider');
+  }
+
+  function setMessage(message) {
+    clearRoot();
+    setHeader('Error');
+    showBack(false);
+    setHeaderAction(null);
+    updateNavUI(state.screen);
+    elRoot.appendChild(mkRowStatic(String(message || 'Unknown error'), tag('!', true)));
+  }
+
+  // ----------------------------
+  // DATA LOAD
+  // ----------------------------
+  function resolveBoardId() {
+    const p = qs('board') || qs('board_id') || qs('b');
+    const id = (p && String(p).trim()) ? String(p).trim() : DEFAULT_BOARD_ID;
+    // only safe chars
+    return id.replace(/[^a-zA-Z0-9_\-]/g, '');
+  }
+  function resolveSaveUrl(boardJson) {
+    const fromQS = getQueryParam('save') || getQueryParam('save_url');
+    if (fromQS) return fromQS;
+
+    const meta = document.querySelector('meta[name="app-save-url"]');
+    if (meta && meta.content) return meta.content.trim();
+
+    // Accept config only if it already points to /feed/commit; otherwise ignore it.
+    if (boardJson && typeof boardJson === 'object') {
+      const cfg = boardJson.save_url || (boardJson.meta && boardJson.meta.save_url);
+      if (cfg && typeof cfg === 'string') {
+        const u = cfg.trim();
+        if (/\/feed\/commit\/?$/.test(u)) return u;
       }
     }
 
-    state.errorMsg = `Save failed: no endpoint matched. Tried: ${attempts.join(' | ')}`;
+    return '/feed/commit';
+  }
+
+async function loadBoard() {
+    state.boardId = resolveBoardId();
+    state.dataUrl = `${DATA_BASE}${state.boardId}.json`;
+
+    const cacheBust = `cb=${Date.now()}`;
+    const url = state.dataUrl + (state.dataUrl.includes('?') ? '&' : '?') + cacheBust;
+
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Board GET failed (${res.status})`);
+
+    const json = await res.json();
+    state.boardJson = json;
+
+    let rows = [];
+    if (Array.isArray(json)) rows = json;
+    else if (Array.isArray(json.rows)) rows = json.rows;
+    else if (Array.isArray(json.board)) rows = json.board;
+    else if (Array.isArray(json.data)) rows = json.data;
+
+    state.rows = rows || [];
+    state.horses = deriveHorses(state.rows);
+    state.saveUrl = resolveSaveUrl(json);
+
+    // after board load, hydrate local session for this board
+    loadSession();
+
+    // prune selection/drafts for missing horses
+    const horseIds = new Set(state.horses.map(h => h.horse_id));
+    Object.keys(state.session.selected).forEach(id => { if (!horseIds.has(id)) delete state.session.selected[id]; });
+    Object.keys(state.session.drafts).forEach(id => { if (!horseIds.has(id)) delete state.session.drafts[id]; });
+    persistSession();
+  }
+
+  // ----------------------------
+  // ROUTING
+  // ----------------------------
+  function normalizeNavTarget(raw) {
+    const s = raw || 'state';
+    if (s === 'start' || s === 'state' || s === 'list1' || s === 'list8' || s === 'summary') return s;
+    if (s === 'list2' || s === 'list3' || s === 'list4' || s === 'list5' || s === 'list6' || s === 'list7') return 'state';
+    return 'state';
+  }
+
+  function gotoScreen(screen) {
+    if (screen !== 'start' && screen !== 'detail') state.lastNonStart = screen;
+    state.screen = screen;
     render();
   }
 
   // ----------------------------
-  // NAV + HEADER BINDINGS
+  // RENDER: Start
   // ----------------------------
-  function initNavLabelsAndVisibility() {
-    const btns = elNavRow.querySelectorAll('.nav-btn[data-screen]');
-
-    btns.forEach((btn) => {
-      const ds = btn.getAttribute('data-screen');
-      const labelEl = btn.querySelector('.nav-label');
-
-      // default: hide non-feed tabs, but keep markup
-      if (['list2', 'list3', 'list4', 'list5', 'list6', 'list7'].includes(ds)) {
-        btn.classList.add('is-hidden');
-        return;
-      }
-
-      if (!labelEl) return;
-
-      if (ds === 'state') labelEl.textContent = 'Active';
-      if (ds === 'list1') labelEl.textContent = 'List';
-      if (ds === 'summary') labelEl.textContent = 'Summary';
-      if (ds === 'list8') labelEl.textContent = 'Text';
-      if (ds === 'start') labelEl.textContent = 'Start';
-    });
-  }
-
-  function bindNav() {
-    elNavRow.addEventListener('click', (e) => {
-      const btn = e.target && e.target.closest ? e.target.closest('.nav-btn[data-screen]') : null;
-      if (!btn) return;
-      const ds = btn.getAttribute('data-screen');
-
-      // leaving detail discards draft for that horse (unless saved)
-      if (state.screen === 'detail') {
-        // discard by default
-        const hid = state.currentHorseId;
-        if (hid && state.session.drafts[hid]) delete state.session.drafts[hid];
-        state.currentHorseId = null;
-        saveSession();
-      }
-
-      if (ds === 'start') {
-        goto('start');
-        setActiveNavBtn('start');
-        return;
-      }
-      if (ds === 'state') {
-        goto('state');
-        setActiveNavBtn('state');
-        return;
-      }
-      if (ds === 'list1') {
-        goto('list1');
-        setActiveNavBtn('list1');
-        return;
-      }
-      if (ds === 'summary') {
-        goto('summary');
-        setActiveNavBtn('summary');
-        return;
-      }
-      if (ds === 'list8') {
-        goto('list8');
-        setActiveNavBtn('list8');
-        return;
-      }
-
-      // safe default for any other legacy tab
-      goto('state');
-      setActiveNavBtn('state');
-    });
-  }
-
-  function bindHeader() {
-    elHeaderBack.addEventListener('click', () => {
-      if (typeof state.headerBack === 'function') state.headerBack();
-    });
-    elHeaderAction.addEventListener('click', () => {
-      if (typeof state.headerAction === 'function') state.headerAction();
-    });
-  }
-
-  // ----------------------------
-  // SCREEN RENDERERS
-  // ----------------------------
-  function renderErrorIfAny(container) {
-    if (!state.errorMsg) return;
-    const row = mk('div', 'row', `
-      <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-        <div class="row-title" style="white-space:normal;overflow:visible;text-overflow:clip">${safeText(state.errorMsg)}</div>
-      </div>
-    `);
-    container.appendChild(row);
-  }
-
   function renderStart() {
-    state.headerBack = null;
-    state.headerAction = null;
-
-    setHeader({ title: 'Start', backVisible: false, actionVisible: false });
-
     clearRoot();
-    const col = mk('div', 'list-column');
+    setHeader('Start');
+    showBack(false);
+    setHeaderAction(null);
+    updateNavUI('start');
 
-    const logo = mk('div', 'start-logo', `
-      <div class="start-logo-title">FeedBoard</div>
-      <div class="start-logo-subtitle">${safeText(state.board)}${state.meta && state.meta.dt ? ' • ' + safeText(state.meta.dt) : ''}</div>
-    `);
-    col.appendChild(logo);
+    // Logo block (existing CSS)
+    const logo = mk('div', 'start-logo');
+    logo.appendChild(mk('div', 'start-logo-title', esc('FeedBoard')));
+    const subtitle = `Board: ${state.boardId} · Selected: ${selectedCount()} / ${state.horses.length}`;
+    logo.appendChild(mk('div', 'start-logo-subtitle', esc(subtitle)));
+    elRoot.appendChild(logo);
 
-    const restart = mk('div', 'row row--tap', `
-      <div><div class="row-title">New session / Restart</div></div>
-      <div class="row-tag row-tag--count">GO</div>
-    `);
-    restart.addEventListener('click', async () => {
-      state.errorMsg = '';
-      clearSession();
-      await loadBoard();
-      goto('state');
-      setActiveNavBtn('state');
-    });
-    col.appendChild(restart);
-
-    const cont = mk('div', 'row row--tap', `
-      <div><div class="row-title">Continue</div></div>
-      <div class="row-tag row-tag--count">OPEN</div>
-    `);
-    cont.addEventListener('click', () => {
-      goto('state');
-      setActiveNavBtn('state');
-    });
-    col.appendChild(cont);
-
-    renderErrorIfAny(col);
-
-    elRoot.appendChild(col);
-  }
-
-  function renderActiveHorses() {
-    state.headerBack = null;
-    state.headerAction = null;
-
-    setHeader({ title: 'Active', backVisible: false, actionVisible: false });
-
-    clearRoot();
-    const col = mk('div', 'list-column');
-
-    // search
-    const searchWrap = mk('div', 'state-search');
-    const input = mk('input', 'state-search-input');
-    input.type = 'search';
-    input.placeholder = 'Filter horses…';
-    searchWrap.appendChild(input);
-    col.appendChild(searchWrap);
-
-    let filter = '';
-    function rerenderList() {
-      // remove existing horse rows after search
-      const existing = col.querySelectorAll('[data-horse-row="1"]');
-      existing.forEach((n) => n.remove());
-
-      const term = filter.trim().toLowerCase();
-      const list = state.rows.filter((h) => !term || h.horseName.toLowerCase().includes(term));
-
-      list.forEach((h) => {
-        const selected = Boolean(state.session.selected[h.horse_id]);
-        const slot = h.boardNumber == null ? '-' : String(h.boardNumber);
-
-        const row = mk('div', `row row--tap${selected ? ' row--active' : ''}`, `
-          <div><div class="row-title">${safeText(h.horseName)}</div></div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span class="row-tag row-tag--count">${slot}</span>
-            <span class="row-tag row-tag--boolean${selected ? ' row-tag--positive' : ''}"></span>
-          </div>
-        `);
-        row.setAttribute('data-horse-row', '1');
-        row.addEventListener('click', () => {
-          state.errorMsg = '';
-          state.session.selected[h.horse_id] = !selected;
-          saveSession();
-          updateNavAgg();
-          rerenderList();
-        });
-        col.appendChild(row);
-      });
-
-      renderErrorIfAny(col);
-    }
-
-    input.addEventListener('input', () => {
-      filter = input.value || '';
-      rerenderList();
-    });
-
-    rerenderList();
-
-    elRoot.appendChild(col);
-  }
-
-  function renderFeedList() {
-    state.headerBack = null;
-    state.headerAction = null;
-
-    setHeader({ title: 'List', backVisible: false, actionVisible: false });
-
-    clearRoot();
-    const col = mk('div', 'list-column');
-
-    const selected = sortByBoardThenName(state.rows.filter((h) => state.session.selected[h.horse_id]));
-
-    if (!selected.length) {
-      const empty = mk('div', 'row', `
-        <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-          <div class="row-title" style="white-space:normal;overflow:visible;text-overflow:clip">No horses selected.</div>
-        </div>
-      `);
-      col.appendChild(empty);
-      elRoot.appendChild(col);
-      return;
-    }
-
-    selected.forEach((h) => {
-      const slot = h.boardNumber == null ? '-' : String(h.boardNumber);
-      const row = mk('div', 'row row--tap', `
-        <div><div class="row-title">${safeText(h.horseName)}</div></div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span class="row-tag row-tag--count">${slot}</span>
-          ${h.feed_display ? `<span class="row-tag row-tag--count">FEED</span>` : ''}
-        </div>
-      `);
-      row.addEventListener('click', () => openDetail(h.horse_id));
-      col.appendChild(row);
-    });
-
-    renderErrorIfAny(col);
-
-    elRoot.appendChild(col);
-  }
-
-  function openDetail(horseId) {
-    const base = getHorseById(horseId);
-    if (!base) return;
-
-    state.errorMsg = '';
-    state.currentHorseId = horseId;
-
-    // seed draft from base
-    state.session.drafts[horseId] = {
-      horse_id: base.horse_id,
-      horseName: base.horseName,
-      boardNumber: base.boardNumber,
-      feed_display: base.feed_display,
-      EEMix: base.EEMix,
-      Positude: base.Positude,
-      OM3GA: base.OM3GA,
-      horse_feed_note: base.horse_feed_note
-    };
-
-    saveSession();
-    goto('detail');
-  }
-
-  function renderDetail() {
-    const horseId = state.currentHorseId;
-    const base = horseId ? getHorseById(horseId) : null;
-    const draft = horseId ? state.session.drafts[horseId] : null;
-
-    if (!horseId || !base || !draft) {
-      state.currentHorseId = null;
-      goto('list1');
-      return;
-    }
-
-    state.headerBack = () => {
-      // discard draft
-      delete state.session.drafts[horseId];
-      state.currentHorseId = null;
-      saveSession();
-      goto('list1');
-    };
-
-    state.headerAction = async () => {
-      state.errorMsg = '';
-      render();
-      await saveDraft(horseId);
-    };
-
-    setHeader({ title: draft.horseName || 'Horse', backVisible: true, actionVisible: true, actionText: 'Save', actionDisabled: false });
-
-    clearRoot();
-    const col = mk('div', 'list-column');
-
-    // Slot picker (prompt)
-    col.appendChild(mk('div', 'list-group-label', 'Slot'));
-
-    const used = new Set(
-      state.rows
-        .filter((h) => h.horse_id !== horseId)
-        .map((h) => h.boardNumber)
-        .filter((n) => n != null)
+    // Restart
+    elRoot.appendChild(
+      mkRowTap('New session / Restart', tag('GO', true), async () => {
+        await restartFlow();
+      })
     );
 
-    const slotText = draft.boardNumber == null ? '-' : String(draft.boardNumber);
+    // Continue
+    elRoot.appendChild(
+      mkRowTap('Continue', tag('→', true), () => gotoScreen('state'))
+    );
 
-    const slotRow = mk('div', 'row row--tap', `
-      <div><div class="row-title">Board Number</div></div>
-      <div class="row-tag row-tag--count">${slotText}</div>
-    `);
-    slotRow.addEventListener('click', () => {
-      const raw = window.prompt('Board Number (unique):', slotText === '-' ? '' : slotText);
-      if (raw == null) return;
-      const cleaned = String(raw).trim();
-      const next = cleaned === '' ? null : toIntOrNull(cleaned);
-      if (cleaned !== '' && next == null) {
-        state.errorMsg = 'Invalid board number.';
-        render();
-        return;
-      }
-      if (next != null && used.has(next)) {
-        state.errorMsg = `Board number ${next} is already used.`;
-        render();
-        return;
-      }
-      draft.boardNumber = next;
-      state.errorMsg = '';
-      saveSession();
-      render();
-    });
-    col.appendChild(slotRow);
+    elRoot.appendChild(divider());
 
-    // Feed fields
-    col.appendChild(mk('div', 'list-group-label', 'Feed'));
+    // Load board (manual)
+    elRoot.appendChild(
+      mkRowTap('Refresh board', tag('↻', false), async () => {
+        try {
+          await loadBoard();
+          render();
+        } catch (e) {
+          setMessage(e && e.message ? e.message : String(e));
+        }
+      })
+    );
 
-    const feedRow = mk('div', 'row row--tap', `
-      <div><div class="row-title">Feed Display</div></div>
-      <div class="row-tag row-tag--count">${draft.feed_display ? 'SET' : '—'}</div>
-    `);
-    feedRow.addEventListener('click', () => {
-      const next = window.prompt('Feed Display:', draft.feed_display || '');
-      if (next == null) return;
-      draft.feed_display = String(next).trim();
-      state.errorMsg = '';
-      saveSession();
-      render();
-    });
-    col.appendChild(feedRow);
-
-    col.appendChild(mk('div', 'list-group-label', 'Supplements'));
-
-    function toggleRow(key, label) {
-      const on = Boolean(draft[key]);
-      const row = mk('div', `row row--tap${on ? ' row--active' : ''}`, `
-        <div><div class="row-title">${label}</div></div>
-        <div class="row-tag row-tag--boolean${on ? ' row-tag--positive' : ''}"></div>
-      `);
-      row.addEventListener('click', () => {
-        draft[key] = !on;
-        state.errorMsg = '';
-        saveSession();
-        render();
-      });
-      return row;
-    }
-
-    col.appendChild(toggleRow('EEMix', 'EEMix'));
-    col.appendChild(toggleRow('Positude', 'Positude'));
-    col.appendChild(toggleRow('OM3GA', 'OM3GA'));
-
-    col.appendChild(mk('div', 'list-group-label', 'Note'));
-
-    const ta = mk('textarea', 'state-search-input');
-    ta.value = draft.horse_feed_note || '';
-    ta.rows = 6;
-    ta.style.minHeight = '140px';
-    ta.style.resize = 'vertical';
-    ta.addEventListener('input', () => {
-      draft.horse_feed_note = ta.value;
-      saveSession();
-    });
-    col.appendChild(ta);
-
-    // show current base snapshot for reference
-    const ref = mk('div', 'row', `
-      <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-        <div class="row-title" style="white-space:normal;overflow:visible;text-overflow:clip">Current on-board:</div>
-        <div style="white-space:normal;overflow:visible;text-overflow:clip;font-size:12px;color:#d1d5db;opacity:.9">
-          Slot: ${base.boardNumber == null ? '-' : base.boardNumber} • Feed: ${safeText(base.feed_display || '—')} • EE: ${base.EEMix ? 'Y' : 'N'} • POS: ${base.Positude ? 'Y' : 'N'} • OM: ${base.OM3GA ? 'Y' : 'N'}
-        </div>
-      </div>
-    `);
-    col.appendChild(ref);
-
-    renderErrorIfAny(col);
-
-    elRoot.appendChild(col);
+    // Save endpoint status
+    const saveStatus = state.saveUrl ? 'Save OK' : 'Save OFF';
+    elRoot.appendChild(mkRowStatic('Save endpoint', tag(saveStatus, !!state.saveUrl)));
   }
 
-  function renderSummary() {
-    state.headerBack = null;
-    state.headerAction = null;
-
-    setHeader({ title: 'Summary', backVisible: false, actionVisible: false });
-
+  // ----------------------------
+  // RENDER: Active Horses (state)
+  // ----------------------------
+  function renderActiveHorses() {
     clearRoot();
-    const col = mk('div', 'list-column');
+    setHeader('Active Horses');
+    showBack(true);
+    setHeaderAction(null);
+    updateNavUI('state');
 
-    const selected = sortByBoardThenName(state.rows.filter((h) => state.session.selected[h.horse_id]));
+    const wrap = mk('div', 'state-search');
+    const input = mk('input', 'state-search-input');
+    input.type = 'search';
+    input.placeholder = 'Search horses…';
+    input.value = state.searchText || '';
+    input.addEventListener('input', () => {
+      state.searchText = input.value || '';
+      renderActiveHorses();
+    });
+    wrap.appendChild(input);
+    elRoot.appendChild(wrap);
 
-    if (!selected.length) {
-      col.appendChild(mk('div', 'row', `
-        <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-          <div class="row-title" style="white-space:normal;overflow:visible;text-overflow:clip">No horses selected.</div>
-        </div>
-      `));
-      elRoot.appendChild(col);
+    const q = (state.searchText || '').trim().toLowerCase();
+    const horses = q
+      ? state.horses.filter(h => String(h.horseName).toLowerCase().includes(q))
+      : state.horses.slice();
+
+    if (!horses.length) {
+      elRoot.appendChild(mkRowStatic('No horses found.', tag('0', false)));
       return;
     }
 
-    selected.forEach((h) => {
-      const slot = h.boardNumber == null ? '-' : String(h.boardNumber);
-      const hasNote = Boolean(h.horse_feed_note && String(h.horse_feed_note).trim());
-      const isExpanded = Boolean(state.session.expanded[h.horse_id]);
+    horses.forEach(h => {
+      const isSel = !!state.session.selected[h.horse_id];
+      const boardNo = toInt(getAny(h.row, FIELD.boardNumber));
+      const tags = [tag(isSel ? 'ON' : 'OFF', isSel)];
+      if (boardNo != null) tags.unshift(tag(String(boardNo), false));
 
-      const tags = mk('div');
-      tags.style.display = 'flex';
-      tags.style.gap = '6px';
-      tags.style.alignItems = 'center';
+      const row = mkRowTap(h.horseName, tags.join(''), () => {
+        state.session.selected[h.horse_id] = !isSel;
+        persistSession();
+        renderActiveHorses();
+        // keep nav aggs live
+        updateNavUI('state');
+      }, isSel);
 
-      const chipSlot = mk('span', 'row-tag row-tag--count');
-      chipSlot.textContent = slot;
-      tags.appendChild(chipSlot);
+      elRoot.appendChild(row);
+    });
+  }
 
-      if (h.feed_display) {
-        const chip = mk('span', 'row-tag row-tag--count');
-        chip.textContent = h.feed_display.length > 10 ? 'FEED' : h.feed_display;
-        tags.appendChild(chip);
-      }
+  // ----------------------------
+  // RENDER: FeedList (list1)
+  // ----------------------------
+  function renderFeedList() {
+    clearRoot();
+    setHeader('Feed List');
+    showBack(true);
+    setHeaderAction(null);
+    updateNavUI('list1');
 
-      if (h.EEMix) { const c = mk('span', 'row-tag row-tag--count'); c.textContent = 'EE'; tags.appendChild(c); }
-      if (h.Positude) { const c = mk('span', 'row-tag row-tag--count'); c.textContent = 'POS'; tags.appendChild(c); }
-      if (h.OM3GA) { const c = mk('span', 'row-tag row-tag--count'); c.textContent = 'OM'; tags.appendChild(c); }
+    const sel = selectedHorses();
+    if (!sel.length) {
+      elRoot.appendChild(mkRowStatic('No active horses selected.', tag('!', true)));
+      elRoot.appendChild(mkRowTap('Go select horses', tag('→', true), () => gotoScreen('state')));
+      return;
+    }
 
-      if (hasNote) {
-        const noteChip = mk('span', 'row-tag row-tag--count');
-        noteChip.textContent = 'NOTE';
-        noteChip.style.cursor = 'pointer';
-        noteChip.addEventListener('click', (e) => {
-          e.stopPropagation();
-          state.session.expanded[h.horse_id] = !isExpanded;
-          saveSession();
-          render();
-        });
-        tags.appendChild(noteChip);
-      }
+    sel.forEach(h => {
+      const boardNo = toInt(getAny(h.row, FIELD.boardNumber));
+      const feed = getAny(h.row, FIELD.feed_display);
+      const tags = [
+        tag(boardNo != null ? String(boardNo) : '—', false),
+        tag(feed != null && String(feed).trim() ? String(feed).trim() : 'feed', false)
+      ].join('');
 
-      const row = mk('div', 'row', '');
-      const left = mk('div', '');
-      left.innerHTML = `<div class="row-title">${safeText(h.horseName)}</div>`;
-      row.appendChild(left);
-      row.appendChild(tags);
-      col.appendChild(row);
+      elRoot.appendChild(
+        mkRowTap(h.horseName, tags, () => openDetail(h.horse_id))
+      );
+    });
+  }
 
-      if (hasNote && isExpanded) {
-        const noteRow = mk('div', 'row', `
-          <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-            <div class="row-title" style="white-space:normal;overflow:visible;text-overflow:clip">${safeText(h.horse_feed_note)}</div>
-          </div>
-        `);
-        col.appendChild(noteRow);
+  // ----------------------------
+  // DETAIL DRAFT
+  // ----------------------------
+  function baseForHorse(horseId) {
+    const h = state.horses.find(x => x.horse_id === horseId);
+    return h ? h.row : null;
+  }
+
+  function ensureDraft(horseId) {
+    if (!state.session.drafts[horseId]) {
+      const base = baseForHorse(horseId) || {};
+      state.session.drafts[horseId] = {
+        boardNumber: toInt(getAny(base, FIELD.boardNumber)),
+        feed_display: (getAny(base, FIELD.feed_display) != null ? String(getAny(base, FIELD.feed_display)) : ''),
+        EEMix: getAny(base, FIELD.EEMix),
+        Positude: getAny(base, FIELD.Positude),
+        OM3GA: getAny(base, FIELD.OM3GA),
+        horse_feed_note: (getAny(base, FIELD.horse_feed_note) != null ? String(getAny(base, FIELD.horse_feed_note)) : '')
+      };
+      persistSession();
+    }
+    return state.session.drafts[horseId];
+  }
+
+  function discardDraft(horseId) {
+    if (state.session.drafts[horseId]) {
+      delete state.session.drafts[horseId];
+      persistSession();
+    }
+  }
+
+  function computeUsedSlots(exceptHorseId) {
+    const used = new Set();
+    state.horses.forEach(h => {
+      if (h.horse_id === exceptHorseId) return;
+      const n = toInt(getAny(h.row, FIELD.boardNumber));
+      if (n != null) used.add(n);
+    });
+    return used;
+  }
+
+  function slotOptions(exceptHorseId) {
+    // Derive a reasonable list of slots: 1..max+5 (min 20)
+    let max = 0;
+    state.horses.forEach(h => {
+      const n = toInt(getAny(h.row, FIELD.boardNumber));
+      if (n != null && n > max) max = n;
+    });
+    max = Math.max(max, 20);
+    return Array.from({ length: max + 5 }, (_, i) => i + 1);
+  }
+
+  function draftChanges(horseId) {
+    const base = baseForHorse(horseId) || {};
+    const d = ensureDraft(horseId);
+
+    const out = {};
+
+    const baseBoard = toInt(getAny(base, FIELD.boardNumber));
+    if ((d.boardNumber || null) !== (baseBoard || null)) out.boardNumber = d.boardNumber;
+
+    const baseFeed = (getAny(base, FIELD.feed_display) != null ? String(getAny(base, FIELD.feed_display)) : '');
+    if (String(d.feed_display || '') !== String(baseFeed || '')) out.feed_display = d.feed_display;
+
+    // toggles: compare via boolean interpretation
+    const baseE = getAny(base, FIELD.EEMix);
+    const baseP = getAny(base, FIELD.Positude);
+    const baseO = getAny(base, FIELD.OM3GA);
+
+    const dE = d.EEMix;
+    const dP = d.Positude;
+    const dO = d.OM3GA;
+
+    if (toBool(dE) !== toBool(baseE)) out.EEMix = dE;
+    if (toBool(dP) !== toBool(baseP)) out.Positude = dP;
+    if (toBool(dO) !== toBool(baseO)) out.OM3GA = dO;
+
+    const baseNote = (getAny(base, FIELD.horse_feed_note) != null ? String(getAny(base, FIELD.horse_feed_note)) : '');
+    if (String(d.horse_feed_note || '') !== String(baseNote || '')) out.horse_feed_note = d.horse_feed_note;
+
+    return out;
+  }
+
+  // ----------------------------
+  // RENDER: Horse Detail
+  // ----------------------------
+  function renderDetail() {
+    const horseId = state.detailHorseId;
+    const horse = state.horses.find(h => h.horse_id === horseId);
+    if (!horse) {
+      gotoScreen('list1');
+      return;
+    }
+
+    const draft = ensureDraft(horseId);
+    const base = baseForHorse(horseId) || {};
+
+    clearRoot();
+    setHeader(horse.horseName);
+    showBack(true);
+
+    setHeaderAction('Save', async () => {
+      try {
+        await saveDraft(horseId);
+      } catch (e) {
+        alert(e && e.message ? e.message : String(e));
       }
     });
 
-    renderErrorIfAny(col);
+    // Highlight List tab while in detail (keeps bottom-nav cadence)
+    updateNavUI('list1');
 
-    elRoot.appendChild(col);
+    // Board Slot
+    elRoot.appendChild(label('Board Slot'));
+
+    const slotTag = tag(draft.boardNumber != null ? String(draft.boardNumber) : '—', false);
+    elRoot.appendChild(
+      mkRowTap('Board Number', slotTag, () => {
+        state.showSlotPicker = !state.showSlotPicker;
+        renderDetail();
+      })
+    );
+
+    if (state.showSlotPicker) {
+      const used = computeUsedSlots(horseId);
+      const opts = slotOptions(horseId);
+
+      elRoot.appendChild(mkRowTap('Clear slot', tag('×', false), () => {
+        draft.boardNumber = null;
+        persistSession();
+        renderDetail();
+      }));
+
+      opts.forEach(n => {
+        const isUsed = used.has(n);
+        const isCurrent = (draft.boardNumber === n);
+        const t = tag(String(n), isCurrent, isUsed ? 'data-used="1"' : '');
+
+        if (isUsed && !isCurrent) {
+          elRoot.appendChild(mkRowStatic(`Slot ${n} (used)`, t));
+        } else {
+          elRoot.appendChild(
+            mkRowTap(`Slot ${n}`, t, () => {
+              draft.boardNumber = n;
+              persistSession();
+              renderDetail();
+            }, isCurrent)
+          );
+        }
+      });
+
+      elRoot.appendChild(divider());
+    }
+
+    // Feed
+    elRoot.appendChild(label('Feed'));
+
+    elRoot.appendChild(
+      mkRowTap('Feed', tag(draft.feed_display && String(draft.feed_display).trim() ? String(draft.feed_display).trim() : '—', false), () => {
+        const next = prompt('Feed (feed_display):', draft.feed_display || '');
+        if (next == null) return;
+        draft.feed_display = String(next);
+        persistSession();
+        renderDetail();
+      })
+    );
+
+    // Supplements
+    elRoot.appendChild(label('Supplements'));
+
+    const toggleRow = (labelText, fieldKey, baseVal) => {
+      const current = toBool(draft[fieldKey]);
+      const t = tag(labelText, current);
+      elRoot.appendChild(
+        mkRowTap(labelText, t, () => {
+          const nextBool = !current;
+          const orig = baseVal;
+          draft[fieldKey] = toggleLikeOriginal(orig, nextBool);
+          persistSession();
+          renderDetail();
+        }, current)
+      );
+    };
+
+    toggleRow('EEMix', 'EEMix', getAny(base, FIELD.EEMix));
+    toggleRow('Positude', 'Positude', getAny(base, FIELD.Positude));
+    toggleRow('OM3GA', 'OM3GA', getAny(base, FIELD.OM3GA));
+
+    // Notes
+    elRoot.appendChild(label('Note'));
+
+    const noteWrap = mk('div', 'state-search');
+    const note = mk('textarea', 'state-search-input');
+    note.rows = 4;
+    note.placeholder = 'horse_feed_note…';
+    note.value = draft.horse_feed_note || '';
+    note.addEventListener('input', () => {
+      draft.horse_feed_note = note.value;
+      persistSession();
+    });
+    noteWrap.appendChild(note);
+    elRoot.appendChild(noteWrap);
+
+    // Show unsaved status
+    const changes = draftChanges(horseId);
+    const hasChanges = Object.keys(changes).length > 0;
+    elRoot.appendChild(
+      mkRowStatic(hasChanges ? 'Unsaved changes' : 'No changes', tag(hasChanges ? '●' : '○', hasChanges))
+    );
+
+    // Safety note
+    if (!state.saveUrl) {
+      elRoot.appendChild(mkRowStatic('Save is disabled (no endpoint)', tag('OFF', false)));
+    }
+  }
+
+  // ----------------------------
+  // SAVE
+  // ----------------------------
+
+  async function saveDraft(horseId) {
+    const changes = draftChanges(horseId);
+    if (!Object.keys(changes).length) return;
+
+    if (!state.dataUrl) throw new Error('Board data URL not configured.');
+
+    // Fetch latest board so we don't overwrite other updates.
+    const latest = await fetchJson(`${state.dataUrl}${state.dataUrl.includes('?') ? '&' : '?'}cb=${cacheBust()}`);
+
+    const rows = (() => {
+      if (Array.isArray(latest)) return latest;
+      if (latest && typeof latest === 'object') {
+        if (Array.isArray(latest.rows)) return latest.rows;
+        if (Array.isArray(latest.horses)) return latest.horses;
+        if (Array.isArray(latest.items)) return latest.items;
+        if (Array.isArray(latest.board)) return latest.board;
+        if (latest.board && typeof latest.board === 'object') {
+          if (Array.isArray(latest.board.rows)) return latest.board.rows;
+          if (Array.isArray(latest.board.horses)) return latest.board.horses;
+        }
+      }
+      return [];
+    })();
+
+    const idStr = String(horseId);
+    const target = rows.find(r => String(getAny(r, FIELD.horse_id)) === idStr);
+    if (!target) throw new Error('Horse not found in board.');
+
+    // Uniqueness guard (use latest board, not local state)
+    if (Object.prototype.hasOwnProperty.call(changes, 'boardNumber')) {
+      const next = changes.boardNumber == null ? null : toInt(changes.boardNumber);
+      if (next != null) {
+        const used = new Set();
+        rows.forEach(r => {
+          const rid = String(getAny(r, FIELD.horse_id));
+          if (rid === idStr) return;
+          const bn = toInt(getAny(r, FIELD.boardNumber));
+          if (Number.isFinite(bn)) used.add(bn);
+        });
+        if (used.has(next)) throw new Error(`Board slot ${next} is already used.`);
+      }
+      changes.boardNumber = next;
+    }
+
+    // Apply patch to latest board (client-side merge).
+    Object.keys(changes).forEach(k => {
+      target[k] = changes[k];
+    });
+
+    // Save via /feed/commit (POST) — fallback to it if config points somewhere invalid.
+    const primary = state.saveUrl || '/feed/commit';
+    const candidates = [primary];
+    if (primary !== '/feed/commit') candidates.push('/feed/commit');
+
+    setHeaderAction('Saving…', null);
+
+    let lastErr = null;
+    for (let i = 0; i < candidates.length; i++) {
+      const url = candidates[i];
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ board: latest })
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          if (res.status === 405 && i + 1 < candidates.length) continue;
+          throw new Error(`Save failed (${res.status})${txt ? ': ' + txt : ''}`);
+        }
+
+        // Success
+        await loadBoard();
+        discardDraft(horseId);
+        state.showSlotPicker = false;
+        gotoScreen('list1');
+        return;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    throw lastErr || new Error('Save failed.');
+  }
+
+  // ----------------------------
+  // RENDER: Summary
+  // ----------------------------
+  function renderSummary() {
+    clearRoot();
+    setHeader('Summary');
+    showBack(true);
+    setHeaderAction(null);
+    updateNavUI('summary');
+
+    const sel = selectedHorses();
+    if (!sel.length) {
+      elRoot.appendChild(mkRowStatic('No active horses selected.', tag('!', true)));
+      elRoot.appendChild(mkRowTap('Go select horses', tag('→', true), () => gotoScreen('state')));
+      return;
+    }
+
+    // Sort by boardNumber then name
+    sel.sort((a, b) => {
+      const an = toInt(getAny(a.row, FIELD.boardNumber));
+      const bn = toInt(getAny(b.row, FIELD.boardNumber));
+      if (an != null && bn != null && an !== bn) return an - bn;
+      if (an != null && bn == null) return -1;
+      if (an == null && bn != null) return 1;
+      return String(a.horseName).localeCompare(String(b.horseName));
+    });
+
+    sel.forEach(h => {
+      const base = h.row || {};
+      const boardNo = toInt(getAny(base, FIELD.boardNumber));
+      const feed = getAny(base, FIELD.feed_display);
+      const eemix = toBool(getAny(base, FIELD.EEMix));
+      const posit = toBool(getAny(base, FIELD.Positude));
+      const om = toBool(getAny(base, FIELD.OM3GA));
+      const note = getAny(base, FIELD.horse_feed_note);
+
+      const noteKey = h.horse_id;
+      const noteOpen = !!state.expandedNotes[noteKey];
+
+      const tags = [
+        tag(boardNo != null ? String(boardNo) : '—', false),
+        tag(feed != null && String(feed).trim() ? String(feed).trim() : 'feed', false),
+        tag('EEMix', eemix),
+        tag('Positude', posit),
+        tag('OM3GA', om),
+        tag('NOTE', !!(note && String(note).trim()), 'data-note="1" style="cursor:pointer"')
+      ].join('');
+
+      const row = mkRowTap(h.horseName, tags, (evt) => {
+        // Only toggle note when NOTE chip is clicked
+        const target = evt && evt.target;
+        const noteChip = target && target.closest ? target.closest('[data-note="1"]') : null;
+        if (noteChip) {
+          state.expandedNotes[noteKey] = !noteOpen;
+          renderSummary();
+          return;
+        }
+        // otherwise open detail
+        openDetail(h.horse_id);
+      });
+
+      elRoot.appendChild(row);
+
+      if (noteOpen) {
+        const txt = (note != null ? String(note) : '').trim();
+        elRoot.appendChild(mkRowStatic(txt || '(no note)', tag('note', false)));
+      }
+    });
+  }
+
+  // ----------------------------
+  // RENDER: Text/Share (list8)
+  // ----------------------------
+  function buildPlainText() {
+    const sel = selectedHorses();
+    sel.sort((a, b) => {
+      const an = toInt(getAny(a.row, FIELD.boardNumber));
+      const bn = toInt(getAny(b.row, FIELD.boardNumber));
+      if (an != null && bn != null && an !== bn) return an - bn;
+      if (an != null && bn == null) return -1;
+      if (an == null && bn != null) return 1;
+      return String(a.horseName).localeCompare(String(b.horseName));
+    });
+
+    const lines = [];
+    sel.forEach(h => {
+      const r = h.row || {};
+      const boardNo = toInt(getAny(r, FIELD.boardNumber));
+      const feed = getAny(r, FIELD.feed_display);
+      const eemix = toBool(getAny(r, FIELD.EEMix));
+      const posit = toBool(getAny(r, FIELD.Positude));
+      const om = toBool(getAny(r, FIELD.OM3GA));
+      const note = getAny(r, FIELD.horse_feed_note);
+
+      const parts = [];
+      if (feed != null && String(feed).trim()) parts.push(String(feed).trim());
+      if (eemix) parts.push('EEMix');
+      if (posit) parts.push('Positude');
+      if (om) parts.push('OM3GA');
+
+      const head = `${boardNo != null ? boardNo + '.' : '-.'} ${h.horseName}`;
+      const mid = parts.length ? ' — ' + parts.join(' · ') : '';
+      const tail = (note != null && String(note).trim()) ? `\n  Note: ${String(note).trim()}` : '';
+
+      lines.push(head + mid + tail);
+    });
+
+    return lines.join('\n');
   }
 
   function renderText() {
-    state.headerBack = null;
-    state.headerAction = null;
-
-    setHeader({ title: 'Text', backVisible: false, actionVisible: false });
-
     clearRoot();
-    const col = mk('div', 'list-column');
+    setHeader('Text');
+    showBack(true);
+    setHeaderAction(null);
+    updateNavUI('list8');
 
-    const text = buildTextBoard();
+    const sel = selectedHorses();
+    if (!sel.length) {
+      elRoot.appendChild(mkRowStatic('No active horses selected.', tag('!', true)));
+      elRoot.appendChild(mkRowTap('Go select horses', tag('→', true), () => gotoScreen('state')));
+      return;
+    }
 
-    const ta = mk('textarea', 'state-search-input');
-    ta.value = text;
-    ta.rows = 10;
-    ta.style.minHeight = '220px';
-    ta.style.resize = 'vertical';
-    col.appendChild(ta);
+    const text = buildPlainText();
 
-    const copyRow = mk('div', 'row row--tap', `
-      <div><div class="row-title">Copy</div></div>
-      <div class="row-tag row-tag--count">COPY</div>
-    `);
-    copyRow.addEventListener('click', async () => {
-      const ok = await copyText(ta.value);
-      state.errorMsg = ok ? '' : 'Copy failed.';
-      render();
-    });
-    col.appendChild(copyRow);
+    elRoot.appendChild(label('Share'));
 
-    const smsRow = mk('div', 'row row--tap', `
-      <div><div class="row-title">SMS</div></div>
-      <div class="row-tag row-tag--count">OPEN</div>
-    `);
-    smsRow.addEventListener('click', () => {
-      const body = encodeURIComponent(ta.value);
-      window.location.href = `sms:?&body=${body}`;
-    });
-    col.appendChild(smsRow);
+    elRoot.appendChild(
+      mkRowTap('Copy to clipboard', tag('COPY', true), async () => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            alert('Copied.');
+          } else {
+            prompt('Copy:', text);
+          }
+        } catch (_) {
+          prompt('Copy:', text);
+        }
+      })
+    );
 
-    renderErrorIfAny(col);
+    elRoot.appendChild(
+      mkRowTap('Open SMS', tag('SMS', true), () => {
+        const body = encodeURIComponent(text);
+        // sms: scheme varies; this is the most compatible pattern
+        const url = `sms:?&body=${body}`;
+        window.location.href = url;
+      })
+    );
 
-    elRoot.appendChild(col);
+    elRoot.appendChild(divider());
+
+    const boxWrap = mk('div', 'state-search');
+    const box = mk('textarea', 'state-search-input');
+    box.rows = 10;
+    box.readOnly = true;
+    box.value = text;
+    boxWrap.appendChild(box);
+    elRoot.appendChild(boxWrap);
   }
 
-  function goto(screenKey) {
-    state.screen = screenKey;
-    updateNavAgg();
-    render();
+  // ----------------------------
+  // FLOW: Restart
+  // ----------------------------
+  async function restartFlow() {
+    clearSession();
+    await loadBoard();
+    gotoScreen('state');
   }
 
+  // ----------------------------
+  // DETAIL NAV
+  // ----------------------------
+  function openDetail(horseId) {
+    state.detailHorseId = horseId;
+    state.showSlotPicker = false;
+    gotoScreen('detail');
+  }
+
+  // ----------------------------
+  // MAIN RENDER
+  // ----------------------------
   function render() {
-    // reset header handlers; each screen sets what it needs
-    state.headerBack = null;
-    state.headerAction = null;
+    // Back button behavior
+    if (elBack) {
+      elBack.onclick = () => {
+        if (state.screen === 'detail') {
+          // discard draft + return to FeedList
+          discardDraft(state.detailHorseId);
+          state.detailHorseId = null;
+          state.showSlotPicker = false;
+          gotoScreen('list1');
+          return;
+        }
+        // from any main screen -> Start
+        gotoScreen('start');
+      };
+    }
 
     if (state.screen === 'start') return renderStart();
     if (state.screen === 'state') return renderActiveHorses();
     if (state.screen === 'list1') return renderFeedList();
-    if (state.screen === 'detail') return renderDetail();
     if (state.screen === 'summary') return renderSummary();
     if (state.screen === 'list8') return renderText();
+    if (state.screen === 'detail') return renderDetail();
 
-    // safe default
-    state.screen = 'state';
-    return renderActiveHorses();
+    // fallback
+    gotoScreen('state');
+  }
+
+  // ----------------------------
+  // EVENTS
+  // ----------------------------
+  function bindNav() {
+    elNavRow.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('.nav-btn[data-screen]') : null;
+      if (!btn) return;
+
+      const raw = btn.getAttribute('data-screen');
+      if (raw === 'start' && state.screen === 'start') {
+        // Start/Restart behavior
+        restartFlow().catch(err => setMessage(err && err.message ? err.message : String(err)));
+        return;
+      }
+
+      const target = normalizeNavTarget(raw);
+      if (target === 'start') gotoScreen('start');
+      else gotoScreen(target);
+    });
   }
 
   // ----------------------------
   // BOOT
   // ----------------------------
   async function boot() {
-    state.board = qs('board') || DEFAULT_BOARD;
-    state.dataDir = qs('data_dir') || DEFAULT_DATA_DIR;
-
-    initNavLabelsAndVisibility();
-    bindNav();
-    bindHeader();
-
-    state.errorMsg = '';
-    await loadBoard();
-    loadSession();
-
-    updateNavAgg();
-
-    // Start screen first, but highlight based on whether there are selections
-    if (selectedHorseIds().length) setActiveNavBtn('list1');
-    else setActiveNavBtn('start');
-
-    goto('start');
+    try {
+      bindNav();
+      await loadBoard();
+      gotoScreen('start');
+    } catch (err) {
+      setMessage(err && err.message ? err.message : String(err));
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
