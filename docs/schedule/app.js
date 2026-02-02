@@ -440,15 +440,65 @@
     const entryId = pickFirst(r, ['entry_id','entryId','entryID','entry']);
     if (entryId != null) o.entry_id = entryId;
 
-    const horse = pickFirst(r, ['horseName','horse_name','horse','horse_display','horse_name_display','horse_label']);
-    if (horse != null) o.horseName = String(horse).trim();
-    else if (entryId != null && String(entryId).trim()) o.horseName = `horse - ${String(entryId).trim()}`;
+    const horse = pickFirst(r, ['horseName','horse_name','horse_display','horse_name_display','horse_name_full','horse_full_name','horseFullName','horse_label','horseLabel','horse']);
+    if (horse != null) {
+      if (horse && typeof horse === 'object') {
+        const hn = pickFirst(horse, ['horseName','horse_name','name','fullName','full_name','display','label','title']);
+        if (hn != null) o.horseName = String(hn).trim();
+      } else {
+        o.horseName = String(horse).trim();
+      }
+    }
 
-    const rider = pickFirst(r, ['riderName','rider_name','rider','rider_display','rider_full_name','riderFullName','rider_label']);
+    // Guard: never display entry_id as a horse name
+    if (o.horseName != null) {
+      const hs = String(o.horseName).trim();
+      const es = (entryId != null) ? String(entryId).trim() : '';
+      if (!hs) {
+        delete o.horseName;
+      } else if (hs === '[object Object]') {
+        delete o.horseName;
+      } else if (/^horse\s*-/i.test(hs)) {
+        delete o.horseName;
+      } else if (/^\d+$/.test(hs) && es && hs === es) {
+        delete o.horseName;
+      }
+    }
+    
+    const rider = pickFirst(r, ['riderName','rider_name','rider_display','rider_name_display','rider_full_name','riderFullName','rider_fullname','rider_label','riderLabel','rider']);
     const riderId = pickFirst(r, ['rider_id','riderId','riderID']);
-    if (rider != null) o.riderName = String(rider).trim();
-    else if (riderId != null && String(riderId).trim()) o.riderName = `rider - ${String(riderId).trim()}`;
+    if (rider != null) {
+      if (rider && typeof rider === 'object') {
+        const rn = pickFirst(rider, ['riderName','rider_name','name','fullName','full_name','display','label','title']);
+        if (rn != null) o.riderName = String(rn).trim();
+      } else {
+        o.riderName = String(rider).trim();
+      }
+    }
 
+    // If riderName is split into parts, synthesize it
+    if (o.riderName == null) {
+      const fn = pickFirst(r, ['rider_first_name','riderFirstName','rider_first','riderFirst','rider_fname','riderFname','first_name','firstName']);
+      const ln = pickFirst(r, ['rider_last_name','riderLastName','rider_last','riderLast','rider_lname','riderLname','last_name','lastName']);
+      const name = `${(fn || '').toString().trim()} ${(ln || '').toString().trim()}`.trim();
+      if (name) o.riderName = name;
+    }
+
+    // Guard: never display IDs / placeholders as rider names
+    if (o.riderName != null) {
+      const rs = String(o.riderName).trim();
+      const rid = (riderId != null) ? String(riderId).trim() : '';
+      if (!rs) {
+        delete o.riderName;
+      } else if (rs === '[object Object]') {
+        delete o.riderName;
+      } else if (/^rider\s*-/i.test(rs)) {
+        delete o.riderName;
+      } else if (/^\d+$/.test(rs) && rid && rs === rid) {
+        delete o.riderName;
+      }
+    }
+    
     const classId = pickFirst(r, ['class_id','classId','classID','class']);
     if (classId != null) o.class_id = safeNumber(classId) ?? classId;
 
