@@ -114,92 +114,32 @@
 
   function bindChromeScroll() {
     let lastTop = 0;
-    let lastToggleTop = 0;
-    let hidden = false;
+    const THRESH = 8;
     let ticking = false;
-    let suppressUntil = 0;
 
-    const TOP_LOCK = 6;
-    const THRESH = 10;        // direction threshold
-    const HYST = 28;          // distance required to toggle back
-    const MIN_SCROLLABLE = 140; // if scroll range smaller than this, never hide
-
-    function scrollRange() {
-      return Math.max(0, (appMain.scrollHeight || 0) - (appMain.clientHeight || 0));
-    }
-
-    function setChromeHidden(nextHidden, reasonTop) {
-      if (nextHidden === hidden) return;
-
-      // Measure before changing layout
-      const prevTop = appMain.scrollTop || 0;
-
-      if (nextHidden) {
+    function apply(dir, top) {
+      if (top <= 4) {
+        appEl.classList.remove('hide-header');
+        appEl.classList.remove('hide-nav');
+        return;
+      }
+      if (dir === 'down') {
         appEl.classList.add('hide-header');
         appEl.classList.add('hide-nav');
-      } else {
+      } else if (dir === 'up') {
         appEl.classList.remove('hide-header');
         appEl.classList.remove('hide-nav');
       }
-
-      hidden = nextHidden;
-      lastToggleTop = (typeof reasonTop === 'number') ? reasonTop : prevTop;
-      suppressUntil = Date.now() + 220;
-
-      // After layout settles, resync lastTop to the clamped/actual scrollTop
-      window.requestAnimationFrame(() => {
-        const topNow = appMain.scrollTop || 0;
-        lastTop = topNow;
-      });
     }
 
     appMain.addEventListener('scroll', () => {
       if (ticking) return;
       ticking = true;
-
       window.requestAnimationFrame(() => {
-        const now = Date.now();
         const top = appMain.scrollTop || 0;
-        const range = scrollRange();
-
-        // Never hide on short pages; always show near top
-        if (range < MIN_SCROLLABLE) {
-          setChromeHidden(false, top);
-          lastTop = top;
-          ticking = false;
-          return;
-        }
-
-        if (top <= TOP_LOCK) {
-          setChromeHidden(false, top);
-          lastTop = top;
-          ticking = false;
-          return;
-        }
-
-        // Suppress oscillation immediately after a toggle (layout/scroll clamp)
-        if (now < suppressUntil) {
-          lastTop = top;
-          ticking = false;
-          return;
-        }
-
         const delta = top - lastTop;
         const dir = (delta > THRESH) ? 'down' : (delta < -THRESH) ? 'up' : null;
-
-        if (!dir) {
-          lastTop = top;
-          ticking = false;
-          return;
-        }
-
-        if (!hidden && dir === 'down') {
-          setChromeHidden(true, top);
-        } else if (hidden && dir === 'up') {
-          // Require meaningful upward travel from the point we hid at
-          if ((lastToggleTop - top) >= HYST) setChromeHidden(false, top);
-        }
-
+        if (dir) apply(dir, top);
         lastTop = top;
         ticking = false;
       });
@@ -399,18 +339,6 @@
     return Number.isFinite(n) ? n : (fallback ?? null);
   }
 
-  function fmtOogPair(lastOog, totalTrips) {
-    const last = safeNum(lastOog, null);
-    const total = safeNum(totalTrips, null);
-    if (last == null) return '';
-    if (total != null && total > 0) {
-      if (last >= 1 && last <= total) return `${last}/${total}`;
-      return '';
-    }
-    if (last >= 1) return String(last);
-    return '';
-  }
-
   function safeNumber(v) {
     if (v === null || v === undefined) return null;
     if (typeof v === 'number') return Number.isFinite(v) ? v : null;
@@ -512,65 +440,15 @@
     const entryId = pickFirst(r, ['entry_id','entryId','entryID','entry']);
     if (entryId != null) o.entry_id = entryId;
 
-    const horse = pickFirst(r, ['horseName','horse_name','horse_display','horse_name_display','horse_name_full','horse_full_name','horseFullName','horse_label','horseLabel','horse']);
-    if (horse != null) {
-      if (horse && typeof horse === 'object') {
-        const hn = pickFirst(horse, ['horseName','horse_name','name','fullName','full_name','display','label','title']);
-        if (hn != null) o.horseName = String(hn).trim();
-      } else {
-        o.horseName = String(horse).trim();
-      }
-    }
+    const horse = pickFirst(r, ['horseName','horse_name','horse','horse_display','horse_name_display','horse_label']);
+    if (horse != null) o.horseName = String(horse).trim();
+    else if (entryId != null && String(entryId).trim()) o.horseName = `horse - ${String(entryId).trim()}`;
 
-    // Guard: never display entry_id as a horse name
-    if (o.horseName != null) {
-      const hs = String(o.horseName).trim();
-      const es = (entryId != null) ? String(entryId).trim() : '';
-      if (!hs) {
-        delete o.horseName;
-      } else if (hs === '[object Object]') {
-        delete o.horseName;
-      } else if (/^horse\s*-/i.test(hs)) {
-        delete o.horseName;
-      } else if (/^\d+$/.test(hs) && es && hs === es) {
-        delete o.horseName;
-      }
-    }
-    
-    const rider = pickFirst(r, ['riderName','rider_name','rider_display','rider_name_display','rider_full_name','riderFullName','rider_fullname','rider_label','riderLabel','rider']);
+    const rider = pickFirst(r, ['riderName','rider_name','rider','rider_display','rider_full_name','riderFullName','rider_label']);
     const riderId = pickFirst(r, ['rider_id','riderId','riderID']);
-    if (rider != null) {
-      if (rider && typeof rider === 'object') {
-        const rn = pickFirst(rider, ['riderName','rider_name','name','fullName','full_name','display','label','title']);
-        if (rn != null) o.riderName = String(rn).trim();
-      } else {
-        o.riderName = String(rider).trim();
-      }
-    }
+    if (rider != null) o.riderName = String(rider).trim();
+    else if (riderId != null && String(riderId).trim()) o.riderName = `rider - ${String(riderId).trim()}`;
 
-    // If riderName is split into parts, synthesize it
-    if (o.riderName == null) {
-      const fn = pickFirst(r, ['rider_first_name','riderFirstName','rider_first','riderFirst','rider_fname','riderFname','first_name','firstName']);
-      const ln = pickFirst(r, ['rider_last_name','riderLastName','rider_last','riderLast','rider_lname','riderLname','last_name','lastName']);
-      const name = `${(fn || '').toString().trim()} ${(ln || '').toString().trim()}`.trim();
-      if (name) o.riderName = name;
-    }
-
-    // Guard: never display IDs / placeholders as rider names
-    if (o.riderName != null) {
-      const rs = String(o.riderName).trim();
-      const rid = (riderId != null) ? String(riderId).trim() : '';
-      if (!rs) {
-        delete o.riderName;
-      } else if (rs === '[object Object]') {
-        delete o.riderName;
-      } else if (/^rider\s*-/i.test(rs)) {
-        delete o.riderName;
-      } else if (/^\d+$/.test(rs) && rid && rs === rid) {
-        delete o.riderName;
-      }
-    }
-    
     const classId = pickFirst(r, ['class_id','classId','classID','class']);
     if (classId != null) o.class_id = safeNumber(classId) ?? classId;
 
@@ -831,97 +709,27 @@
     return t;
   }
   function fmtNextUpFromEntryKeys(entryKeys, tIdx) {
-    const now = new Date();
-    const nowM = now.getHours() * 60 + now.getMinutes();
-
-    const candidates = [];
+    const list = [];
     for (const k of (entryKeys || [])) {
-      const list = (tIdx && tIdx.byEntryKey) ? (tIdx.byEntryKey.get(k) || []) : [];
-      if (!list || list.length === 0) continue;
-
-      // eligible: exclude underway/complete
-      const eligible = list.filter((t) => {
-        const s = String(t && t.latestStatus ? t.latestStatus : t && t.status ? t.status : '').toLowerCase();
-        if (s.includes('underway')) return false;
-        if (s.includes('complete')) return false;
-        return true;
-      });
-      if (!eligible.length) continue;
-
-      // split by time relative to now
-      let bestFuture = null;
-      let bestFutureT = 999999;
-      let bestFutureO = 999999;
-
-      let bestPast = null;
-      let bestPastT = -1;
-      let bestPastO = -1;
-
-      for (const t of eligible) {
-        const goM = timeToMinutes(t && (t.latestGO || t.latestStart)) ?? -1;
-        const oog = (t && t.lastOOG != null) ? safeNum(t.lastOOG, 999999) : 999999;
-
-        if (goM >= nowM) {
-          if (!bestFuture || goM < bestFutureT || (goM === bestFutureT && oog < bestFutureO)) {
-            bestFuture = t; bestFutureT = goM; bestFutureO = oog;
-          }
-        } else if (goM >= 0) {
-          // closest past (largest time)
-          if (!bestPast || goM > bestPastT || (goM === bestPastT && oog > bestPastO)) {
-            bestPast = t; bestPastT = goM; bestPastO = oog;
-          }
-        } else {
-          // no parsable time: treat as future-ish fallback
-          if (!bestFuture) bestFuture = t;
-        }
-      }
-
-      candidates.push(bestFuture || bestPast);
+      const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
+      if (best) list.push(best);
     }
-
-    if (!candidates.length) return '';
-
-    // choose earliest future across candidates; fallback to closest past
-    let chosen = null;
-    let chosenFuture = false;
-
-    let bestT = 999999;
-    let bestO = 999999;
-
-    let bestPastT = -1;
-    let bestPastO = -1;
-    let bestPastTrip = null;
-
-    for (const t of candidates) {
-      if (!t) continue;
-      const goM = timeToMinutes(t && (t.latestGO || t.latestStart)) ?? -1;
-      const oog = (t && t.lastOOG != null) ? safeNum(t.lastOOG, 999999) : 999999;
-
-      if (goM >= nowM) {
-        if (!chosenFuture || goM < bestT || (goM === bestT && oog < bestO)) {
-          chosenFuture = true;
-          chosen = t; bestT = goM; bestO = oog;
-        }
-      } else if (!chosenFuture && goM >= 0) {
-        if (!bestPastTrip || goM > bestPastT || (goM === bestPastT && oog > bestPastO)) {
-          bestPastTrip = t; bestPastT = goM; bestPastO = oog;
-        }
-      } else if (!chosenFuture && !bestPastTrip) {
-        bestPastTrip = t;
-      }
-    }
-
-    if (!chosen && bestPastTrip) chosen = bestPastTrip;
-    if (!chosen) return '';
+    const best = pickBestTrip(list);
+    if (!best) return '';
 
     const parts = [];
-    if (chosen.ring_number != null && String(chosen.ring_number) !== '') {
-      parts.push(`R${String(chosen.ring_number)}`);
+
+    if (best.ring_number != null && String(best.ring_number) !== '') {
+      parts.push(`R${String(best.ring_number)}`);
     }
-    const t = chosen.latestGO || chosen.latestStart || '';
+
+    const t = best.latestGO || best.latestStart || '';
     if (t) parts.push(fmtTimeShort(t));
-    const n = safeNum(chosen.lastOOG, null);
-    if (n != null && n >= 1) parts.push(String(n));
+
+    if (best.lastOOG != null && String(best.lastOOG) !== '') {
+      const n = safeNum(best.lastOOG, null);
+      if (n != null) parts.push(String(n));
+    }
 
     return parts.join(' - ');
   }
@@ -1364,6 +1172,36 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     render();
   }
 
+  // From a detail screen, jump back to Schedule and scroll to the chosen ring.
+  // Keeps history so header back returns to where you came from.
+  function pushScheduleRing(ringNumber) {
+    const rk = String(ringNumber || '').trim();
+    if (!rk) {
+      // Fall back to plain schedule navigation.
+      state.history.push({ screen: state.screen, detail: state.detail });
+      state.screen = 'schedule';
+      state.detail = null;
+      render();
+      return;
+    }
+
+    const id = `ring-${rk}`;
+
+    state.history.push({ screen: state.screen, detail: state.detail });
+    state.screen = 'schedule';
+    state.detail = null;
+
+    try {
+      history.replaceState(null, '', `#${id}`);
+    } catch (_) {
+      try { location.hash = `#${id}`; } catch (_) {}
+    }
+
+    // Let schedule render pick this up and smooth-scroll under the peakbar.
+    state.pendingScrollId = id;
+    render();
+  }
+
   function goBack() {
     const prev = state.history.pop();
     if (!prev) return;
@@ -1414,52 +1252,35 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     clearRoot();
     setHeader('Summary');
 
-    // Classes status: Completed vs To Go (not completed)
+    // Classes: completed vs not completed (truth-only)
     let completed = 0;
-    let toGo = 0;
+    let notCompleted = 0;
 
-    for (const entryKeys of (tIdx && tIdx.byClass ? tIdx.byClass.values() : [])) {
-      let bestRank = 0;
-      for (const key of (entryKeys || [])) {
-        const trip = tIdx.byEntry.get(key);
-        if (!trip) continue;
-        const r = statusRank(trip.status);
-        if (r > bestRank) bestRank = r;
+    for (const [cid, entryKeys] of tIdx.byClass.entries()) {
+      let maxRank = 0;
+      for (const k of (entryKeys || [])) {
+        const best = tIdx.entryBest.get(k);
+        if (!best) continue;
+        const r = statusRank(best.latestStatus);
+        if (r > maxRank) maxRank = r;
       }
-      if (bestRank >= 2) completed++;
-      else toGo++;
+      if (maxRank === 1) completed++;
+      else notCompleted++;
     }
 
-    const totalClasses = completed + toGo;
-    const horsesUnique = tIdx && tIdx.byHorse ? tIdx.byHorse.size : 0;
-    const ridersUnique = tIdx && tIdx.byRider ? tIdx.byRider.size : 0;
-
-    // Ribbons 1-8 (place counts)
-    const placeCount = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0};
-    for (const entryKeys of (tIdx && tIdx.byEntryGroup ? tIdx.byEntryGroup.values() : [])) {
-      // Pick best trip for the entry (highest status rank, then latest start)
-      let best = null;
-      for (const key of (entryKeys || [])) {
-        const t = tIdx.byEntry.get(key);
-        if (!t) continue;
-        if (!best) { best = t; continue; }
-        const ar = statusRank(best.status);
-        const br = statusRank(t.status);
-        if (br > ar) { best = t; continue; }
-        if (br === ar) {
-          const at = safeNum(best.latestStartMin, safeNum(best.latestGoMin, 0));
-          const bt = safeNum(t.latestStartMin, safeNum(t.latestGoMin, 0));
-          if (bt > at) best = t;
-        }
-      }
-      const p = best ? safeNum(best.place, null) : null;
-      if (p != null && p >= 1 && p <= 8) placeCount[p] = (placeCount[p] || 0) + 1;
+    // Ribbons: count placings 1..8 (truth-only, per entryKey best)
+    const ribbonByPlace = { 1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0 };
+    for (const best of tIdx.entryBest.values()) {
+      if (!best) continue;
+      const pRaw = (best.latestPlacing != null ? best.latestPlacing : best.lastestPlacing);
+      const p = safeNum(pRaw, null);
+      if (p != null && p >= 1 && p <= 8) ribbonByPlace[p] = (ribbonByPlace[p] || 0) + 1;
     }
-    const ribbonsTotal = Object.values(placeCount).reduce((a,b)=>a+b, 0);
+    const ribbonsTotal = Object.values(ribbonByPlace).reduce((a,b)=>a+b, 0);
 
     const grid = el('div', 'summary-grid');
 
-    function cardBase(title, big, onClick) {
+    function tile(title, lines, onClick) {
       const card = el('div', 'card summary-tile');
       if (typeof onClick === 'function') {
         card.classList.add('summary-tile--tap');
@@ -1468,71 +1289,42 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       const body = el('div', 'card-body summary-body');
       card.appendChild(body);
 
-      const head = el('div', 'summary-head');
-      head.appendChild(el('div', 'summary-title', title));
-      head.appendChild(el('div', 'summary-big', String(big)));
-      body.appendChild(head);
+      body.appendChild(el('div', 'summary-title', title));
 
-      return { card, body };
-    }
-
-    // Classes tile: big total + two boxes
-    {
-      const { card, body } = cardBase('Classes', totalClasses, null);
-      card.classList.add('summary-tile--classes');
-
-      const split = el('div', 'summary-split');
-      const a = el('div', 'summary-mini');
-      a.appendChild(el('div', 'summary-mini-k', 'Complete'));
-      a.appendChild(el('div', 'summary-mini-v', String(completed)));
-
-      const b = el('div', 'summary-mini');
-      b.appendChild(el('div', 'summary-mini-k', 'To Go'));
-      b.appendChild(el('div', 'summary-mini-v', String(toGo)));
-
-      split.appendChild(a);
-      split.appendChild(b);
-      body.appendChild(split);
-
-      grid.appendChild(card);
-    }
-
-    // Horses tile (tap -> horses)
-    {
-      const { card, body } = cardBase('Horses', horsesUnique, () => goto('horses'));
-      card.classList.add('summary-tile--one');
-      body.appendChild(el('div', 'summary-sub', 'Unique'));
-      grid.appendChild(card);
-    }
-
-    // Riders tile (tap -> riders)
-    {
-      const { card, body } = cardBase('Riders', ridersUnique, () => goto('riders'));
-      card.classList.add('summary-tile--one');
-      body.appendChild(el('div', 'summary-sub', 'Unique'));
-      grid.appendChild(card);
-    }
-
-    // Ribbons tile (tap -> riders ribbons mode)
-    {
-      const { card, body } = cardBase('Ribbons (1-8)', ribbonsTotal, () => {
-        state.ridersMode = 'ribbons';
-        goto('riders');
-      });
-      card.classList.add('summary-tile--ribbons');
-
-      const places = el('div', 'summary-places');
-      const labels = {1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th',6:'6th',7:'7th',8:'8th'};
-      for (let i = 1; i <= 8; i++) {
-        const row = el('div', 'summary-place');
-        row.appendChild(el('div', 'summary-place-k', labels[i]));
-        row.appendChild(el('div', 'summary-place-v', String(placeCount[i] || 0)));
-        places.appendChild(row);
+      const wrap = el('div', 'summary-lines');
+      for (const line of (lines || [])) {
+        const row = el('div', 'summary-line');
+        row.appendChild(el('div', 'summary-k', String(line.k || '')));
+        row.appendChild(el('div', 'summary-v', String(line.v || '')));
+        wrap.appendChild(row);
       }
-      body.appendChild(places);
-
-      grid.appendChild(card);
+      body.appendChild(wrap);
+      return card;
     }
+
+    grid.appendChild(tile('Classes', [
+      { k: 'Completed', v: completed },
+      { k: 'Not Completed', v: notCompleted },
+    ], () => { state.ridersMode = null; goto('schedule'); }));
+
+    grid.appendChild(tile('Horses', [
+      { k: 'Unique', v: tIdx.byHorse.size },
+    ], () => { state.ridersMode = null; goto('horses'); }));
+
+    grid.appendChild(tile('Riders', [
+      { k: 'Unique', v: tIdx.byRider.size },
+    ], () => { state.ridersMode = null; goto('riders'); }));
+
+    const ribbonLines = [
+      { k: 'Total', v: ribbonsTotal },
+      { k: '1-4', v: (ribbonByPlace[1]+ribbonByPlace[2]+ribbonByPlace[3]+ribbonByPlace[4]) },
+      { k: '5-8', v: (ribbonByPlace[5]+ribbonByPlace[6]+ribbonByPlace[7]+ribbonByPlace[8]) },
+    ];
+
+    grid.appendChild(tile('Ribbons (1-8)', ribbonLines, () => {
+      state.ridersMode = 'ribbons';
+      goto('riders');
+    }));
 
     screenRoot.appendChild(grid);
   }
@@ -1592,12 +1384,12 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (keys.length === 0) continue;
 
       const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
+      const title = nextup ? `${String(h)}  ${nextup}` : String(h);
 
-      const row = el('div', 'row row--tap row--3col');
+      const row = el('div', 'row row--tap');
       row.id = `horse-${idify(h)}`;
 
-      row.appendChild(el('div', 'row-title', String(h)));
-      row.appendChild(el('div', 'row-mid', nextup || ''));
+      row.appendChild(el('div', 'row-title', title));
       row.appendChild(makeTagCount(keys.length));
 
       row.addEventListener('click', () => {
@@ -1828,14 +1620,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
 
     function makeBadge(txt, cls) {
-      const letter = String(txt || '').trim();
-      const base = String(cls || '').trim();
-      const classes = ['badge'];
-      if (base) classes.push(base);
-      if (letter && base.includes('badge--status')) classes.push(`badge--status-${letter}`);
-      if (letter && base.includes('badge--type')) classes.push(`badge--type-${letter}`);
-      if (letter && base.includes('badge--seq')) classes.push(`badge--seq-${letter}`);
-      return el('span', classes.join(' '), letter);
+      const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
+      return b;
     }
 
     for (const r of ringsAll) {
@@ -1848,15 +1634,18 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       card.appendChild(body);
 
       // Ring header row (ringName | | | agg)
+      const ringNav = (state.screen !== 'schedule')
+        ? (() => pushScheduleRing(rk))
+        : null;
       addLine4(
         body,
         String(r.ringName),
         '',
         document.createTextNode(''),
-        el('span', 'nav-agg nav-agg--positive', String(r.classIdSet ? r.classIdSet.size : 0)),
-        'row--class row--ring-peak',
-        'row-alt',
-        null
+        String(r.classIdSet ? r.classIdSet.size : 0),
+        'row--class',
+        '',
+        ringNav
       );
 
       // groups
@@ -1918,46 +1707,56 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
-                            const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? String(best.latestGO || best.latestStart || '') : '';
-              const timeText = go ? fmtTimeShort(go) : '';
+              const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
+              const go = best ? (best.latestGO || '') : '';
               const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips;
-              const oogText = fmtOogPair(lastOog, totalTrips);
-              const rider = (best && best.riderName) ? String(best.riderName) : '';
-              const horseNameRaw = eObj.horseName ? String(eObj.horseName) : '';
-              const horseLabel =
-                (state.screen === 'horseDetail' && state.detail && state.detail.key) ?
-                  String(state.detail.key) :
-                  horseNameRaw;
+              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
 
-              // Horse detail: Rider-first label and tap goes to Rider detail
-              const isHorseDetail = (state.screen === 'horseDetail');
-              const lineText = (isHorseDetail
-                ? [rider, horseLabel, oogText, timeText]
-                : [horseLabel, rider, oogText, timeText]
-              ).filter(Boolean).join(' - ');
-
-              let onEntryClick = null;
-              if (isHorseDetail) {
-                if (rider) onEntryClick = () => pushDetail('riderDetail', { kind: 'rider', key: rider });
-              } else if (canHorseNav && horseLabel) {
-                onEntryClick = () => pushDetail('horseDetail', { kind: 'horse', key: horseLabel });
-              }
+              const oogText =
+                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
+                (lastOog != null) ? String(lastOog) :
+                (totalTrips) ? `/${totalTrips}` : '';
 
               stripe++;
               addLine4(
                 gWrap,
-                '',
+                fmtTimeShort(go),
                 entryNo,
-                document.createTextNode(lineText),
-                '',
+                document.createTextNode(eObj.horseName || ''),
+                oogText,
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
-                onEntryClick
+                canHorseNav ? (() => pushDetail('horseDetail', { kind: 'horse', key: String(eObj.horseName || '') })) : null
               );
-                            // TRIPS (child) removed per UI contract
-}
+
+              // TRIPS (child)
+              const childTrips = (eObj.trips || []).slice().sort((a, b) => {
+                const oa = safeNum(a.lastOOG, 999999);
+                const ob = safeNum(b.lastOOG, 999999);
+                if (oa !== ob) return oa - ob;
+                return String(a.riderName || '').localeCompare(String(b.riderName || ''));
+              });
+
+              for (const tt of childTrips) {
+                const back = tt.backNumber != null ? String(tt.backNumber) : (tt.entryNumber != null ? String(tt.entryNumber) : '');
+                const rider = tt.riderName ? String(tt.riderName) : '';
+                const score = (tt.latestScore != null && String(tt.latestScore) !== '') ? String(tt.latestScore) : '';
+                const placing = (tt.latestPlacing != null && String(tt.latestPlacing) !== '') ? String(tt.latestPlacing) : '';
+                const right = score || placing || '';
+
+                stripe++;
+                addLine4(
+                  gWrap,
+                  '',
+                  back,
+                  document.createTextNode(rider),
+                  right,
+                  'row--trip',
+                  (stripe % 2 === 0 ? 'row-alt' : ''),
+                  canRiderNav ? (() => pushDetail('riderDetail', { kind: 'rider', key: String(rider || '') })) : null
+                );
+              }
+            }
           }
         }
       }
@@ -2180,20 +1979,15 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
 
     function makeBadge(txt, cls) {
-      const letter = String(txt || '').trim();
-      const base = String(cls || '').trim();
-      const classes = ['badge'];
-      if (base) classes.push(base);
-      if (letter && base.includes('badge--status')) classes.push(`badge--status-${letter}`);
-      if (letter && base.includes('badge--type')) classes.push(`badge--type-${letter}`);
-      if (letter && base.includes('badge--seq')) classes.push(`badge--seq-${letter}`);
-      return el('span', classes.join(' '), letter);
+      const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
+      return b;
     }
 
     function nodeWithBadges(badges, text) {
-      const wrap = el('div', 'badge-wrap');
-      for (const b of (badges || [])) wrap.appendChild(b);
-      if (text) wrap.appendChild(document.createTextNode(text));
+      const wrap = el('div', '');
+      for (const b of badges) wrap.appendChild(b);
+      if (badges.length) wrap.appendChild(el('span', '', ' '));
+      wrap.appendChild(document.createTextNode(text || ''));
       return wrap;
     }
 
@@ -2212,9 +2006,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.ringName),
         '',
         document.createTextNode(''),
-        el('span', 'nav-agg nav-agg--positive', String(r.classIdSet ? r.classIdSet.size : 0)),
-        'row--class row--ring-peak',
-        'row-alt',
+        String(r.classIdSet ? r.classIdSet.size : 0),
+        'row--class',
+        '',
         null
       );
 
@@ -2283,29 +2077,56 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
-                            const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? String(best.latestGO || best.latestStart || '') : '';
-              const timeText = go ? fmtTimeShort(go) : '';
+              const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
+              const go = best ? (best.latestGO || '') : '';
               const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips;
-              const oogText = fmtOogPair(lastOog, totalTrips);
-              const rider = (best && best.riderName) ? String(best.riderName) : '';
-              const horseName = eObj.horseName ? String(eObj.horseName) : '';
-              const lineText = [horseName, rider, oogText, timeText].filter(Boolean).join(' - ');
+              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
+
+              const oogText =
+                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
+                (lastOog != null) ? String(lastOog) :
+                (totalTrips) ? `/${totalTrips}` : '';
 
               stripe++;
               addLine4(
                 gWrap,
-                '',
+                fmtTimeShort(go),
                 entryNo,
-                document.createTextNode(lineText),
-                '',
+                document.createTextNode(eObj.horseName || ''),
+                oogText,
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
                 () => pushDetail('horseDetail', { key: String(eObj.horseName || '') })
               );
-                            // TRIPS (child) removed per UI contract
-}
+
+              // TRIPS (child)
+              const trips = (eObj.trips || []).slice().sort((a, b) => {
+                const oa = safeNum(a.lastOOG, 999999);
+                const ob = safeNum(b.lastOOG, 999999);
+                if (oa !== ob) return oa - ob;
+                return String(a.riderName || '').localeCompare(String(b.riderName || ''));
+              });
+
+              for (const t of trips) {
+                const back = t.backNumber != null ? String(t.backNumber) : (t.entryNumber != null ? String(t.entryNumber) : '');
+                const rider = t.riderName ? String(t.riderName) : '';
+                const score = (t.latestScore != null && String(t.latestScore) !== '') ? String(t.latestScore) : '';
+                const placing = (t.latestPlacing != null && String(t.latestPlacing) !== '') ? String(t.latestPlacing) : '';
+                const right = score || placing || '';
+
+                stripe++;
+                addLine4(
+                  gWrap,
+                  '',
+                  back,
+                  document.createTextNode(rider),
+                  right,
+                  'row--trip',
+                  (stripe % 2 === 0 ? 'row-alt' : ''),
+                  () => pushDetail('riderDetail', { key: String(rider || '') })
+                );
+              }
+            }
           }
         }
       }
@@ -2481,11 +2302,11 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (q && !normalizeStr(name).includes(q)) continue;
 
       const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
+      const title = nextup ? `${String(name)}  ${nextup}` : String(name);
 
-      const row = el('div', 'row row--tap row--3col');
+      const row = el('div', 'row row--tap');
       row.id = `rider-${idify(name)}`;
-      row.appendChild(el('div', 'row-title', String(name)));
-      row.appendChild(el('div', 'row-mid', nextup || ''));
+      row.appendChild(el('div', 'row-title', title));
 
       const rightCount = (mode === 'ribbons') ? ribbonCountFromEntryKeys(keys, tIdx) : keys.length;
       row.appendChild(makeTagCount(rightCount));
@@ -2532,9 +2353,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         `${(c.class_number != null ? String(c.class_number) : '')} ${String(c.class_name || '').trim()}`.trim() :
         (classId ? `Class ${classId}` : 'Class');
 
-    const headerName = (c && c.class_name != null) ? String(c.class_name).trim() : '';
-    const headerTitle = headerName ? (headerName.length > 25 ? (headerName.slice(0, 25).trimEnd() + '...') : headerName) : title;
-    setHeader(headerTitle);
+    setHeader(title);
 
     const baseTrips = (state.trips || []).filter(t => String(t && t.class_id || '') === classId);
 

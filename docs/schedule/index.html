@@ -101,7 +101,7 @@
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
 
-    .list-column { display: flex; flex-direction: column; gap: 4px; padding-bottom: 12px; }
+    .list-column { display: flex; flex-direction: column; gap: 4px; padding: 1px 1px; padding-bottom: 4px; }
 
     /* Start logo ------------------------------------------------- */
     .start-logo {
@@ -161,7 +161,7 @@
     }
 
     /* Search ----------------------------------------------------- */
-    .state-search { margin: 4px 4px 4px; }
+    .state-search { margin: 4px 4px 2px; }
     .state-search-input {
       width: 100%;
       padding: 10px 16px;
@@ -189,7 +189,7 @@
     }
 
     .nav-scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; width: 100%; }
-    .nav-row { display: inline-flex; gap: 8px; padding: 0 4px; align-items: center; }
+    .nav-row { display: inline-flex; gap: 8px; padding: 4px 4px; align-items: center; }
 
     .nav-btn {
       padding: 6px 14px;
@@ -234,17 +234,17 @@
       z-index: 5;
       background: linear-gradient(to bottom, rgba(2,6,23,0.95), rgba(2,6,23,0.75));
       backdrop-filter: blur(10px);
-      padding: 4px 4px 4px;
-      margin: -8px 0 6px;
+      /* padding: 4px 0px 4px 4px; */
+      margin: 1px 4px 0px 4px;
     }
 
     /* Cards ------------------------------------------------------ */
     .card {
-      border-radius: 6px 0px 6px 0px;
+      border-radius: 6px 6px 0px 0px;
       border: 1px solid rgba(75, 85, 99, 0.9);
       background: rgba(17, 24, 39, 0.95);
       overflow: hidden;
-      padding: 4px 4px 4px;
+      /* padding: 4px 4px 4px;*/
       box-shadow: 0 0 0 1px rgba(2, 6, 23, 0.9), 0 10px 24px rgba(0,0,0,0.45);
     }
     .card--tap { cursor: pointer; user-select: none; }
@@ -384,7 +384,7 @@
       grid-template-columns: 45px 30px 1fr 45px;
       gap:6px;
       align-items:center;
-      padding: 6px 8px;
+      padding: 4px 8px;
       border-top: 1px solid rgba(55,65,81,0.45);
       font-size: 13px;
       color: #e5e7eb;
@@ -475,7 +475,8 @@
       background: #020617;
       box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(12px);
-      padding: 6px 6px 10px;
+      padding: 2px 0px 4px 4px;
+      
     }
     .filterbottom-row{
       display:flex;
@@ -510,8 +511,8 @@
     .badge--status-S{ background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.5); }
     .badge--status-L{ background: rgba(245,158,11,0.16); border-color: rgba(245,158,11,0.55); }
 
-    .badge--type-J{ background: rgba(244,63,94,0.14); border-color: rgba(244,63,94,0.55); }
-    .badge--type-E{ background: rgba(168,85,247,0.14); border-color: rgba(168,85,247,0.55); }
+    .badge--type-J{ display: none; background: rgba(244,63,94,0.14); border-color: rgba(244,63,94,0.55); }
+    .badge--type-E{ display: none; background: rgba(168,85,247,0.14); border-color: rgba(168,85,247,0.55); }
     .badge--type-H{ display: none; background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.55); }
 
     .badge--seq-O{ background: rgba(14,165,233,0.14); border-color: rgba(14,165,233,0.55); }
