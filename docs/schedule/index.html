@@ -393,6 +393,21 @@
     .c4-a{ font-variant-numeric: tabular-nums; color: rgba(209,213,219,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .c4-b{ font-variant-numeric: tabular-nums; color: rgba(209,213,219,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .c4-c{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+      .c4-grid{
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr) max-content;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+    .c4-grid > span{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .c4g-b{ color: var(--muted); }
+    .c4g-c{ justify-self: end; font-variant-numeric: tabular-nums; }
     .c4-d{ justify-self: end; display:inline-flex; align-items:center; justify-content:flex-end; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; min-width:0; }
 
     .timeline-axis{ z-index: 30; }
@@ -611,23 +626,7 @@
     .summary-place-k{ opacity:0.9; font-size:12px; }
     .summary-place-v{ font-weight:900; }
 
-    /* Entry rows: keep 4 columns but tighten blanks + prevent wrapping */
-    .card-line4.row--entry{
-      grid-template-columns: 45px 30px minmax(0,1fr) 16px;
-    }
-    .card-line4.row--entry .c4-a,
-    .card-line4.row--entry .c4-b,
-    .card-line4.row--entry .c4-c,
-    .card-line4.row--entry .c4-d{
-      white-space: nowrap !important;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    @media (max-width: 520px){
-      .summary-tile{ grid-column: span 12; }
-      .summary-body{ min-height: 140px; }
-    }
+    
 
   </style>
 </head>
