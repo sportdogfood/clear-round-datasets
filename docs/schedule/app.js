@@ -306,6 +306,7 @@
     return `${h}:${String(m).padStart(2, '0')}${ap}`;
   }
 
+
   function fmtClockFromMinutes(totalMinutes) {
     const mins = Math.max(0, Math.floor(totalMinutes));
     const h24 = Math.floor(mins / 60) % 24;
@@ -314,6 +315,15 @@
     let h = h24 % 12;
     if (h === 0) h = 12;
     return `${h}:${String(m).padStart(2, '0')}${ap}`;
+  }
+
+  function fmtMD(dt) {
+    const s = String(dt || '').trim();
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return s;
+    const mm = String(parseInt(m[2], 10));
+    const dd = String(parseInt(m[3], 10));
+    return `${mm}/${dd}`;
   }
 
   function fmtStatus4(v) {
@@ -1172,36 +1182,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     render();
   }
 
-  // From a detail screen, jump back to Schedule and scroll to the chosen ring.
-  // Keeps history so header back returns to where you came from.
-  function pushScheduleRing(ringNumber) {
-    const rk = String(ringNumber || '').trim();
-    if (!rk) {
-      // Fall back to plain schedule navigation.
-      state.history.push({ screen: state.screen, detail: state.detail });
-      state.screen = 'schedule';
-      state.detail = null;
-      render();
-      return;
-    }
-
-    const id = `ring-${rk}`;
-
-    state.history.push({ screen: state.screen, detail: state.detail });
-    state.screen = 'schedule';
-    state.detail = null;
-
-    try {
-      history.replaceState(null, '', `#${id}`);
-    } catch (_) {
-      try { location.hash = `#${id}`; } catch (_) {}
-    }
-
-    // Let schedule render pick this up and smooth-scroll under the peakbar.
-    state.pendingScrollId = id;
-    render();
-  }
-
   function goBack() {
     const prev = state.history.pop();
     if (!prev) return;
@@ -1634,9 +1614,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       card.appendChild(body);
 
       // Ring header row (ringName | | | agg)
-      const ringNav = (state.screen !== 'schedule')
-        ? (() => pushScheduleRing(rk))
-        : null;
       addLine4(
         body,
         String(r.ringName),
@@ -1645,7 +1622,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.classIdSet ? r.classIdSet.size : 0),
         'row--class',
         '',
-        ringNav
+        null
       );
 
       // groups
@@ -1709,24 +1686,50 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
               const go = best ? (best.latestGO || '') : '';
-              const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
+              const dt = best ? (best.dt || '') : '';
+              const rider = (best && best.riderName) ? String(best.riderName) : '';
 
-              const oogText =
-                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
-                (lastOog != null) ? String(lastOog) :
-                (totalTrips) ? `/${totalTrips}` : '';
+              const lastOog = best ? safeNum(best.lastOOG, null) : null;
+              const totalTripsN = safeNum(cn.total_trips, null);
+              let oogShown = null;
+              if (lastOog != null && totalTripsN != null && totalTripsN > 0) {
+                oogShown = Math.min(Math.max(lastOog, 1), totalTripsN);
+              }
+              const oogPart = (oogShown != null && totalTripsN != null) ? `${oogShown}/${totalTripsN}` : '';
+
+              const whenPart = ((dt ? `${fmtMD(dt)} - ` : '') + (go ? fmtTimeShort(go) : '')).trim();
+              const tail = [oogPart, whenPart].filter(Boolean).join(' - ');
+
+              const horseName = String(eObj.horseName || '');
+              const cGrid = el('div', 'c4-grid');
+
+              if (state.screen === 'horseDetail') {
+                cGrid.appendChild(el('span', 'c4g-a', rider));
+                cGrid.appendChild(el('span', 'c4g-b', horseName));
+              } else {
+                cGrid.appendChild(el('span', 'c4g-a', horseName));
+                cGrid.appendChild(el('span', 'c4g-b', rider));
+              }
+              cGrid.appendChild(el('span', 'c4g-c', tail));
+
+              const entryClick = (() => {
+                if (state.screen === 'horseDetail') {
+                  const rKey = rider.trim();
+                  return (rKey && canRiderNav) ? (() => pushDetail('riderDetail', { kind: 'rider', key: rKey })) : null;
+                }
+                return (horseName && canHorseNav) ? (() => pushDetail('horseDetail', { kind: 'horse', key: horseName })) : null;
+              })();
 
               stripe++;
               addLine4(
                 gWrap,
-                fmtTimeShort(go),
+                '',
                 entryNo,
-                document.createTextNode(eObj.horseName || ''),
-                oogText,
+                cGrid,
+                '',
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
-                canHorseNav ? (() => pushDetail('horseDetail', { kind: 'horse', key: String(eObj.horseName || '') })) : null
+                entryClick
               );
 
               // TRIPS (child)
@@ -2079,24 +2082,36 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
               const go = best ? (best.latestGO || '') : '';
-              const lastOog = best ? safeNum(best.lastOOG, null) : null;
-              const totalTrips = cn.total_trips != null ? String(cn.total_trips) : '';
+              const dt = best ? (best.dt || '') : '';
+              const rider = (best && best.riderName) ? String(best.riderName) : '';
 
-              const oogText =
-                (lastOog != null && totalTrips) ? `${lastOog}/${totalTrips}` :
-                (lastOog != null) ? String(lastOog) :
-                (totalTrips) ? `/${totalTrips}` : '';
+              const lastOog = best ? safeNum(best.lastOOG, null) : null;
+              const totalTripsN = safeNum(cn.total_trips, null);
+              let oogShown = null;
+              if (lastOog != null && totalTripsN != null && totalTripsN > 0) {
+                oogShown = Math.min(Math.max(lastOog, 1), totalTripsN);
+              }
+              const oogPart = (oogShown != null && totalTripsN != null) ? `${oogShown}/${totalTripsN}` : '';
+
+              const whenPart = ((dt ? `${fmtMD(dt)} - ` : '') + (go ? fmtTimeShort(go) : '')).trim();
+              const tail = [oogPart, whenPart].filter(Boolean).join(' - ');
+
+              const horseName = String(eObj.horseName || '');
+              const cGrid = el('div', 'c4-grid');
+              cGrid.appendChild(el('span', 'c4g-a', horseName));
+              cGrid.appendChild(el('span', 'c4g-b', rider));
+              cGrid.appendChild(el('span', 'c4g-c', tail));
 
               stripe++;
               addLine4(
                 gWrap,
-                fmtTimeShort(go),
+                '',
                 entryNo,
-                document.createTextNode(eObj.horseName || ''),
-                oogText,
+                cGrid,
+                '',
                 'row--entry',
                 (stripe % 2 === 0 ? 'row-alt' : ''),
-                () => pushDetail('horseDetail', { key: String(eObj.horseName || '') })
+                (horseName ? (() => pushDetail('horseDetail', { key: horseName })) : null)
               );
 
               // TRIPS (child)
