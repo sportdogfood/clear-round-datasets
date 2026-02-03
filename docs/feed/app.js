@@ -131,7 +131,12 @@
     return true;
   }
 
-  const SUPP_DEFAULTS = {
+  // Normalize supplement fields from legacy/production shapes into a boolean-ish value.
+  function normalizeSupplementValue(v) {
+    return toBool(v);
+  }
+
+const SUPP_DEFAULTS = {
     EEMix: 'AM  |  PM',
     Positude: 'PM',
     OM3GA: 'PM'
@@ -332,7 +337,17 @@
     elRoot.appendChild(mkRowStatic(String(message || 'Unknown error'), tag('!', true)));
   }
 
-  // ----------------------------
+    // Minimal toast helper (no new markup/CSS in the legacy shell).
+  // Uses console as the default surface; swap to a real toast later if desired.
+  function toast(message) {
+    try {
+      if (message != null && String(message).trim()) console.log(String(message));
+    } catch (_) {}
+  }
+
+  try { window.toast = window.toast || toast; } catch (_) {}
+
+// ----------------------------
   // DATA LOAD
   // ----------------------------
   function resolveBoardId() {
@@ -355,20 +370,11 @@
   }
 
   function resolveSaveUrl(json) {
-    // FeedBoard Save must always target the canonical server.
-    // Only accept an explicit override if it is already on the ITEMS origin.
-    const qp = String(qs('save_url') || qs('saveUrl') || qs('save') || qs('endpoint') || '').trim();
-    const meta = (json && (json.meta || json._meta)) || null;
-    const fromJson = String(json && (json.save_url || json.saveUrl || json.save_endpoint) || '').trim();
-    const fromMeta = String(meta && (meta.save_url || meta.saveUrl || meta.save_endpoint) || '').trim();
-    const picked = String(qp || fromJson || fromMeta || '').trim();
-
-    if (picked && picked.startsWith(ITEMS_ORIGIN)) return picked;
-    if (picked === '/feed/commit') return DEFAULT_SAVE_URL;
-
-    // Default: always use the canonical server endpoint (works cross-origin).
+    // Always use the canonical server endpoint (works cross-origin).
+    // Do NOT honor legacy query params (e.g. ?endpoint=...) to avoid 405s on unrelated hosts.
     return DEFAULT_SAVE_URL;
   }
+
 
   function extractRowsFromBoardJson(json) {
     if (Array.isArray(json)) return json;
@@ -480,6 +486,7 @@
   function normalizeNavTarget(raw) {
     const s = String(raw || '').trim();
     if (!s) return 'state';
+    if (s === 'start') return 'state';
     if (s === 'state' || s === 'list1' || s === 'summary' || s === 'detail' || s === 'list8') return s;
     return 'state';
   }
@@ -937,6 +944,12 @@
 
     let res = await postCommit(state.saveUrl);
 
+    // If the save URL is wrong (legacy params, wrong host), retry the canonical endpoint once.
+    if ((res.status === 405 || res.status === 404) && state.saveUrl !== DEFAULT_SAVE_URL) {
+      state.saveUrl = DEFAULT_SAVE_URL;
+      res = await postCommit(state.saveUrl);
+    }
+
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
       throw new Error(`Save failed (${res.status})${txt ? ': ' + txt : ''}`);
@@ -1150,6 +1163,8 @@
         gotoScreen('state');
       };
     }
+
+    if (state.screen === 'start') return renderActiveHorses();
     if (state.screen === 'state') return renderActiveHorses();
     if (state.screen === 'list1') return renderFeedList();
     if (state.screen === 'summary') return renderSummary();
@@ -1163,46 +1178,46 @@
   // ----------------------------
   // EVENTS
   // ----------------------------
+  // Ensure the bottom nav reflects the Feed app even if the legacy shell still has old labels/tabs.
+  function normalizeBottomNav() {
+    const nav = document.getElementById('nav-row') || document.querySelector('.nav-row');
+    if (!nav) return;
+    const btns = Array.from(nav.querySelectorAll('.nav-btn[data-screen]'));
+    if (!btns.length) return;
 
-  // ----------------------------
-  // NAV COMPAT: legacy bottom nav -> FeedBoard mapping
-  // - relabel first 4 tabs
-  // - hide extras
-  // ----------------------------
-  function initNavCompat() {
-    try {
-      const row = document.getElementById('nav-row') || document.querySelector('.nav-row');
-      if (!row) return;
+    const labelMap = {
+      state: 'Horses',
+      list1: 'Active',
+      summary: 'Summary',
+      list8: 'Text'
+    };
 
-      const btns = Array.from(row.querySelectorAll('.nav-btn'));
-      if (!btns.length) return;
+    const allowed = new Set(Object.keys(labelMap));
+    const hasAllowed = btns.some(b => allowed.has(String(b.getAttribute('data-screen') || '').trim()));
 
-      const map = [
-        { screen: 'state',   label: 'Horse List',  agg: 'state' },
-        { screen: 'list1',   label: 'Active List', agg: 'list1' },
-        { screen: 'summary', label: 'Summary',     agg: 'summary' },
-        { screen: 'list8',   label: 'Text',        agg: 'list8' }
-      ];
-
-      btns.forEach((btn, i) => {
-        if (i < map.length) {
-          btn.hidden = false;
-          btn.setAttribute('data-screen', map[i].screen);
-
-          const lbl = btn.querySelector('.nav-label');
-          if (lbl) lbl.textContent = map[i].label;
-
-          const agg = btn.querySelector('.nav-agg');
-          if (agg) agg.setAttribute('data-nav-agg', map[i].agg);
-
-          btn.classList.remove('nav-btn--primary');
-        } else {
-          btn.hidden = true;
-          btn.setAttribute('data-screen', 'state');
-        }
+    if (!hasAllowed && btns.length >= 4) {
+      const order = ['state', 'list1', 'summary', 'list8'];
+      btns.forEach((b, i) => {
+        if (i < order.length) b.setAttribute('data-screen', order[i]);
+        else b.hidden = true;
       });
-    } catch (_) {}
+    } else {
+      btns.forEach(b => {
+        const s = String(b.getAttribute('data-screen') || '').trim();
+        if (!allowed.has(s)) b.hidden = true;
+      });
+    }
+
+    // Relabel visible tabs
+    btns.forEach(b => {
+      if (b.hidden) return;
+      const s = String(b.getAttribute('data-screen') || '').trim();
+      const label = labelMap[s] || 'Horses';
+      const el = b.querySelector('.nav-label') || b.querySelector('[data-nav-label]');
+      if (el) el.textContent = label;
+    });
   }
+
 
   function bindNav() {
     elNavRow.addEventListener('click', (e) => {
@@ -1210,14 +1225,15 @@
       if (!btn) return;
 
       const raw = btn.getAttribute('data-screen');
-      if (raw === 'start' && state.screen === 'start') {
+      if (raw === 'start') {
         // Start/Restart behavior
         restartFlow().catch(err => setMessage(err && err.message ? err.message : String(err)));
         return;
       }
 
       const target = normalizeNavTarget(raw);
-      gotoScreen(target);
+      if (target === 'start') gotoScreen('state');
+      else gotoScreen(target);
     });
   }
 
@@ -1226,7 +1242,7 @@
   // ----------------------------
   async function boot() {
     try {
-      initNavCompat();
+      normalizeBottomNav();
       bindNav();
       await loadBoard();
       gotoScreen('state');
