@@ -1657,8 +1657,14 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (!ring || !ring.groups) return 999999;
       let best = 999999;
       for (const g of ring.groups.values()) {
-        const m = timeToMinutes(g.latestStart || '');
-        if (m != null && m < best) best = m;
+        if (!g || !g.classes) continue;
+        for (const c of g.classes.values()) {
+          if (!c || !c.classNumbers) continue;
+          for (const cn of c.classNumbers.values()) {
+            const m = timeToMinutes(cn.latestStart || '');
+            if (m != null && m < best) best = m;
+          }
+        }
       }
       return best;
     }
@@ -2099,8 +2105,14 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (!ring || !ring.groups) return 999999;
       let best = 999999;
       for (const g of ring.groups.values()) {
-        const m = timeToMinutes(g.latestStart || '');
-        if (m != null && m < best) best = m;
+        if (!g || !g.classes) continue;
+        for (const c of g.classes.values()) {
+          if (!c || !c.classNumbers) continue;
+          for (const cn of c.classNumbers.values()) {
+            const m = timeToMinutes(cn.latestStart || '');
+            if (m != null && m < best) best = m;
+          }
+        }
       }
       return best;
     }
