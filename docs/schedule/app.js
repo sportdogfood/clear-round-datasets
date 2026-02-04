@@ -905,9 +905,9 @@
 
     bar.appendChild(row);
 
-    // Insert above nav
-    const nav = appEl && appEl.querySelector('.app-nav');
-    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
+    // Insert inside main (below list content)
+    const main = appMain || (appEl && appEl.querySelector('.app-main'));
+    if (main) main.appendChild(bar);
     else (appEl || document.body).appendChild(bar);
   }
 
@@ -1001,9 +1001,9 @@
 
     bar.appendChild(row);
 
-    // Insert above nav (same as schedule bottom filter)
-    const nav = appEl && appEl.querySelector('.app-nav');
-    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
+    // Insert inside main (same as schedule bottom filter)
+    const main = appMain || (appEl && appEl.querySelector('.app-main'));
+    if (main) main.appendChild(bar);
     else (appEl || document.body).appendChild(bar);
   }
 
@@ -1777,6 +1777,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
       // groups
       const groups = [...r.groups.values()].sort((a, b) => {
+        const ta = timeToMinutes(a.latestStart || '') ?? 999999;
+        const tb = timeToMinutes(b.latestStart || '') ?? 999999;
+        if (ta !== tb) return ta - tb;
         if (a.statusRank !== b.statusRank) return b.statusRank - a.statusRank;
         return String(a.group_name || '').localeCompare(String(b.group_name || ''));
       });
