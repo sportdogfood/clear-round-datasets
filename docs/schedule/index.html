@@ -239,6 +239,7 @@
       /* padding: 4px 0px 4px 4px; */
       /* margin: 1px 4px 0px 4px; */
     }
+    .app.hide-header .peakbar{ top: 0; }
 
     /* Cards ------------------------------------------------------ */
     .card {
@@ -575,6 +576,9 @@
       transform: translateY(var(--nav-h));
       pointer-events: none;
     }
+    .app.hide-header .app-main{ margin-top: calc(-1 * var(--header-h)); }
+    .app.hide-nav .app-main{ margin-bottom: calc(-1 * var(--nav-h)); }
+    .app.hide-nav .filterbottom{ bottom: 0; }
 
   
     /* Summary ------------------------------------------------- */
