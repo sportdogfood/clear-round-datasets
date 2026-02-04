@@ -239,6 +239,7 @@
       /* padding: 4px 0px 4px 4px; */
       /* margin: 1px 4px 0px 4px; */
     }
+    .app.hide-header .peakbar{ top: 0; }
 
     /* Cards ------------------------------------------------------ */
     .card {
@@ -543,7 +544,7 @@
     .badge--seq-U{ background: rgba(148,163,184,0.14); border-color: rgba(148,163,184,0.55); }
 
     .card-line4.row--class{ font-size: 12px; font-weight: 600; }
-    .card-line4.row--group.row-alt{ display: none; }
+    .card-line4.row--class.row--group{ display: none; }
     .card-line4.row--class .badge--type,
     .card-line4.row--class .badge--seq{ display:none; }
     .card-line4.row--entry{ font-size: 10px; font-weight: 300; color: var(--fh-sentiment-positive, #90e58c);
@@ -575,6 +576,9 @@
       transform: translateY(var(--nav-h));
       pointer-events: none;
     }
+    .app.hide-header .app-main{ margin-top: calc(-1 * var(--header-h)); }
+    .app.hide-nav .app-main{ margin-bottom: calc(-1 * var(--nav-h)); }
+    .app.hide-nav .filterbottom{ bottom: 0; }
 
   
     /* Summary ------------------------------------------------- */
