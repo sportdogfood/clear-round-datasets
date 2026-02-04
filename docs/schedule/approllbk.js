@@ -728,8 +728,8 @@
   function fmtNextUpFromEntryKeys(entryKeys, tIdx) {
     const list = [];
     for (const k of (entryKeys || [])) {
-      const trips = tIdx && tIdx.byEntryKey ? tIdx.byEntryKey.get(k) : null;
-      if (trips && trips.length) list.push(...trips);
+      const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
+      if (best) list.push(best);
     }
     function statusRank(statusText) {
       const s = String(statusText || '').toLowerCase();
@@ -739,9 +739,9 @@
       return 0;
     }
 
-    const activeTrips = list.filter(t => statusRank(t.latestStatus) >= 2);
-    const best = pickBestTrip(activeTrips.length ? activeTrips : list);
-    if (!best || statusRank(best.latestStatus) < 2) return '';
+    const activeList = list.filter(t => statusRank(t.latestStatus) >= 2);
+    const best = pickBestTrip(activeList.length ? activeList : list);
+    if (!best) return '';
 
     const parts = [];
 
@@ -784,14 +784,6 @@
     input.addEventListener('input', () => {
       state.search[screenKey] = input.value;
       render();
-      window.setTimeout(() => {
-        const active = document.querySelector('.state-search-input');
-        if (active) {
-          active.focus();
-          const end = active.value.length;
-          active.setSelectionRange(end, end);
-        }
-      }, 0);
     });
 
     wrap.appendChild(input);
@@ -905,9 +897,9 @@
 
     bar.appendChild(row);
 
-    // Insert inside main (below list content)
-    const main = appMain || (appEl && appEl.querySelector('.app-main'));
-    if (main) main.appendChild(bar);
+    // Insert above nav
+    const nav = appEl && appEl.querySelector('.app-nav');
+    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
     else (appEl || document.body).appendChild(bar);
   }
 
@@ -1001,9 +993,9 @@
 
     bar.appendChild(row);
 
-    // Insert inside main (same as schedule bottom filter)
-    const main = appMain || (appEl && appEl.querySelector('.app-main'));
-    if (main) main.appendChild(bar);
+    // Insert above nav (same as schedule bottom filter)
+    const nav = appEl && appEl.querySelector('.app-nav');
+    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
     else (appEl || document.body).appendChild(bar);
   }
 
@@ -1603,7 +1595,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         groupObj.latestStatus = t.latestStatus || '';
         groupObj.statusRank = statusRank(t.latestStatus || '');
       }
-      // group start: align with class latestStart (earliest)
+      // group start: keep earliest if possible
       const curM = timeToMinutes(groupObj.latestStart || '');
       const tM = timeToMinutes(t.latestStart || '');
       if (curM == null || (tM != null && tM < curM)) groupObj.latestStart = t.latestStart || groupObj.latestStart;
@@ -1653,39 +1645,16 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       entryObj.trips.push(t);
     }
 
-    for (const ring of ringMap.values()) {
-      for (const group of ring.groups.values()) {
-        let bestStart = null;
-        let bestRaw = '';
-        for (const cls of group.classes.values()) {
-          for (const cn of cls.classNumbers.values()) {
-            const raw = cn.latestStart || '';
-            const m = timeToMinutes(raw);
-            if (m == null) continue;
-            if (bestStart == null || m < bestStart) {
-              bestStart = m;
-              bestRaw = raw;
-            }
-          }
-        }
-        group.latestStart = bestRaw || group.latestStart || '';
-      }
-    }
-
     const ringsAll = [...ringMap.values()]
       .filter(r => r && r.groups && r.groups.size > 0)
       .sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
 
     // Peakbar (ring anchors)
-    const peakItems = ringsAll.map(r => {
-      const rk = String(r.ring_number);
-      return {
-        key: rk,
-        label: String(r.ringName || `Ring ${r.ring_number}`),
-        agg: r.classIdSet ? r.classIdSet.size : 0,
-        href: (state.screen === 'schedule') ? `#ring-${rk}` : undefined
-      };
-    });
+    const peakItems = ringsAll.map(r => ({
+      key: String(r.ring_number),
+      label: String(r.ringName || `Ring ${r.ring_number}`),
+      agg: r.classIdSet ? r.classIdSet.size : 0
+    }));
 
     if (!options.skipPeakBar) {
       screenRoot.appendChild(renderPeakBar(peakItems));
@@ -1734,15 +1703,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       parent.appendChild(line);
     }
 
-    function addCardBottom(parent) {
-      const line = el('div', 'card-line4 row--class row--ring-peak card-bottom');
-      line.appendChild(el('div', 'c4-a', ''));
-      line.appendChild(el('div', 'c4-b', ''));
-      line.appendChild(el('div', 'c4-c', ''));
-      line.appendChild(el('div', 'c4-d', ''));
-      parent.appendChild(line);
-    }
-
     function makeBadge(txt, cls) {
       const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
       return b;
@@ -1777,9 +1737,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
       // groups
       const groups = [...r.groups.values()].sort((a, b) => {
-        const ta = timeToMinutes(a.latestStart || '') ?? 999999;
-        const tb = timeToMinutes(b.latestStart || '') ?? 999999;
-        if (ta !== tb) return ta - tb;
         if (a.statusRank !== b.statusRank) return b.statusRank - a.statusRank;
         return String(a.group_name || '').localeCompare(String(b.group_name || ''));
       });
@@ -1790,26 +1747,13 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         const gWrap = el('div', 'group-wrap ' + statusTintClass(g.latestStatus));
         body.appendChild(gWrap);
 
-        stripe++;
-        addLine4(
-          gWrap,
-          fmtTimeShort(g.latestStart || ''),
-          '',
-          document.createTextNode(String(g.group_name || '').trim()),
-          document.createTextNode(''),
-          'row--class row--group',
-          (stripe % 2 === 0 ? 'row-alt' : ''),
-          null
-        );
-
         const classes = [...g.classes.values()].sort((a, b) => {
-          const aMin = Math.min(...[...a.classNumbers.values()].map(x => timeToMinutes(x.latestStart || '') ?? 999999));
-          const bMin = Math.min(...[...b.classNumbers.values()].map(x => timeToMinutes(x.latestStart || '') ?? 999999));
+          const aMin = Math.min(...[...a.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
+          const bMin = Math.min(...[...b.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
           if (aMin !== bMin) return aMin - bMin;
           return String(a.class_name || '').localeCompare(String(b.class_name || ''));
         });
 
-        let lastClassStart = null;
         for (const c of classes) {
           const classNums = [...c.classNumbers.values()].sort((a, b) => safeNum(a.class_number, 999999) - safeNum(b.class_number, 999999));
 
@@ -1828,14 +1772,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             if (statusNode) badgeWrap.appendChild(statusNode);
             for (const b of badges) badgeWrap.appendChild(b);
 
-            const classStart = String(cn.latestStart || '');
-            const showStart = classStart && classStart !== lastClassStart;
-            if (classStart) lastClassStart = classStart;
-
             stripe++;
             addLine4(
               gWrap,
-              showStart ? fmtTimeShort(classStart) : '',
+              fmtTimeShort(cn.latestStart || ''),
               (cn.class_number != null ? String(cn.class_number) : ''),
               document.createTextNode(String(c.class_name || '').trim()),
               badgeWrap,
@@ -1855,11 +1795,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               return String(a.horseName || '').localeCompare(String(b.horseName || ''));
             });
 
-            const seenEntries = new Set();
             for (const eObj of entries) {
-              const entryKey = eObj.entry_id || eObj.entryNumber || eObj.horseName || '';
-              if (entryKey && seenEntries.has(entryKey)) continue;
-              if (entryKey) seenEntries.add(entryKey);
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
               const go = best ? (best.latestGO || best.latestStart || '') : '';
@@ -1942,7 +1878,6 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       }
 
       ringContainer.appendChild(card);
-      addCardBottom(body);
     }
 
     screenRoot.appendChild(ringContainer);
@@ -1976,7 +1911,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   // ----------------------------
   // SCREEN: SCHEDULE (rings)
   // ----------------------------
-  function renderSchedule(sIdx, tIdx) {
+    function renderSchedule(sIdx, tIdx) {
     clearRoot();
     setHeader('Schedule');
 
@@ -1985,7 +1920,352 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     const qRing = normalizeStr(state.search.rings);
     const horseFilter = state.filter && state.filter.horse ? String(state.filter.horse) : null;
-    renderRingCardsFromTrips(state.trips || [], sIdx, { qRing, horseFilter, skipPeakBar: false });
+    const canClassNav = true; // schedule allows class nav
+
+
+    // ----------------------------
+    // Build hierarchy from watch_trips (flat -> dimensions)
+    // ring_number -> group_id -> class_id -> class_number -> entry_id -> trips
+    // ----------------------------
+    const ringMap = new Map();
+
+    function ringSortKey(rn) { return safeNum(rn, 999999); }
+
+    function statusRank(statusText) {
+      const s = String(statusText || '').toLowerCase();
+      if (s.includes('underway')) return 3;
+      if (s.includes('upcoming')) return 2;
+      if (s.includes('complete')) return 1;
+      return 0;
+    }
+
+    function statusLetter(statusText) {
+      const s = String(statusText || '').toLowerCase();
+      if (s.includes('underway')) return 'L';
+      if (s.includes('upcoming')) return 'S';
+      if (s.includes('complete')) return 'C';
+      return '';
+    }
+
+    function statusTintClass(statusText) {
+      const s = String(statusText || '').toLowerCase();
+      if (s.includes('underway')) return 'tint-L';
+      if (s.includes('upcoming')) return 'tint-S';
+      if (s.includes('complete')) return 'tint-C';
+      return '';
+    }
+
+    function getRingNameFromTrip(t) {
+      if (t && t.ringName) return String(t.ringName);
+      const rn = t && t.ring_number != null ? String(t.ring_number) : null;
+      const rObj = rn && sIdx && sIdx.ringMap ? sIdx.ringMap.get(rn) : null;
+      if (rObj && rObj.ringName) return String(rObj.ringName);
+      return rn ? `Ring ${rn}` : 'Ring';
+    }
+
+    function getOrInit(map, key, factory) {
+      if (!map.has(key)) map.set(key, factory());
+      return map.get(key);
+    }
+
+    for (const t of (state.trips || [])) {
+      if (!t) continue;
+      if (t.ring_number == null) continue;
+      if (t.class_id == null) continue;
+
+      // ring search filter
+      const rnStr = String(t.ring_number);
+      const ringName = getRingNameFromTrip(t);
+      if (qRing && !normalizeStr(ringName).includes(qRing)) continue;
+
+      // horse filter (entry_id preferred; fallback horseName)
+      const entryKey = (t.entry_id != null) ? String(t.entry_id) : (t.horseName ? String(t.horseName) : null);
+      if (!entryKey) continue;
+      if (horseFilter && entryKey !== horseFilter) continue;
+
+      const ringObj = getOrInit(ringMap, rnStr, () => ({
+        ring_number: t.ring_number,
+        ringName,
+        classIdSet: new Set(),
+        groups: new Map()
+      }));
+
+      ringObj.classIdSet.add(String(t.class_id));
+
+      const gid = (t.class_group_id != null) ? String(t.class_group_id) : '__nogroup__';
+      const groupObj = getOrInit(ringObj.groups, gid, () => ({
+        class_group_id: gid,
+        group_name: t.group_name ? String(t.group_name) : '',
+        statusRank: 0,
+        latestStatus: '',
+        classes: new Map()
+      }));
+
+      // group status (max rank)
+      const rnk = statusRank(t.latestStatus);
+      if (rnk > groupObj.statusRank) {
+        groupObj.statusRank = rnk;
+        groupObj.latestStatus = t.latestStatus || '';
+      }
+
+      const cid = String(t.class_id);
+      const classObj = getOrInit(groupObj.classes, cid, () => ({
+        class_id: cid,
+        class_name: t.class_name ? String(t.class_name) : '',
+        class_type: t.class_type ? String(t.class_type) : '',
+        schedule_sequencetype: t.schedule_sequencetype ? String(t.schedule_sequencetype) : '',
+        classNumbers: new Map()
+      }));
+
+      const classNumKey = (t.class_number != null) ? String(t.class_number) : '';
+      const cn = (t.class_number != null) ? Number(t.class_number) : null;
+
+      const classNumObj = getOrInit(classObj.classNumbers, classNumKey, () => ({
+        class_number: cn,
+        latestStart: t.latestStart || '',
+        latestStatus: t.latestStatus || '',
+        statusRank: statusRank(t.latestStatus),
+        total_trips: t.total_trips != null ? t.total_trips : null,
+        entries: new Map()
+      }));
+
+      // prefer stronger status for classNum
+      const cnRank = statusRank(t.latestStatus);
+      if (cnRank > classNumObj.statusRank) {
+        classNumObj.statusRank = cnRank;
+        classNumObj.latestStatus = t.latestStatus || '';
+      }
+      if (!classNumObj.latestStart && t.latestStart) classNumObj.latestStart = t.latestStart;
+
+      const entryObj = getOrInit(classNumObj.entries, entryKey, () => ({
+        entry_id: entryKey,
+        entryNumber: t.entryNumber != null ? String(t.entryNumber) : '',
+        horseName: t.horseName ? String(t.horseName) : '',
+        trips: []
+      }));
+
+      if (!entryObj.entryNumber && t.entryNumber != null) entryObj.entryNumber = String(t.entryNumber);
+      if (!entryObj.horseName && t.horseName) entryObj.horseName = String(t.horseName);
+
+      entryObj.trips.push(t);
+    }
+
+    const ringsAll = [...ringMap.values()].sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
+
+    // Peakbar (anchors)
+    const peakItems = ringsAll.map(r => {
+      const rk = String(r.ring_number);
+      return {
+        key: rk,
+        label: String(r.ringName),
+        agg: (r.classIdSet ? r.classIdSet.size : 0),
+        href: `#ring-${rk}`
+      };
+    });
+    screenRoot.appendChild(renderPeakBar(peakItems));
+
+    // Ring cards
+    const ringContainer = el('div', 'list-column');
+    ringContainer.dataset.kind = 'ringContainer';
+
+    let stripe = 0;
+
+    function addLine4(parent, a, b, cNode, dNode, rowClass, extraClass, onClick) {
+      const line = el('div', 'card-line4' + (rowClass ? (' ' + rowClass) : '') + (extraClass ? (' ' + extraClass) : ''));
+      const cA = el('div', 'c4-a', a || '');
+      const cB = el('div', 'c4-b', b || '');
+      const cC = el('div', 'c4-c');
+      const cD = el('div', 'c4-d');
+
+      if (cNode) cC.appendChild(cNode);
+      if (typeof dNode === 'string') cD.textContent = dNode;
+      else if (dNode) cD.appendChild(dNode);
+
+      line.appendChild(cA);
+      line.appendChild(cB);
+      line.appendChild(cC);
+      line.appendChild(cD);
+
+      if (onClick) {
+        line.style.cursor = 'pointer';
+        line.addEventListener('click', onClick);
+      }
+
+      parent.appendChild(line);
+    }
+
+    function makeBadge(txt, cls) {
+      const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
+      return b;
+    }
+
+    function nodeWithBadges(badges, text) {
+      const wrap = el('div', '');
+      for (const b of badges) wrap.appendChild(b);
+      if (badges.length) wrap.appendChild(el('span', '', ' '));
+      wrap.appendChild(document.createTextNode(text || ''));
+      return wrap;
+    }
+
+    for (const r of ringsAll) {
+      const rk = String(r.ring_number);
+      if (!r.groups || r.groups.size === 0) continue;
+
+      const card = el('div', 'card');
+      card.id = `ring-${rk}`;
+      const body = el('div', 'card-body');
+      card.appendChild(body);
+
+      // Ring header row (ringName | | | agg)
+      addLine4(
+        body,
+        String(r.ringName),
+        '',
+        document.createTextNode(''),
+        makeNavAgg(r.classIdSet ? r.classIdSet.size : 0),
+        'row--class',
+        'row--ring-peak',
+        null
+      );
+
+      // groups
+      const groups = [...r.groups.values()].sort((a, b) => {
+        // stable: status rank desc then name
+        if (a.statusRank !== b.statusRank) return b.statusRank - a.statusRank;
+        return String(a.group_name || '').localeCompare(String(b.group_name || ''));
+      });
+
+      for (const g of groups) {
+        if (!g.classes || g.classes.size === 0) continue;
+
+        const gWrap = el('div', 'group-wrap ' + statusTintClass(g.latestStatus));
+        body.appendChild(gWrap);
+
+        const classes = [...g.classes.values()].sort((a, b) => {
+          // sort by lowest class_number present, then name
+          const aMin = Math.min(...[...a.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
+          const bMin = Math.min(...[...b.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
+          if (aMin !== bMin) return aMin - bMin;
+          return String(a.class_name || '').localeCompare(String(b.class_name || ''));
+        });
+
+        for (const c of classes) {
+          const classNums = [...c.classNumbers.values()].sort((a, b) => safeNum(a.class_number, 999999) - safeNum(b.class_number, 999999));
+
+          for (const cn of classNums) {
+            if (!cn.entries || cn.entries.size === 0) continue;
+
+            // CLASS ROW
+            const badges = [];
+            if (c.class_type) badges.push(makeBadge(String(c.class_type).slice(0, 1).toUpperCase(), 'badge--type'));
+            if (c.schedule_sequencetype) badges.push(makeBadge(String(c.schedule_sequencetype).slice(0, 1).toUpperCase(), 'badge--seq'));
+
+            const statusL = statusLetter(cn.latestStatus);
+            const statusNode = statusL ? makeBadge(statusL, 'badge--status') : document.createTextNode('');
+
+            const classNameText = String(c.class_name || '').trim();
+            const classNode = document.createTextNode(classNameText);
+
+            // ALL badges in column D (status + type + seq)
+            const badgeWrap = el('div', 'badge-wrap');
+            if (statusNode) badgeWrap.appendChild(statusNode);
+            for (const b of badges) badgeWrap.appendChild(b);
+
+            stripe++;
+            addLine4(
+              gWrap,
+              fmtTimeShort(cn.latestStart || ''),
+              (cn.class_number != null ? String(cn.class_number) : ''),
+              classNode,
+              badgeWrap,
+              'row--class',
+              (stripe % 2 === 0 ? 'row-alt' : ''),
+              canClassNav ? (() => {
+                state.search.classes = String(c.class_name || '').trim();
+                goto('classes');
+              }) : null
+            );
+
+            // ENTRIES
+            const entries = [...cn.entries.values()].sort((a, b) => {
+              const ea = safeNum(a.entryNumber, 999999);
+              const eb = safeNum(b.entryNumber, 999999);
+              if (ea !== eb) return ea - eb;
+              return String(a.horseName || '').localeCompare(String(b.horseName || ''));
+            });
+
+            for (const eObj of entries) {
+              const best = pickBestTrip(eObj.trips || []);
+              const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
+              const go = best ? (best.latestGO || best.latestStart || '') : '';
+              const rider = (best && best.riderName) ? String(best.riderName) : '';
+
+              const lastOog = best ? safeNum(best.lastOOG, null) : null;
+              const totalTripsN = safeNum(cn.total_trips, null);
+              let oogShown = null;
+              if (lastOog != null && totalTripsN != null && totalTripsN > 0 && lastOog >= 1 && lastOog <= totalTripsN) {
+                oogShown = lastOog;
+              }
+              const oogPart = (oogShown != null && totalTripsN != null) ? `${oogShown}/${totalTripsN}` : '';
+              const whenPart = go ? fmtTimeShort(go) : '';
+
+              const horseName = String(eObj.horseName || '');
+              const cGrid = el('div', 'c4-grid');
+              cGrid.appendChild(el('span', 'c4g-a', horseName));
+              cGrid.appendChild(el('span', 'c4g-b', rider));
+              cGrid.appendChild(el('span', 'c4g-c', oogPart));
+              cGrid.appendChild(el('span', 'c4g-d', whenPart));
+              cGrid.appendChild(el('span', 'c4g-e', (c.class_type ? String(c.class_type).slice(0, 1).toUpperCase() : '')));
+              cGrid.appendChild(el('span', 'c4g-f', (c.schedule_sequencetype ? String(c.schedule_sequencetype).slice(0, 1).toUpperCase() : '')));
+
+              stripe++;
+              addLine4(
+                gWrap,
+                '',
+                entryNo,
+                cGrid,
+                '',
+                'row--entry',
+                (stripe % 2 === 0 ? 'row-alt' : ''),
+                (horseName ? (() => pushDetail('horseDetail', { key: horseName })) : null)
+              );
+
+              // TRIPS (child)
+              const trips = (eObj.trips || []).slice().sort((a, b) => {
+                const oa = safeNum(a.lastOOG, 999999);
+                const ob = safeNum(b.lastOOG, 999999);
+                if (oa !== ob) return oa - ob;
+                return String(a.riderName || '').localeCompare(String(b.riderName || ''));
+              });
+
+              for (const t of trips) {
+                const back = t.backNumber != null ? String(t.backNumber) : (t.entryNumber != null ? String(t.entryNumber) : '');
+                const rider = t.riderName ? String(t.riderName) : '';
+                const score = (t.latestScore != null && String(t.latestScore) !== '') ? String(t.latestScore) : '';
+                const placing = (t.latestPlacing != null && String(t.latestPlacing) !== '') ? String(t.latestPlacing) : '';
+                const right = score || placing || '';
+
+                stripe++;
+                addLine4(
+                  gWrap,
+                  '',
+                  back,
+                  document.createTextNode(rider),
+                  right,
+                  'row--trip',
+                  (stripe % 2 === 0 ? 'row-alt' : ''),
+                  () => pushDetail('riderDetail', { key: String(rider || '') })
+                );
+              }
+            }
+          }
+        }
+      }
+
+      ringContainer.appendChild(card);
+    }
+
+    screenRoot.appendChild(ringContainer);
 
     // Filterbottom (horse chips) OUTSIDE app-main, above nav
     const chips = buildHorseChips(state.search.rings, sIdx);
@@ -2003,10 +2283,65 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     if (!ringObj) return;
 
-    const baseTrips = (state.trips || []).filter(t => String(t && t.ring_number || '') === rk);
-    renderRingCardsFromTrips(baseTrips, sIdx, { skipPeakBar: false });
+    const ringEntryKeys = tIdx.byRing.get(rk) || [];
+    if (ringEntryKeys.length === 0) return;
 
-    applyPendingScroll();
+    const card = makeCard(ringObj.ringName, ringEntryKeys.length, true, null);
+    card.id = 'detail-card';
+    card.dataset.detail = 'ring';
+
+    const groups = [...ringObj.groups.values()].sort((a, b) => {
+      const ta = timeToMinutes(a.latestStart) ?? 999999;
+      const tb = timeToMinutes(b.latestStart) ?? 999999;
+      if (ta !== tb) return ta - tb;
+      return String(a.group_name).localeCompare(String(b.group_name));
+    });
+
+    for (const g of groups) {
+      const gid = String(g.class_group_id);
+      const gKeys = tIdx.byGroup.get(gid) || [];
+      if (gKeys.length === 0) continue;
+
+      addCardLine(
+        card,
+        fmtTimeShort(g.latestStart || ''),
+        String(g.group_name),
+        (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
+        {
+          onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
+        }
+      );
+
+      const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
+      for (const c of classes) {
+        const cid = String(c.class_id);
+        const cKeys = tIdx.byClass.get(cid) || [];
+        if (cKeys.length === 0) continue;
+
+        addCardLine(
+          card,
+          (c.class_number != null ? String(c.class_number) : ''),
+          String(c.class_name || ''),
+          makeTagCount(cKeys.length),
+          { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
+        );
+
+        const bestTrips = cKeys
+          .map(k => tIdx.entryBest.get(k))
+          .filter(Boolean)
+          .sort((a, b) => {
+            const oa = safeNum(a.lastOOG, 999999);
+            const ob = safeNum(b.lastOOG, 999999);
+            if (oa !== ob) return oa - ob;
+            return String(a.horseName || '').localeCompare(String(b.horseName || ''));
+          })
+          .slice(0, 20);
+
+        addHorseChipsRollup(card, bestTrips);
+      }
+    }
+
+    screenRoot.appendChild(card);
   }
 
   function renderGroupDetail(sIdx, tIdx) {
@@ -2022,13 +2357,43 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
     if (!gObj) return;
 
-    const title = String(gObj.group_name || '').trim() || 'Group';
-    setHeader(title);
+    const gKeys = tIdx.byGroup.get(gid) || [];
+    if (gKeys.length === 0) return;
 
-    const baseTrips = (state.trips || []).filter(t => String(t && t.class_group_id || '') === gid);
-    renderRingCardsFromTrips(baseTrips, sIdx, { skipPeakBar: false });
+    const title = `${fmtTimeShort(gObj.latestStart || '')} ${gObj.group_name || ''}`.trim();
+    const card = makeCard(title, gKeys.length, true, null);
+    card.id = 'detail-card';
+    card.dataset.detail = 'group';
 
-    applyPendingScroll();
+    const classes = [...gObj.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
+    for (const c of classes) {
+      const cid = String(c.class_id);
+      const cKeys = tIdx.byClass.get(cid) || [];
+      if (cKeys.length === 0) continue;
+
+      addCardLine(
+        card,
+        (c.class_number != null ? String(c.class_number) : ''),
+        String(c.class_name || ''),
+        makeTagCount(cKeys.length),
+        { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
+      );
+
+      const bestTrips = cKeys
+        .map(k => tIdx.entryBest.get(k))
+        .filter(Boolean)
+        .sort((a, b) => {
+          const oa = safeNum(a.lastOOG, 999999);
+          const ob = safeNum(b.lastOOG, 999999);
+          if (oa !== ob) return oa - ob;
+          return String(a.horseName || '').localeCompare(String(b.horseName || ''));
+        })
+        .slice(0, 20);
+
+      addHorseChipsRollup(card, bestTrips);
+    }
+
+    screenRoot.appendChild(card);
   }
 
   // ----------------------------
