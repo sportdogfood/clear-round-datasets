@@ -492,7 +492,11 @@
   
     /* Contract additions: filterbottom + row/badge styling */
     .filterbottom{
-      position: sticky;
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 8px);
+      max-width: 480px;
       bottom: calc(var(--nav-h) - 38px);
       z-index: 6;
       border-top: 1px solid #27272f;

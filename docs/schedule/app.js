@@ -1656,16 +1656,19 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     for (const ring of ringMap.values()) {
       for (const group of ring.groups.values()) {
         let bestStart = null;
+        let bestRaw = '';
         for (const cls of group.classes.values()) {
           for (const cn of cls.classNumbers.values()) {
-            const m = timeToMinutes(cn.latestStart || '');
+            const raw = cn.latestStart || '';
+            const m = timeToMinutes(raw);
             if (m == null) continue;
             if (bestStart == null || m < bestStart) {
               bestStart = m;
-              group.latestStart = cn.latestStart || group.latestStart;
+              bestRaw = raw;
             }
           }
         }
+        group.latestStart = bestRaw || group.latestStart || '';
       }
     }
 
@@ -1803,6 +1806,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
           return String(a.class_name || '').localeCompare(String(b.class_name || ''));
         });
 
+        let lastClassStart = null;
         for (const c of classes) {
           const classNums = [...c.classNumbers.values()].sort((a, b) => safeNum(a.class_number, 999999) - safeNum(b.class_number, 999999));
 
@@ -1821,10 +1825,14 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             if (statusNode) badgeWrap.appendChild(statusNode);
             for (const b of badges) badgeWrap.appendChild(b);
 
+            const classStart = String(cn.latestStart || '');
+            const showStart = classStart && classStart !== lastClassStart;
+            if (classStart) lastClassStart = classStart;
+
             stripe++;
             addLine4(
               gWrap,
-              fmtTimeShort(cn.latestStart || ''),
+              showStart ? fmtTimeShort(classStart) : '',
               (cn.class_number != null ? String(cn.class_number) : ''),
               document.createTextNode(String(c.class_name || '').trim()),
               badgeWrap,
