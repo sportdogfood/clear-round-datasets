@@ -1653,9 +1653,24 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       entryObj.trips.push(t);
     }
 
+    function ringEarliestMinutes(ring) {
+      if (!ring || !ring.groups) return 999999;
+      let best = 999999;
+      for (const g of ring.groups.values()) {
+        const m = timeToMinutes(g.latestStart || '');
+        if (m != null && m < best) best = m;
+      }
+      return best;
+    }
+
     const ringsAll = [...ringMap.values()]
       .filter(r => r && r.groups && r.groups.size > 0)
-      .sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
+      .sort((a, b) => {
+        const aMin = ringEarliestMinutes(a);
+        const bMin = ringEarliestMinutes(b);
+        if (aMin !== bMin) return aMin - bMin;
+        return ringSortKey(a.ring_number) - ringSortKey(b.ring_number);
+      });
 
     // Peakbar (ring anchors)
     const peakItems = ringsAll.map(r => ({
@@ -1771,7 +1786,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
           '',
           document.createTextNode(String(g.group_name || '').trim()),
           document.createTextNode(''),
-          'row--class',
+          'row--class row--group',
           (stripe % 2 === 0 ? 'row-alt' : ''),
           () => pushDetail('groupDetail', { kind: 'group', key: String(g.class_group_id) })
         );
@@ -2080,7 +2095,22 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       entryObj.trips.push(t);
     }
 
-    const ringsAll = [...ringMap.values()].sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
+    function ringEarliestMinutes(ring) {
+      if (!ring || !ring.groups) return 999999;
+      let best = 999999;
+      for (const g of ring.groups.values()) {
+        const m = timeToMinutes(g.latestStart || '');
+        if (m != null && m < best) best = m;
+      }
+      return best;
+    }
+
+    const ringsAll = [...ringMap.values()].sort((a, b) => {
+      const aMin = ringEarliestMinutes(a);
+      const bMin = ringEarliestMinutes(b);
+      if (aMin !== bMin) return aMin - bMin;
+      return ringSortKey(a.ring_number) - ringSortKey(b.ring_number);
+    });
 
     // Peakbar (anchors)
     const peakItems = ringsAll.map(r => {
@@ -2187,7 +2217,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
           '',
           document.createTextNode(String(g.group_name || '').trim()),
           document.createTextNode(''),
-          'row--class',
+          'row--class row--group',
           (stripe % 2 === 0 ? 'row-alt' : ''),
           () => pushDetail('groupDetail', { kind: 'group', key: String(g.class_group_id) })
         );
