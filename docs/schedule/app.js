@@ -1777,7 +1777,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
           document.createTextNode(''),
           'row--class row--group',
           (stripe % 2 === 0 ? 'row-alt' : ''),
-          () => pushDetail('groupDetail', { kind: 'group', key: String(g.class_group_id) })
+          null
         );
 
         const classes = [...g.classes.values()].sort((a, b) => {
