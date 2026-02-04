@@ -731,7 +731,16 @@
       const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
       if (best) list.push(best);
     }
-    const best = pickBestTrip(list);
+    function statusRank(statusText) {
+      const s = String(statusText || '').toLowerCase();
+      if (s.includes('underway')) return 3;
+      if (s.includes('upcoming')) return 2;
+      if (s.includes('complete')) return 1;
+      return 0;
+    }
+
+    const activeList = list.filter(t => statusRank(t.latestStatus) >= 2);
+    const best = pickBestTrip(activeList.length ? activeList : list);
     if (!best) return '';
 
     const parts = [];
@@ -745,7 +754,7 @@
 
     if (best.lastOOG != null && String(best.lastOOG) !== '') {
       const n = safeNum(best.lastOOG, null);
-      if (n != null) parts.push(String(n));
+      if (n != null && n > 0) parts.push(String(n));
     }
 
     return parts.join(' - ');
@@ -1207,6 +1216,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
 
       summary: 'summary',
+      classes: 'summary',
       horses: 'horses',
       horseDetail: 'horses',
 
@@ -1235,7 +1245,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   // ----------------------------
   // SCREEN: SUMMARY
   // ----------------------------
-  function renderSummary(_sIdx, tIdx) {
+  function renderSummary(sIdx, tIdx) {
     clearRoot();
     setHeader('Summary');
 
@@ -1267,7 +1277,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     const grid = el('div', 'summary-grid');
 
-    function tile(title, lines, onClick) {
+    function makeTileBase(title, total, subtitle, onClick) {
       const card = el('div', 'card summary-tile');
       if (typeof onClick === 'function') {
         card.classList.add('summary-tile--tap');
@@ -1276,42 +1286,62 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       const body = el('div', 'card-body summary-body');
       card.appendChild(body);
 
-      body.appendChild(el('div', 'summary-title', title));
+      const head = el('div', 'summary-head');
+      head.appendChild(el('div', 'summary-title', title));
+      head.appendChild(el('div', 'summary-big', String(total)));
+      body.appendChild(head);
 
-      const wrap = el('div', 'summary-lines');
-      for (const line of (lines || [])) {
-        const row = el('div', 'summary-line');
-        row.appendChild(el('div', 'summary-k', String(line.k || '')));
-        row.appendChild(el('div', 'summary-v', String(line.v || '')));
-        wrap.appendChild(row);
-      }
-      body.appendChild(wrap);
-      return card;
+      if (subtitle) body.appendChild(el('div', 'summary-sub', subtitle));
+
+      return { card, body };
     }
 
-    grid.appendChild(tile('Classes', [
-      { k: 'Completed', v: completed },
-      { k: 'Not Completed', v: notCompleted },
-    ], () => { state.ridersMode = null; goto('schedule'); }));
+    const totalClasses = tIdx.byClass.size;
+    const toGo = Math.max(totalClasses - completed, 0);
 
-    grid.appendChild(tile('Horses', [
-      { k: 'Unique', v: tIdx.byHorse.size },
-    ], () => { state.ridersMode = null; goto('horses'); }));
+    const classesTile = makeTileBase('Classes', totalClasses, 'Total classes', () => {
+      state.ridersMode = null;
+      goto('classes');
+    });
+    const classSplit = el('div', 'summary-split');
+    function addSummaryMini(label, value) {
+      const mini = el('div', 'summary-mini');
+      mini.appendChild(el('div', 'summary-mini-k', label));
+      mini.appendChild(el('div', 'summary-mini-v', String(value)));
+      classSplit.appendChild(mini);
+    }
+    addSummaryMini('Complete', completed);
+    addSummaryMini('To Go', toGo);
+    classesTile.body.appendChild(classSplit);
+    grid.appendChild(classesTile.card);
 
-    grid.appendChild(tile('Riders', [
-      { k: 'Unique', v: tIdx.byRider.size },
-    ], () => { state.ridersMode = null; goto('riders'); }));
+    const horsesTile = makeTileBase('Horses', tIdx.byHorse.size, 'Unique horses', () => {
+      state.ridersMode = null;
+      goto('horses');
+    });
+    grid.appendChild(horsesTile.card);
 
-    const ribbonLines = [
-      { k: 'Total', v: ribbonsTotal },
-      { k: '1-4', v: (ribbonByPlace[1]+ribbonByPlace[2]+ribbonByPlace[3]+ribbonByPlace[4]) },
-      { k: '5-8', v: (ribbonByPlace[5]+ribbonByPlace[6]+ribbonByPlace[7]+ribbonByPlace[8]) },
-    ];
-
-    grid.appendChild(tile('Ribbons (1-8)', ribbonLines, () => {
-      state.ridersMode = 'ribbons';
+    const ridersTile = makeTileBase('Riders', tIdx.byRider.size, 'Unique riders', () => {
+      state.ridersMode = null;
       goto('riders');
-    }));
+    });
+    grid.appendChild(ridersTile.card);
+
+    const placingsTile = makeTileBase('Placings (1-8)', ribbonsTotal, 'Tap a placing to filter riders', null);
+    const placesGrid = el('div', 'summary-places');
+    const placeLabels = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th' };
+    for (let place = 1; place <= 8; place++) {
+      const btn = el('button', { className: 'summary-place summary-place--tap', type: 'button' });
+      btn.appendChild(el('div', 'summary-place-k', placeLabels[place]));
+      btn.appendChild(el('div', 'summary-place-v', String(ribbonByPlace[place] || 0)));
+      btn.addEventListener('click', () => {
+        state.ridersMode = { kind: 'placing', place };
+        goto('riders');
+      });
+      placesGrid.appendChild(btn);
+    }
+    placingsTile.body.appendChild(placesGrid);
+    grid.appendChild(placingsTile.card);
 
     screenRoot.appendChild(grid);
   }
@@ -1381,6 +1411,73 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
       row.addEventListener('click', () => {
         pushDetail('horseDetail', { kind: 'horse', key: String(h) });
+      });
+
+      screenRoot.appendChild(row);
+    }
+  }
+
+  // ----------------------------
+  // SCREEN: CLASSES (list -> detail)
+  // ----------------------------
+  function renderClasses(sIdx, tIdx) {
+    clearRoot();
+    setHeader('Classes');
+
+    screenRoot.appendChild(renderSearch('classes', 'Search classes...'));
+
+    const q = normalizeStr(state.search.classes);
+    const classMap = new Map();
+
+    for (const r of (state.schedule || [])) {
+      if (!r || r.class_id == null) continue;
+      const cid = String(r.class_id);
+      if (!classMap.has(cid)) {
+        classMap.set(cid, {
+          class_id: cid,
+          class_name: r.class_name ? String(r.class_name).trim() : '',
+          class_number: r.class_number != null ? String(r.class_number) : ''
+        });
+      }
+    }
+
+    for (const t of (state.trips || [])) {
+      if (!t || t.class_id == null) continue;
+      const cid = String(t.class_id);
+      if (!classMap.has(cid)) {
+        classMap.set(cid, {
+          class_id: cid,
+          class_name: t.class_name ? String(t.class_name).trim() : '',
+          class_number: t.class_number != null ? String(t.class_number) : ''
+        });
+      } else if (!classMap.get(cid).class_name && t.class_name) {
+        classMap.get(cid).class_name = String(t.class_name).trim();
+      }
+    }
+
+    const classesAll = [...classMap.values()].sort((a, b) => {
+      const aNum = safeNum(a.class_number, 999999);
+      const bNum = safeNum(b.class_number, 999999);
+      if (aNum !== bNum) return aNum - bNum;
+      return String(a.class_name || '').localeCompare(String(b.class_name || ''));
+    });
+
+    for (const c of classesAll) {
+      const name = String(c.class_name || '').trim() || `Class ${c.class_id}`;
+      if (q && !normalizeStr(name).includes(q)) continue;
+
+      const keys = tIdx.byClass.get(String(c.class_id)) || [];
+      if (keys.length === 0) continue;
+
+      const row = el('div', 'row row--tap row--3col');
+      row.id = `class-${idify(c.class_id)}`;
+
+      row.appendChild(el('div', 'row-title', name));
+      row.appendChild(el('div', 'row-mid', c.class_number || ''));
+      row.appendChild(makeTagCount(keys.length));
+
+      row.addEventListener('click', () => {
+        pushDetail('classDetail', { kind: 'class', key: String(c.class_id) });
       });
 
       screenRoot.appendChild(row);
@@ -2304,7 +2401,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     const q = normalizeStr(state.search.riders);
 
-    const mode = state.ridersMode || null; // null | 'ribbons'
+    const mode = state.ridersMode || null; // null | 'ribbons' | { kind: 'placing', place }
+    const placingMode = mode && typeof mode === 'object' && mode.kind === 'placing' ? Number(mode.place) : null;
 
     let ridersAll = [...tIdx.byRider.keys()];
     if (mode === 'ribbons') {
@@ -2320,6 +2418,19 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         if (bc !== ac) return bc - ac;
         return String(a).localeCompare(String(b));
       });
+    } else if (placingMode != null && Number.isFinite(placingMode)) {
+      ridersAll = ridersAll.filter((name) => {
+        const keys = tIdx.byRider.get(name) || [];
+        for (const k of keys) {
+          const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
+          if (!best) continue;
+          const pRaw = (best.latestPlacing != null ? best.latestPlacing : best.lastestPlacing);
+          const p = safeNum(pRaw, null);
+          if (p === placingMode) return true;
+        }
+        return false;
+      });
+      ridersAll.sort((a, b) => String(a).localeCompare(String(b)));
     } else {
       ridersAll.sort((a, b) => String(a).localeCompare(String(b)));
     }
@@ -2336,7 +2447,20 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       row.appendChild(el('div', 'row-title', String(name)));
       row.appendChild(el('div', 'row-mid', nextup || ''));
 
-      const rightCount = (mode === 'ribbons') ? ribbonCountFromEntryKeys(keys, tIdx) : keys.length;
+      let rightCount = keys.length;
+      if (mode === 'ribbons') {
+        rightCount = ribbonCountFromEntryKeys(keys, tIdx);
+      } else if (placingMode != null && Number.isFinite(placingMode)) {
+        let placeCount = 0;
+        for (const k of keys) {
+          const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
+          if (!best) continue;
+          const pRaw = (best.latestPlacing != null ? best.latestPlacing : best.lastestPlacing);
+          const p = safeNum(pRaw, null);
+          if (p === placingMode) placeCount++;
+        }
+        rightCount = placeCount;
+      }
       row.appendChild(makeTagCount(rightCount));
 
       row.addEventListener('click', () => {
@@ -2457,6 +2581,7 @@ const sIdx = buildScheduleIndex();
 
     if (state.screen === 'start') return renderStart();
     if (state.screen === 'summary') return renderSummary(sIdx, tIdx);
+    if (state.screen === 'classes') return renderClasses(sIdx, tIdx);
     if (state.screen === 'horses') return renderHorses(sIdx, tIdx);
     if (state.screen === 'schedule' || state.screen === 'rings') return renderSchedule(sIdx, tIdx);
     if (state.screen === 'ringDetail') return renderRingDetail(sIdx, tIdx);
