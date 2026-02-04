@@ -1781,7 +1781,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               badgeWrap,
               'row--class',
               (stripe % 2 === 0 ? 'row-alt' : ''),
-              canClassNav ? (() => pushDetail('classDetail', { kind: 'class', key: String(c.class_id) })) : null
+              canClassNav ? (() => {
+                state.search.classes = String(c.class_name || '').trim();
+                goto('classes');
+              }) : null
             );
 
             // ENTRIES
@@ -2177,7 +2180,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               badgeWrap,
               'row--class',
               (stripe % 2 === 0 ? 'row-alt' : ''),
-              canClassNav ? (() => pushDetail('classDetail', { kind: 'class', key: String(c.class_id) })) : null
+              canClassNav ? (() => {
+                state.search.classes = String(c.class_name || '').trim();
+                goto('classes');
+              }) : null
             );
 
             // ENTRIES
