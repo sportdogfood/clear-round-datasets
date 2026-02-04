@@ -492,7 +492,7 @@
   
     /* Contract additions: filterbottom + row/badge styling */
     .filterbottom{
-      position: fixed;
+      position: sticky;
       left: 50%;
       transform: translateX(-50%);
       width: calc(100% - 8px);
@@ -662,6 +662,7 @@
 
     <main class="app-main" id="app-main">
       <div id="screen-root" class="list-column"></div>
+      <div id="filterbottom" class="filterbottom"></div>
     </main>
 
     <nav class="app-nav">
