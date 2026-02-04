@@ -232,7 +232,7 @@
     /* Peak bar --------------------------------------------------- */
     .peakbar {
       position: sticky;
-      top: 0;
+      top: 24px;
       z-index: 5;
       background: linear-gradient(to bottom, rgba(2,6,23,0.95), rgba(2,6,23,0.75));
       backdrop-filter: blur(10px);
@@ -492,9 +492,8 @@
   
     /* Contract additions: filterbottom + row/badge styling */
     .filterbottom{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
+      position: sticky;
+    
       width: calc(100% - 8px);
       max-width: 480px;
       bottom: calc(var(--nav-h) - 38px);
@@ -582,7 +581,7 @@
     }
     .app.hide-header .app-main{ margin-top: calc(-1 * var(--header-h)); }
     .app.hide-nav .app-main{ margin-bottom: calc(-1 * var(--nav-h)); }
-    .app.hide-nav .filterbottom{ bottom: 0; }
+    .app.hide-nav .filterbottom{ bottom: 38px; }
 
   
     /* Summary ------------------------------------------------- */
