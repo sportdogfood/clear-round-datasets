@@ -1842,8 +1842,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               'row--class',
               (stripe % 2 === 0 ? 'row-alt' : ''),
               canClassNav ? (() => {
-                state.search.classes = String(c.class_name || '').trim();
-                goto('classes');
+                const classId = c.class_id != null ? String(c.class_id) : '';
+                if (!classId) return;
+                pushDetail('classDetail', { kind: 'class', key: classId });
               }) : null
             );
 
