@@ -1976,65 +1976,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     if (!ringObj) return;
 
-    const ringEntryKeys = tIdx.byRing.get(rk) || [];
-    if (ringEntryKeys.length === 0) return;
+    const baseTrips = (state.trips || []).filter(t => String(t && t.ring_number || '') === rk);
+    renderRingCardsFromTrips(baseTrips, sIdx, { skipPeakBar: false });
 
-    const card = makeCard(ringObj.ringName, ringEntryKeys.length, true, null);
-    card.id = 'detail-card';
-    card.dataset.detail = 'ring';
-
-    const groups = [...ringObj.groups.values()].sort((a, b) => {
-      const ta = timeToMinutes(a.latestStart) ?? 999999;
-      const tb = timeToMinutes(b.latestStart) ?? 999999;
-      if (ta !== tb) return ta - tb;
-      return String(a.group_name).localeCompare(String(b.group_name));
-    });
-
-    for (const g of groups) {
-      const gid = String(g.class_group_id);
-      const gKeys = tIdx.byGroup.get(gid) || [];
-      if (gKeys.length === 0) continue;
-
-      addCardLine(
-        card,
-        fmtTimeShort(g.latestStart || ''),
-        String(g.group_name),
-        (fmtStatus4(g.latestStatus) ? el('div', 'row-tag row-tag--count', fmtStatus4(g.latestStatus)) : null),
-        {
-          onMid: () => pushDetail('groupDetail', { kind: 'group', key: gid })
-        }
-      );
-
-      const classes = [...g.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
-      for (const c of classes) {
-        const cid = String(c.class_id);
-        const cKeys = tIdx.byClass.get(cid) || [];
-        if (cKeys.length === 0) continue;
-
-        addCardLine(
-          card,
-          (c.class_number != null ? String(c.class_number) : ''),
-          String(c.class_name || ''),
-          makeTagCount(cKeys.length),
-          { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
-        );
-
-        const bestTrips = cKeys
-          .map(k => tIdx.entryBest.get(k))
-          .filter(Boolean)
-          .sort((a, b) => {
-            const oa = safeNum(a.lastOOG, 999999);
-            const ob = safeNum(b.lastOOG, 999999);
-            if (oa !== ob) return oa - ob;
-            return String(a.horseName || '').localeCompare(String(b.horseName || ''));
-          })
-          .slice(0, 20);
-
-        addHorseChipsRollup(card, bestTrips);
-      }
-    }
-
-    screenRoot.appendChild(card);
+    applyPendingScroll();
   }
 
   function renderGroupDetail(sIdx, tIdx) {
