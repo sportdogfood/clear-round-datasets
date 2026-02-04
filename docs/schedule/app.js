@@ -1653,6 +1653,22 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       entryObj.trips.push(t);
     }
 
+    for (const ring of ringMap.values()) {
+      for (const group of ring.groups.values()) {
+        let bestStart = null;
+        for (const cls of group.classes.values()) {
+          for (const cn of cls.classNumbers.values()) {
+            const m = timeToMinutes(cn.latestStart || '');
+            if (m == null) continue;
+            if (bestStart == null || m < bestStart) {
+              bestStart = m;
+              group.latestStart = cn.latestStart || group.latestStart;
+            }
+          }
+        }
+      }
+    }
+
     const ringsAll = [...ringMap.values()]
       .filter(r => r && r.groups && r.groups.size > 0)
       .sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));

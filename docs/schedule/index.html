@@ -243,7 +243,7 @@
 
     /* Cards ------------------------------------------------------ */
     .card {
-      border-radius: 6px;
+      border-radius: 6px 6px 0px 0px;
       border: 1px solid rgba(75, 85, 99, 0.9);
       background: rgba(17, 24, 39, 0.95);
       overflow: hidden;
@@ -398,8 +398,8 @@
     .c4-c{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .c4-grid{
       display: grid;
-      grid-template-columns: minmax(30px,1fr) minmax(30px,1fr) max-content max-content max-content max-content;
-      gap: 6px;
+      grid-template-columns: minmax(0,1.2fr) minmax(0,1.2fr) max-content max-content max-content max-content;
+      gap: 10px;
       align-items: center;
       min-width: 0;
     }
@@ -493,7 +493,7 @@
     /* Contract additions: filterbottom + row/badge styling */
     .filterbottom{
       position: sticky;
-      bottom: 34px;
+      bottom: calc(var(--nav-h) - 38px);
       z-index: 6;
       border-top: 1px solid #27272f;
       background: #020617;
@@ -544,7 +544,6 @@
     .badge--seq-U{ background: rgba(148,163,184,0.14); border-color: rgba(148,163,184,0.55); }
 
     .card-line4.row--class{ font-size: 12px; font-weight: 600; }
-    .card-line4.row--group.row-alt{ display: none; }
     .card-line4.row--class.row--group{ display: none; }
     .card-line4.row--class .badge--type,
     .card-line4.row--class .badge--seq{ display:none; }
