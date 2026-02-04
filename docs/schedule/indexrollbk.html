@@ -142,7 +142,7 @@
     /* 3-column list rows (name | next-up | agg) */
     .row--3col{
       display:grid;
-      grid-template-columns: 1fr minmax(0, 1fr) auto;
+      grid-template-columns: 1fr auto auto;
       gap: 12px;
       align-items:center;
       justify-content: initial;
@@ -158,8 +158,6 @@
       font-variant-numeric: tabular-nums;
       color: rgba(209,213,219,0.85);
       font-size: 13px;
-      justify-self: center;
-      text-align: center;
     }
 
     /* Search ----------------------------------------------------- */
@@ -239,11 +237,10 @@
       /* padding: 4px 0px 4px 4px; */
       /* margin: 1px 4px 0px 4px; */
     }
-    .app.hide-header .peakbar{ top: 0; }
 
     /* Cards ------------------------------------------------------ */
     .card {
-      border-radius: 6px;
+      border-radius: 6px 6px 0px 0px;
       border: 1px solid rgba(75, 85, 99, 0.9);
       background: rgba(17, 24, 39, 0.95);
       overflow: hidden;
@@ -398,8 +395,8 @@
     .c4-c{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .c4-grid{
       display: grid;
-      grid-template-columns: minmax(30px,1fr) minmax(30px,1fr) max-content max-content max-content max-content;
-      gap: 6px;
+      grid-template-columns: minmax(0,1.2fr) minmax(0,1.2fr) max-content max-content max-content max-content;
+      gap: 10px;
       align-items: center;
       min-width: 0;
     }
@@ -493,7 +490,7 @@
     /* Contract additions: filterbottom + row/badge styling */
     .filterbottom{
       position: sticky;
-      bottom: 34px;
+      bottom: 0;
       z-index: 6;
       border-top: 1px solid #27272f;
       background: #020617;
@@ -544,8 +541,6 @@
     .badge--seq-U{ background: rgba(148,163,184,0.14); border-color: rgba(148,163,184,0.55); }
 
     .card-line4.row--class{ font-size: 12px; font-weight: 600; }
-    .card-line4.row--group.row-alt{ display: none; }
-    .card-line4.row--class.row--group{ display: none; }
     .card-line4.row--class .badge--type,
     .card-line4.row--class .badge--seq{ display:none; }
     .card-line4.row--entry{ font-size: 10px; font-weight: 300; color: var(--fh-sentiment-positive, #90e58c);
@@ -577,9 +572,6 @@
       transform: translateY(var(--nav-h));
       pointer-events: none;
     }
-    .app.hide-header .app-main{ margin-top: calc(-1 * var(--header-h)); }
-    .app.hide-nav .app-main{ margin-bottom: calc(-1 * var(--nav-h)); }
-    .app.hide-nav .filterbottom{ bottom: 0; }
 
   
     /* Summary ------------------------------------------------- */
