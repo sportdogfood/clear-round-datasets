@@ -1603,7 +1603,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         groupObj.latestStatus = t.latestStatus || '';
         groupObj.statusRank = statusRank(t.latestStatus || '');
       }
-      // group start: keep earliest if possible
+      // group start: align with class latestStart (earliest)
       const curM = timeToMinutes(groupObj.latestStart || '');
       const tM = timeToMinutes(t.latestStart || '');
       if (curM == null || (tM != null && tM < curM)) groupObj.latestStart = t.latestStart || groupObj.latestStart;
@@ -1653,30 +1653,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       entryObj.trips.push(t);
     }
 
-    function ringEarliestMinutes(ring) {
-      if (!ring || !ring.groups) return 999999;
-      let best = 999999;
-      for (const g of ring.groups.values()) {
-        if (!g || !g.classes) continue;
-        for (const c of g.classes.values()) {
-          if (!c || !c.classNumbers) continue;
-          for (const cn of c.classNumbers.values()) {
-            const m = timeToMinutes(cn.latestStart || '');
-            if (m != null && m < best) best = m;
-          }
-        }
-      }
-      return best;
-    }
-
     const ringsAll = [...ringMap.values()]
       .filter(r => r && r.groups && r.groups.size > 0)
-      .sort((a, b) => {
-        const aMin = ringEarliestMinutes(a);
-        const bMin = ringEarliestMinutes(b);
-        if (aMin !== bMin) return aMin - bMin;
-        return ringSortKey(a.ring_number) - ringSortKey(b.ring_number);
-      });
+      .sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
 
     // Peakbar (ring anchors)
     const peakItems = ringsAll.map(r => ({
@@ -1798,8 +1777,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         );
 
         const classes = [...g.classes.values()].sort((a, b) => {
-          const aMin = Math.min(...[...a.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
-          const bMin = Math.min(...[...b.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
+          const aMin = Math.min(...[...a.classNumbers.values()].map(x => timeToMinutes(x.latestStart || '') ?? 999999));
+          const bMin = Math.min(...[...b.classNumbers.values()].map(x => timeToMinutes(x.latestStart || '') ?? 999999));
           if (aMin !== bMin) return aMin - bMin;
           return String(a.class_name || '').localeCompare(String(b.class_name || ''));
         });
@@ -1845,7 +1824,11 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               return String(a.horseName || '').localeCompare(String(b.horseName || ''));
             });
 
+            const seenEntries = new Set();
             for (const eObj of entries) {
+              const entryKey = eObj.entry_id || eObj.entryNumber || eObj.horseName || '';
+              if (entryKey && seenEntries.has(entryKey)) continue;
+              if (entryKey) seenEntries.add(entryKey);
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
               const go = best ? (best.latestGO || best.latestStart || '') : '';
@@ -2047,6 +2030,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       const groupObj = getOrInit(ringObj.groups, gid, () => ({
         class_group_id: gid,
         group_name: t.group_name ? String(t.group_name) : '',
+        latestStart: t.latestStart || '',
         statusRank: 0,
         latestStatus: '',
         classes: new Map()
@@ -2058,6 +2042,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         groupObj.statusRank = rnk;
         groupObj.latestStatus = t.latestStatus || '';
       }
+      // group start: align with class latestStart (earliest)
+      const curM = timeToMinutes(groupObj.latestStart || '');
+      const tM = timeToMinutes(t.latestStart || '');
+      if (curM == null || (tM != null && tM < curM)) groupObj.latestStart = t.latestStart || groupObj.latestStart;
 
       const cid = String(t.class_id);
       const classObj = getOrInit(groupObj.classes, cid, () => ({
@@ -2101,28 +2089,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       entryObj.trips.push(t);
     }
 
-    function ringEarliestMinutes(ring) {
-      if (!ring || !ring.groups) return 999999;
-      let best = 999999;
-      for (const g of ring.groups.values()) {
-        if (!g || !g.classes) continue;
-        for (const c of g.classes.values()) {
-          if (!c || !c.classNumbers) continue;
-          for (const cn of c.classNumbers.values()) {
-            const m = timeToMinutes(cn.latestStart || '');
-            if (m != null && m < best) best = m;
-          }
-        }
-      }
-      return best;
-    }
-
-    const ringsAll = [...ringMap.values()].sort((a, b) => {
-      const aMin = ringEarliestMinutes(a);
-      const bMin = ringEarliestMinutes(b);
-      if (aMin !== bMin) return aMin - bMin;
-      return ringSortKey(a.ring_number) - ringSortKey(b.ring_number);
-    });
+    const ringsAll = [...ringMap.values()].sort((a, b) => ringSortKey(a.ring_number) - ringSortKey(b.ring_number));
 
     // Peakbar (anchors)
     const peakItems = ringsAll.map(r => {
@@ -2235,9 +2202,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         );
 
         const classes = [...g.classes.values()].sort((a, b) => {
-          // sort by lowest class_number present, then name
-          const aMin = Math.min(...[...a.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
-          const bMin = Math.min(...[...b.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
+          // sort by earliest class latestStart, then name
+          const aMin = Math.min(...[...a.classNumbers.values()].map(x => timeToMinutes(x.latestStart || '') ?? 999999));
+          const bMin = Math.min(...[...b.classNumbers.values()].map(x => timeToMinutes(x.latestStart || '') ?? 999999));
           if (aMin !== bMin) return aMin - bMin;
           return String(a.class_name || '').localeCompare(String(b.class_name || ''));
         });
@@ -2287,7 +2254,11 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               return String(a.horseName || '').localeCompare(String(b.horseName || ''));
             });
 
+            const seenEntries = new Set();
             for (const eObj of entries) {
+              const entryKey = eObj.entry_id || eObj.entryNumber || eObj.horseName || '';
+              if (entryKey && seenEntries.has(entryKey)) continue;
+              if (entryKey) seenEntries.add(entryKey);
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
               const go = best ? (best.latestGO || best.latestStart || '') : '';
