@@ -728,8 +728,8 @@
   function fmtNextUpFromEntryKeys(entryKeys, tIdx) {
     const list = [];
     for (const k of (entryKeys || [])) {
-      const best = tIdx && tIdx.entryBest ? tIdx.entryBest.get(k) : null;
-      if (best) list.push(best);
+      const trips = tIdx && tIdx.byEntryKey ? tIdx.byEntryKey.get(k) : null;
+      if (trips && trips.length) list.push(...trips);
     }
     function statusRank(statusText) {
       const s = String(statusText || '').toLowerCase();
@@ -741,7 +741,7 @@
 
     const activeList = list.filter(t => statusRank(t.latestStatus) >= 2);
     const best = pickBestTrip(activeList.length ? activeList : list);
-    if (!best) return '';
+    if (!best || statusRank(best.latestStatus) < 2) return '';
 
     const parts = [];
 
@@ -784,6 +784,14 @@
     input.addEventListener('input', () => {
       state.search[screenKey] = input.value;
       render();
+      window.setTimeout(() => {
+        const active = document.querySelector('.state-search-input');
+        if (active) {
+          active.focus();
+          const end = active.value.length;
+          active.setSelectionRange(end, end);
+        }
+      }, 0);
     });
 
     wrap.appendChild(input);
@@ -1703,6 +1711,15 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       parent.appendChild(line);
     }
 
+    function addCardBottom(parent) {
+      const line = el('div', 'card-line4 row--class row--ring-peak card-bottom');
+      line.appendChild(el('div', 'c4-a', ''));
+      line.appendChild(el('div', 'c4-b', ''));
+      line.appendChild(el('div', 'c4-c', ''));
+      line.appendChild(el('div', 'c4-d', ''));
+      parent.appendChild(line);
+    }
+
     function makeBadge(txt, cls) {
       const b = el('span', 'badge' + (cls ? (' ' + cls) : ''), txt);
       return b;
@@ -1746,6 +1763,18 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
         const gWrap = el('div', 'group-wrap ' + statusTintClass(g.latestStatus));
         body.appendChild(gWrap);
+
+        stripe++;
+        addLine4(
+          gWrap,
+          fmtTimeShort(g.latestStart || ''),
+          '',
+          document.createTextNode(String(g.group_name || '').trim()),
+          document.createTextNode(''),
+          'row--class',
+          (stripe % 2 === 0 ? 'row-alt' : ''),
+          () => pushDetail('groupDetail', { kind: 'group', key: String(g.class_group_id) })
+        );
 
         const classes = [...g.classes.values()].sort((a, b) => {
           const aMin = Math.min(...[...a.classNumbers.values()].map(x => safeNum(x.class_number, 999999)));
@@ -1878,6 +1907,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       }
 
       ringContainer.appendChild(card);
+      addCardBottom(body);
     }
 
     screenRoot.appendChild(ringContainer);
@@ -2107,6 +2137,15 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       return wrap;
     }
 
+    function addCardBottom(parent) {
+      const line = el('div', 'card-line4 row--class row--ring-peak card-bottom');
+      line.appendChild(el('div', 'c4-a', ''));
+      line.appendChild(el('div', 'c4-b', ''));
+      line.appendChild(el('div', 'c4-c', ''));
+      line.appendChild(el('div', 'c4-d', ''));
+      parent.appendChild(line);
+    }
+
     for (const r of ringsAll) {
       const rk = String(r.ring_number);
       if (!r.groups || r.groups.size === 0) continue;
@@ -2140,6 +2179,18 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
         const gWrap = el('div', 'group-wrap ' + statusTintClass(g.latestStatus));
         body.appendChild(gWrap);
+
+        stripe++;
+        addLine4(
+          gWrap,
+          fmtTimeShort(g.latestStart || ''),
+          '',
+          document.createTextNode(String(g.group_name || '').trim()),
+          document.createTextNode(''),
+          'row--class',
+          (stripe % 2 === 0 ? 'row-alt' : ''),
+          () => pushDetail('groupDetail', { kind: 'group', key: String(g.class_group_id) })
+        );
 
         const classes = [...g.classes.values()].sort((a, b) => {
           // sort by lowest class_number present, then name
@@ -2263,6 +2314,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       }
 
       ringContainer.appendChild(card);
+      addCardBottom(body);
     }
 
     screenRoot.appendChild(ringContainer);
@@ -2357,43 +2409,13 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
     if (!gObj) return;
 
-    const gKeys = tIdx.byGroup.get(gid) || [];
-    if (gKeys.length === 0) return;
+    const title = String(gObj.group_name || '').trim() || 'Group';
+    setHeader(title);
 
-    const title = `${fmtTimeShort(gObj.latestStart || '')} ${gObj.group_name || ''}`.trim();
-    const card = makeCard(title, gKeys.length, true, null);
-    card.id = 'detail-card';
-    card.dataset.detail = 'group';
+    const baseTrips = (state.trips || []).filter(t => String(t && t.class_group_id || '') === gid);
+    renderRingCardsFromTrips(baseTrips, sIdx, { skipPeakBar: false });
 
-    const classes = [...gObj.classes.values()].sort((a, b) => (a.class_number || 0) - (b.class_number || 0));
-    for (const c of classes) {
-      const cid = String(c.class_id);
-      const cKeys = tIdx.byClass.get(cid) || [];
-      if (cKeys.length === 0) continue;
-
-      addCardLine(
-        card,
-        (c.class_number != null ? String(c.class_number) : ''),
-        String(c.class_name || ''),
-        makeTagCount(cKeys.length),
-        { onRow: () => pushDetail('classDetail', { kind: 'class', key: cid }) }
-      );
-
-      const bestTrips = cKeys
-        .map(k => tIdx.entryBest.get(k))
-        .filter(Boolean)
-        .sort((a, b) => {
-          const oa = safeNum(a.lastOOG, 999999);
-          const ob = safeNum(b.lastOOG, 999999);
-          if (oa !== ob) return oa - ob;
-          return String(a.horseName || '').localeCompare(String(b.horseName || ''));
-        })
-        .slice(0, 20);
-
-      addHorseChipsRollup(card, bestTrips);
-    }
-
-    screenRoot.appendChild(card);
+    applyPendingScroll();
   }
 
   // ----------------------------
