@@ -718,6 +718,13 @@
     if (Number(n) > 0) t.classList.add('row-tag--positive');
     return t;
   }
+
+  function makeNavAgg(value) {
+    if (value == null) return document.createTextNode('');
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return document.createTextNode('');
+    return el('span', 'nav-agg nav-agg--positive', String(n));
+  }
   function fmtNextUpFromEntryKeys(entryKeys, tIdx) {
     const list = [];
     for (const k of (entryKeys || [])) {
@@ -1364,12 +1371,12 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (keys.length === 0) continue;
 
       const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
-      const title = nextup ? `${String(h)}  ${nextup}` : String(h);
 
-      const row = el('div', 'row row--tap');
+      const row = el('div', 'row row--tap row--3col');
       row.id = `horse-${idify(h)}`;
 
-      row.appendChild(el('div', 'row-title', title));
+      row.appendChild(el('div', 'row-title', String(h)));
+      row.appendChild(el('div', 'row-mid', nextup || ''));
       row.appendChild(makeTagCount(keys.length));
 
       row.addEventListener('click', () => {
@@ -1614,15 +1621,21 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       card.appendChild(body);
 
       // Ring header row (ringName | | | agg)
+      const ringTargetId = `ring-${rk}`;
+      const ringClick = (state.screen === 'schedule') ? null : () => {
+        history.replaceState(null, '', `#${ringTargetId}`);
+        goto('schedule');
+      };
+
       addLine4(
         body,
         String(r.ringName),
         '',
         document.createTextNode(''),
-        String(r.classIdSet ? r.classIdSet.size : 0),
+        makeNavAgg(r.classIdSet ? r.classIdSet.size : 0),
         'row--class',
-        '',
-        null
+        'row--ring-peak',
+        ringClick
       );
 
       // groups
@@ -1685,20 +1698,17 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? (best.latestGO || '') : '';
-              const dt = best ? (best.dt || '') : '';
+              const go = best ? (best.latestGO || best.latestStart || '') : '';
               const rider = (best && best.riderName) ? String(best.riderName) : '';
 
               const lastOog = best ? safeNum(best.lastOOG, null) : null;
               const totalTripsN = safeNum(cn.total_trips, null);
               let oogShown = null;
-              if (lastOog != null && totalTripsN != null && totalTripsN > 0) {
-                oogShown = Math.min(Math.max(lastOog, 1), totalTripsN);
+              if (lastOog != null && totalTripsN != null && totalTripsN > 0 && lastOog >= 1 && lastOog <= totalTripsN) {
+                oogShown = lastOog;
               }
               const oogPart = (oogShown != null && totalTripsN != null) ? `${oogShown}/${totalTripsN}` : '';
-
-              const whenPart = ((dt ? `${fmtMD(dt)} - ` : '') + (go ? fmtTimeShort(go) : '')).trim();
-              const tail = [oogPart, whenPart].filter(Boolean).join(' - ');
+              const whenPart = go ? fmtTimeShort(go) : '';
 
               const horseName = String(eObj.horseName || '');
               const cGrid = el('div', 'c4-grid');
@@ -1710,7 +1720,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 cGrid.appendChild(el('span', 'c4g-a', horseName));
                 cGrid.appendChild(el('span', 'c4g-b', rider));
               }
-              cGrid.appendChild(el('span', 'c4g-c', tail));
+              cGrid.appendChild(el('span', 'c4g-c', oogPart));
+              cGrid.appendChild(el('span', 'c4g-d', whenPart));
+              cGrid.appendChild(el('span', 'c4g-e', (c.class_type ? String(c.class_type).slice(0, 1).toUpperCase() : '')));
+              cGrid.appendChild(el('span', 'c4g-f', (c.schedule_sequencetype ? String(c.schedule_sequencetype).slice(0, 1).toUpperCase() : '')));
 
               const entryClick = (() => {
                 if (state.screen === 'horseDetail') {
@@ -2009,9 +2022,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
         String(r.ringName),
         '',
         document.createTextNode(''),
-        String(r.classIdSet ? r.classIdSet.size : 0),
+        makeNavAgg(r.classIdSet ? r.classIdSet.size : 0),
         'row--class',
-        '',
+        'row--ring-peak',
         null
       );
 
@@ -2081,26 +2094,26 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             for (const eObj of entries) {
               const best = pickBestTrip(eObj.trips || []);
               const entryNo = eObj.entryNumber || (best && best.entryNumber != null ? String(best.entryNumber) : '');
-              const go = best ? (best.latestGO || '') : '';
-              const dt = best ? (best.dt || '') : '';
+              const go = best ? (best.latestGO || best.latestStart || '') : '';
               const rider = (best && best.riderName) ? String(best.riderName) : '';
 
               const lastOog = best ? safeNum(best.lastOOG, null) : null;
               const totalTripsN = safeNum(cn.total_trips, null);
               let oogShown = null;
-              if (lastOog != null && totalTripsN != null && totalTripsN > 0) {
-                oogShown = Math.min(Math.max(lastOog, 1), totalTripsN);
+              if (lastOog != null && totalTripsN != null && totalTripsN > 0 && lastOog >= 1 && lastOog <= totalTripsN) {
+                oogShown = lastOog;
               }
               const oogPart = (oogShown != null && totalTripsN != null) ? `${oogShown}/${totalTripsN}` : '';
-
-              const whenPart = ((dt ? `${fmtMD(dt)} - ` : '') + (go ? fmtTimeShort(go) : '')).trim();
-              const tail = [oogPart, whenPart].filter(Boolean).join(' - ');
+              const whenPart = go ? fmtTimeShort(go) : '';
 
               const horseName = String(eObj.horseName || '');
               const cGrid = el('div', 'c4-grid');
               cGrid.appendChild(el('span', 'c4g-a', horseName));
               cGrid.appendChild(el('span', 'c4g-b', rider));
-              cGrid.appendChild(el('span', 'c4g-c', tail));
+              cGrid.appendChild(el('span', 'c4g-c', oogPart));
+              cGrid.appendChild(el('span', 'c4g-d', whenPart));
+              cGrid.appendChild(el('span', 'c4g-e', (c.class_type ? String(c.class_type).slice(0, 1).toUpperCase() : '')));
+              cGrid.appendChild(el('span', 'c4g-f', (c.schedule_sequencetype ? String(c.schedule_sequencetype).slice(0, 1).toUpperCase() : '')));
 
               stripe++;
               addLine4(
@@ -2317,11 +2330,11 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       if (q && !normalizeStr(name).includes(q)) continue;
 
       const nextup = fmtNextUpFromEntryKeys(keys, tIdx);
-      const title = nextup ? `${String(name)}  ${nextup}` : String(name);
 
-      const row = el('div', 'row row--tap');
+      const row = el('div', 'row row--tap row--3col');
       row.id = `rider-${idify(name)}`;
-      row.appendChild(el('div', 'row-title', title));
+      row.appendChild(el('div', 'row-title', String(name)));
+      row.appendChild(el('div', 'row-mid', nextup || ''));
 
       const rightCount = (mode === 'ribbons') ? ribbonCountFromEntryKeys(keys, tIdx) : keys.length;
       row.appendChild(makeTagCount(rightCount));
@@ -2362,11 +2375,10 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     const classId = String((state.detail && state.detail.key) || '');
     const c = findClassInSchedule(sIdx, classId);
-
-    const title =
-      c && (c.class_number != null || c.class_name) ?
-        `${(c.class_number != null ? String(c.class_number) : '')} ${String(c.class_name || '').trim()}`.trim() :
-        (classId ? `Class ${classId}` : 'Class');
+    const classInfo = c && c.cls ? c.cls : null;
+    const className = classInfo && classInfo.class_name ? String(classInfo.class_name).trim() : '';
+    const headerName = className.length > 25 ? `${className.slice(0, 25)}…` : className;
+    const title = headerName || (classId ? `Class ${classId}` : 'Class');
 
     setHeader(title);
 
