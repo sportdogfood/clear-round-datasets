@@ -914,7 +914,7 @@
   // ----------------------------
   // FILTERBOTTOM (time buckets) — detail + timeline screens
   // ----------------------------
-  const BUCKET_FILTER_SCREENS = new Set(['horseDetail','riderDetail','classDetail']);
+  const BUCKET_FILTER_SCREENS = new Set(['horseDetail','riderDetail','classDetail','summaryDetail']);
 
   function getTripStartMinutes(t) {
     if (!t) return null;
@@ -1224,6 +1224,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
 
       summary: 'summary',
+      summaryDetail: 'summary',
       classes: 'summary',
       horses: 'horses',
       horseDetail: 'horses',
@@ -1257,21 +1258,25 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     clearRoot();
     setHeader('Summary');
 
-    // Classes: completed vs not completed (truth-only)
-    let completed = 0;
-    let notCompleted = 0;
-
-    for (const [cid, entryKeys] of tIdx.byClass.entries()) {
-      let maxRank = 0;
-      for (const k of (entryKeys || [])) {
-        const best = tIdx.entryBest.get(k);
-        if (!best) continue;
-        const r = statusRank(best.latestStatus);
-        if (r > maxRank) maxRank = r;
+    function bucketByStatus(entityMap) {
+      const buckets = { complete: [], togo: [] };
+      for (const [key, entryKeys] of entityMap.entries()) {
+        let maxRank = 0;
+        for (const k of (entryKeys || [])) {
+          const best = tIdx.entryBest.get(k);
+          if (!best) continue;
+          const r = statusRank(best.latestStatus);
+          if (r > maxRank) maxRank = r;
+        }
+        if (maxRank === 1) buckets.complete.push(key);
+        else buckets.togo.push(key);
       }
-      if (maxRank === 1) completed++;
-      else notCompleted++;
+      return buckets;
     }
+
+    const classBuckets = bucketByStatus(tIdx.byClass);
+    const horseBuckets = bucketByStatus(tIdx.byHorse);
+    const riderBuckets = bucketByStatus(tIdx.byRider);
 
     // Ribbons: count placings 1..8 (truth-only, per entryKey best)
     const ribbonByPlace = { 1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0 };
@@ -1283,75 +1288,119 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
     const ribbonsTotal = Object.values(ribbonByPlace).reduce((a,b)=>a+b, 0);
 
-    const grid = el('div', 'summary-grid');
+    const wrap = el('div', 'list-column');
 
-    function makeTileBase(title, total, subtitle, onClick) {
-      const card = el('div', 'card summary-tile');
-      if (typeof onClick === 'function') {
-        card.classList.add('summary-tile--tap');
-        card.addEventListener('click', onClick);
-      }
-      const body = el('div', 'card-body summary-body');
-      card.appendChild(body);
-
-      const head = el('div', 'summary-head');
-      head.appendChild(el('div', 'summary-title', title));
-      head.appendChild(el('div', 'summary-big', String(total)));
-      body.appendChild(head);
-
-      if (subtitle) body.appendChild(el('div', 'summary-sub', subtitle));
-
-      return { card, body };
+    function addSectionHeader(title, total) {
+      const row = el('div', 'row row--3col');
+      row.appendChild(el('div', 'row-title', title));
+      row.appendChild(el('div', 'row-mid', ''));
+      row.appendChild(makeTagCount(total));
+      wrap.appendChild(row);
     }
 
-    const totalClasses = tIdx.byClass.size;
-    const toGo = Math.max(totalClasses - completed, 0);
-
-    const classesTile = makeTileBase('Classes', totalClasses, 'Total classes', () => {
-      state.ridersMode = null;
-      goto('classes');
-    });
-    const classSplit = el('div', 'summary-split');
-    function addSummaryMini(label, value) {
-      const mini = el('div', 'summary-mini');
-      mini.appendChild(el('div', 'summary-mini-k', label));
-      mini.appendChild(el('div', 'summary-mini-v', String(value)));
-      classSplit.appendChild(mini);
+    function addTapRow(title, mid, value, onClick) {
+      const row = el('div', 'row row--tap row--3col');
+      row.appendChild(el('div', 'row-title', title));
+      row.appendChild(el('div', 'row-mid', mid || ''));
+      row.appendChild(makeTagCount(value));
+      if (typeof onClick === 'function') row.addEventListener('click', onClick);
+      wrap.appendChild(row);
     }
-    addSummaryMini('Complete', completed);
-    addSummaryMini('To Go', toGo);
-    classesTile.body.appendChild(classSplit);
-    grid.appendChild(classesTile.card);
 
-    const horsesTile = makeTileBase('Horses', tIdx.byHorse.size, 'Unique horses', () => {
+    addSectionHeader('Classes', tIdx.byClass.size);
+    addTapRow('Completed', 'Classes', classBuckets.complete.length, () => {
       state.ridersMode = null;
-      goto('horses');
+      pushDetail('summaryDetail', { kind: 'class', status: 'complete' });
     });
-    grid.appendChild(horsesTile.card);
-
-    const ridersTile = makeTileBase('Riders', tIdx.byRider.size, 'Unique riders', () => {
+    addTapRow('To Go', 'Classes', classBuckets.togo.length, () => {
       state.ridersMode = null;
-      goto('riders');
+      pushDetail('summaryDetail', { kind: 'class', status: 'togo' });
     });
-    grid.appendChild(ridersTile.card);
 
-    const placingsTile = makeTileBase('Placings (1-8)', ribbonsTotal, 'Tap a placing to filter riders', null);
-    const placesGrid = el('div', 'summary-places');
+    addSectionHeader('Horses', tIdx.byHorse.size);
+    addTapRow('Completed', 'Horses', horseBuckets.complete.length, () => {
+      state.ridersMode = null;
+      pushDetail('summaryDetail', { kind: 'horse', status: 'complete' });
+    });
+    addTapRow('To Go', 'Horses', horseBuckets.togo.length, () => {
+      state.ridersMode = null;
+      pushDetail('summaryDetail', { kind: 'horse', status: 'togo' });
+    });
+
+    addSectionHeader('Riders', tIdx.byRider.size);
+    addTapRow('Completed', 'Riders', riderBuckets.complete.length, () => {
+      state.ridersMode = null;
+      pushDetail('summaryDetail', { kind: 'rider', status: 'complete' });
+    });
+    addTapRow('To Go', 'Riders', riderBuckets.togo.length, () => {
+      state.ridersMode = null;
+      pushDetail('summaryDetail', { kind: 'rider', status: 'togo' });
+    });
+
+    addSectionHeader('Ribbons', ribbonsTotal);
     const placeLabels = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th' };
     for (let place = 1; place <= 8; place++) {
-      const btn = el('button', { className: 'summary-place summary-place--tap', type: 'button' });
-      btn.appendChild(el('div', 'summary-place-k', placeLabels[place]));
-      btn.appendChild(el('div', 'summary-place-v', String(ribbonByPlace[place] || 0)));
-      btn.addEventListener('click', () => {
+      addTapRow(placeLabels[place], 'Place', ribbonByPlace[place] || 0, () => {
         state.ridersMode = { kind: 'placing', place };
         goto('riders');
       });
-      placesGrid.appendChild(btn);
     }
-    placingsTile.body.appendChild(placesGrid);
-    grid.appendChild(placingsTile.card);
 
-    screenRoot.appendChild(grid);
+    screenRoot.appendChild(wrap);
+  }
+
+  function renderSummaryDetail(sIdx, tIdx) {
+    clearRoot();
+
+    const detail = state.detail || {};
+    const kind = detail.kind;
+    const status = detail.status === 'complete' ? 'complete' : 'togo';
+
+    const kindLabel = kind === 'class' ? 'Classes' : (kind === 'horse' ? 'Horses' : 'Riders');
+    const statusLabel = status === 'complete' ? 'Completed' : 'To Go';
+    setHeader(`${kindLabel} ${statusLabel}`);
+
+    const entityMap = kind === 'class' ? tIdx.byClass : (kind === 'horse' ? tIdx.byHorse : tIdx.byRider);
+
+    const buckets = (function () {
+      const out = { complete: [], togo: [] };
+      for (const [key, entryKeys] of entityMap.entries()) {
+        let maxRank = 0;
+        for (const k of (entryKeys || [])) {
+          const best = tIdx.entryBest.get(k);
+          if (!best) continue;
+          const r = statusRank(best.latestStatus);
+          if (r > maxRank) maxRank = r;
+        }
+        if (maxRank === 1) out.complete.push(key);
+        else out.togo.push(key);
+      }
+      return out;
+    })();
+
+    const picked = status === 'complete' ? buckets.complete : buckets.togo;
+    const pickedSet = new Set(picked.map(k => String(k)));
+
+    let baseTrips = [];
+    if (kind === 'class') {
+      baseTrips = (state.trips || []).filter(t => t && t.class_id != null && pickedSet.has(String(t.class_id)));
+    } else if (kind === 'horse') {
+      baseTrips = (state.trips || []).filter(t => t && t.horseName && pickedSet.has(String(t.horseName)));
+    } else {
+      baseTrips = (state.trips || []).filter(t => t && t.riderName && pickedSet.has(String(t.riderName)));
+    }
+
+    const bucketItems = buildBucketChipsFromTrips(baseTrips, 30);
+    const activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
+    const hasActive = bucketItems.some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
+    const bucketKey = hasActive ? activeBucket : null;
+
+    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
+
+    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
+    renderBucketFilterBottom(bucketItems, bucketKey);
+
+    applyPendingScroll();
   }
 
 // ----------------------------
@@ -2223,6 +2272,7 @@ const sIdx = buildScheduleIndex();
 
     if (state.screen === 'start') return renderStart();
     if (state.screen === 'summary') return renderSummary(sIdx, tIdx);
+    if (state.screen === 'summaryDetail') return renderSummaryDetail(sIdx, tIdx);
     if (state.screen === 'classes') return renderClasses(sIdx, tIdx);
     if (state.screen === 'horses') return renderHorses(sIdx, tIdx);
     if (state.screen === 'schedule' || state.screen === 'rings') return renderSchedule(sIdx, tIdx);
