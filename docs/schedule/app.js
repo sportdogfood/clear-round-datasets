@@ -1286,61 +1286,60 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
       const p = safeNum(pRaw, null);
       if (p != null && p >= 1 && p <= 8) ribbonByPlace[p] = (ribbonByPlace[p] || 0) + 1;
     }
-    const ribbonsTotal = Object.values(ribbonByPlace).reduce((a,b)=>a+b, 0);
-
     const wrap = el('div', 'list-column');
 
-    function addSectionHeader(title, total) {
-      const row = el('div', 'row row--3col');
-      row.appendChild(el('div', 'row-title', title));
-      row.appendChild(el('div', 'row-mid', ''));
-      row.appendChild(makeTagCount(total));
-      wrap.appendChild(row);
+    function makeSection(title, className) {
+      const section = el('section', `summary-section ${className}`);
+      section.appendChild(el('div', 'summary-section-label', title));
+      const list = el('div', 'list-column');
+      section.appendChild(list);
+      wrap.appendChild(section);
+      return list;
     }
 
-    function addTapRow(title, mid, value, onClick) {
+    function addTapRow(list, title, value, onClick) {
       const row = el('div', 'row row--tap row--3col');
       row.appendChild(el('div', 'row-title', title));
-      row.appendChild(el('div', 'row-mid', mid || ''));
+      row.appendChild(el('div', 'row-mid', ''));
       row.appendChild(makeTagCount(value));
       if (typeof onClick === 'function') row.addEventListener('click', onClick);
-      wrap.appendChild(row);
+      list.appendChild(row);
     }
 
-    addSectionHeader('Classes', tIdx.byClass.size);
-    addTapRow('Completed', 'Classes', classBuckets.complete.length, () => {
+    const classesList = makeSection('Classes', 'summary-section--classes');
+    addTapRow(classesList, 'Completed', classBuckets.complete.length, () => {
       state.ridersMode = null;
       pushDetail('summaryDetail', { kind: 'class', status: 'complete' });
     });
-    addTapRow('To Go', 'Classes', classBuckets.togo.length, () => {
+    addTapRow(classesList, 'To Go', classBuckets.togo.length, () => {
       state.ridersMode = null;
       pushDetail('summaryDetail', { kind: 'class', status: 'togo' });
     });
 
-    addSectionHeader('Horses', tIdx.byHorse.size);
-    addTapRow('Completed', 'Horses', horseBuckets.complete.length, () => {
+    const horsesList = makeSection('Horses', 'summary-section--horses');
+    addTapRow(horsesList, 'Completed', horseBuckets.complete.length, () => {
       state.ridersMode = null;
       pushDetail('summaryDetail', { kind: 'horse', status: 'complete' });
     });
-    addTapRow('To Go', 'Horses', horseBuckets.togo.length, () => {
+    addTapRow(horsesList, 'To Go', horseBuckets.togo.length, () => {
       state.ridersMode = null;
       pushDetail('summaryDetail', { kind: 'horse', status: 'togo' });
     });
 
-    addSectionHeader('Riders', tIdx.byRider.size);
-    addTapRow('Completed', 'Riders', riderBuckets.complete.length, () => {
+    const ridersList = makeSection('Riders', 'summary-section--riders');
+    addTapRow(ridersList, 'Completed', riderBuckets.complete.length, () => {
       state.ridersMode = null;
       pushDetail('summaryDetail', { kind: 'rider', status: 'complete' });
     });
-    addTapRow('To Go', 'Riders', riderBuckets.togo.length, () => {
+    addTapRow(ridersList, 'To Go', riderBuckets.togo.length, () => {
       state.ridersMode = null;
       pushDetail('summaryDetail', { kind: 'rider', status: 'togo' });
     });
 
-    addSectionHeader('Ribbons', ribbonsTotal);
     const placeLabels = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th' };
+    const ribbonsList = makeSection('Ribbons', 'summary-section--ribbons');
     for (let place = 1; place <= 8; place++) {
-      addTapRow(placeLabels[place], 'Place', ribbonByPlace[place] || 0, () => {
+      addTapRow(ribbonsList, placeLabels[place], ribbonByPlace[place] || 0, () => {
         state.ridersMode = { kind: 'placing', place };
         goto('riders');
       });

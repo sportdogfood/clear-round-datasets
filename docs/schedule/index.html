@@ -585,64 +585,43 @@
 
   
     /* Summary ------------------------------------------------- */
-    .summary-grid{
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 10px;
-      width: 100%;
-      padding-bottom: 12px;
-    }
-    .summary-tile{ grid-column: span 6; }
-    .summary-tile--tap{ cursor:pointer; }
-    .summary-body{ display:flex; flex-direction:column; gap:12px; min-height: 152px; }
-    .summary-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-    .summary-title{ font-weight:800; letter-spacing:0.2px; font-size: 18px; }
-    .summary-big{ font-weight:900; font-size: 34px; line-height: 1; }
-    .summary-sub{ opacity:0.9; font-size:12px; margin-top: -6px; }
-
-    .summary-split{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .summary-mini{
-      border: 1px solid rgba(255,255,255,0.10);
+    .summary-section{
+      padding: 12px;
       border-radius: 14px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.03);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      min-height: 44px;
-    }
-    .summary-mini-k{ opacity:0.9; font-size:12px; }
-    .summary-mini-v{ font-weight:900; font-size: 18px; }
-
-    .summary-places{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 10px;
-      margin-top: -2px;
-    }
-    .summary-place{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 6px 10px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.02);
       border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      margin-bottom: 12px;
     }
-    .summary-place--tap{
-      cursor: pointer;
+    .summary-section-label{
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.75;
+      margin-bottom: 8px;
     }
-    .summary-place--tap:active{
-      transform: translateY(1px);
+    .summary-section .row{
+      margin-bottom: 6px;
     }
-    .summary-place-k{ opacity:0.9; font-size:12px; }
-    .summary-place-v{ font-weight:900; }
+    .summary-section .row:last-child{
+      margin-bottom: 0;
+    }
+    .summary-section--classes{
+      background: rgba(59,130,246,0.10);
+      border-color: rgba(59,130,246,0.25);
+    }
+    .summary-section--horses{
+      background: rgba(16,185,129,0.10);
+      border-color: rgba(16,185,129,0.25);
+    }
+    .summary-section--riders{
+      background: rgba(245,158,11,0.12);
+      border-color: rgba(245,158,11,0.28);
+    }
+    .summary-section--ribbons{
+      background: rgba(236,72,153,0.10);
+      border-color: rgba(236,72,153,0.24);
+    }
 
     
 
