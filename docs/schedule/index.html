@@ -227,7 +227,7 @@
       font-size: 11px; text-align: center; font-variant-numeric: tabular-nums;
       box-shadow: 0 0 0 1px #020617; white-space: nowrap; user-select: none;
     }
-    .nav-agg--positive { border-color: #22c55e; background: #14532d; color: #f9fafb; }
+    .nav-agg--positive { border-color: #22c55e;  color: #f9fafb; } /*background: #14532d;*/
 
     /* Peak bar --------------------------------------------------- */
     .peakbar {
@@ -398,7 +398,7 @@
     .c4-c{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .c4-grid{
       display: grid;
-      grid-template-columns: 30px 30px 20px 20px max-content max-content;
+      grid-template-columns: 45px 45px 40px max-content max-content max-content;
       gap: 10px;
       align-items: center;
       min-width: 0;
@@ -550,7 +550,8 @@
     .card-line4.row--class.row--group{ display: none; }
     .card-line4.row--class .badge--type,
     .card-line4.row--class .badge--seq{ display:none; }
-    .card-line4.row--entry{ font-size: 10px; font-weight: 300; color: var(--fh-sentiment-positive, #90e58c);
+    .card-line4.row--entry{ font-size: 10px; font-weight: 500;  text-transform: uppercase;
+ color: var(--fh-sentiment-positive, #90e58c);
 }
     .card-line4.row--trip{ display: none; font-size: 9px; font-weight: 300; opacity: 0.95; }
 
