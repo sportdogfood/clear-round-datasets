@@ -734,14 +734,16 @@
     function statusRank(statusText) {
       const s = String(statusText || '').toLowerCase();
       if (s.includes('underway')) return 3;
+      if (s.includes('next up') || s.includes('on deck')) return 3;
       if (s.includes('upcoming')) return 2;
+      if (s.includes('not started')) return 2;
       if (s.includes('complete')) return 1;
       return 0;
     }
 
     const activeTrips = list.filter(t => statusRank(t.latestStatus) >= 2);
     const best = pickBestTrip(activeTrips.length ? activeTrips : list);
-    if (!best || statusRank(best.latestStatus) < 2) return '';
+    if (!best) return '';
 
     const parts = [];
 
