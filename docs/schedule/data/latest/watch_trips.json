@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-05T17:01:24-05:00",
+    "generated_at": "2026-02-05T17:04:50-05:00",
     "table": "watch_trips",
     "view": "commit",
     "record_count": 1,
@@ -36,6 +36,7 @@
       "riderName",
       "latestPlacing",
       "lastScore",
+      "lastTime",
       "latestGO",
       "lastOOG"
     ]
@@ -74,6 +75,7 @@
       "riderName": "Tanner",
       "latestPlacing": "14",
       "lastScore": null,
+      "lastTime": "72.9",
       "latestGO": "10:44 AM",
       "lastOOG": 8
     }
