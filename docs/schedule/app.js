@@ -1974,6 +1974,29 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 const score = (tt.latestScore != null && String(tt.latestScore) !== '') ? String(tt.latestScore) : '';
                 const placing = (tt.latestPlacing != null && String(tt.latestPlacing) !== '') ? String(tt.latestPlacing) : '';
                 const right = score || placing || '';
+                const isCompleted = normalizeStr(tt.latestStatus) === 'completed';
+
+                if (isCompleted) {
+                  const tripGrid = el('div', 'c4-grid');
+                  tripGrid.appendChild(el('span', 'c4g-a', ''));
+                  tripGrid.appendChild(el('span', 'c4g-b', (tt.trip_id != null ? String(tt.trip_id) : '')));
+                  tripGrid.appendChild(el('span', 'c4g-c', (tt.latestPlacing != null ? String(tt.latestPlacing) : '')));
+                  tripGrid.appendChild(el('span', 'c4g-d', (tt.lastScore != null ? String(tt.lastScore) : '')));
+                  tripGrid.appendChild(el('span', 'c4g-e', (tt.lastTime != null ? String(tt.lastTime) : '')));
+                  tripGrid.appendChild(el('span', 'c4g-f', ''));
+
+                  addLine4(
+                    gWrap,
+                    '',
+                    '',
+                    tripGrid,
+                    '',
+                    'row--trip',
+                    'row-alt',
+                    null
+                  );
+                  continue;
+                }
 
                 stripe++;
                 addLine4(
