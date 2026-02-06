@@ -99,13 +99,13 @@
   // If we resumed a valid session, extend TTL for another 12 hours (no lastUpdated change)
   if (TL.state.session) {
     TL.lists.normalizeSessionListsToConfig();
-    TL.storage.touchSessionExpiry();
+    TL.session.touchSessionExpiry();
     TL.session.saveSessionToStorage();
   }
 
   TL.ui.render();
 
-  // background loads
+  // background loads 
   if (TL.lists && typeof TL.lists.loadListsConfig === 'function') TL.lists.loadListsConfig();
   if (TL.catalog && typeof TL.catalog.loadCatalog === 'function') TL.catalog.loadCatalog();
 
