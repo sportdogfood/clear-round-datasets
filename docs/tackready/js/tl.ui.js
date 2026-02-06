@@ -122,6 +122,25 @@
       return;
     }
   }
+// ---------------------------------------------------------------------------
+// Navigation helpers (used by tl.boot.js)
+// ---------------------------------------------------------------------------
+TL.ui.setScreen = function setScreen(newScreen, pushHistory = true) {
+  const s = String(newScreen || 'start');
+
+  if (pushHistory && TL.state.currentScreen && TL.state.currentScreen !== s) {
+    TL.state.history.push(TL.state.currentScreen);
+  }
+
+  TL.state.currentScreen = s;
+  TL.ui.render();
+};
+
+TL.ui.goBack = function goBack() {
+  const prev = TL.state.history.pop();
+  TL.state.currentScreen = prev || 'start';
+  TL.ui.render();
+};
 
   TL.ui.titleForScreen = titleForScreen;
   TL.ui.renderHeader = renderHeader;
