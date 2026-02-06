@@ -92,6 +92,8 @@
   TL.state.listsConfig = TL.lists.loadListsFromStorage() || TL.lists.buildFallbackLists();
   TL.state.listsStatus = (Array.isArray(TL.state.listsConfig) && TL.state.listsConfig.length) ? 'ready' : 'fallback';
 
+
+  
   TL.state.session = TL.session.loadSessionFromStorage();
 
   // If we resumed a valid session, extend TTL for another 12 hours (no lastUpdated change)
@@ -104,6 +106,7 @@
   TL.ui.render();
 
   // background loads
-  TL.lists.loadListsConfig();
-  TL.catalog.loadCatalog(); // background (used for New/Restart)
+  if (TL.lists && typeof TL.lists.loadListsConfig === 'function') TL.lists.loadListsConfig();
+  if (TL.catalog && typeof TL.catalog.loadCatalog === 'function') TL.catalog.loadCatalog();
+
 })();
