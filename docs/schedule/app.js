@@ -155,6 +155,11 @@
     schedule: [],
     trips: [],
     meta: { dt: null, sid: null, generated_at: null },
+    tripSnapshot: null,
+    changeFlags: {
+      classKeys: new Set(),
+      entryKeys: new Set()
+    },
 
     screen: 'start',
     history: [],
@@ -181,6 +186,25 @@
     // optional: after render, scroll within main to an element id
     pendingScrollId: null
   };
+
+  function makeClassNumberKey(classId, classNumber) {
+    if (classId == null) return null;
+    const cnKey = (classNumber != null && String(classNumber) !== '') ? String(classNumber) : '__noclassnum__';
+    return `${String(classId)}|${cnKey}`;
+  }
+
+  function makeEntryKey(classId, entryId, entryNumber, horseName) {
+    if (classId == null) return null;
+    const entryKey = (entryId != null && String(entryId) !== '')
+      ? String(entryId)
+      : (entryNumber != null && String(entryNumber) !== '')
+        ? String(entryNumber)
+        : (horseName != null && String(horseName) !== '')
+          ? String(horseName)
+          : null;
+    if (!entryKey) return null;
+    return `${String(classId)}|${entryKey}`;
+  }
 
   // ----------------------------
   // UTIL (DOM)
@@ -507,6 +531,67 @@
     return o;
   }
 
+  function buildTripSnapshot(trips) {
+    const classMap = new Map();
+    const entryMap = new Map();
+    const byEntryKey = new Map();
+
+    for (const t of (trips || [])) {
+      if (!t) continue;
+      if (t.class_id == null) continue;
+
+      const classKey = makeClassNumberKey(t.class_id, t.class_number);
+      if (classKey) {
+        const current = classMap.get(classKey) || { latestStart: '', latestStatus: '' };
+        if (t.latestStart) current.latestStart = String(t.latestStart).trim();
+        if (t.latestStatus) current.latestStatus = String(t.latestStatus).trim();
+        classMap.set(classKey, current);
+      }
+
+      const entryKey = makeEntryKey(t.class_id, t.entry_id, t.entryNumber, t.horseName);
+      if (!entryKey) continue;
+      if (!byEntryKey.has(entryKey)) byEntryKey.set(entryKey, []);
+      byEntryKey.get(entryKey).push(t);
+    }
+
+    for (const [entryKey, list] of byEntryKey.entries()) {
+      const best = pickBestTrip(list);
+      if (!best) continue;
+      entryMap.set(entryKey, {
+        latestGO: best.latestGO != null ? String(best.latestGO).trim() : '',
+        lastOOG: best.lastOOG != null ? String(best.lastOOG).trim() : ''
+      });
+    }
+
+    return { classMap, entryMap };
+  }
+
+  function buildTripChangeFlags(prevSnapshot, nextSnapshot) {
+    const classKeys = new Set();
+    const entryKeys = new Set();
+    if (!prevSnapshot || !nextSnapshot) return { classKeys, entryKeys };
+
+    for (const [key, nextVal] of nextSnapshot.classMap.entries()) {
+      const prevVal = prevSnapshot.classMap.get(key);
+      if (!prevVal) continue;
+      if (String(prevVal.latestStart || '') !== String(nextVal.latestStart || '')
+        || String(prevVal.latestStatus || '') !== String(nextVal.latestStatus || '')) {
+        classKeys.add(key);
+      }
+    }
+
+    for (const [key, nextVal] of nextSnapshot.entryMap.entries()) {
+      const prevVal = prevSnapshot.entryMap.get(key);
+      if (!prevVal) continue;
+      if (String(prevVal.latestGO || '') !== String(nextVal.latestGO || '')
+        || String(prevVal.lastOOG || '') !== String(nextVal.lastOOG || '')) {
+        entryKeys.add(key);
+      }
+    }
+
+    return { classKeys, entryKeys };
+  }
+
   async function fetchJsonFirst(urls) {
     let lastErr = null;
     for (const u of urls) {
@@ -551,7 +636,11 @@
   if (schedOk) state.schedule = Array.isArray(sched && sched.records) ? sched.records : [];
   if (tripsOk) {
     const raw = Array.isArray(trips && trips.records) ? trips.records : [];
+    const prevSnapshot = state.tripSnapshot;
     state.trips = raw.map(normalizeTripRecord).filter(Boolean);
+    const nextSnapshot = buildTripSnapshot(state.trips);
+    state.tripSnapshot = nextSnapshot;
+    state.changeFlags = buildTripChangeFlags(prevSnapshot, nextSnapshot);
   }
 
   const dtScope =
@@ -1746,10 +1835,15 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
     // Local helpers (matching schedule layout)
     let stripe = 0;
+    const changeFlags = state.changeFlags || { classKeys: new Set(), entryKeys: new Set() };
 
     const canClassNav = state.screen !== 'classDetail';
     const canHorseNav = state.screen !== 'horseDetail';
     const canRiderNav = state.screen !== 'riderDetail';
+
+    function joinClasses(...parts) {
+      return parts.filter(Boolean).join(' ');
+    }
 
     function addLine4(parent, a, b, cNode, dNode, rowCls, extraCls, onClick) {
       const line = el(
@@ -1883,6 +1977,12 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
             if (classStart) lastClassStart = classStart;
 
             stripe++;
+            const classKey = makeClassNumberKey(cn.class_id, cn.class_number);
+            const classChanged = !!(classKey && changeFlags.classKeys && changeFlags.classKeys.has(classKey));
+            const classExtra = joinClasses(
+              (stripe % 2 === 0 ? 'row-alt' : ''),
+              (classChanged ? 'row--changed' : '')
+            );
             addLine4(
               gWrap,
               showStart ? fmtTimeShort(classStart) : '',
@@ -1890,7 +1990,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               document.createTextNode(String(c.class_name || '').trim()),
               badgeWrap,
               'row--class',
-              (stripe % 2 === 0 ? 'row-alt' : ''),
+              classExtra,
               canClassNav ? (() => {
                 const classId = c.class_id != null ? String(c.class_id) : '';
                 if (!classId) return;
@@ -1949,6 +2049,12 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               })();
 
               stripe++;
+              const entryKey = makeEntryKey(c.class_id, eObj.entry_id, eObj.entryNumber, eObj.horseName);
+              const entryChanged = !!(entryKey && changeFlags.entryKeys && changeFlags.entryKeys.has(entryKey));
+              const entryExtra = joinClasses(
+                (stripe % 2 === 0 ? 'row-alt' : ''),
+                (entryChanged ? 'row--changed' : '')
+              );
               addLine4(
                 gWrap,
                 '',
@@ -1956,7 +2062,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 cGrid,
                 '',
                 'row--entry',
-                (stripe % 2 === 0 ? 'row-alt' : ''),
+                entryExtra,
                 entryClick
               );
 
