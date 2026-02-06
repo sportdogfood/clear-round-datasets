@@ -5,8 +5,20 @@
   const TL = (window.TL = window.TL || {});
   TL.lists = TL.lists || {};
 
+  const FALLBACK_LISTS = [
+    { key: 'state', label: 'Active Horses', type: 'state', inNav: true, inSummary: true, inShare: true },
+    { key: 'list1', label: 'Schooling Bridles', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list2', label: 'Show Bridles', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list3', label: 'Schooling Girths', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list4', label: 'Show Girths', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list5', label: 'Saddles', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list6', label: 'Trunks', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list7', label: 'Supplements', type: 'list', inNav: true, inSummary: true, inShare: true },
+    { key: 'list8', label: 'Sheets', type: 'list', inNav: true, inSummary: true, inShare: true }
+  ];
+
   function buildFallbackLists() {
-    return TL.fallback.FALLBACK_LISTS.slice();
+    return FALLBACK_LISTS.slice();
   }
 
   function normalizeListsStrict(raw) {
@@ -32,7 +44,6 @@
       });
     }
 
-    // Ensure we always have a state definition (minimum)
     const hasState = out.some((d) => d.key === 'state' || d.type === 'state');
     if (!hasState) {
       out.unshift({
@@ -85,7 +96,6 @@
   }
 
   function getListDefs(cfg) {
-    // "list" type only; preserve config order
     return cfg.filter((d) => d && d.type === 'list' && String(d.key || '').startsWith('list'));
   }
 
@@ -116,7 +126,7 @@
     const s = String(scr || '');
     if (!s.startsWith('list')) return null;
     const isDetail = s.endsWith('Detail');
-    const key = isDetail ? s.slice(0, -6) : s; // remove "Detail"
+    const key = isDetail ? s.slice(0, -6) : s;
     return { key, isDetail };
   }
 
@@ -159,11 +169,8 @@
       }
     }
 
-    if (changed) {
-      // Save without modifying lastUpdated
-      if (TL.session && typeof TL.session.saveSessionToStorage === 'function') {
-        TL.session.saveSessionToStorage();
-      }
+    if (changed && TL.session && typeof TL.session.saveSessionToStorage === 'function') {
+      TL.session.saveSessionToStorage(); // no lastUpdated change
     }
   }
 
@@ -173,6 +180,7 @@
       TL.state.listsConfig = cached;
       TL.state.listsStatus = 'ready';
       normalizeSessionListsToConfig();
+      if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
       if (TL.ui && TL.ui.render) TL.ui.render();
 
       // silent background refresh
@@ -187,10 +195,10 @@
             saveListsToStorage(fresh);
             normalizeSessionListsToConfig();
 
-            // if user is on a now-missing list screen, send to summary
             const p = parseListScreen(TL.state.currentScreen);
             if (p && !isKnownListKey(p.key)) TL.state.currentScreen = 'summary';
 
+            if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
             if (TL.ui && TL.ui.render) TL.ui.render();
           }
         }
@@ -209,6 +217,7 @@
         TL.state.listsStatus = 'ready';
         saveListsToStorage(items);
         normalizeSessionListsToConfig();
+        if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
         if (TL.ui && TL.ui.render) TL.ui.render();
         return;
       }
@@ -218,14 +227,13 @@
       TL.state.listsStatus = 'fallback';
       saveListsToStorage(TL.state.listsConfig);
       normalizeSessionListsToConfig();
+      if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
       if (TL.ui && TL.ui.render) TL.ui.render();
     }
   }
 
-  // exports
   TL.lists.buildFallbackLists = buildFallbackLists;
   TL.lists.normalizeListsStrict = normalizeListsStrict;
-
   TL.lists.loadListsFromStorage = loadListsFromStorage;
   TL.lists.saveListsToStorage = saveListsToStorage;
 
@@ -233,14 +241,13 @@
   TL.lists.getStateDef = getStateDef;
   TL.lists.getListDefs = getListDefs;
   TL.lists.getListKeys = getListKeys;
-
   TL.lists.getLabelMap = getLabelMap;
   TL.lists.labelForKey = labelForKey;
 
   TL.lists.parseListScreen = parseListScreen;
   TL.lists.isKnownListKey = isKnownListKey;
   TL.lists.firstListKey = firstListKey;
-
   TL.lists.normalizeSessionListsToConfig = normalizeSessionListsToConfig;
+
   TL.lists.loadListsConfig = loadListsConfig;
 })();
