@@ -1,4 +1,4 @@
-// tl.lists.js
+// tl.lists.js (minimal + compatible)
 (function () {
   'use strict';
 
@@ -85,7 +85,7 @@
   }
 
   function getStateDef(cfg) {
-    return cfg.find((d) => d.type === 'state' || d.key === 'state') || {
+    return (cfg || []).find((d) => d && (d.type === 'state' || d.key === 'state')) || {
       key: 'state',
       label: 'Active Horses',
       type: 'state',
@@ -96,19 +96,11 @@
   }
 
   function getListDefs(cfg) {
-    return cfg.filter((d) => d && d.type === 'list' && String(d.key || '').startsWith('list'));
+    return (cfg || []).filter((d) => d && d.type === 'list' && String(d.key || '').startsWith('list'));
   }
 
   function getListKeys(cfg) {
     return getListDefs(cfg).map((d) => d.key);
-  }
-
-  function getLabelMap(cfg) {
-    const map = {};
-    for (const d of cfg) {
-      if (d && d.key) map[d.key] = d.label;
-    }
-    return map;
   }
 
   function labelForKey(key) {
@@ -118,8 +110,8 @@
     if (k === 'share') return 'Share';
 
     const cfg = getListsConfig();
-    const map = getLabelMap(cfg);
-    return map[k] || '';
+    for (const d of cfg) if (d && d.key === k) return d.label || '';
+    return '';
   }
 
   function parseListScreen(scr) {
@@ -132,8 +124,7 @@
 
   function isKnownListKey(key) {
     const cfg = getListsConfig();
-    const keys = getListKeys(cfg);
-    return keys.includes(String(key || ''));
+    return getListKeys(cfg).includes(String(key || ''));
   }
 
   function firstListKey() {
@@ -159,17 +150,16 @@
       }
 
       for (const k of listKeys) {
-        const before = !!h.lists[k];
         if (!(k in h.lists)) {
           h.lists[k] = false;
           changed = true;
         } else {
-          h.lists[k] = before;
+          h.lists[k] = !!h.lists[k];
         }
       }
     }
 
-    if (changed && TL.session && typeof TL.session.saveSessionToStorage === 'function') {
+    if (changed && TL.session && TL.session.saveSessionToStorage) {
       TL.session.saveSessionToStorage(); // no lastUpdated change
     }
   }
@@ -182,53 +172,35 @@
       normalizeSessionListsToConfig();
       if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
       if (TL.ui && TL.ui.render) TL.ui.render();
-
-      // silent background refresh
-      try {
-        const res = await fetch(TL.cfg.LISTS_DATA_URL, { cache: 'no-store' });
-        if (res && res.ok) {
-          const raw = await res.json();
-          const fresh = normalizeListsStrict(raw);
-          if (fresh.length) {
-            TL.state.listsConfig = fresh;
-            TL.state.listsStatus = 'ready';
-            saveListsToStorage(fresh);
-            normalizeSessionListsToConfig();
-
-            const p = parseListScreen(TL.state.currentScreen);
-            if (p && !isKnownListKey(p.key)) TL.state.currentScreen = 'summary';
-
-            if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
-            if (TL.ui && TL.ui.render) TL.ui.render();
-          }
-        }
-      } catch (_) {}
-      return;
     }
 
+    // background refresh (or first load if no cache)
     try {
       const res = await fetch(TL.cfg.LISTS_DATA_URL, { cache: 'no-store' });
-      if (!res.ok) throw new Error('bad status');
+      if (!res || !res.ok) throw new Error('bad status');
       const raw = await res.json();
-      const items = normalizeListsStrict(raw);
+      const fresh = normalizeListsStrict(raw);
+      if (!fresh.length) throw new Error('empty');
 
-      if (items.length) {
-        TL.state.listsConfig = items;
-        TL.state.listsStatus = 'ready';
-        saveListsToStorage(items);
+      TL.state.listsConfig = fresh;
+      TL.state.listsStatus = 'ready';
+      saveListsToStorage(fresh);
+      normalizeSessionListsToConfig();
+
+      const p = parseListScreen(TL.state.currentScreen);
+      if (p && !isKnownListKey(p.key)) TL.state.currentScreen = 'summary';
+
+      if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
+      if (TL.ui && TL.ui.render) TL.ui.render();
+    } catch (_) {
+      if (!TL.state.listsConfig || !TL.state.listsConfig.length) {
+        TL.state.listsConfig = buildFallbackLists();
+        TL.state.listsStatus = 'fallback';
+        saveListsToStorage(TL.state.listsConfig);
         normalizeSessionListsToConfig();
         if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
         if (TL.ui && TL.ui.render) TL.ui.render();
-        return;
       }
-      throw new Error('empty');
-    } catch (_) {
-      TL.state.listsConfig = buildFallbackLists();
-      TL.state.listsStatus = 'fallback';
-      saveListsToStorage(TL.state.listsConfig);
-      normalizeSessionListsToConfig();
-      if (TL.nav && TL.nav.rebuild) TL.nav.rebuild();
-      if (TL.ui && TL.ui.render) TL.ui.render();
     }
   }
 
@@ -241,13 +213,12 @@
   TL.lists.getStateDef = getStateDef;
   TL.lists.getListDefs = getListDefs;
   TL.lists.getListKeys = getListKeys;
-  TL.lists.getLabelMap = getLabelMap;
   TL.lists.labelForKey = labelForKey;
 
   TL.lists.parseListScreen = parseListScreen;
   TL.lists.isKnownListKey = isKnownListKey;
   TL.lists.firstListKey = firstListKey;
-  TL.lists.normalizeSessionListsToConfig = normalizeSessionListsToConfig;
 
+  TL.lists.normalizeSessionListsToConfig = normalizeSessionListsToConfig;
   TL.lists.loadListsConfig = loadListsConfig;
 })();
