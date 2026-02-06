@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-05T17:11:27-05:00",
+    "generated_at": "2026-02-05T20:06:34-05:00",
     "table": "watch_trips",
     "view": "commit",
-    "record_count": 1,
+    "record_count": 0,
     "fields": [
       "sid",
       "dt",
@@ -22,6 +22,7 @@
       "latest_calendarEnd",
       "schedule_sequencetype",
       "run_id",
+      "trip_id",
       "time_sort",
       "latestStart",
       "latestStatus",
@@ -41,43 +42,5 @@
       "lastOOG"
     ]
   },
-  "records": [
-    {
-      "record_id": "recK7XgM4kPk7rRZp",
-      "sid": "200000049",
-      "dt": "2026-02-05",
-      "ring_number": 1,
-      "ringName": "Intl",
-      "class_group_id": 200019343,
-      "class_groupxclasses_id": 200029622,
-      "group_name": "CSI5* $116,100 Adequan WEF Challenge Cup 221.4.3 (Top 12 Return)",
-      "class_id": 200022784,
-      "class_number": 513,
-      "class_name": "CSI5* $116,100 Adequan WEF Challenge Cup 221.4.3 (Top 12 Return)",
-      "class_type": "Jumpers",
-      "estimated_end_time": "13:30:00",
-      "latest_calendarBucket": "2026-02-05 10:30",
-      "latest_calendarStart": null,
-      "latest_calendarEnd": "2026-02-05T10:40:00.000Z",
-      "schedule_sequencetype": "Over Fences",
-      "run_id": "20260205",
-      "time_sort": 37800,
-      "latestStart": "10:30 AM",
-      "latestStatus": "Completed",
-      "total_trips": 44,
-      "entry_id": 200150467,
-      "backNumber": "1077",
-      "entryNumber": "1077",
-      "entryxclasses_uuid": "CA8146BEBD824293BC374C7974276D12",
-      "barnName": "Kinmar",
-      "horseName": "Kinmar",
-      "teamName": "Tanner",
-      "riderName": "Tanner",
-      "latestPlacing": "14",
-      "lastScore": null,
-      "lastTime": "72.9",
-      "latestGO": "10:44 AM",
-      "lastOOG": 8
-    }
-  ]
+  "records": []
 }
