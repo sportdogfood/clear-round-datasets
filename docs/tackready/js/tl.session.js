@@ -5,9 +5,17 @@
   const TL = (window.TL = window.TL || {});
   TL.session = TL.session || {};
 
-  // ---------------------------------------------------------------------------
-  // Session storage (localStorage)
-  // ---------------------------------------------------------------------------
+  function isExpired(expiresAt) {
+    if (!expiresAt) return false;
+    const t = Date.parse(String(expiresAt));
+    if (!Number.isFinite(t)) return false;
+    return t <= TL.storage.nowMs();
+  }
+
+  function touchSessionExpiry() {
+    if (!TL.state.session) return;
+    TL.state.session.expiresAt = new Date(TL.storage.nowMs() + TL.cfg.SESSION_TTL_MS).toISOString();
+  }
 
   function loadSessionFromStorage() {
     const raw = TL.storage.get(TL.cfg.STORAGE_KEY_SESSION);
@@ -17,8 +25,7 @@
     if (!parsed || typeof parsed !== 'object') return null;
     if (!Array.isArray(parsed.horses)) return null;
 
-    // If expired, treat as no session.
-    if (parsed.expiresAt && TL.storage.isExpired(parsed.expiresAt)) {
+    if (parsed.expiresAt && isExpired(parsed.expiresAt)) {
       TL.storage.remove(TL.cfg.STORAGE_KEY_SESSION);
       TL.storage.clearSessionCookie();
       return null;
@@ -31,9 +38,7 @@
       .filter((h) => h && typeof h === 'object')
       .map((h) => {
         const lists = {};
-        for (const k of listKeys) {
-          lists[k] = !!(h.lists && h.lists[k]);
-        }
+        for (const k of listKeys) lists[k] = !!(h.lists && h.lists[k]);
 
         return {
           horseId: String(h.horseId || ''),
@@ -67,10 +72,6 @@
     TL.storage.clearSessionCookie();
   }
 
-  // ---------------------------------------------------------------------------
-  // Session helpers
-  // ---------------------------------------------------------------------------
-
   function createNewSession() {
     const catalog = TL.catalog.getCatalog();
     const cfg = TL.lists.getListsConfig();
@@ -83,8 +84,8 @@
       return {
         horseId: `h${index + 1}`,
         horseName: item.horseName,
-        barnActive: !!item.barnActive, // indicator only
-        state: false,                  // manual selection only
+        barnActive: !!item.barnActive,
+        state: false,
         lists
       };
     });
@@ -108,41 +109,13 @@
   function updateLastUpdated() {
     if (!TL.state.session) return;
     TL.state.session.lastUpdated = new Date().toISOString();
-    TL.storage.touchSessionExpiry(); // sliding TTL on any meaningful change
+    touchSessionExpiry();
     saveSessionToStorage();
   }
 
-  function findHorse(horseId) {
-    if (!TL.state.session) return null;
-    return TL.state.session.horses.find((h) => h.horseId === horseId) || null;
-  }
+  TL.session.isExpired = isExpired;
+  TL.session.touchSessionExpiry = touchSessionExpiry;
 
-  function horseLabel(horse) {
-    // Indicator only. No auto-select.
-    return horse.horseName + (horse.barnActive ? ' 🏷️' : '');
-  }
-
-  // groupby barnActive (A→Z) then others (A→Z)
-  function sortBarnActiveThenName(list) {
-    return list.slice().sort((a, b) => {
-      const af = a.barnActive ? 1 : 0;
-      const bf = b.barnActive ? 1 : 0;
-      if (af !== bf) return bf - af; // true first
-      return a.horseName.localeCompare(b.horseName);
-    });
-  }
-
-  function formatTimeShort(iso) {
-    const t = Date.parse(String(iso || ''));
-    if (!Number.isFinite(t)) return null;
-    try {
-      return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    } catch (_) {
-      return null;
-    }
-  }
-
-  // exports
   TL.session.loadSessionFromStorage = loadSessionFromStorage;
   TL.session.saveSessionToStorage = saveSessionToStorage;
   TL.session.clearSessionStorage = clearSessionStorage;
@@ -150,9 +123,4 @@
   TL.session.createNewSession = createNewSession;
   TL.session.ensureSession = ensureSession;
   TL.session.updateLastUpdated = updateLastUpdated;
-
-  TL.session.findHorse = findHorse;
-  TL.session.horseLabel = horseLabel;
-  TL.session.sortBarnActiveThenName = sortBarnActiveThenName;
-  TL.session.formatTimeShort = formatTimeShort;
 })();

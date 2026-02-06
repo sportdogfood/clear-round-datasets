@@ -34,62 +34,42 @@
 
   function setSessionCookie() {
     try {
-      document.cookie = `${TL.cfg.SESSION_COOKIE_NAME}=1; Max-Age=${TL.cfg.SESSION_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`;
+      const c = TL.cfg;
+      document.cookie = `${c.SESSION_COOKIE_NAME}=1; Max-Age=${c.SESSION_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`;
     } catch (_) {}
   }
 
   function clearSessionCookie() {
     try {
-      document.cookie = `${TL.cfg.SESSION_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+      const c = TL.cfg;
+      document.cookie = `${c.SESSION_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
     } catch (_) {}
   }
 
-  function touchSessionExpiry() {
-    if (!TL.state.session) return;
-    TL.state.session.expiresAt = new Date(nowMs() + TL.cfg.SESSION_TTL_MS).toISOString();
-  }
-
-  function isExpired(expiresAt) {
-    if (!expiresAt) return false;
-    const t = Date.parse(String(expiresAt));
-    if (!Number.isFinite(t)) return false;
-    return t <= nowMs();
-  }
-
-  // Migrate legacy sessionStorage -> localStorage (one-time, best-effort)
   function migrateLegacySessionStorage() {
     try {
-      const legacySession = sessionStorage.getItem(TL.cfg.STORAGE_KEY_SESSION);
-      if (legacySession && !storageGet(TL.cfg.STORAGE_KEY_SESSION)) {
-        storageSet(TL.cfg.STORAGE_KEY_SESSION, legacySession);
-      }
-      if (legacySession) sessionStorage.removeItem(TL.cfg.STORAGE_KEY_SESSION);
+      const c = TL.cfg;
 
-      const legacyCatalog = sessionStorage.getItem(TL.cfg.STORAGE_KEY_CATALOG);
-      if (legacyCatalog && !storageGet(TL.cfg.STORAGE_KEY_CATALOG)) {
-        storageSet(TL.cfg.STORAGE_KEY_CATALOG, legacyCatalog);
-      }
-      if (legacyCatalog) sessionStorage.removeItem(TL.cfg.STORAGE_KEY_CATALOG);
+      const legacySession = sessionStorage.getItem(c.STORAGE_KEY_SESSION);
+      if (legacySession && !storageGet(c.STORAGE_KEY_SESSION)) storageSet(c.STORAGE_KEY_SESSION, legacySession);
+      if (legacySession) sessionStorage.removeItem(c.STORAGE_KEY_SESSION);
 
-      const legacyLists = sessionStorage.getItem(TL.cfg.STORAGE_KEY_LISTS);
-      if (legacyLists && !storageGet(TL.cfg.STORAGE_KEY_LISTS)) {
-        storageSet(TL.cfg.STORAGE_KEY_LISTS, legacyLists);
-      }
-      if (legacyLists) sessionStorage.removeItem(TL.cfg.STORAGE_KEY_LISTS);
+      const legacyCatalog = sessionStorage.getItem(c.STORAGE_KEY_CATALOG);
+      if (legacyCatalog && !storageGet(c.STORAGE_KEY_CATALOG)) storageSet(c.STORAGE_KEY_CATALOG, legacyCatalog);
+      if (legacyCatalog) sessionStorage.removeItem(c.STORAGE_KEY_CATALOG);
+
+      const legacyLists = sessionStorage.getItem(c.STORAGE_KEY_LISTS);
+      if (legacyLists && !storageGet(c.STORAGE_KEY_LISTS)) storageSet(c.STORAGE_KEY_LISTS, legacyLists);
+      if (legacyLists) sessionStorage.removeItem(c.STORAGE_KEY_LISTS);
     } catch (_) {}
   }
 
-  // exports
   TL.storage.nowMs = nowMs;
   TL.storage.safeJSONParse = safeJSONParse;
   TL.storage.get = storageGet;
   TL.storage.set = storageSet;
   TL.storage.remove = storageRemove;
-
   TL.storage.setSessionCookie = setSessionCookie;
   TL.storage.clearSessionCookie = clearSessionCookie;
-
-  TL.storage.touchSessionExpiry = touchSessionExpiry;
-  TL.storage.isExpired = isExpired;
   TL.storage.migrateLegacySessionStorage = migrateLegacySessionStorage;
 })();
