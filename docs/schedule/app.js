@@ -155,6 +155,11 @@
     schedule: [],
     trips: [],
     meta: { dt: null, sid: null, generated_at: null },
+    tripSnapshot: null,
+    changeFlags: {
+      classKeys: new Set(),
+      entryKeys: new Set()
+    },
 
     screen: 'start',
     history: [],
@@ -181,6 +186,24 @@
     // optional: after render, scroll within main to an element id
     pendingScrollId: null
   };
+  function makeClassNumberKey(classId, classNumber) {
+    if (classId == null) return null;
+    const cnKey = (classNumber != null && String(classNumber) !== '') ? String(classNumber) : '__noclassnum__';
+    return `${String(classId)}|${cnKey}`;
+  }
+
+  function makeEntryKey(classId, entryId, entryNumber, horseName) {
+    if (classId == null) return null;
+    const entryKey = (entryId != null && String(entryId) !== '')
+      ? String(entryId)
+      : (entryNumber != null && String(entryNumber) !== '')
+        ? String(entryNumber)
+        : (horseName != null && String(horseName) !== '')
+          ? String(horseName)
+          : null;
+    if (!entryKey) return null;
+    return `${String(classId)}|${entryKey}`;
+  }
 
   // ----------------------------
   // UTIL (DOM)
@@ -505,6 +528,66 @@
     if (sid != null) o.sid = sid;
 
     return o;
+  }
+   function buildTripSnapshot(trips) {
+    const classMap = new Map();
+    const entryMap = new Map();
+    const byEntryKey = new Map();
+
+    for (const t of (trips || [])) {
+      if (!t) continue;
+      if (t.class_id == null) continue;
+
+      const classKey = makeClassNumberKey(t.class_id, t.class_number);
+      if (classKey) {
+        const current = classMap.get(classKey) || { latestStart: '', latestStatus: '' };
+        if (t.latestStart) current.latestStart = String(t.latestStart).trim();
+        if (t.latestStatus) current.latestStatus = String(t.latestStatus).trim();
+        classMap.set(classKey, current);
+      }
+
+      const entryKey = makeEntryKey(t.class_id, t.entry_id, t.entryNumber, t.horseName);
+      if (!entryKey) continue;
+      if (!byEntryKey.has(entryKey)) byEntryKey.set(entryKey, []);
+      byEntryKey.get(entryKey).push(t);
+    }
+
+    for (const [entryKey, list] of byEntryKey.entries()) {
+      const best = pickBestTrip(list);
+      if (!best) continue;
+      entryMap.set(entryKey, {
+        latestGO: best.latestGO != null ? String(best.latestGO).trim() : '',
+        lastOOG: best.lastOOG != null ? String(best.lastOOG).trim() : ''
+      });
+    }
+
+    return { classMap, entryMap };
+  }
+
+  function buildTripChangeFlags(prevSnapshot, nextSnapshot) {
+    const classKeys = new Set();
+    const entryKeys = new Set();
+    if (!prevSnapshot || !nextSnapshot) return { classKeys, entryKeys };
+
+    for (const [key, nextVal] of nextSnapshot.classMap.entries()) {
+      const prevVal = prevSnapshot.classMap.get(key);
+      if (!prevVal) continue;
+      if (String(prevVal.latestStart || '') !== String(nextVal.latestStart || '')
+        || String(prevVal.latestStatus || '') !== String(nextVal.latestStatus || '')) {
+        classKeys.add(key);
+      }
+    }
+
+    for (const [key, nextVal] of nextSnapshot.entryMap.entries()) {
+      const prevVal = prevSnapshot.entryMap.get(key);
+      if (!prevVal) continue;
+      if (String(prevVal.latestGO || '') !== String(nextVal.latestGO || '')
+        || String(prevVal.lastOOG || '') !== String(nextVal.lastOOG || '')) {
+        entryKeys.add(key);
+      }
+    }
+
+    return { classKeys, entryKeys };
   }
 
   async function fetchJsonFirst(urls) {
