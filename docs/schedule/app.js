@@ -814,18 +814,18 @@
       const trips = tIdx && tIdx.byEntryKey ? tIdx.byEntryKey.get(k) : null;
       if (trips && trips.length) list.push(...trips);
     }
-    function statusRank(statusText) {
+    function isEligibleStatus(statusText) {
       const s = String(statusText || '').toLowerCase();
-      if (s.includes('underway')) return 3;
-      if (s.includes('next up') || s.includes('on deck')) return 3;
-      if (s.includes('upcoming')) return 2;
-      if (s.includes('not started')) return 2;
-      if (s.includes('complete')) return 1;
-      return 0;
+      if (!s) return false;
+      if (s.includes('complete')) return false;
+      if (s.includes('underway')) return false;
+      return true;
     }
 
-    const activeTrips = list.filter(t => statusRank(t.latestStatus) >= 2);
-    const best = pickBestTrip(activeTrips.length ? activeTrips : list);
+    const eligibleTrips = list.filter(t => isEligibleStatus(t.latestStatus));
+    if (!eligibleTrips.length) return '';
+
+    const best = pickBestTrip(eligibleTrips);
     if (!best) return '';
 
     const parts = [];
