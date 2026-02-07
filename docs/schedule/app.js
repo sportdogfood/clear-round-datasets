@@ -1974,6 +1974,35 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 const score = (tt.latestScore != null && String(tt.latestScore) !== '') ? String(tt.latestScore) : '';
                 const placing = (tt.latestPlacing != null && String(tt.latestPlacing) !== '') ? String(tt.latestPlacing) : '';
                 const right = score || placing || '';
+                const statusKey = normalizeStr(tt.latestStatus);
+                const isCompletedOrUnderway = statusKey === 'completed' || statusKey === 'underway';
+                const tripId = tt.trip_id != null ? String(tt.trip_id) : '';
+                const tripPlacing = tt.latestPlacing != null ? String(tt.latestPlacing) : '';
+                const tripScore = tt.lastScore != null ? String(tt.lastScore) : '';
+                const tripTime = tt.lastTime != null ? String(tt.lastTime) : '';
+                const hasTripData = Boolean(tripId || tripPlacing || tripScore || tripTime);
+
+                if (isCompletedOrUnderway && hasTripData) {
+                  const tripGrid = el('div', 'c4-grid');
+                  tripGrid.appendChild(el('span', 'c4g-a', ''));
+                  tripGrid.appendChild(el('span', 'c4g-b', tripId));
+                  tripGrid.appendChild(el('span', 'c4g-c', tripPlacing));
+                  tripGrid.appendChild(el('span', 'c4g-d', tripScore));
+                  tripGrid.appendChild(el('span', 'c4g-e', tripTime));
+                  tripGrid.appendChild(el('span', 'c4g-f', ''));
+
+                  addLine4(
+                    gWrap,
+                    '',
+                    '',
+                    tripGrid,
+                    '',
+                    'row--trip',
+                    'row-alt',
+                    null
+                  );
+                  continue;
+                }
 
                 stripe++;
                 addLine4(
