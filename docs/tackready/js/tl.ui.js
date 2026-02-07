@@ -122,6 +122,41 @@
       return;
     }
   }
+// ---------------------------------------------------------------------------
+// Navigation helpers (used by tl.boot.js)
+// ---------------------------------------------------------------------------
+TL.ui.setScreen = function setScreen(newScreen, pushHistory = true) {
+  const s = String(newScreen || 'start');
+
+  if (pushHistory && TL.state.currentScreen && TL.state.currentScreen !== s) {
+    TL.state.history.push(TL.state.currentScreen);
+  }
+
+  TL.state.currentScreen = s;
+  TL.ui.render();
+};
+
+TL.ui.goBack = function goBack() {
+  const prev = TL.state.history.pop();
+  TL.state.currentScreen = prev || 'start';
+  TL.ui.render();
+};
+TL.ui.handleListPrevNext = function handleListPrevNext(direction) {
+  const p = TL.lists.parseListScreen(TL.state.currentScreen);
+  if (!p) return;
+
+  const cfg = TL.lists.getListsConfig();
+  const listKeys = TL.lists.getListKeys(cfg);
+  const idx = listKeys.indexOf(p.key);
+  if (idx === -1) return;
+
+  if (direction === 'prev' && idx > 0) {
+    TL.ui.setScreen(listKeys[idx - 1]);
+  } else if (direction === 'next') {
+    if (idx < listKeys.length - 1) TL.ui.setScreen(listKeys[idx + 1]);
+    else TL.ui.setScreen('summary');
+  }
+};
 
   TL.ui.titleForScreen = titleForScreen;
   TL.ui.renderHeader = renderHeader;
