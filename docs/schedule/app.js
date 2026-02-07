@@ -814,18 +814,18 @@
       const trips = tIdx && tIdx.byEntryKey ? tIdx.byEntryKey.get(k) : null;
       if (trips && trips.length) list.push(...trips);
     }
-    function statusRank(statusText) {
+    function isEligibleStatus(statusText) {
       const s = String(statusText || '').toLowerCase();
-      if (s.includes('underway')) return 3;
-      if (s.includes('next up') || s.includes('on deck')) return 3;
-      if (s.includes('upcoming')) return 2;
-      if (s.includes('not started')) return 2;
-      if (s.includes('complete')) return 1;
-      return 0;
+      if (!s) return false;
+      if (s.includes('complete')) return false;
+      if (s.includes('underway')) return false;
+      return true;
     }
 
-    const activeTrips = list.filter(t => statusRank(t.latestStatus) >= 2);
-    const best = pickBestTrip(activeTrips.length ? activeTrips : list);
+    const eligibleTrips = list.filter(t => isEligibleStatus(t.latestStatus));
+    if (!eligibleTrips.length) return '';
+
+    const best = pickBestTrip(eligibleTrips);
     if (!best) return '';
 
     const parts = [];
@@ -2051,21 +2051,27 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 return String(a.riderName || '').localeCompare(String(b.riderName || ''));
               });
 
-              for (const tt of childTrips) {
+               for (const tt of childTrips) {
                 const back = tt.backNumber != null ? String(tt.backNumber) : (tt.entryNumber != null ? String(tt.entryNumber) : '');
                 const rider = tt.riderName ? String(tt.riderName) : '';
                 const score = (tt.latestScore != null && String(tt.latestScore) !== '') ? String(tt.latestScore) : '';
                 const placing = (tt.latestPlacing != null && String(tt.latestPlacing) !== '') ? String(tt.latestPlacing) : '';
                 const right = score || placing || '';
-                const isCompleted = normalizeStr(tt.latestStatus) === 'completed';
+                const statusKey = normalizeStr(tt.latestStatus);
+                const isCompletedOrUnderway = statusKey === 'completed' || statusKey === 'underway';
+                const tripId = tt.trip_id != null ? String(tt.trip_id) : '';
+                const tripPlacing = tt.latestPlacing != null ? String(tt.latestPlacing) : '';
+                const tripScore = tt.lastScore != null ? String(tt.lastScore) : '';
+                const tripTime = tt.lastTime != null ? String(tt.lastTime) : '';
+                const hasTripData = Boolean(tripId || tripPlacing || tripScore || tripTime);
 
-                if (isCompleted) {
+                if (isCompletedOrUnderway && hasTripData) {
                   const tripGrid = el('div', 'c4-grid');
                   tripGrid.appendChild(el('span', 'c4g-a', ''));
-                  tripGrid.appendChild(el('span', 'c4g-b', (tt.trip_id != null ? String(tt.trip_id) : '')));
-                  tripGrid.appendChild(el('span', 'c4g-c', (tt.latestPlacing != null ? String(tt.latestPlacing) : '')));
-                  tripGrid.appendChild(el('span', 'c4g-d', (tt.lastScore != null ? String(tt.lastScore) : '')));
-                  tripGrid.appendChild(el('span', 'c4g-e', (tt.lastTime != null ? String(tt.lastTime) : '')));
+                  tripGrid.appendChild(el('span', 'c4g-b', tripId));
+                  tripGrid.appendChild(el('span', 'c4g-c', tripPlacing));
+                  tripGrid.appendChild(el('span', 'c4g-d', tripScore));
+                  tripGrid.appendChild(el('span', 'c4g-e', tripTime));
                   tripGrid.appendChild(el('span', 'c4g-f', ''));
 
                   addLine4(
