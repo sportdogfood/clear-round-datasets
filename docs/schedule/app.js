@@ -878,14 +878,6 @@
         }
       }, 0);
     });
-    input.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      if (!input.value) return;
-      event.preventDefault();
-      input.value = '';
-      state.search[screenKey] = '';
-      render();
-    });
 
     wrap.appendChild(input);
     return wrap;
