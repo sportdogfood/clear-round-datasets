@@ -2426,7 +2426,7 @@ const sIdx = buildScheduleIndex();
       render();
     });
   }
-
+  // this is a comment
   // ----------------------------
   // BOOT
   // ----------------------------
