@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-09T16:22:09-05:00",
+    "generated_at": "2026-02-09T16:24:25-05:00",
     "table": "watch_trips",
     "view": "commit",
-    "record_count": 0,
+    "record_count": 1,
     "fields": [
       "sid",
       "dt",
@@ -51,5 +51,56 @@
     ],
     "force": true
   },
-  "records": []
+  "records": [
+    {
+      "record_id": "recwxlLPjxyEFSVOd",
+      "sid": null,
+      "dt": null,
+      "ring_number": null,
+      "ringName": null,
+      "class_group_id": null,
+      "class_groupxclasses_id": null,
+      "group_name": null,
+      "class_id": null,
+      "class_number": null,
+      "class_name": null,
+      "class_type": null,
+      "estimated_end_time": null,
+      "latest_calendarBucket": {
+        "error": "#ERROR!"
+      },
+      "latest_calendarStart": null,
+      "latest_calendarEnd": null,
+      "schedule_sequencetype": null,
+      "run_id": null,
+      "trip_id": null,
+      "time_sort": null,
+      "latestStart": {
+        "error": "#ERROR!"
+      },
+      "latestStatus": null,
+      "total_trips": null,
+      "entry_id": null,
+      "backNumber": null,
+      "entryNumber": null,
+      "entryxclasses_uuid": "833AD1542A784191AF04889DBFF09290",
+      "barnName": null,
+      "horseName": null,
+      "teamName": null,
+      "riderName": null,
+      "latestPlacing": null,
+      "lastScore": null,
+      "lastPlace": null,
+      "lastPosition": null,
+      "time_one": null,
+      "time_two": null,
+      "time_three": null,
+      "score1": null,
+      "score2": null,
+      "score3": null,
+      "lastTime": null,
+      "latestGO": null,
+      "lastOOG": null
+    }
+  ]
 }
