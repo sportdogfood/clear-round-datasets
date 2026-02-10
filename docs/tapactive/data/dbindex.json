@@ -1,12 +1,12 @@
 {
   "version": "v1",
   "datasets": [
-    { "name": "horses", "path": "docs/tapactive/data/horses.json" },
-    { "name": "profiles", "path": "docs/tapactive/data/profiles.json" },
-    { "name": "timespans", "path": "docs/tapactive/data/timespans.json" },
-    { "name": "locations", "path": "docs/tapactive/data/locations.json" },
-    { "name": "slots", "path": "docs/tapactive/data/slots.json" },
-    { "name": "lists", "path": "docs/tapactive/data/lists.json" },
-    { "name": "feed_items", "path": "docs/tapactive/data/feed_items.json" }
+    {"name":"horses","path":"docs/tapactive/data/horses.json"},
+    {"name":"profiles","path":"docs/tapactive/data/profiles.json"},
+    {"name":"feed_items","path":"docs/tapactive/data/feed_items.json"},
+    {"name":"locations","path":"docs/tapactive/data/locations.json"},
+    {"name":"timespans","path":"docs/tapactive/data/timespans.json"},
+    {"name":"slots","path":"docs/tapactive/data/slots.json"},
+    {"name":"lists","path":"docs/tapactive/data/lists.json"}
   ]
 }

@@ -1,6 +1,8 @@
 [
-  { "timespan_id": "AM", "label": "AM", "sort": 1 },
-  { "timespan_id": "MD", "label": "MD", "sort": 2 },
-  { "timespan_id": "PM", "label": "PM", "sort": 3 },
-  { "timespan_id": "NC", "label": "NC", "sort": 4 }
+  {"timespan_id":"AM","label":"AM","active":true,"sort":1,"type":"timepills"},
+  {"timespan_id":"MD","label":"MD","active":true,"sort":2,"type":"timepills"},
+  {"timespan_id":"PM","label":"PM","active":true,"sort":3,"type":"timepills"},
+  {"timespan_id":"NC","label":"NC","active":true,"sort":4,"type":"timepills"},
+  {"timespan_id":"15","label":"15","active":true,"sort":15,"type":"timebuckets"},
+  {"timespan_id":"30","label":"30","active":true,"sort":30,"type":"timebuckets"}
 ]
