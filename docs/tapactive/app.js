@@ -1,13 +1,14 @@
 /* Tap-Active BaseApp: placeholder script for future behavior. */
 document.addEventListener("DOMContentLoaded", () => {
   const routes = [
-    "tacklists/index.html",
+    "index.html",
     "pellettap/index.html",
-    "tackuptap/index.html",
-    "taskstap/index.html",
-    "turnouttap/index.html",
     "tuneuptap/index.html",
     "lessonstap/index.html",
+    "turnouttap/index.html",
+    "taskstap/index.html",
+    "tackuptap/index.html",
+    "horsestap/index.html",
   ];
 
   const rows = document.querySelectorAll(".row--tap");
