@@ -44,6 +44,16 @@ function resolveRepoRelativePath(repoRelativePath) {
   return new URL(normalized, `${origin}/`).toString();
 }
 
+function normalizeDatasetPath(pathFromManifest) {
+  const raw = String(pathFromManifest || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("./data/")) return raw;
+  if (raw.startsWith("data/")) return `./${raw}`;
+
+  const fileName = raw.split("/").filter(Boolean).pop();
+  return fileName ? `./data/${fileName}` : "";
+}
+
 function openDb() {
   if (typeof indexedDB === "undefined") {
     if (!idbWarned) {
@@ -113,7 +123,7 @@ async function fetchJson(url) {
 
 async function getManifestDatasets() {
   try {
-    const manifestUrl = resolveRepoRelativePath("docs/tapactive/data/dbindex.json");
+    const manifestUrl = resolveRepoRelativePath("./data/dbindex.json");
     const manifest = await fetchJson(manifestUrl);
     const datasets = Array.isArray(manifest?.datasets) ? manifest.datasets : [];
     const map = {};
@@ -157,7 +167,7 @@ async function loadAll() {
       });
     } else if (sourcePath) {
       try {
-        const datasetUrl = resolveRepoRelativePath(sourcePath);
+        const datasetUrl = resolveRepoRelativePath(normalizeDatasetPath(sourcePath));
         const networkData = await fetchJson(datasetUrl);
         data = isArray(networkData);
         source = "network";
