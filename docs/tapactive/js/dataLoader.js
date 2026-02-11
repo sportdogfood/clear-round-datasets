@@ -2,7 +2,8 @@ const DB_NAME = "tapactive";
 const STORE_NAME = "datasets";
 const DB_VERSION = 1;
 const TTL_MS = 12 * 60 * 60 * 1000;
-const TARGET_DATASETS = ["horses", "profiles", "feed_items", "locations", "lists"];
+const TARGET_DATASETS = ["horses", "profiles", "feed_items", "locations", "tack_lists", "barn_tack"];
+
 
 let idbWarned = false;
 const memory = {
