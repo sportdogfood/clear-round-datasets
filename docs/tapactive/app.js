@@ -1,5 +1,10 @@
+import { loadAll } from "./js/dataLoader.js";
+
 /* Tap-Active BaseApp: placeholder script for future behavior. */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  window.tapData = await loadAll();
+  console.log("tapactive datasets loaded", Object.keys(window.tapData || {}));
+
   const routes = [
     "index.html",
     "pellettap/index.html",
