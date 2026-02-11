@@ -28,20 +28,10 @@ function isArray(value) {
 
 function resolveRepoRelativePath(repoRelativePath) {
   const normalized = String(repoRelativePath || "").replace(/^\/+/, "");
-  if (typeof window === "undefined" || !window.location) {
+  if (typeof document === "undefined" || !document.baseURI) {
     return normalized;
   }
-
-  const { origin, pathname } = window.location;
-  const marker = "/docs/tapactive/";
-  const markerIndex = pathname.indexOf(marker);
-
-  if (markerIndex >= 0) {
-    const repoRootPath = pathname.slice(0, markerIndex + 1);
-    return new URL(normalized, `${origin}${repoRootPath}`).toString();
-  }
-
-  return new URL(normalized, `${origin}/`).toString();
+  return new URL(normalized, document.baseURI).toString();
 }
 
 function normalizeDatasetPath(pathFromManifest) {
