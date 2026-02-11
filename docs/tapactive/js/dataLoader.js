@@ -11,7 +11,8 @@ const memory = {
   profiles: [],
   feed_items: [],
   locations: [],
-  lists: [],
+  tack_lists: [],
+  barn_tack: [],
   meta: {},
 };
 
