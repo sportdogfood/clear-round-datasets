@@ -70,42 +70,59 @@ function openDb() {
     };
 
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
   });
 }
 
 async function getCachedRecord(name) {
-  const db = await openDb();
-  if (!db) return null;
+  try {
+    const db = await openDb();
+    if (!db) return null;
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.get(name);
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(name);
 
-    request.onsuccess = () => resolve(request.result || null);
-    request.onerror = () => reject(request.error);
-
-    tx.oncomplete = () => db.close();
-    tx.onabort = () => db.close();
-  });
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error("IndexedDB read failed"));
+      tx.onabort = () => reject(tx.error || new Error("IndexedDB read aborted"));
+      tx.onerror = () => reject(tx.error || new Error("IndexedDB read transaction error"));
+      tx.oncomplete = () => db.close();
+    });
+  } catch (error) {
+    warn("IndexedDB read failed.", error);
+    return null;
+  }
 }
 
 async function putCachedRecord(record) {
-  const db = await openDb();
-  if (!db) return;
+  try {
+    const db = await openDb();
+    if (!db) return;
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.put(record);
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.put(record);
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-
-    tx.oncomplete = () => db.close();
-    tx.onabort = () => db.close();
-  });
+      request.onerror = () => reject(request.error || new Error("IndexedDB write failed"));
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        reject(tx.error || new Error("IndexedDB transaction error"));
+      };
+      tx.onabort = () => {
+        db.close();
+        reject(tx.error || new Error("IndexedDB write aborted"));
+      };
+    });
+  } catch (error) {
+    warn("IndexedDB write failed.", error);
+  }
 }
 
 async function fetchJson(url) {
@@ -203,20 +220,32 @@ function getDataset(name) {
 }
 
 async function clearCache() {
-  const db = await openDb();
-  if (!db) return;
+  try {
+    const db = await openDb();
+    if (!db) return;
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.clear();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.clear();
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-
-    tx.oncomplete = () => db.close();
-    tx.onabort = () => db.close();
-  });
+      request.onerror = () => reject(request.error || new Error("IndexedDB clear failed"));
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        reject(tx.error || new Error("IndexedDB clear transaction error"));
+      };
+      tx.onabort = () => {
+        db.close();
+        reject(tx.error || new Error("IndexedDB clear aborted"));
+      };
+    });
+  } catch (error) {
+    warn("IndexedDB clear failed.", error);
+  }
 }
 
 const api = { loadAll, getDataset, clearCache };
