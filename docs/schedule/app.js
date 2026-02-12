@@ -2084,15 +2084,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 const statusKey = normalizeStr(tt.latestStatus);
                 const isCompletedOrUnderway = statusKey === 'completed' || statusKey === 'underway';
                 const tripId = tt.trip_id != null ? String(tt.trip_id) : '';
-                const tripLastPosition = tt.lastPosition != null
-                  ? String(tt.lastPosition)
-                  : (tt.lastOOG != null ? String(tt.lastOOG) : '');
-                const tripLastPlace = tt.lastPlace != null
-                  ? String(tt.lastPlace)
-                  : (tt.latestPlacing != null ? String(tt.latestPlacing) : '');
-                const tripLastScore = tt.lastScore != null
-                  ? String(tt.lastScore)
-                  : (tt.latestScore != null ? String(tt.latestScore) : '');
+                const tripLastPosition = tt.lastPosition != null ? String(tt.lastPosition) : '';
+                const tripLastPlace = tt.lastPlace != null ? String(tt.lastPlace) : '';
+                const tripLastScore = tt.lastScore != null ? String(tt.lastScore) : '';
                 const tripLastTime = tt.lastTime != null ? String(tt.lastTime) : '';
                 const hasTripData = Boolean(tripId || tripLastPosition || tripLastPlace || tripLastScore || tripLastTime);
 
