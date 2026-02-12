@@ -2033,7 +2033,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
               const whenPart = go ? fmtTimeShort(go) : '';
 
               const horseName = String(eObj.horseName || '');
-              const cGrid = el('div', 'c4-grid');
+              const cGrid = el('div', 'c4-grid c4-grid--entry');
 
               if (state.screen === 'horseDetail') {
                 cGrid.appendChild(el('span', 'c4g-a', rider));
@@ -2084,19 +2084,25 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                 const statusKey = normalizeStr(tt.latestStatus);
                 const isCompletedOrUnderway = statusKey === 'completed' || statusKey === 'underway';
                 const tripId = tt.trip_id != null ? String(tt.trip_id) : '';
-                const tripPlacing = tt.latestPlacing != null ? String(tt.latestPlacing) : '';
-                const tripScore = tt.lastScore != null ? String(tt.lastScore) : '';
-                const tripTime = tt.lastTime != null ? String(tt.lastTime) : '';
-                const hasTripData = Boolean(tripId || tripPlacing || tripScore || tripTime);
+                const tripLastPosition = tt.lastPosition != null
+                  ? String(tt.lastPosition)
+                  : (tt.lastOOG != null ? String(tt.lastOOG) : '');
+                const tripLastPlace = tt.lastPlace != null
+                  ? String(tt.lastPlace)
+                  : (tt.latestPlacing != null ? String(tt.latestPlacing) : '');
+                const tripLastScore = tt.lastScore != null
+                  ? String(tt.lastScore)
+                  : (tt.latestScore != null ? String(tt.latestScore) : '');
+                const tripLastTime = tt.lastTime != null ? String(tt.lastTime) : '';
+                const hasTripData = Boolean(tripId || tripLastPosition || tripLastPlace || tripLastScore || tripLastTime);
 
                 if (isCompletedOrUnderway && hasTripData) {
-                  const tripGrid = el('div', 'c4-grid');
-                  tripGrid.appendChild(el('span', 'c4g-a', ''));
-                  tripGrid.appendChild(el('span', 'c4g-b', tripId));
-                  tripGrid.appendChild(el('span', 'c4g-c', tripPlacing));
-                  tripGrid.appendChild(el('span', 'c4g-d', tripScore));
-                  tripGrid.appendChild(el('span', 'c4g-e', tripTime));
-                  tripGrid.appendChild(el('span', 'c4g-f', ''));
+                  const tripGrid = el('div', 'c4-grid c4-grid--trip');
+                  tripGrid.appendChild(el('span', 'c4g-a', tripId));
+                  tripGrid.appendChild(el('span', 'c4g-b', tripLastPosition));
+                  tripGrid.appendChild(el('span', 'c4g-c', tripLastPlace));
+                  tripGrid.appendChild(el('span', 'c4g-d', tripLastScore));
+                  tripGrid.appendChild(el('span', 'c4g-e', tripLastTime));
 
                   addLine4(
                     gWrap,
