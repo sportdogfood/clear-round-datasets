@@ -115,20 +115,40 @@
   function bindChromeScroll() {
     let lastTop = 0;
     const THRESH = 8;
+    const TOP_RESET = 4;
+    const HIDE_MIN_TOP = 24;
     let ticking = false;
+    let chromeHidden = false;
 
     function apply(dir, top) {
-      if (top <= 4) {
-        appEl.classList.remove('hide-header');
-        appEl.classList.remove('hide-nav');
+      // Keep chrome stable on long searchable lists where hide/show feels jittery.
+      if (state.screen === 'horses' || state.screen === 'riders') {
+        if (chromeHidden) {
+          appEl.classList.remove('hide-header');
+          appEl.classList.remove('hide-nav');
+          chromeHidden = false;
+        }
         return;
       }
-      if (dir === 'down') {
-        appEl.classList.add('hide-header');
-        appEl.classList.add('hide-nav');
-      } else if (dir === 'up') {
+
+      if (top <= TOP_RESET) {
+        if (!chromeHidden) return;
         appEl.classList.remove('hide-header');
         appEl.classList.remove('hide-nav');
+        chromeHidden = false;
+        return;
+      }
+
+      if (dir === 'down') {
+        if (chromeHidden || top < HIDE_MIN_TOP) return;
+        appEl.classList.add('hide-header');
+        appEl.classList.add('hide-nav');
+        chromeHidden = true;
+      } else if (dir === 'up') {
+        if (!chromeHidden) return;
+        appEl.classList.remove('hide-header');
+        appEl.classList.remove('hide-nav');
+        chromeHidden = false;
       }
     }
 
