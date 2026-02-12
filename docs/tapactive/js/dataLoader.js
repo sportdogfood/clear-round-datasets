@@ -150,16 +150,20 @@ async function loadAll() {
     let source = "empty";
     let fetchedAt = nowMs;
 
-    if (isFresh(cached, nowMs)) {
+    if (cached) {
       data = isArray(cached.data);
-      source = "cache";
-    } else if (sourcePath) {
+      source = isFresh(cached, nowMs) ? "cache" : "stale-cache";
+      fetchedAt = typeof cached.fetched_at === "number" ? cached.fetched_at : nowMs;
+    }
+
+    if (sourcePath) {
       try {
         const datasetUrl = resolveRepoRelativePath(
           normalizeDatasetPath(sourcePath)
         );
         data = isArray(await fetchJson(datasetUrl));
         source = "network";
+        fetchedAt = nowMs;
 
         await putCachedRecord({
           name,
@@ -167,15 +171,8 @@ async function loadAll() {
           fetched_at: nowMs,
           source_path: sourcePath,
         });
-
       } catch (error) {
         warn(`Failed refresh: ${name}`, error);
-
-        if (cached) {
-          data = isArray(cached.data);
-          source = "stale-cache";
-          fetchedAt = cached.fetched_at;
-        }
       }
     }
 
