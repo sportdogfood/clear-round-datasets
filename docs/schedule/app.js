@@ -629,8 +629,6 @@
     (tripsOk && trips && trips.meta && trips.meta.generated_at) ||
     null;
 
-  if (state.loaded && nextGenerated && state.meta.generated_at === nextGenerated) return;
-
   if (schedOk) state.schedule = Array.isArray(sched && sched.records) ? sched.records : [];
   if (tripsOk) {
     const raw = Array.isArray(trips && trips.records) ? trips.records : [];
