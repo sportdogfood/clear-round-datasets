@@ -2001,6 +2001,12 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
             // ENTRIES
             const entries = [...cn.entries.values()].sort((a, b) => {
+              const aBest = pickBestTrip(a && a.trips ? a.trips : []);
+              const bBest = pickBestTrip(b && b.trips ? b.trips : []);
+              const aOog = safeNum(aBest && aBest.lastOOG, 999999);
+              const bOog = safeNum(bBest && bBest.lastOOG, 999999);
+              if (aOog !== bOog) return aOog - bOog;
+
               const ea = safeNum(a.entryNumber, 999999);
               const eb = safeNum(b.entryNumber, 999999);
               if (ea !== eb) return ea - eb;
