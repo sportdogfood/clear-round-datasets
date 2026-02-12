@@ -1,0 +1,164 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --ink: #1f2a37;
+  --muted: #667085;
+  --line: #d7deea;
+  --tap: #eaf2ff;
+  --active: #2a6fdc;
+  --active-ink: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
+  color: var(--ink);
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.app-header p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.view {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.view h2,
+.view h3 {
+  margin: 0 0 0.6rem;
+}
+
+.row--tap {
+  width: 100%;
+  border: 1px solid #b8d1f7;
+  border-radius: 0.65rem;
+  background: var(--tap);
+  color: var(--ink);
+  text-align: left;
+  padding: 0.72rem 0.82rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.row--active {
+  background: var(--active);
+  border-color: var(--active);
+  color: var(--active-ink);
+}
+
+.stack {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pill {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.84rem;
+}
+
+.pill.active {
+  background: var(--active);
+  border-color: var(--active);
+  color: #fff;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.tabs .row--tap {
+  width: auto;
+  min-width: 5.6rem;
+  text-align: center;
+  padding: 0.45rem 0.7rem;
+}
+
+.section-card {
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  padding: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.83rem;
+}
+
+.bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45rem;
+}
+
+.bottom-nav .row--tap {
+  text-align: center;
+  padding: 0.58rem 0.3rem;
+  font-size: 0.86rem;
+}
+
+@media (min-width: 48rem) {
+  .app-shell {
+    max-width: 42rem;
+    margin: 0 auto;
+  }
+}
+
+@media print {
+  .bottom-nav,
+  .tabs,
+  .tools-only,
+  .hide-print {
+    display: none !important;
+  }
+
+  .view {
+    border: 0;
+    padding: 0;
+  }
+}

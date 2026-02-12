@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PelletTap FeedBoard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell" aria-label="PelletTap FeedBoard">
+      <header class="app-header">
+        <h1>PelletTap FeedBoard</h1>
+        <p id="todayLabel"></p>
+      </header>
+
+      <section id="view-start" class="view"></section>
+      <section id="view-horses" class="view" hidden></section>
+      <section id="view-detail" class="view" hidden></section>
+      <section id="view-summary" class="view" hidden></section>
+      <section id="view-tools" class="view" hidden></section>
+
+      <nav class="bottom-nav" aria-label="Bottom navigation">
+        <button type="button" class="row--tap nav-btn row--active" data-view="start">Start</button>
+        <button type="button" class="row--tap nav-btn" data-view="horses">Horses</button>
+        <button type="button" class="row--tap nav-btn" data-view="summary">Summary</button>
+        <button type="button" class="row--tap nav-btn" data-view="tools">Tools</button>
+      </nav>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
