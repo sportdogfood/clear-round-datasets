@@ -2095,7 +2095,7 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
                   document.createTextNode(rider),
                   right,
                   'row--trip',
-                  (stripe % 2 === 0 ? 'row-alt' : ''),
+                  '',
                   canRiderNav ? (() => pushDetail('riderDetail', { kind: 'rider', key: String(rider || '') })) : null
                 );
               }
