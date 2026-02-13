@@ -1,0 +1,321 @@
+:root,
+:root[data-kit="A"] {
+  --bg0: #081022;
+  --bg1: #111b34;
+  --card: #1a2945;
+  --text: #f5f8ff;
+  --muted: #9eb2d8;
+  --accent: #31cfff;
+  --accent2: #74f082;
+  --shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+  --radius: 14px;
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+}
+
+:root[data-kit="B"] {
+  --bg0: #030711;
+  --bg1: #0a1120;
+  --card: #101927;
+  --text: #f2f6ff;
+  --muted: #9aa8c4;
+  --accent: #3f86ff;
+  --accent2: #7be17c;
+  --shadow: 0 6px 14px rgba(0, 0, 0, 0.38);
+  --radius: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: radial-gradient(circle at top, var(--bg1) 0, var(--bg0) 74%);
+  color: var(--text);
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-header,
+.HeaderBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg0) 90%, black 10%);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  padding: var(--space-2) var(--space-3);
+  transition: transform 160ms ease;
+}
+
+.app-header h1,
+.app-header p {
+  margin: 0;
+}
+
+.app-header p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.header--hidden {
+  transform: translateY(-100%);
+}
+
+.app-main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2) var(--space-2) calc(78px + env(safe-area-inset-bottom));
+  transition: padding-top 160ms ease;
+}
+
+.header--hidden + .app-main {
+  padding-top: 4px;
+}
+
+.bottom-nav,
+.BottomNav {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: color-mix(in srgb, var(--bg0) 92%, black 8%);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.bottom-nav__item,
+.BottomNav__item {
+  text-align: center;
+  padding: 10px 4px;
+  font-size: 0.82rem;
+}
+
+.bottom-nav__item--active,
+.BottomNav__item--active {
+  background: color-mix(in srgb, var(--accent) 30%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
+}
+
+.row,
+.RowTap {
+  display: grid;
+  gap: 4px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  background: var(--card);
+  padding: 10px 12px;
+}
+
+.row--tap {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  background: color-mix(in srgb, var(--accent) 11%, var(--card));
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform 90ms ease, filter 90ms ease;
+}
+
+.row--tap:active {
+  transform: scale(0.98);
+  filter: brightness(1.08);
+}
+
+.row--active {
+  background: color-mix(in srgb, var(--accent) 38%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.row__left,
+.row__mid,
+.row__right {
+  display: flex;
+  align-items: center;
+}
+
+.row__mid {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.row__right {
+  justify-content: flex-end;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.card,
+.Card,
+.HorseCard {
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: calc(var(--radius) + 2px);
+  padding: var(--space-2);
+  box-shadow: var(--shadow);
+}
+
+.card--dense {
+  padding: var(--space-1) var(--space-2);
+}
+
+.card__title {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.card__meta {
+  color: var(--muted);
+  margin-top: 2px;
+  font-size: 0.8rem;
+}
+
+.peak-strip,
+.PeakStrip {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.peak-strip .row--tap {
+  width: auto;
+  white-space: nowrap;
+  padding: 7px 10px;
+}
+
+.tabs,
+.Tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.tab,
+.Tabs__tab {
+  width: auto;
+  min-width: 72px;
+  text-align: center;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+.tab--active {
+  background: color-mix(in srgb, var(--accent2) 34%, var(--card));
+  border-color: color-mix(in srgb, var(--accent2) 66%, transparent);
+}
+
+.pills,
+.Pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill {
+  width: auto;
+  min-width: 38px;
+  border-radius: 999px;
+  text-align: center;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.pill--active {
+  background: color-mix(in srgb, var(--accent) 44%, var(--card));
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent2) 50%, transparent);
+  background: color-mix(in srgb, var(--accent2) 17%, var(--card));
+}
+
+.time-grid,
+.TimespanColumn {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.time-block,
+.TimespanColumn__block {
+  border: 1px solid color-mix(in srgb, var(--accent) 16%, transparent);
+  border-radius: calc(var(--radius) - 2px);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 7%, var(--card));
+}
+
+.time-block__label,
+.TimespanColumn__label {
+  padding: 6px 10px;
+  font-size: 0.81rem;
+  color: var(--muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.time-block__body,
+.TimespanColumn__body {
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inline-actions .row--tap {
+  width: auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+[data-kit="B"] .card,
+[data-kit="B"] .row,
+[data-kit="B"] .row--tap {
+  border-radius: 999px;
+}
+
+[data-kit="B"] .card {
+  padding: 8px 10px;
+}
+
+[data-kit="B"] .tab,
+[data-kit="B"] .pill,
+[data-kit="B"] .bottom-nav__item {
+  border-radius: 999px;
+}

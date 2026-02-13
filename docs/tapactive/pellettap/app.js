@@ -1,7 +1,18 @@
 import { loadAll } from "../js/dataLoader.js";
+import {
+  Card,
+  HorseCard,
+  PeakStrip,
+  Pills,
+  RowTap,
+  Tabs,
+  TimespanColumn,
+  escapeHtml,
+} from "../js/ui/components.js";
 
-const APP = "pellettap";
-const KEY_PREFIX = `tapactive:${APP}:`;
+const KIT_VARIANT = "A"; // switch to "B" for legacy-inspired style
+const APP_SLUG = "pellettap";
+const KEY_PREFIX = `tapactive:${APP_SLUG}:`;
 const TTL_MS = 5 * 24 * 60 * 60 * 1000;
 const TIMESPANS = ["AM", "MD", "PM", "NC"];
 const AMOUNTS = [0.5, 1, 1.5, 2, 2.5];
@@ -16,33 +27,36 @@ const ui = {
     plan: document.getElementById("view-plan"),
     share: document.getElementById("view-share"),
   },
+  nav: document.querySelector(".bottom-nav"),
 };
 
 const state = {
   yyyymmdd: "",
   stateKey: "",
   loadedFromCache: false,
+  hadSavedState: false,
   datasets: { horses: [], feed_items: [] },
   daily: null,
   nav: "start",
+  planMode: "list", // list | detail
   planTab: "feed",
   selectedHorseId: null,
-  expandedGrainId: null,
-  expandedSuppId: null,
+  expandedGrainByHorse: {},
+  expandedSuppByHorse: {},
   lastScrollTop: 0,
 };
 
-function todayKey(date = new Date()) {
+function yyyymmdd(date = new Date()) {
   const y = date.getFullYear();
-  const m = `${date.getMonth() + 1}`.padStart(2, "0");
-  const d = `${date.getDate()}`.padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
   return `${y}${m}${d}`;
 }
 
-function createDaily(yyyymmdd) {
+function createDaily(dayKey) {
   return {
-    app: APP,
-    yyyymmdd,
+    app: APP_SLUG,
+    yyyymmdd: dayKey,
     saved_at: Date.now(),
     active_horse_ids: [],
     by_horse: {},
@@ -54,37 +68,37 @@ function saveDaily() {
   localStorage.setItem(state.stateKey, JSON.stringify(state.daily));
 }
 
-function purgeOldDailyState() {
+function purgeOldState() {
   const now = Date.now();
-  const keys = [];
+  const stale = [];
   for (let i = 0; i < localStorage.length; i += 1) {
     const k = localStorage.key(i);
     if (!k || !k.startsWith(KEY_PREFIX)) continue;
     try {
       const parsed = JSON.parse(localStorage.getItem(k) || "{}");
-      const ts = Number(parsed.saved_at || 0);
-      if (!ts || now - ts > TTL_MS) keys.push(k);
+      if (!parsed.saved_at || now - Number(parsed.saved_at) > TTL_MS) stale.push(k);
     } catch {
-      keys.push(k);
+      stale.push(k);
     }
   }
-  keys.forEach((k) => localStorage.removeItem(k));
+  stale.forEach((k) => localStorage.removeItem(k));
 }
 
 function loadDaily() {
-  purgeOldDailyState();
+  purgeOldState();
   const raw = localStorage.getItem(state.stateKey);
   if (!raw) {
     state.loadedFromCache = false;
+    state.hadSavedState = false;
     state.daily = createDaily(state.yyyymmdd);
-    saveDaily();
     return;
   }
 
   try {
     const parsed = JSON.parse(raw);
-    if (parsed?.app === APP && parsed?.yyyymmdd === state.yyyymmdd) {
+    if (parsed?.app === APP_SLUG && parsed?.yyyymmdd === state.yyyymmdd) {
       state.loadedFromCache = true;
+      state.hadSavedState = true;
       state.daily = {
         ...createDaily(state.yyyymmdd),
         ...parsed,
@@ -94,12 +108,12 @@ function loadDaily() {
       return;
     }
   } catch {
-    // fallback below
+    // fall through
   }
 
   state.loadedFromCache = false;
+  state.hadSavedState = false;
   state.daily = createDaily(state.yyyymmdd);
-  saveDaily();
 }
 
 function ensureHorseState(horseId) {
@@ -114,31 +128,15 @@ function ensureHorseState(horseId) {
   return state.daily.by_horse[key];
 }
 
-function isHorseActive(horseId) {
-  return state.daily.active_horse_ids.includes(horseId);
-}
-
-function toggleHorseActive(horseId) {
-  const idx = state.daily.active_horse_ids.indexOf(horseId);
-  if (idx >= 0) state.daily.active_horse_ids.splice(idx, 1);
-  else state.daily.active_horse_ids.push(horseId);
-  saveDaily();
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function horseLabel(horse) {
+function getHorseLabel(horse) {
   return horse.display_name || horse.show_name || horse.barn_name || String(horse.horse_id);
 }
 
-function itemLabel(item) {
+function getHorseInitial(horse) {
+  return getHorseLabel(horse).trim().slice(0, 1).toUpperCase();
+}
+
+function getFeedLabel(item) {
   return item.display_name || item.short_name || item.feed_item_id;
 }
 
@@ -148,8 +146,14 @@ function getHorses() {
     .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
 }
 
-function getHorse(horseId) {
+function getHorseById(horseId) {
   return getHorses().find((h) => h.horse_id === horseId) || null;
+}
+
+function getActiveHorseIds() {
+  const horses = getHorses();
+  if (!state.daily.active_horse_ids.length) return horses.map((h) => h.horse_id);
+  return state.daily.active_horse_ids.filter((id) => getHorseById(id));
 }
 
 function getGrains() {
@@ -164,306 +168,409 @@ function getSupplements() {
     .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
 }
 
+function ensureAutoActivatedOnFirstLoad() {
+  if (state.hadSavedState) return;
+  const allIds = getHorses().map((h) => h.horse_id);
+  state.daily.active_horse_ids = allIds;
+  if (!state.selectedHorseId && allIds.length) state.selectedHorseId = allIds[0];
+  saveDaily();
+}
+
+function toDatasetRootLoad(loadFn) {
+  const existingBase = document.querySelector("base");
+  const oldHref = existingBase ? existingBase.getAttribute("href") : null;
+  let created = false;
+  let baseTag = existingBase;
+
+  if (!baseTag) {
+    baseTag = document.createElement("base");
+    document.head.prepend(baseTag);
+    created = true;
+  }
+  baseTag.setAttribute("href", "../");
+
+  return Promise.resolve(loadFn()).finally(() => {
+    if (created) baseTag.remove();
+    else if (oldHref == null) baseTag.removeAttribute("href");
+    else baseTag.setAttribute("href", oldHref);
+  });
+}
+
+async function loadDatasets() {
+  const loaded = await toDatasetRootLoad(() => loadAll());
+  state.datasets.horses = Array.isArray(loaded.horses) ? loaded.horses : [];
+  state.datasets.feed_items = Array.isArray(loaded.feed_items) ? loaded.feed_items : [];
+}
+
 function setNav(nav) {
   state.nav = nav;
-  Object.entries(ui.views).forEach(([name, el]) => {
-    el.classList.toggle("hidden", name !== nav);
+  Object.entries(ui.views).forEach(([key, el]) => {
+    el.classList.toggle("hidden", key !== nav);
   });
 
-  document.querySelectorAll("[data-nav]").forEach((btn) => {
-    const active = btn.dataset.nav === nav;
-    btn.classList.toggle("bottom-nav__item--active", active);
-    btn.classList.toggle("row--active", active);
-  });
+  const items = [
+    { key: "start", label: "Start" },
+    { key: "horses", label: "Horses" },
+    { key: "plan", label: "Plan" },
+    { key: "share", label: "Share" },
+  ];
+  ui.nav.innerHTML = items
+    .map(
+      (item) =>
+        `<button type="button" class="row--tap bottom-nav__item BottomNav__item ${
+          nav === item.key ? "row--active bottom-nav__item--active BottomNav__item--active" : ""
+        }" data-nav="${item.key}">${item.label}</button>`
+    )
+    .join("");
+}
+
+function setPlanMode(mode) {
+  state.planMode = mode;
 }
 
 function setPlanTab(tab) {
   state.planTab = tab;
 }
 
-function ensureSelectedHorse() {
-  if (state.selectedHorseId && getHorse(state.selectedHorseId)) return;
-  const active = state.daily.active_horse_ids.find((id) => getHorse(id));
-  state.selectedHorseId = active || null;
-}
-
-function renderStart() {
-  ui.views.start.innerHTML = `
-    <article class="card">
-      <h2 class="card__title">Start</h2>
-      <div class="card__meta">Begin fresh or resume today's saved plan.</div>
-      <div class="stack" style="margin-top:0.55rem;">
-        <button type="button" class="row--tap" data-action="new-day">New</button>
-        <button type="button" class="row--tap ${state.loadedFromCache ? "row--active" : ""}" data-action="resume-day">Resume</button>
-      </div>
-    </article>
-  `;
-}
-
-function renderHorses() {
-  const rows = getHorses().map((horse) => {
-    const active = isHorseActive(horse.horse_id);
-    return `
-      <button type="button" class="row row--tap horse-row ${active ? "row--active" : ""}" data-horse-id="${escapeHtml(horse.horse_id)}">
-        <span class="row__left">${escapeHtml(horseLabel(horse))}</span>
-        <span class="row__mid">${escapeHtml(horse.barn_name || "")}</span>
-        <span class="row__right">${active ? "On" : "Off"}</span>
-      </button>
-    `;
-  }).join("");
-
-  ui.views.horses.innerHTML = `
-    <article class="card">
-      <h2 class="card__title">Horses</h2>
-      <div class="card__meta">Tap row to toggle active. Tap again still routes to plan.</div>
-      <div class="horse-list" style="margin-top:0.55rem;">${rows || "<div class=\"card__meta\">No horses found.</div>"}</div>
-    </article>
-  `;
-}
-
-function grainState(horseId, grainId) {
-  const horseState = ensureHorseState(horseId);
-  if (!horseState.grains[grainId]) {
-    horseState.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
+function openHorseDetail(horseId) {
+  state.selectedHorseId = horseId;
+  if (!state.daily.active_horse_ids.includes(horseId)) {
+    state.daily.active_horse_ids.push(horseId);
+    saveDaily();
   }
-  return horseState.grains[grainId];
+  setPlanMode("detail");
+  setPlanTab("feed");
+  setNav("plan");
+}
+
+function grainTimespanEntry(horseId, grainId, span) {
+  const h = ensureHorseState(horseId);
+  if (!h.grains[grainId]) h.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
+  if (!(span in h.grains[grainId])) h.grains[grainId][span] = null;
+  return h.grains[grainId][span];
 }
 
 function toggleGrainAmount(horseId, grainId, span, amount, defaultUom) {
-  const g = grainState(horseId, grainId);
-  const current = g[span];
-  if (current && Number(current.amount) === amount) g[span] = null;
-  else g[span] = { amount, uom: current?.uom || defaultUom || "scoop" };
+  const h = ensureHorseState(horseId);
+  if (!h.grains[grainId]) h.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
+  const current = h.grains[grainId][span];
+  if (current && Number(current.amount) === amount) h.grains[grainId][span] = null;
+  else h.grains[grainId][span] = { amount, uom: current?.uom || defaultUom || "scoop" };
   saveDaily();
 }
 
 function setGrainUom(horseId, grainId, span, uom) {
-  const g = grainState(horseId, grainId);
-  const current = g[span];
-  g[span] = { amount: current?.amount ?? 1, uom };
+  const h = ensureHorseState(horseId);
+  if (!h.grains[grainId]) h.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
+  const current = h.grains[grainId][span];
+  h.grains[grainId][span] = { amount: current?.amount ?? 1, uom };
   saveDaily();
 }
 
-function toggleSuppSpan(horseId, suppId, span) {
-  const horseState = ensureHorseState(horseId);
-  const current = Array.isArray(horseState.supplements[suppId]) ? [...horseState.supplements[suppId]] : [];
-  const idx = current.indexOf(span);
-  if (idx >= 0) current.splice(idx, 1);
-  else current.push(span);
-  horseState.supplements[suppId] = current;
+function toggleSupplementSpan(horseId, suppId, span) {
+  const h = ensureHorseState(horseId);
+  const curr = Array.isArray(h.supplements[suppId]) ? [...h.supplements[suppId]] : [];
+  const i = curr.indexOf(span);
+  if (i >= 0) curr.splice(i, 1);
+  else curr.push(span);
+  h.supplements[suppId] = curr;
   saveDaily();
 }
 
-function toggleHay(horseId, span, amount) {
-  const horseState = ensureHorseState(horseId);
-  const current = Number(horseState.hay[span] || 0);
-  horseState.hay[span] = current === amount ? 0 : amount;
+function toggleHayAmount(horseId, span, amount) {
+  const h = ensureHorseState(horseId);
+  const current = Number(h.hay[span] || 0);
+  h.hay[span] = current === amount ? 0 : amount;
   saveDaily();
 }
 
-function renderFeedTab(horse) {
+function renderStart() {
+  ui.views.start.innerHTML = Card({
+    title: "Start",
+    meta: "New creates fresh state. Resume uses today's state if available.",
+    body: `
+      <div class="stack" style="margin-top:8px;">
+        ${RowTap({ title: "New", attrs: 'data-action="start-new"' })}
+        ${RowTap({ title: "Resume", active: state.loadedFromCache, attrs: 'data-action="start-resume"' })}
+      </div>
+    `,
+  });
+}
+
+function renderHorses() {
+  const list = getHorses()
+    .map((horse) => {
+      const active = getActiveHorseIds().includes(horse.horse_id);
+      return RowTap({
+        title: getHorseLabel(horse),
+        meta: [horse.barn_name, horse.gender, horse.color].filter(Boolean).join(" | "),
+        right: active ? "Active" : "",
+        active: state.selectedHorseId === horse.horse_id,
+        attrs: `data-action="open-horse" data-horse-id="${escapeHtml(horse.horse_id)}"`,
+      });
+    })
+    .join("");
+
+  ui.views.horses.innerHTML = Card({
+    title: "Horses",
+    meta: "Tap any horse to jump into Horse Detail.",
+    body: `<div class="horse-list" style="margin-top:8px;">${list || "<div class=\"card__meta\">No horses found.</div>"}</div>`,
+  });
+}
+
+function renderPlanList() {
+  const activeIds = getActiveHorseIds();
+  const peaks = PeakStrip({
+    items: activeIds.map((id) => ({ id, label: getHorseLabel(getHorseById(id) || { horse_id: id }) })),
+  });
+
+  const cards = activeIds
+    .map((horseId) => {
+      const horse = getHorseById(horseId);
+      if (!horse) return "";
+      return `
+        <div id="plan-horse-${horseId}">
+          ${HorseCard({
+            title: getHorseLabel(horse),
+            meta: [horse.barn_name, horse.gender, horse.color].filter(Boolean).join(" | "),
+            body: `<div class="card__meta" style="margin-top:8px;">Tap card to open Horse Detail</div>`,
+            attrs: `data-action="open-horse" data-horse-id="${escapeHtml(horseId)}"`,
+            active: state.selectedHorseId === horseId,
+          })}
+        </div>
+      `;
+    })
+    .join("");
+
+  ui.views.plan.innerHTML = `
+    ${Card({
+      title: "Plan",
+      meta: "Peak anchors jump to horse cards.",
+      body: `<div style="margin-top:8px;">${peaks}</div>`,
+    })}
+    <section class="plan-list">${cards || "<div class='card card--dense'><div class='card__meta'>No active horses.</div></div>"}</section>
+  `;
+}
+
+function renderFeedDetail(horse) {
+  const horseId = horse.horse_id;
+  const openGrainId = state.expandedGrainByHorse[String(horseId)] || null;
   const grains = getGrains();
-  const horseState = ensureHorseState(horse.horse_id);
 
-  return grains.map((grain) => {
-    const grainId = grain.feed_item_id;
-    const open = state.expandedGrainId === grainId;
-    const uoms = Array.isArray(grain.uoms) && grain.uoms.length
-      ? grain.uoms
-      : (grain.default_uom ? [grain.default_uom] : ["cup", "scoop"]);
+  return grains
+    .map((grain) => {
+      const grainId = grain.feed_item_id;
+      const open = openGrainId === grainId;
+      const uoms = Array.isArray(grain.uoms) && grain.uoms.length ? grain.uoms : ["cup", "scoop"];
 
-    const detail = !open
-      ? ""
-      : `
-        <div class="inline-detail card card--dense">
-          <div class="time-grid">
-            ${TIMESPANS.map((span) => {
-              const entry = grainState(horse.horse_id, grainId)[span];
-              const amounts = AMOUNTS.map((amount) => {
-                const active = entry && Number(entry.amount) === amount;
-                return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="grain-amount" data-grain-id="${escapeHtml(grainId)}" data-span="${span}" data-amount="${amount}">${amount}</button>`;
-              }).join("");
-              const uomPills = uoms.map((uom) => {
-                const active = entry && entry.uom === uom;
-                return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="grain-uom" data-grain-id="${escapeHtml(grainId)}" data-span="${span}" data-uom="${escapeHtml(uom)}">${escapeHtml(uom)}</button>`;
-              }).join("");
-              return `
-                <section class="time-block">
-                  <div class="time-block__label">${span}</div>
-                  <div class="time-block__body">
-                    <div class="inline-actions">${amounts}</div>
-                    <div class="inline-actions">${uomPills}</div>
-                  </div>
-                </section>
-              `;
-            }).join("")}
-          </div>
-        </div>
+      const detail = !open
+        ? ""
+        : Card({
+            dense: true,
+            body: TimespanColumn({
+              blocks: TIMESPANS.map((span) => {
+                const entry = grainTimespanEntry(horseId, grainId, span);
+                const amountPills = Pills({
+                  items: AMOUNTS.map((n) => ({ value: n, label: String(n) })),
+                  activeValue: entry ? entry.amount : "",
+                  action: "grain-amount",
+                  attrs: `data-grain-id="${escapeHtml(grainId)}" data-span="${span}" data-horse-id="${escapeHtml(horseId)}"`,
+                });
+                const uomPills = Pills({
+                  items: uoms.map((u) => ({ value: u, label: u })),
+                  activeValue: entry ? entry.uom : "",
+                  action: "grain-uom",
+                  attrs: `data-grain-id="${escapeHtml(grainId)}" data-span="${span}" data-horse-id="${escapeHtml(horseId)}"`,
+                });
+                return { label: span, body: `${amountPills}${uomPills}` };
+              }),
+            }),
+          });
+
+      const setCount = TIMESPANS.filter((span) => grainTimespanEntry(horseId, grainId, span)).length;
+
+      return `
+        <article class="card card--dense">
+          ${RowTap({
+            title: getFeedLabel(grain),
+            right: setCount ? `${setCount} set` : "open",
+            active: open,
+            attrs: `data-action="open-grain" data-grain-id="${escapeHtml(grainId)}" data-horse-id="${escapeHtml(horseId)}"`,
+          })}
+          <div class="inline-detail">${detail}</div>
+        </article>
       `;
-
-    const selectedCount = TIMESPANS.filter((s) => grainState(horse.horse_id, grainId)[s]).length;
-
-    return `
-      <article class="card card--dense">
-        <button type="button" class="row row--tap ${open ? "row--active" : ""}" data-action="open-grain" data-grain-id="${escapeHtml(grainId)}">
-          <span class="row__left">${escapeHtml(itemLabel(grain))}</span>
-          <span class="row__right">${selectedCount ? `${selectedCount} set` : "open"}</span>
-        </button>
-        ${detail}
-      </article>
-    `;
-  }).join("") || "<div class='card card--dense'><div class='card__meta'>No grain items.</div></div>";
+    })
+    .join("");
 }
 
-function renderExtrasTab(horse) {
-  const horseState = ensureHorseState(horse.horse_id);
+function renderExtrasDetail(horse) {
+  const horseId = horse.horse_id;
+  const openSuppId = state.expandedSuppByHorse[String(horseId)] || null;
   const supplements = getSupplements();
+  const horseState = ensureHorseState(horseId);
 
-  const suppHtml = supplements.map((supp) => {
-    const suppId = supp.feed_item_id;
-    const open = state.expandedSuppId === suppId;
-    const selectedSpans = Array.isArray(horseState.supplements[suppId]) ? horseState.supplements[suppId] : [];
+  const suppBlocks = supplements
+    .map((supp) => {
+      const suppId = supp.feed_item_id;
+      const open = openSuppId === suppId;
+      const selected = Array.isArray(horseState.supplements[suppId]) ? horseState.supplements[suppId] : [];
 
-    const detail = !open
-      ? ""
-      : `
-        <div class="inline-detail card card--dense">
-          <div class="inline-actions">
-            ${TIMESPANS.map((span) => {
-              const active = selectedSpans.includes(span);
-              return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="supp-span" data-supp-id="${escapeHtml(suppId)}" data-span="${span}">${span}</button>`;
-            }).join("")}
-          </div>
-        </div>
+      const detail = !open
+        ? ""
+        : Card({
+            dense: true,
+            body: `
+              <div class="inline-actions">
+                ${TIMESPANS.map((span) => {
+                  const active = selected.includes(span);
+                  return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="supp-span" data-supp-id="${escapeHtml(
+                    suppId
+                  )}" data-horse-id="${escapeHtml(horseId)}" data-value="${span}">${span}</button>`;
+                }).join("")}
+              </div>
+            `,
+          });
+
+      const chips = selected.map((span) => `<span class="chip">${escapeHtml(span)}</span>`).join(" ");
+      return `
+        <article class="card card--dense">
+          ${RowTap({
+            title: getFeedLabel(supp),
+            right: selected.length ? `${selected.length} spans` : "open",
+            active: open,
+            attrs: `data-action="open-supp" data-supp-id="${escapeHtml(suppId)}" data-horse-id="${escapeHtml(horseId)}"`,
+          })}
+          ${chips ? `<div style="margin-top:6px;">${chips}</div>` : ""}
+          <div class="inline-detail">${detail}</div>
+        </article>
       `;
+    })
+    .join("");
 
-    return `
-      <article class="card card--dense">
-        <button type="button" class="row row--tap ${open ? "row--active" : ""}" data-action="open-supp" data-supp-id="${escapeHtml(suppId)}">
-          <span class="row__left">${escapeHtml(itemLabel(supp))}</span>
-          <span class="row__right">${selectedSpans.length ? `${selectedSpans.length} spans` : "open"}</span>
-        </button>
-        ${detail}
-      </article>
-    `;
-  }).join("");
-
-  const hay = TIMESPANS.map((span) => {
-    const current = Number(horseState.hay[span] || 0);
-    const amountButtons = AMOUNTS.map((amount) => {
-      const active = current === amount;
-      return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="hay-amount" data-span="${span}" data-amount="${amount}">${amount}</button>`;
-    }).join("");
-
-    return `
-      <section class="time-block">
-        <div class="time-block__label">${span}</div>
-        <div class="time-block__body">
-          <div class="inline-actions">${amountButtons}</div>
-          <div class="chip">flakes</div>
-        </div>
-      </section>
-    `;
-  }).join("");
+  const hayBlocks = TimespanColumn({
+    blocks: TIMESPANS.map((span) => {
+      const amount = Number(horseState.hay[span] || 0);
+      const amountPills = AMOUNTS.map((n) => {
+        const active = amount === n;
+        return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="hay-amount" data-horse-id="${escapeHtml(
+          horseId
+        )}" data-span="${span}" data-value="${n}">${n}</button>`;
+      }).join("");
+      return { label: span, body: `<div class="inline-actions">${amountPills}</div><span class="chip">flakes</span>` };
+    }),
+  });
 
   return `
-    <div class="extra-list">
-      ${suppHtml || "<div class='card card--dense'><div class='card__meta'>No supplement items.</div></div>"}
-      <article class="card">
-        <h3 class="card__title">Hay</h3>
-        <div class="card__meta">Hardcoded stage (not from dataset)</div>
-        <div class="time-grid" style="margin-top:0.45rem;">${hay}</div>
-      </article>
+    <div class="stack">
+      ${suppBlocks || "<div class='card card--dense'><div class='card__meta'>No supplements.</div></div>"}
+      ${Card({ title: "Hay", meta: "Hardcoded stage (not from dataset)", body: hayBlocks })}
     </div>
   `;
 }
 
-function horseCardLines(horseId) {
-  const horse = getHorse(horseId);
+function renderHorseSummaryCard(horseId) {
+  const horse = getHorseById(horseId);
   const horseState = ensureHorseState(horseId);
 
-  const grainLines = getGrains().map((grain) => {
-    const g = horseState.grains[grain.feed_item_id];
-    if (!g) return "";
-    const spans = TIMESPANS.map((span) => (g[span] ? `${span} ${g[span].amount} ${g[span].uom}` : "")).filter(Boolean);
-    if (!spans.length) return "";
-    return `<div>${escapeHtml(itemLabel(grain))}: ${escapeHtml(spans.join(" | "))}</div>`;
-  }).filter(Boolean).join("");
+  const grainLines = getGrains()
+    .map((grain) => {
+      const g = horseState.grains[grain.feed_item_id];
+      if (!g) return "";
+      const spans = TIMESPANS.map((span) => (g[span] ? `${span} ${g[span].amount} ${g[span].uom}` : "")).filter(Boolean);
+      if (!spans.length) return "";
+      return `<div>${escapeHtml(getFeedLabel(grain))}: ${escapeHtml(spans.join(" | "))}</div>`;
+    })
+    .filter(Boolean)
+    .join("");
 
-  const extraLines = getSupplements().map((supp) => {
-    const spans = horseState.supplements[supp.feed_item_id] || [];
-    if (!spans.length) return "";
-    return `<div>${escapeHtml(itemLabel(supp))}: ${escapeHtml(spans.join(", "))}</div>`;
-  }).filter(Boolean).join("");
+  const suppLines = getSupplements()
+    .map((supp) => {
+      const spans = horseState.supplements[supp.feed_item_id] || [];
+      if (!spans.length) return "";
+      return `<div>${escapeHtml(getFeedLabel(supp))}: ${escapeHtml(spans.join(", "))}</div>`;
+    })
+    .filter(Boolean)
+    .join("");
 
-  const haySpans = TIMESPANS.map((span) => {
-    const a = Number(horseState.hay[span] || 0);
-    return a ? `${span} ${a} flakes` : "";
-  }).filter(Boolean);
+  const hayLine = TIMESPANS.map((span) => {
+    const amount = Number(horseState.hay[span] || 0);
+    return amount ? `${span} ${amount} flakes` : "";
+  })
+    .filter(Boolean)
+    .join(" | ");
 
-  return `
-    <article class="card card--dense">
-      <div class="headline-row">
-        <h3 class="card__title">${escapeHtml(horse ? horseLabel(horse) : String(horseId))}</h3>
-        <span class="chip">${escapeHtml(String(horseId))}</span>
-      </div>
-      <div class="card__meta">Feed</div>
+  return HorseCard({
+    title: horse ? getHorseLabel(horse) : `Horse ${horseId}`,
+    meta: horse ? [horse.barn_name, horse.gender, horse.color].filter(Boolean).join(" | ") : "",
+    body: `
+      <div class="card__meta" style="margin-top:8px;">Feed</div>
       ${grainLines || "<div class='meta-line'>No feed set.</div>"}
-      <div class="card__meta" style="margin-top:0.35rem;">Extras</div>
-      ${extraLines || "<div class='meta-line'>No extras set.</div>"}
-      <div class="card__meta" style="margin-top:0.35rem;">Hay</div>
-      ${haySpans.length ? `<div>${escapeHtml(haySpans.join(" | "))}</div>` : "<div class='meta-line'>No hay set.</div>"}
-    </article>
-  `;
+      <div class="card__meta" style="margin-top:8px;">Extras</div>
+      ${suppLines || "<div class='meta-line'>No extras set.</div>"}
+      <div class="card__meta" style="margin-top:8px;">Hay</div>
+      ${hayLine ? `<div>${escapeHtml(hayLine)}</div>` : "<div class='meta-line'>No hay set.</div>"}
+    `,
+    attrs: `data-action="open-horse" data-horse-id="${escapeHtml(horseId)}"`,
+    active: state.selectedHorseId === horseId,
+  });
 }
 
-function renderCardTab(horse) {
-  return horseCardLines(horse.horse_id);
-}
-
-function renderPlan() {
-  ensureSelectedHorse();
-  const horse = state.selectedHorseId ? getHorse(state.selectedHorseId) : null;
+function renderPlanDetail() {
+  const horse = state.selectedHorseId ? getHorseById(state.selectedHorseId) : null;
   if (!horse) {
-    ui.views.plan.innerHTML = `
-      <article class="card">
-        <h2 class="card__title">Plan</h2>
-        <div class="card__meta">Select a horse from Horses to begin planning.</div>
-      </article>
-    `;
+    ui.views.plan.innerHTML = Card({
+      title: "Plan",
+      meta: "Select a horse from Horses or Plan.",
+    });
     return;
   }
 
-  const horseMeta = `
-    <article class="card">
-      <h2 class="card__title">${escapeHtml(horseLabel(horse))}</h2>
-      <div class="card__meta">
-        barn ${escapeHtml(horse.barn_name || "-")} | gender ${escapeHtml(horse.gender || "-")} | color ${escapeHtml(horse.color || "-")}
+  const horseMetaCard = Card({
+    body: `
+      <div class="horse-meta">
+        <div class="horse-avatar">${escapeHtml(getHorseInitial(horse))}</div>
+        <div>
+          <h2 class="card__title">${escapeHtml(getHorseLabel(horse))}</h2>
+          <div class="card__meta">${escapeHtml([horse.barn_name, horse.color, horse.gender].filter(Boolean).join(" | "))}</div>
+        </div>
       </div>
-    </article>
-  `;
+    `,
+  });
 
-  const tabHtml = `
-    <div class="tabs">
-      <button type="button" class="row--tap tab ${state.planTab === "feed" ? "row--active tab--active" : ""}" data-tab="feed">Feed</button>
-      <button type="button" class="row--tap tab ${state.planTab === "extras" ? "row--active tab--active" : ""}" data-tab="extras">Extras</button>
-      <button type="button" class="row--tap tab ${state.planTab === "card" ? "row--active tab--active" : ""}" data-tab="card">Card</button>
-    </div>
-  `;
+  const tabs = Tabs({
+    active: state.planTab,
+    items: [
+      { key: "feed", label: "Feed" },
+      { key: "extras", label: "Extras" },
+      { key: "card", label: "Card" },
+    ],
+  });
 
   let body = "";
-  if (state.planTab === "feed") body = `<section class="feed-list">${renderFeedTab(horse)}</section>`;
-  if (state.planTab === "extras") body = renderExtrasTab(horse);
-  if (state.planTab === "card") body = `<section class="summary-list">${renderCardTab(horse)}</section>`;
+  if (state.planTab === "feed") body = renderFeedDetail(horse);
+  if (state.planTab === "extras") body = renderExtrasDetail(horse);
+  if (state.planTab === "card") body = renderHorseSummaryCard(horse.horse_id);
 
-  ui.views.plan.innerHTML = `${horseMeta}${tabHtml}${body}`;
+  ui.views.plan.innerHTML = `
+    ${RowTap({ title: "Back to Plan List", attrs: 'data-action="back-plan-list"' })}
+    ${horseMetaCard}
+    ${tabs}
+    <section class="stack">${body}</section>
+  `;
 }
 
-function sharePayload() {
+function renderPlan() {
+  if (state.planMode === "detail") renderPlanDetail();
+  else renderPlanList();
+}
+
+function sharePayload(selectedOnly) {
+  const ids = selectedOnly && state.selectedHorseId ? [state.selectedHorseId] : getActiveHorseIds();
   return {
-    app: APP,
+    app: APP_SLUG,
     yyyymmdd: state.yyyymmdd,
-    horses: state.daily.active_horse_ids.map((horseId) => ({
+    horses: ids.map((horseId) => ({
       horse_id: horseId,
       selections: ensureHorseState(horseId),
     })),
@@ -471,18 +578,35 @@ function sharePayload() {
 }
 
 function renderShare() {
-  const cards = state.daily.active_horse_ids.map((id) => horseCardLines(id)).join("");
-  ui.views.share.innerHTML = `
-    <article class="card">
-      <h2 class="card__title">Share</h2>
-      <div class="card__meta">Daily board for all active horses.</div>
-      <div class="inline-actions" style="margin-top:0.45rem;">
-        <button type="button" class="row--tap" data-action="copy-share">Copy text</button>
-        <button type="button" class="row--tap" data-action="push-share">Push to cloud</button>
+  const selectedHorse = state.selectedHorseId ? getHorseById(state.selectedHorseId) : null;
+
+  const headerCard = Card({
+    title: "Share",
+    meta: selectedHorse
+      ? `Selected horse: ${getHorseLabel(selectedHorse)}`
+      : "No selected horse. Showing all-horse overview.",
+    body: `
+      <div class="inline-actions" style="margin-top:8px;">
+        <button type="button" class="row--tap" data-action="share-copy">Copy text</button>
+        <button type="button" class="row--tap" data-action="share-cloud">Push to cloud</button>
       </div>
-    </article>
-    <section class="summary-list">${cards || "<div class='card card--dense'><div class='card__meta'>No active horses yet.</div></div>"}</section>
-  `;
+    `,
+  });
+
+  let content = "";
+  if (selectedHorse) {
+    content = renderHorseSummaryCard(selectedHorse.horse_id);
+  } else {
+    content = getActiveHorseIds()
+      .map((id) => RowTap({
+        title: getHorseLabel(getHorseById(id) || { horse_id: id }),
+        meta: "Tap to open horse detail",
+        attrs: `data-action="open-horse" data-horse-id="${escapeHtml(id)}"`,
+      }))
+      .join("");
+  }
+
+  ui.views.share.innerHTML = `${headerCard}<section class="summary-list">${content || "<div class='card card--dense'><div class='card__meta'>No horses available.</div></div>"}</section>`;
 }
 
 function renderAll() {
@@ -495,44 +619,14 @@ function renderAll() {
 
 function bindHeaderAutoHide() {
   ui.main.addEventListener("scroll", () => {
-    const y = ui.main.scrollTop;
-    if (y > state.lastScrollTop + 8 && y > 24) {
-      ui.header.classList.add("header--hidden");
-    } else if (y < state.lastScrollTop - 8) {
-      ui.header.classList.remove("header--hidden");
-    }
-    state.lastScrollTop = y;
+    const top = ui.main.scrollTop;
+    if (top > state.lastScrollTop + 8 && top > 26) ui.header.classList.add("header--hidden");
+    if (top < state.lastScrollTop - 8) ui.header.classList.remove("header--hidden");
+    state.lastScrollTop = top;
   });
 }
 
-function withTapactiveRootBase(fn) {
-  const baseTag = document.querySelector("base");
-  const existingHref = baseTag ? baseTag.getAttribute("href") : null;
-  let created = false;
-
-  let activeBase = baseTag;
-  if (!activeBase) {
-    activeBase = document.createElement("base");
-    document.head.prepend(activeBase);
-    created = true;
-  }
-
-  activeBase.setAttribute("href", "../");
-
-  return Promise.resolve(fn()).finally(() => {
-    if (created) activeBase.remove();
-    else if (existingHref === null) activeBase.removeAttribute("href");
-    else activeBase.setAttribute("href", existingHref);
-  });
-}
-
-async function loadDatasets() {
-  const loaded = await withTapactiveRootBase(() => loadAll());
-  state.datasets.horses = Array.isArray(loaded.horses) ? loaded.horses : [];
-  state.datasets.feed_items = Array.isArray(loaded.feed_items) ? loaded.feed_items : [];
-}
-
-function copyToClipboard(text) {
+function copyText(text) {
   if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
   const area = document.createElement("textarea");
   area.value = text;
@@ -544,124 +638,139 @@ function copyToClipboard(text) {
 }
 
 function handleClick(event) {
-  const target = event.target.closest("button");
-  if (!target) return;
+  const btn = event.target.closest("button");
+  if (!btn) return;
 
-  if (target.dataset.nav) {
-    setNav(target.dataset.nav);
+  if (btn.dataset.nav) {
+    setNav(btn.dataset.nav);
+    if (btn.dataset.nav === "plan") setPlanMode("list");
+    renderPlan();
     return;
   }
 
-  const action = target.dataset.action;
+  const action = btn.dataset.action;
   if (!action) return;
 
-  if (action === "new-day") {
+  if (action === "start-new") {
     state.daily = createDaily(state.yyyymmdd);
+    state.daily.active_horse_ids = getHorses().map((h) => h.horse_id);
+    state.selectedHorseId = state.daily.active_horse_ids[0] || null;
     saveDaily();
     state.loadedFromCache = true;
-    state.selectedHorseId = null;
     renderAll();
     setNav("horses");
     return;
   }
 
-  if (action === "resume-day") {
+  if (action === "start-resume") {
     setNav("horses");
     return;
   }
 
+  if (action === "open-horse") {
+    const horseId = Number(btn.dataset.horseId);
+    openHorseDetail(horseId);
+    renderAll();
+    return;
+  }
+
+  if (action === "back-plan-list") {
+    setPlanMode("list");
+    renderPlan();
+    return;
+  }
+
+  if (action === "peak-jump") {
+    const horseId = Number(btn.dataset.horseId);
+    const target = document.getElementById(`plan-horse-${horseId}`);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  if (btn.dataset.tab) {
+    setPlanTab(btn.dataset.tab);
+    renderPlan();
+    return;
+  }
+
   if (action === "open-grain") {
-    const grainId = target.dataset.grainId;
-    state.expandedGrainId = state.expandedGrainId === grainId ? null : grainId;
+    const horseId = Number(btn.dataset.horseId);
+    const key = String(horseId);
+    const grainId = btn.dataset.grainId;
+    state.expandedGrainByHorse[key] = state.expandedGrainByHorse[key] === grainId ? null : grainId;
     renderPlan();
     return;
   }
 
   if (action === "grain-amount") {
-    const grainId = target.dataset.grainId;
-    const span = target.dataset.span;
-    const amount = Number(target.dataset.amount);
+    const horseId = Number(btn.dataset.horseId);
+    const grainId = btn.dataset.grainId;
+    const span = btn.dataset.span;
+    const amount = Number(btn.dataset.value);
     const grain = getGrains().find((g) => g.feed_item_id === grainId);
-    toggleGrainAmount(state.selectedHorseId, grainId, span, amount, grain?.default_uom || "scoop");
+    toggleGrainAmount(horseId, grainId, span, amount, grain?.default_uom || "scoop");
     renderPlan();
     renderShare();
     return;
   }
 
   if (action === "grain-uom") {
-    setGrainUom(state.selectedHorseId, target.dataset.grainId, target.dataset.span, target.dataset.uom);
+    setGrainUom(Number(btn.dataset.horseId), btn.dataset.grainId, btn.dataset.span, btn.dataset.value);
     renderPlan();
     renderShare();
     return;
   }
 
   if (action === "open-supp") {
-    const suppId = target.dataset.suppId;
-    state.expandedSuppId = state.expandedSuppId === suppId ? null : suppId;
+    const horseId = Number(btn.dataset.horseId);
+    const key = String(horseId);
+    const suppId = btn.dataset.suppId;
+    state.expandedSuppByHorse[key] = state.expandedSuppByHorse[key] === suppId ? null : suppId;
     renderPlan();
     return;
   }
 
   if (action === "supp-span") {
-    toggleSuppSpan(state.selectedHorseId, target.dataset.suppId, target.dataset.span);
+    toggleSupplementSpan(Number(btn.dataset.horseId), btn.dataset.suppId, btn.dataset.value);
     renderPlan();
     renderShare();
     return;
   }
 
   if (action === "hay-amount") {
-    toggleHay(state.selectedHorseId, target.dataset.span, Number(target.dataset.amount));
+    toggleHayAmount(Number(btn.dataset.horseId), btn.dataset.span, Number(btn.dataset.value));
     renderPlan();
     renderShare();
     return;
   }
 
-  if (action === "copy-share") {
-    copyToClipboard(JSON.stringify(sharePayload(), null, 2));
+  if (action === "share-copy") {
+    const payload = sharePayload(Boolean(state.selectedHorseId));
+    copyText(JSON.stringify(payload, null, 2));
     return;
   }
 
-  if (action === "push-share") {
-    console.log("pellettap push payload", sharePayload());
-  }
-}
-
-function handleViewSpecificClick(event) {
-  const horseRow = event.target.closest(".horse-row");
-  if (horseRow) {
-    const horseId = Number(horseRow.dataset.horseId);
-    toggleHorseActive(horseId);
-    state.selectedHorseId = horseId;
-    if (state.planTab !== "feed") state.planTab = "feed";
-    renderHorses();
-    renderPlan();
-    renderShare();
-    setNav("plan");
-    return;
-  }
-
-  const tabBtn = event.target.closest("[data-tab]");
-  if (tabBtn) {
-    setPlanTab(tabBtn.dataset.tab);
-    renderPlan();
+  if (action === "share-cloud") {
+    const payload = sharePayload(Boolean(state.selectedHorseId));
+    console.log("pellettap push payload", payload);
   }
 }
 
 async function boot() {
-  state.yyyymmdd = todayKey();
+  document.documentElement.setAttribute("data-kit", KIT_VARIANT);
+
+  state.yyyymmdd = yyyymmdd();
   state.stateKey = `${KEY_PREFIX}${state.yyyymmdd}`;
   ui.dateLabel.textContent = state.yyyymmdd;
 
   loadDaily();
   await loadDatasets();
+  ensureAutoActivatedOnFirstLoad();
 
   bindHeaderAutoHide();
   renderAll();
 
-  document.addEventListener("click", (event) => {
-    handleClick(event);
-    handleViewSpecificClick(event);
-  });
+  document.addEventListener("click", handleClick);
 }
 
 boot();
