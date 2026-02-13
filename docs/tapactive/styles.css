@@ -1,66 +1,11 @@
-:root {
-  color-scheme: light;
-  --bg: #f6f7fb;
-  --panel: #ffffff;
-  --text: #1f2a37;
-  --tap: #e8f1ff;
-  --tap-border: #b8d1f7;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100dvh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
-  color: var(--text);
-}
+@import url("./js/ui-kit.css");
 
 .app-shell {
   min-height: 100dvh;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  padding: 1rem;
-  gap: 1rem;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.2;
 }
 
 .app-list {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.62rem;
   align-content: start;
-}
-
-.row--tap {
-  width: 100%;
-  border: 1px solid var(--tap-border);
-  border-radius: 0.75rem;
-  background: var(--tap);
-  color: var(--text);
-  text-align: left;
-  padding: 0.9rem 1rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.row--tap:focus-visible {
-  outline: 2px solid #2a6fdc;
-  outline-offset: 2px;
-}
-
-@media (min-width: 48rem) {
-  .app-shell {
-    max-width: 30rem;
-    margin: 0 auto;
-    padding-top: 2rem;
-  }
 }

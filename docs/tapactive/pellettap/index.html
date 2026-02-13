@@ -3,27 +3,29 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PelletTap FeedBoard</title>
+    <title>PelletTap</title>
+    <link rel="stylesheet" href="../js/ui-kit.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell" aria-label="PelletTap FeedBoard">
-      <header class="app-header">
-        <h1>PelletTap FeedBoard</h1>
-        <p id="todayLabel"></p>
+    <main class="app-shell" aria-label="PelletTap">
+      <header class="app-header" id="appHeader">
+        <h1>PelletTap</h1>
+        <p id="dateLabel">Today</p>
       </header>
 
-      <section id="view-start" class="view"></section>
-      <section id="view-horses" class="view" hidden></section>
-      <section id="view-detail" class="view" hidden></section>
-      <section id="view-summary" class="view" hidden></section>
-      <section id="view-tools" class="view" hidden></section>
+      <section class="app-main" id="appMain">
+        <section id="view-start" data-view="start"></section>
+        <section id="view-horses" data-view="horses" class="hidden"></section>
+        <section id="view-plan" data-view="plan" class="hidden"></section>
+        <section id="view-share" data-view="share" class="hidden"></section>
+      </section>
 
-      <nav class="bottom-nav" aria-label="Bottom navigation">
-        <button type="button" class="row--tap nav-btn row--active" data-view="start">Start</button>
-        <button type="button" class="row--tap nav-btn" data-view="horses">Horses</button>
-        <button type="button" class="row--tap nav-btn" data-view="summary">Summary</button>
-        <button type="button" class="row--tap nav-btn" data-view="tools">Tools</button>
+      <nav class="bottom-nav" aria-label="Bottom nav">
+        <button class="row--tap bottom-nav__item bottom-nav__item--active" type="button" data-nav="start">Start</button>
+        <button class="row--tap bottom-nav__item" type="button" data-nav="horses">Horses</button>
+        <button class="row--tap bottom-nav__item" type="button" data-nav="plan">Plan</button>
+        <button class="row--tap bottom-nav__item" type="button" data-nav="share">Share</button>
       </nav>
     </main>
 
