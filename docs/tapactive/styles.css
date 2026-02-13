@@ -1,11 +1,6 @@
-@import url("./js/ui-kit.css");
-
-.app-shell {
-  min-height: 100dvh;
-}
+@import url("./js/ui/ui.css");
 
 .app-list {
   display: grid;
-  gap: 0.62rem;
-  align-content: start;
+  gap: 8px;
 }
