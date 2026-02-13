@@ -1,65 +1,47 @@
 import { loadAll } from "../js/dataLoader.js";
 
-const APP_SLUG = "pellettap";
-const KEY_PREFIX = `tapactive:${APP_SLUG}:`;
-const STATE_TTL_MS = 5 * 24 * 60 * 60 * 1000;
+const APP = "pellettap";
+const KEY_PREFIX = `tapactive:${APP}:`;
+const TTL_MS = 5 * 24 * 60 * 60 * 1000;
 const TIMESPANS = ["AM", "MD", "PM", "NC"];
 const AMOUNTS = [0.5, 1, 1.5, 2, 2.5];
 
-const state = {
-  datasets: {
-    horses: [],
-    feed_items: [],
-    profiles: [],
-    locations: [],
+const ui = {
+  header: document.getElementById("appHeader"),
+  main: document.getElementById("appMain"),
+  dateLabel: document.getElementById("dateLabel"),
+  views: {
+    start: document.getElementById("view-start"),
+    horses: document.getElementById("view-horses"),
+    plan: document.getElementById("view-plan"),
+    share: document.getElementById("view-share"),
   },
-  todayKey: "",
+};
+
+const state = {
   yyyymmdd: "",
+  stateKey: "",
   loadedFromCache: false,
+  datasets: { horses: [], feed_items: [] },
   daily: null,
-  activeView: "start",
+  nav: "start",
+  planTab: "feed",
   selectedHorseId: null,
-  horseTab: "grain",
-  selectedGrainId: null,
-  selectedSuppId: null,
+  expandedGrainId: null,
+  expandedSuppId: null,
+  lastScrollTop: 0,
 };
 
-const views = {
-  start: document.getElementById("view-start"),
-  horses: document.getElementById("view-horses"),
-  detail: document.getElementById("view-detail"),
-  summary: document.getElementById("view-summary"),
-  tools: document.getElementById("view-tools"),
-};
-
-const todayLabel = document.getElementById("todayLabel");
-
-function getYyyymmdd(date = new Date()) {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${year}${month}${day}`;
+function todayKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, "0");
+  const d = `${date.getDate()}`.padStart(2, "0");
+  return `${y}${m}${d}`;
 }
 
-function makeStateKey(yyyymmdd) {
-  return `${KEY_PREFIX}${yyyymmdd}`;
-}
-
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
-function emptyHorseState() {
+function createDaily(yyyymmdd) {
   return {
-    grains: {},
-    supplements: {},
-    hay: { AM: 0, MD: 0, PM: 0, NC: 0 },
-  };
-}
-
-function createEmptyDaily(yyyymmdd) {
-  return {
-    app: APP_SLUG,
+    app: APP,
     yyyymmdd,
     saved_at: Date.now(),
     active_horse_ids: [],
@@ -69,46 +51,42 @@ function createEmptyDaily(yyyymmdd) {
 
 function saveDaily() {
   state.daily.saved_at = Date.now();
-  localStorage.setItem(state.todayKey, JSON.stringify(state.daily));
+  localStorage.setItem(state.stateKey, JSON.stringify(state.daily));
 }
 
-function purgeOldState() {
+function purgeOldDailyState() {
   const now = Date.now();
-  const removeKeys = [];
-
+  const keys = [];
   for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith(KEY_PREFIX)) continue;
-
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(KEY_PREFIX)) continue;
     try {
-      const parsed = JSON.parse(localStorage.getItem(key) || "{}");
-      if (!parsed.saved_at || now - Number(parsed.saved_at) > STATE_TTL_MS) {
-        removeKeys.push(key);
-      }
+      const parsed = JSON.parse(localStorage.getItem(k) || "{}");
+      const ts = Number(parsed.saved_at || 0);
+      if (!ts || now - ts > TTL_MS) keys.push(k);
     } catch {
-      removeKeys.push(key);
+      keys.push(k);
     }
   }
-
-  removeKeys.forEach((key) => localStorage.removeItem(key));
+  keys.forEach((k) => localStorage.removeItem(k));
 }
 
 function loadDaily() {
-  purgeOldState();
-  const raw = localStorage.getItem(state.todayKey);
+  purgeOldDailyState();
+  const raw = localStorage.getItem(state.stateKey);
   if (!raw) {
     state.loadedFromCache = false;
-    state.daily = createEmptyDaily(state.yyyymmdd);
+    state.daily = createDaily(state.yyyymmdd);
     saveDaily();
     return;
   }
 
   try {
     const parsed = JSON.parse(raw);
-    if (parsed?.app === APP_SLUG && parsed?.yyyymmdd === state.yyyymmdd) {
+    if (parsed?.app === APP && parsed?.yyyymmdd === state.yyyymmdd) {
       state.loadedFromCache = true;
       state.daily = {
-        ...createEmptyDaily(state.yyyymmdd),
+        ...createDaily(state.yyyymmdd),
         ...parsed,
         active_horse_ids: Array.isArray(parsed.active_horse_ids) ? parsed.active_horse_ids : [],
         by_horse: parsed.by_horse && typeof parsed.by_horse === "object" ? parsed.by_horse : {},
@@ -116,167 +94,38 @@ function loadDaily() {
       return;
     }
   } catch {
-    // fall through to empty state
+    // fallback below
   }
 
   state.loadedFromCache = false;
-  state.daily = createEmptyDaily(state.yyyymmdd);
+  state.daily = createDaily(state.yyyymmdd);
   saveDaily();
 }
 
-async function loadDatasetsFromBaseLoader() {
-  const existingBaseTag = document.querySelector("base");
-  const previousHref = existingBaseTag ? existingBaseTag.getAttribute("href") : null;
-
-  if (!existingBaseTag) {
-    const baseTag = document.createElement("base");
-    baseTag.setAttribute("href", "../");
-    document.head.prepend(baseTag);
-  } else {
-    existingBaseTag.setAttribute("href", "../");
-  }
-
-  try {
-    const loaded = await loadAll();
-    state.datasets.horses = Array.isArray(loaded.horses) ? loaded.horses : [];
-    state.datasets.feed_items = Array.isArray(loaded.feed_items) ? loaded.feed_items : [];
-    state.datasets.profiles = Array.isArray(loaded.profiles) ? loaded.profiles : [];
-    state.datasets.locations = Array.isArray(loaded.locations) ? loaded.locations : [];
-  } finally {
-    const currentBaseTag = document.querySelector("base");
-    if (currentBaseTag) {
-      if (previousHref === null) {
-        currentBaseTag.remove();
-      } else {
-        currentBaseTag.setAttribute("href", previousHref);
-      }
-    }
-  }
-}
-
-function horseIdToKey(horseId) {
-  return String(horseId);
-}
-
-function ensureHorse(horseId) {
-  const key = horseIdToKey(horseId);
+function ensureHorseState(horseId) {
+  const key = String(horseId);
   if (!state.daily.by_horse[key]) {
-    state.daily.by_horse[key] = emptyHorseState();
+    state.daily.by_horse[key] = {
+      grains: {},
+      supplements: {},
+      hay: { AM: 0, MD: 0, PM: 0, NC: 0 },
+    };
   }
   return state.daily.by_horse[key];
 }
 
-function toggleActiveHorse(horseId) {
-  const list = state.daily.active_horse_ids;
-  const idx = list.indexOf(horseId);
-  if (idx >= 0) {
-    list.splice(idx, 1);
-  } else {
-    list.push(horseId);
-  }
-  saveDaily();
-  return idx < 0;
-}
-
-function isActiveHorse(horseId) {
+function isHorseActive(horseId) {
   return state.daily.active_horse_ids.includes(horseId);
 }
 
-function getHorseLabel(horse) {
-  return horse.display_name || horse.show_name || horse.barn_name || String(horse.horse_id);
-}
-
-function getFeedLabel(item) {
-  return item.display_name || item.short_name || item.feed_item_id;
-}
-
-function getSortedActiveHorses() {
-  return state.datasets.horses
-    .filter((h) => h && h.active !== false)
-    .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
-}
-
-function getGrains() {
-  return state.datasets.feed_items
-    .filter((item) => {
-      const type = String(item.type || "").toLowerCase();
-      return type.includes("grain") || (!type.includes("supp") && !type.includes("supplement"));
-    })
-    .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
-}
-
-function getSupplements() {
-  return state.datasets.feed_items
-    .filter((item) => {
-      const type = String(item.type || "").toLowerCase();
-      return type.includes("supp");
-    })
-    .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
-}
-
-function getGrainTimespanEntry(horseId, grainId, timespan) {
-  const horseState = ensureHorse(horseId);
-  if (!horseState.grains[grainId]) {
-    horseState.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
-  }
-  if (!(timespan in horseState.grains[grainId])) {
-    horseState.grains[grainId][timespan] = null;
-  }
-  return horseState.grains[grainId][timespan];
-}
-
-function setGrainAmount(horseId, grainId, timespan, amount, defaultUom) {
-  const horseState = ensureHorse(horseId);
-  if (!horseState.grains[grainId]) {
-    horseState.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
-  }
-
-  const current = horseState.grains[grainId][timespan];
-  if (current && Number(current.amount) === amount) {
-    horseState.grains[grainId][timespan] = null;
-  } else {
-    horseState.grains[grainId][timespan] = {
-      amount,
-      uom: current?.uom || defaultUom || "scoop",
-    };
-  }
+function toggleHorseActive(horseId) {
+  const idx = state.daily.active_horse_ids.indexOf(horseId);
+  if (idx >= 0) state.daily.active_horse_ids.splice(idx, 1);
+  else state.daily.active_horse_ids.push(horseId);
   saveDaily();
 }
 
-function setGrainUom(horseId, grainId, timespan, uom) {
-  const horseState = ensureHorse(horseId);
-  if (!horseState.grains[grainId]) {
-    horseState.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
-  }
-  const current = horseState.grains[grainId][timespan];
-  horseState.grains[grainId][timespan] = {
-    amount: current?.amount ?? 1,
-    uom,
-  };
-  saveDaily();
-}
-
-function toggleSuppTimespan(horseId, suppId, timespan) {
-  const horseState = ensureHorse(horseId);
-  const current = Array.isArray(horseState.supplements[suppId]) ? [...horseState.supplements[suppId]] : [];
-  const idx = current.indexOf(timespan);
-  if (idx >= 0) {
-    current.splice(idx, 1);
-  } else {
-    current.push(timespan);
-  }
-  horseState.supplements[suppId] = current;
-  saveDaily();
-}
-
-function setHayAmount(horseId, timespan, amount) {
-  const horseState = ensureHorse(horseId);
-  const current = Number(horseState.hay[timespan] || 0);
-  horseState.hay[timespan] = current === amount ? 0 : amount;
-  saveDaily();
-}
-
-function htmlEscape(value) {
+function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -285,499 +134,534 @@ function htmlEscape(value) {
     .replaceAll("'", "&#39;");
 }
 
-function getHorseById(horseId) {
-  return getSortedActiveHorses().find((horse) => horse.horse_id === horseId) || null;
+function horseLabel(horse) {
+  return horse.display_name || horse.show_name || horse.barn_name || String(horse.horse_id);
 }
 
-function formatHorseSummary(horseId) {
-  const horse = getHorseById(horseId);
-  const horseState = ensureHorse(horseId);
-  const grainItems = getGrains();
-  const suppItems = getSupplements();
-
-  const grainsHtml = grainItems
-    .map((item) => {
-      const grain = horseState.grains[item.feed_item_id];
-      if (!grain) return "";
-      const parts = TIMESPANS
-        .map((span) => {
-          const val = grain[span];
-          if (!val) return "";
-          return `${span} ${val.amount} ${val.uom}`;
-        })
-        .filter(Boolean);
-      if (!parts.length) return "";
-      return `<div><strong>${htmlEscape(getFeedLabel(item))}</strong>: ${htmlEscape(parts.join(" | "))}</div>`;
-    })
-    .filter(Boolean)
-    .join("");
-
-  const suppHtml = suppItems
-    .map((item) => {
-      const spans = Array.isArray(horseState.supplements[item.feed_item_id])
-        ? horseState.supplements[item.feed_item_id]
-        : [];
-      if (!spans.length) return "";
-      return `<div><strong>${htmlEscape(getFeedLabel(item))}</strong>: ${htmlEscape(spans.join(", "))}</div>`;
-    })
-    .filter(Boolean)
-    .join("");
-
-  const hayParts = TIMESPANS
-    .map((span) => {
-      const amount = Number(horseState.hay[span] || 0);
-      if (!amount) return "";
-      return `${span} ${amount} flake(s)`;
-    })
-    .filter(Boolean);
-
-  const horseTitle = horse ? getHorseLabel(horse) : `Horse ${horseId}`;
-
-  return `
-    <div class="section-card">
-      <h3>${htmlEscape(horseTitle)}</h3>
-      <div class="meta">horse_id: ${htmlEscape(horseId)}</div>
-      <div><strong>Grain</strong></div>
-      ${grainsHtml || "<div class=\"meta\">No grain set.</div>"}
-      <div style="margin-top:0.4rem;"><strong>Supplements</strong></div>
-      ${suppHtml || "<div class=\"meta\">No supplements set.</div>"}
-      <div style="margin-top:0.4rem;"><strong>Hay</strong></div>
-      ${hayParts.length ? `<div>${htmlEscape(hayParts.join(" | "))}</div>` : "<div class=\"meta\">No hay set.</div>"}
-    </div>
-  `;
+function itemLabel(item) {
+  return item.display_name || item.short_name || item.feed_item_id;
 }
 
-function formatToolsPayload() {
-  const activeIds = state.daily.active_horse_ids;
-  const horsesPayload = activeIds.map((horseId) => {
-    return {
-      horse_id: horseId,
-      horse_label: getHorseLabel(getHorseById(horseId) || { horse_id: horseId }),
-      data: clone(ensureHorse(horseId)),
-    };
+function getHorses() {
+  return state.datasets.horses
+    .filter((h) => h && h.active !== false)
+    .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
+}
+
+function getHorse(horseId) {
+  return getHorses().find((h) => h.horse_id === horseId) || null;
+}
+
+function getGrains() {
+  return state.datasets.feed_items
+    .filter((item) => String(item.type || "").toLowerCase() === "grain")
+    .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
+}
+
+function getSupplements() {
+  return state.datasets.feed_items
+    .filter((item) => String(item.type || "").toLowerCase() === "supplement")
+    .sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
+}
+
+function setNav(nav) {
+  state.nav = nav;
+  Object.entries(ui.views).forEach(([name, el]) => {
+    el.classList.toggle("hidden", name !== nav);
   });
 
-  return {
-    app: APP_SLUG,
-    yyyymmdd: state.yyyymmdd,
-    saved_at: state.daily.saved_at,
-    active_horse_ids: [...state.daily.active_horse_ids],
-    horses: horsesPayload,
-  };
+  document.querySelectorAll("[data-nav]").forEach((btn) => {
+    const active = btn.dataset.nav === nav;
+    btn.classList.toggle("bottom-nav__item--active", active);
+    btn.classList.toggle("row--active", active);
+  });
 }
 
-function setView(viewName) {
-  state.activeView = viewName;
-  views.start.hidden = viewName !== "start";
-  views.horses.hidden = viewName !== "horses";
-  views.detail.hidden = viewName !== "detail";
-  views.summary.hidden = viewName !== "summary";
-  views.tools.hidden = viewName !== "tools";
+function setPlanTab(tab) {
+  state.planTab = tab;
+}
 
-  document.querySelectorAll(".nav-btn").forEach((btn) => {
-    btn.classList.toggle("row--active", btn.dataset.view === viewName);
-  });
+function ensureSelectedHorse() {
+  if (state.selectedHorseId && getHorse(state.selectedHorseId)) return;
+  const active = state.daily.active_horse_ids.find((id) => getHorse(id));
+  state.selectedHorseId = active || null;
 }
 
 function renderStart() {
-  views.start.innerHTML = `
-    <h2>Start</h2>
-    <p class="meta">Create a new run or resume today's saved run.</p>
-    <div class="stack">
-      <button type="button" id="btn-new" class="row--tap">New</button>
-      <button type="button" id="btn-resume" class="row--tap ${state.loadedFromCache ? "row--active" : ""}" ${state.loadedFromCache ? "" : "disabled"}>Resume</button>
-    </div>
+  ui.views.start.innerHTML = `
+    <article class="card">
+      <h2 class="card__title">Start</h2>
+      <div class="card__meta">Begin fresh or resume today's saved plan.</div>
+      <div class="stack" style="margin-top:0.55rem;">
+        <button type="button" class="row--tap" data-action="new-day">New</button>
+        <button type="button" class="row--tap ${state.loadedFromCache ? "row--active" : ""}" data-action="resume-day">Resume</button>
+      </div>
+    </article>
   `;
-
-  document.getElementById("btn-new").addEventListener("click", () => {
-    state.daily = createEmptyDaily(state.yyyymmdd);
-    saveDaily();
-    state.loadedFromCache = true;
-    renderAll();
-    setView("horses");
-  });
-
-  document.getElementById("btn-resume").addEventListener("click", () => {
-    setView("horses");
-  });
 }
 
 function renderHorses() {
-  const horses = getSortedActiveHorses();
-  const rows = horses
-    .map((horse) => {
-      const isActive = isActiveHorse(horse.horse_id);
-      return `
-        <button type="button" class="row--tap horse-row ${isActive ? "row--active" : ""}" data-horse-id="${htmlEscape(horse.horse_id)}">
-          <div class="two-col">
-            <span>${htmlEscape(getHorseLabel(horse))}</span>
-            <span>${isActive ? "Active" : "Inactive"}</span>
-          </div>
-          <div class="meta">${htmlEscape(horse.barn_name || "")} ${horse.gender ? `| ${htmlEscape(horse.gender)}` : ""}</div>
-        </button>
-      `;
-    })
-    .join("");
-
-  views.horses.innerHTML = `
-    <h2>Horses</h2>
-    <p class="meta">Tap a horse row to toggle active state and open detail.</p>
-    <div class="stack">${rows || "<div class=\"meta\">No active horses dataset found.</div>"}</div>
-  `;
-
-  views.horses.querySelectorAll(".horse-row").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const horseId = Number(btn.dataset.horseId);
-      const turnedOn = toggleActiveHorse(horseId);
-      if (turnedOn) {
-        btn.classList.add("row--active");
-      } else {
-        btn.classList.remove("row--active");
-      }
-      state.selectedHorseId = horseId;
-      state.horseTab = "grain";
-      state.selectedGrainId = null;
-      state.selectedSuppId = null;
-      renderDetail();
-      setView("detail");
-    });
-  });
-}
-
-function renderGrainTab(horseId) {
-  const grains = getGrains();
-  const selectedGrainId = state.selectedGrainId || (grains[0] ? grains[0].feed_item_id : null);
-  state.selectedGrainId = selectedGrainId;
-
-  const list = grains
-    .map((grain) => {
-      const selected = grain.feed_item_id === selectedGrainId;
-      return `<button type="button" class="row--tap grain-item ${selected ? "row--active" : ""}" data-grain-id="${htmlEscape(grain.feed_item_id)}">${htmlEscape(getFeedLabel(grain))}</button>`;
-    })
-    .join("");
-
-  let detail = "<div class=\"meta\">Select a grain to set schedule.</div>";
-  const grain = grains.find((g) => g.feed_item_id === selectedGrainId);
-  if (grain) {
-    const uoms = Array.isArray(grain.uoms) && grain.uoms.length
-      ? grain.uoms
-      : (grain.default_uom ? [grain.default_uom] : ["scoop", "cup"]);
-
-    const timespanRows = TIMESPANS.map((span) => {
-      const entry = getGrainTimespanEntry(horseId, grain.feed_item_id, span);
-      const amountPills = AMOUNTS.map((amount) => {
-        const active = entry && Number(entry.amount) === amount;
-        return `<button type="button" class="pill amount-pill ${active ? "active" : ""}" data-grain-id="${htmlEscape(grain.feed_item_id)}" data-span="${span}" data-amount="${amount}">${amount}</button>`;
-      }).join("");
-
-      const uomPills = uoms.map((uom) => {
-        const active = entry && entry.uom === uom;
-        return `<button type="button" class="pill uom-pill ${active ? "active" : ""}" data-grain-id="${htmlEscape(grain.feed_item_id)}" data-span="${span}" data-uom="${htmlEscape(uom)}">${htmlEscape(uom)}</button>`;
-      }).join("");
-
-      return `
-        <div class="section-card">
-          <div><strong>${span}</strong></div>
-          <div class="pills">${amountPills}</div>
-          <div class="pills">${uomPills}</div>
-        </div>
-      `;
-    }).join("");
-
-    detail = `<div class="section-card"><h3>${htmlEscape(getFeedLabel(grain))}</h3></div>${timespanRows}`;
-  }
-
-  return `
-    <div class="stack">
-      <div class="section-card">
-        <h3>Grains</h3>
-        <div class="stack">${list || "<div class=\"meta\">No grain items.</div>"}</div>
-      </div>
-      ${detail}
-    </div>
-  `;
-}
-
-function renderSuppTab(horseId) {
-  const supplements = getSupplements();
-  const selectedSuppId = state.selectedSuppId || (supplements[0] ? supplements[0].feed_item_id : null);
-  state.selectedSuppId = selectedSuppId;
-
-  const list = supplements
-    .map((supp) => {
-      const selected = supp.feed_item_id === selectedSuppId;
-      return `<button type="button" class="row--tap supp-item ${selected ? "row--active" : ""}" data-supp-id="${htmlEscape(supp.feed_item_id)}">${htmlEscape(getFeedLabel(supp))}</button>`;
-    })
-    .join("");
-
-  let detail = "<div class=\"meta\">Select a supplement to set timespans.</div>";
-  const supp = supplements.find((s) => s.feed_item_id === selectedSuppId);
-  if (supp) {
-    const horseState = ensureHorse(horseId);
-    const selectedSpans = Array.isArray(horseState.supplements[supp.feed_item_id])
-      ? horseState.supplements[supp.feed_item_id]
-      : [];
-
-    const spans = TIMESPANS.map((span) => {
-      const active = selectedSpans.includes(span);
-      return `<button type="button" class="pill supp-span-pill ${active ? "active" : ""}" data-supp-id="${htmlEscape(supp.feed_item_id)}" data-span="${span}">${span}</button>`;
-    }).join("");
-
-    detail = `
-      <div class="section-card">
-        <h3>${htmlEscape(getFeedLabel(supp))}</h3>
-        <div class="pills">${spans}</div>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="stack">
-      <div class="section-card">
-        <h3>Supplements</h3>
-        <div class="stack">${list || "<div class=\"meta\">No supplement items.</div>"}</div>
-      </div>
-      ${detail}
-    </div>
-  `;
-}
-
-function renderHayTab(horseId) {
-  const horseState = ensureHorse(horseId);
-  const rows = TIMESPANS.map((span) => {
-    const value = Number(horseState.hay[span] || 0);
-    const amountPills = AMOUNTS.map((amount) => {
-      const active = value === amount;
-      return `<button type="button" class="pill hay-pill ${active ? "active" : ""}" data-span="${span}" data-amount="${amount}">${amount}</button>`;
-    }).join("");
-
+  const rows = getHorses().map((horse) => {
+    const active = isHorseActive(horse.horse_id);
     return `
-      <div class="section-card">
-        <div><strong>${span}</strong></div>
-        <div class="pills">${amountPills}</div>
-        <div class="meta">flake(s)</div>
-      </div>
+      <button type="button" class="row row--tap horse-row ${active ? "row--active" : ""}" data-horse-id="${escapeHtml(horse.horse_id)}">
+        <span class="row__left">${escapeHtml(horseLabel(horse))}</span>
+        <span class="row__mid">${escapeHtml(horse.barn_name || "")}</span>
+        <span class="row__right">${active ? "On" : "Off"}</span>
+      </button>
     `;
   }).join("");
 
-  return `<div class="stack">${rows}</div>`;
+  ui.views.horses.innerHTML = `
+    <article class="card">
+      <h2 class="card__title">Horses</h2>
+      <div class="card__meta">Tap row to toggle active. Tap again still routes to plan.</div>
+      <div class="horse-list" style="margin-top:0.55rem;">${rows || "<div class=\"card__meta\">No horses found.</div>"}</div>
+    </article>
+  `;
 }
 
-function renderHorseDetailSummaryTab(horseId) {
-  return formatHorseSummary(horseId);
+function grainState(horseId, grainId) {
+  const horseState = ensureHorseState(horseId);
+  if (!horseState.grains[grainId]) {
+    horseState.grains[grainId] = { AM: null, MD: null, PM: null, NC: null };
+  }
+  return horseState.grains[grainId];
 }
 
-function renderDetail() {
-  const horse = getHorseById(state.selectedHorseId);
-  if (!horse) {
-    views.detail.innerHTML = `
-      <h2>Horse Detail</h2>
-      <p class="meta">Select a horse from Horses.</p>
-      <button type="button" class="row--tap" id="detail-back">Back to Horses</button>
+function toggleGrainAmount(horseId, grainId, span, amount, defaultUom) {
+  const g = grainState(horseId, grainId);
+  const current = g[span];
+  if (current && Number(current.amount) === amount) g[span] = null;
+  else g[span] = { amount, uom: current?.uom || defaultUom || "scoop" };
+  saveDaily();
+}
+
+function setGrainUom(horseId, grainId, span, uom) {
+  const g = grainState(horseId, grainId);
+  const current = g[span];
+  g[span] = { amount: current?.amount ?? 1, uom };
+  saveDaily();
+}
+
+function toggleSuppSpan(horseId, suppId, span) {
+  const horseState = ensureHorseState(horseId);
+  const current = Array.isArray(horseState.supplements[suppId]) ? [...horseState.supplements[suppId]] : [];
+  const idx = current.indexOf(span);
+  if (idx >= 0) current.splice(idx, 1);
+  else current.push(span);
+  horseState.supplements[suppId] = current;
+  saveDaily();
+}
+
+function toggleHay(horseId, span, amount) {
+  const horseState = ensureHorseState(horseId);
+  const current = Number(horseState.hay[span] || 0);
+  horseState.hay[span] = current === amount ? 0 : amount;
+  saveDaily();
+}
+
+function renderFeedTab(horse) {
+  const grains = getGrains();
+  const horseState = ensureHorseState(horse.horse_id);
+
+  return grains.map((grain) => {
+    const grainId = grain.feed_item_id;
+    const open = state.expandedGrainId === grainId;
+    const uoms = Array.isArray(grain.uoms) && grain.uoms.length
+      ? grain.uoms
+      : (grain.default_uom ? [grain.default_uom] : ["cup", "scoop"]);
+
+    const detail = !open
+      ? ""
+      : `
+        <div class="inline-detail card card--dense">
+          <div class="time-grid">
+            ${TIMESPANS.map((span) => {
+              const entry = grainState(horse.horse_id, grainId)[span];
+              const amounts = AMOUNTS.map((amount) => {
+                const active = entry && Number(entry.amount) === amount;
+                return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="grain-amount" data-grain-id="${escapeHtml(grainId)}" data-span="${span}" data-amount="${amount}">${amount}</button>`;
+              }).join("");
+              const uomPills = uoms.map((uom) => {
+                const active = entry && entry.uom === uom;
+                return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="grain-uom" data-grain-id="${escapeHtml(grainId)}" data-span="${span}" data-uom="${escapeHtml(uom)}">${escapeHtml(uom)}</button>`;
+              }).join("");
+              return `
+                <section class="time-block">
+                  <div class="time-block__label">${span}</div>
+                  <div class="time-block__body">
+                    <div class="inline-actions">${amounts}</div>
+                    <div class="inline-actions">${uomPills}</div>
+                  </div>
+                </section>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `;
+
+    const selectedCount = TIMESPANS.filter((s) => grainState(horse.horse_id, grainId)[s]).length;
+
+    return `
+      <article class="card card--dense">
+        <button type="button" class="row row--tap ${open ? "row--active" : ""}" data-action="open-grain" data-grain-id="${escapeHtml(grainId)}">
+          <span class="row__left">${escapeHtml(itemLabel(grain))}</span>
+          <span class="row__right">${selectedCount ? `${selectedCount} set` : "open"}</span>
+        </button>
+        ${detail}
+      </article>
     `;
-    document.getElementById("detail-back")?.addEventListener("click", () => setView("horses"));
+  }).join("") || "<div class='card card--dense'><div class='card__meta'>No grain items.</div></div>";
+}
+
+function renderExtrasTab(horse) {
+  const horseState = ensureHorseState(horse.horse_id);
+  const supplements = getSupplements();
+
+  const suppHtml = supplements.map((supp) => {
+    const suppId = supp.feed_item_id;
+    const open = state.expandedSuppId === suppId;
+    const selectedSpans = Array.isArray(horseState.supplements[suppId]) ? horseState.supplements[suppId] : [];
+
+    const detail = !open
+      ? ""
+      : `
+        <div class="inline-detail card card--dense">
+          <div class="inline-actions">
+            ${TIMESPANS.map((span) => {
+              const active = selectedSpans.includes(span);
+              return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="supp-span" data-supp-id="${escapeHtml(suppId)}" data-span="${span}">${span}</button>`;
+            }).join("")}
+          </div>
+        </div>
+      `;
+
+    return `
+      <article class="card card--dense">
+        <button type="button" class="row row--tap ${open ? "row--active" : ""}" data-action="open-supp" data-supp-id="${escapeHtml(suppId)}">
+          <span class="row__left">${escapeHtml(itemLabel(supp))}</span>
+          <span class="row__right">${selectedSpans.length ? `${selectedSpans.length} spans` : "open"}</span>
+        </button>
+        ${detail}
+      </article>
+    `;
+  }).join("");
+
+  const hay = TIMESPANS.map((span) => {
+    const current = Number(horseState.hay[span] || 0);
+    const amountButtons = AMOUNTS.map((amount) => {
+      const active = current === amount;
+      return `<button type="button" class="row--tap pill ${active ? "row--active pill--active" : ""}" data-action="hay-amount" data-span="${span}" data-amount="${amount}">${amount}</button>`;
+    }).join("");
+
+    return `
+      <section class="time-block">
+        <div class="time-block__label">${span}</div>
+        <div class="time-block__body">
+          <div class="inline-actions">${amountButtons}</div>
+          <div class="chip">flakes</div>
+        </div>
+      </section>
+    `;
+  }).join("");
+
+  return `
+    <div class="extra-list">
+      ${suppHtml || "<div class='card card--dense'><div class='card__meta'>No supplement items.</div></div>"}
+      <article class="card">
+        <h3 class="card__title">Hay</h3>
+        <div class="card__meta">Hardcoded stage (not from dataset)</div>
+        <div class="time-grid" style="margin-top:0.45rem;">${hay}</div>
+      </article>
+    </div>
+  `;
+}
+
+function horseCardLines(horseId) {
+  const horse = getHorse(horseId);
+  const horseState = ensureHorseState(horseId);
+
+  const grainLines = getGrains().map((grain) => {
+    const g = horseState.grains[grain.feed_item_id];
+    if (!g) return "";
+    const spans = TIMESPANS.map((span) => (g[span] ? `${span} ${g[span].amount} ${g[span].uom}` : "")).filter(Boolean);
+    if (!spans.length) return "";
+    return `<div>${escapeHtml(itemLabel(grain))}: ${escapeHtml(spans.join(" | "))}</div>`;
+  }).filter(Boolean).join("");
+
+  const extraLines = getSupplements().map((supp) => {
+    const spans = horseState.supplements[supp.feed_item_id] || [];
+    if (!spans.length) return "";
+    return `<div>${escapeHtml(itemLabel(supp))}: ${escapeHtml(spans.join(", "))}</div>`;
+  }).filter(Boolean).join("");
+
+  const haySpans = TIMESPANS.map((span) => {
+    const a = Number(horseState.hay[span] || 0);
+    return a ? `${span} ${a} flakes` : "";
+  }).filter(Boolean);
+
+  return `
+    <article class="card card--dense">
+      <div class="headline-row">
+        <h3 class="card__title">${escapeHtml(horse ? horseLabel(horse) : String(horseId))}</h3>
+        <span class="chip">${escapeHtml(String(horseId))}</span>
+      </div>
+      <div class="card__meta">Feed</div>
+      ${grainLines || "<div class='meta-line'>No feed set.</div>"}
+      <div class="card__meta" style="margin-top:0.35rem;">Extras</div>
+      ${extraLines || "<div class='meta-line'>No extras set.</div>"}
+      <div class="card__meta" style="margin-top:0.35rem;">Hay</div>
+      ${haySpans.length ? `<div>${escapeHtml(haySpans.join(" | "))}</div>` : "<div class='meta-line'>No hay set.</div>"}
+    </article>
+  `;
+}
+
+function renderCardTab(horse) {
+  return horseCardLines(horse.horse_id);
+}
+
+function renderPlan() {
+  ensureSelectedHorse();
+  const horse = state.selectedHorseId ? getHorse(state.selectedHorseId) : null;
+  if (!horse) {
+    ui.views.plan.innerHTML = `
+      <article class="card">
+        <h2 class="card__title">Plan</h2>
+        <div class="card__meta">Select a horse from Horses to begin planning.</div>
+      </article>
+    `;
     return;
   }
 
-  const horseLabel = getHorseLabel(horse);
-  let tabContent = "";
-  if (state.horseTab === "grain") tabContent = renderGrainTab(horse.horse_id);
-  if (state.horseTab === "supplements") tabContent = renderSuppTab(horse.horse_id);
-  if (state.horseTab === "hay") tabContent = renderHayTab(horse.horse_id);
-  if (state.horseTab === "summary") tabContent = renderHorseDetailSummaryTab(horse.horse_id);
+  const horseMeta = `
+    <article class="card">
+      <h2 class="card__title">${escapeHtml(horseLabel(horse))}</h2>
+      <div class="card__meta">
+        barn ${escapeHtml(horse.barn_name || "-")} | gender ${escapeHtml(horse.gender || "-")} | color ${escapeHtml(horse.color || "-")}
+      </div>
+    </article>
+  `;
 
-  views.detail.innerHTML = `
-    <div class="hide-print">
-      <button type="button" class="row--tap" id="detail-back">Back to Horses</button>
-    </div>
-    <div class="section-card">
-      <h2>${htmlEscape(horseLabel)}</h2>
-      <div class="meta">barn: ${htmlEscape(horse.barn_name || "-")} | gender: ${htmlEscape(horse.gender || "-")} | horse_id: ${htmlEscape(horse.horse_id)}</div>
-    </div>
+  const tabHtml = `
     <div class="tabs">
-      <button type="button" class="row--tap detail-tab ${state.horseTab === "grain" ? "row--active" : ""}" data-tab="grain">Grain</button>
-      <button type="button" class="row--tap detail-tab ${state.horseTab === "supplements" ? "row--active" : ""}" data-tab="supplements">Supplements</button>
-      <button type="button" class="row--tap detail-tab ${state.horseTab === "hay" ? "row--active" : ""}" data-tab="hay">Hay</button>
-      <button type="button" class="row--tap detail-tab ${state.horseTab === "summary" ? "row--active" : ""}" data-tab="summary">Summary</button>
-    </div>
-    ${tabContent}
-  `;
-
-  document.getElementById("detail-back")?.addEventListener("click", () => {
-    renderHorses();
-    setView("horses");
-  });
-
-  views.detail.querySelectorAll(".detail-tab").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.horseTab = btn.dataset.tab;
-      renderDetail();
-    });
-  });
-
-  views.detail.querySelectorAll(".grain-item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.selectedGrainId = btn.dataset.grainId;
-      renderDetail();
-    });
-  });
-
-  views.detail.querySelectorAll(".supp-item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.selectedSuppId = btn.dataset.suppId;
-      renderDetail();
-    });
-  });
-
-  views.detail.querySelectorAll(".amount-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const grainId = btn.dataset.grainId;
-      const span = btn.dataset.span;
-      const amount = Number(btn.dataset.amount);
-      const grain = getGrains().find((item) => item.feed_item_id === grainId);
-      setGrainAmount(horse.horse_id, grainId, span, amount, grain?.default_uom || "scoop");
-      renderDetail();
-      renderSummary();
-    });
-  });
-
-  views.detail.querySelectorAll(".uom-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const grainId = btn.dataset.grainId;
-      const span = btn.dataset.span;
-      const uom = btn.dataset.uom;
-      setGrainUom(horse.horse_id, grainId, span, uom);
-      renderDetail();
-      renderSummary();
-    });
-  });
-
-  views.detail.querySelectorAll(".supp-span-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      toggleSuppTimespan(horse.horse_id, btn.dataset.suppId, btn.dataset.span);
-      renderDetail();
-      renderSummary();
-    });
-  });
-
-  views.detail.querySelectorAll(".hay-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      setHayAmount(horse.horse_id, btn.dataset.span, Number(btn.dataset.amount));
-      renderDetail();
-      renderSummary();
-    });
-  });
-}
-
-function renderSummary() {
-  const activeIds = state.daily.active_horse_ids;
-  const blocks = activeIds.map((horseId) => formatHorseSummary(horseId)).join("");
-
-  views.summary.innerHTML = `
-    <h2>Summary</h2>
-    <div class="meta">All active horses for ${htmlEscape(state.yyyymmdd)}</div>
-    <div>${blocks || "<div class=\"meta\">No active horses selected.</div>"}</div>
-  `;
-}
-
-function copyText(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text);
-  }
-
-  const box = document.createElement("textarea");
-  box.value = text;
-  document.body.appendChild(box);
-  box.select();
-  document.execCommand("copy");
-  document.body.removeChild(box);
-  return Promise.resolve();
-}
-
-function renderTools() {
-  views.tools.innerHTML = `
-    <h2>Tools</h2>
-    <div class="stack tools-only">
-      <button type="button" class="row--tap" id="tool-text">Text</button>
-      <button type="button" class="row--tap" id="tool-print">Print</button>
-      <button type="button" class="row--tap" id="tool-cloud">Save to Cloud</button>
-      <button type="button" class="row--tap" id="tool-clear">Clear Today</button>
+      <button type="button" class="row--tap tab ${state.planTab === "feed" ? "row--active tab--active" : ""}" data-tab="feed">Feed</button>
+      <button type="button" class="row--tap tab ${state.planTab === "extras" ? "row--active tab--active" : ""}" data-tab="extras">Extras</button>
+      <button type="button" class="row--tap tab ${state.planTab === "card" ? "row--active tab--active" : ""}" data-tab="card">Card</button>
     </div>
   `;
 
-  document.getElementById("tool-text").addEventListener("click", async () => {
-    const payload = formatToolsPayload();
-    await copyText(JSON.stringify(payload, null, 2));
-  });
+  let body = "";
+  if (state.planTab === "feed") body = `<section class="feed-list">${renderFeedTab(horse)}</section>`;
+  if (state.planTab === "extras") body = renderExtrasTab(horse);
+  if (state.planTab === "card") body = `<section class="summary-list">${renderCardTab(horse)}</section>`;
 
-  document.getElementById("tool-print").addEventListener("click", () => {
-    setView("summary");
-    window.print();
-  });
+  ui.views.plan.innerHTML = `${horseMeta}${tabHtml}${body}`;
+}
 
-  document.getElementById("tool-cloud").addEventListener("click", () => {
-    console.log("pellettap save-to-cloud payload", formatToolsPayload());
-  });
+function sharePayload() {
+  return {
+    app: APP,
+    yyyymmdd: state.yyyymmdd,
+    horses: state.daily.active_horse_ids.map((horseId) => ({
+      horse_id: horseId,
+      selections: ensureHorseState(horseId),
+    })),
+  };
+}
 
-  document.getElementById("tool-clear").addEventListener("click", () => {
-    localStorage.removeItem(state.todayKey);
-    state.daily = createEmptyDaily(state.yyyymmdd);
-    saveDaily();
-    state.loadedFromCache = false;
-    state.selectedHorseId = null;
-    renderAll();
-    setView("start");
-  });
+function renderShare() {
+  const cards = state.daily.active_horse_ids.map((id) => horseCardLines(id)).join("");
+  ui.views.share.innerHTML = `
+    <article class="card">
+      <h2 class="card__title">Share</h2>
+      <div class="card__meta">Daily board for all active horses.</div>
+      <div class="inline-actions" style="margin-top:0.45rem;">
+        <button type="button" class="row--tap" data-action="copy-share">Copy text</button>
+        <button type="button" class="row--tap" data-action="push-share">Push to cloud</button>
+      </div>
+    </article>
+    <section class="summary-list">${cards || "<div class='card card--dense'><div class='card__meta'>No active horses yet.</div></div>"}</section>
+  `;
 }
 
 function renderAll() {
   renderStart();
   renderHorses();
-  renderDetail();
-  renderSummary();
-  renderTools();
+  renderPlan();
+  renderShare();
+  setNav(state.nav);
 }
 
-function bindNav() {
-  document.querySelectorAll(".nav-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      setView(btn.dataset.view);
-      if (btn.dataset.view === "horses") renderHorses();
-      if (btn.dataset.view === "summary") renderSummary();
-      if (btn.dataset.view === "tools") renderTools();
-      if (btn.dataset.view === "start") renderStart();
-    });
+function bindHeaderAutoHide() {
+  ui.main.addEventListener("scroll", () => {
+    const y = ui.main.scrollTop;
+    if (y > state.lastScrollTop + 8 && y > 24) {
+      ui.header.classList.add("header--hidden");
+    } else if (y < state.lastScrollTop - 8) {
+      ui.header.classList.remove("header--hidden");
+    }
+    state.lastScrollTop = y;
   });
+}
+
+function withTapactiveRootBase(fn) {
+  const baseTag = document.querySelector("base");
+  const existingHref = baseTag ? baseTag.getAttribute("href") : null;
+  let created = false;
+
+  let activeBase = baseTag;
+  if (!activeBase) {
+    activeBase = document.createElement("base");
+    document.head.prepend(activeBase);
+    created = true;
+  }
+
+  activeBase.setAttribute("href", "../");
+
+  return Promise.resolve(fn()).finally(() => {
+    if (created) activeBase.remove();
+    else if (existingHref === null) activeBase.removeAttribute("href");
+    else activeBase.setAttribute("href", existingHref);
+  });
+}
+
+async function loadDatasets() {
+  const loaded = await withTapactiveRootBase(() => loadAll());
+  state.datasets.horses = Array.isArray(loaded.horses) ? loaded.horses : [];
+  state.datasets.feed_items = Array.isArray(loaded.feed_items) ? loaded.feed_items : [];
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+  const area = document.createElement("textarea");
+  area.value = text;
+  document.body.appendChild(area);
+  area.select();
+  document.execCommand("copy");
+  document.body.removeChild(area);
+  return Promise.resolve();
+}
+
+function handleClick(event) {
+  const target = event.target.closest("button");
+  if (!target) return;
+
+  if (target.dataset.nav) {
+    setNav(target.dataset.nav);
+    return;
+  }
+
+  const action = target.dataset.action;
+  if (!action) return;
+
+  if (action === "new-day") {
+    state.daily = createDaily(state.yyyymmdd);
+    saveDaily();
+    state.loadedFromCache = true;
+    state.selectedHorseId = null;
+    renderAll();
+    setNav("horses");
+    return;
+  }
+
+  if (action === "resume-day") {
+    setNav("horses");
+    return;
+  }
+
+  if (action === "open-grain") {
+    const grainId = target.dataset.grainId;
+    state.expandedGrainId = state.expandedGrainId === grainId ? null : grainId;
+    renderPlan();
+    return;
+  }
+
+  if (action === "grain-amount") {
+    const grainId = target.dataset.grainId;
+    const span = target.dataset.span;
+    const amount = Number(target.dataset.amount);
+    const grain = getGrains().find((g) => g.feed_item_id === grainId);
+    toggleGrainAmount(state.selectedHorseId, grainId, span, amount, grain?.default_uom || "scoop");
+    renderPlan();
+    renderShare();
+    return;
+  }
+
+  if (action === "grain-uom") {
+    setGrainUom(state.selectedHorseId, target.dataset.grainId, target.dataset.span, target.dataset.uom);
+    renderPlan();
+    renderShare();
+    return;
+  }
+
+  if (action === "open-supp") {
+    const suppId = target.dataset.suppId;
+    state.expandedSuppId = state.expandedSuppId === suppId ? null : suppId;
+    renderPlan();
+    return;
+  }
+
+  if (action === "supp-span") {
+    toggleSuppSpan(state.selectedHorseId, target.dataset.suppId, target.dataset.span);
+    renderPlan();
+    renderShare();
+    return;
+  }
+
+  if (action === "hay-amount") {
+    toggleHay(state.selectedHorseId, target.dataset.span, Number(target.dataset.amount));
+    renderPlan();
+    renderShare();
+    return;
+  }
+
+  if (action === "copy-share") {
+    copyToClipboard(JSON.stringify(sharePayload(), null, 2));
+    return;
+  }
+
+  if (action === "push-share") {
+    console.log("pellettap push payload", sharePayload());
+  }
+}
+
+function handleViewSpecificClick(event) {
+  const horseRow = event.target.closest(".horse-row");
+  if (horseRow) {
+    const horseId = Number(horseRow.dataset.horseId);
+    toggleHorseActive(horseId);
+    state.selectedHorseId = horseId;
+    if (state.planTab !== "feed") state.planTab = "feed";
+    renderHorses();
+    renderPlan();
+    renderShare();
+    setNav("plan");
+    return;
+  }
+
+  const tabBtn = event.target.closest("[data-tab]");
+  if (tabBtn) {
+    setPlanTab(tabBtn.dataset.tab);
+    renderPlan();
+  }
 }
 
 async function boot() {
-  state.yyyymmdd = getYyyymmdd();
-  state.todayKey = makeStateKey(state.yyyymmdd);
-
-  todayLabel.textContent = `Date ${state.yyyymmdd}`;
+  state.yyyymmdd = todayKey();
+  state.stateKey = `${KEY_PREFIX}${state.yyyymmdd}`;
+  ui.dateLabel.textContent = state.yyyymmdd;
 
   loadDaily();
-  await loadDatasetsFromBaseLoader();
+  await loadDatasets();
 
-  const resolvedDbindexUrl = new URL("../data/dbindex.json", document.baseURI).toString();
-  const datasetCounts = {
-    horses: state.datasets.horses.length,
-    feed_items: state.datasets.feed_items.length,
-    profiles: state.datasets.profiles.length,
-    locations: state.datasets.locations.length,
-  };
-
-  console.log("pellettap boot", {
-    baseURI: document.baseURI,
-    resolved_dbindex_url: resolvedDbindexUrl,
-    dataset_counts: datasetCounts,
-    state_key: state.todayKey,
-    loaded_from_cache: state.loadedFromCache,
-  });
-
-  bindNav();
+  bindHeaderAutoHide();
   renderAll();
-  setView("start");
+
+  document.addEventListener("click", (event) => {
+    handleClick(event);
+    handleViewSpecificClick(event);
+  });
 }
 
 boot();
