@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (Quarter Fold)</title>
+<title>CRT Schedule (One Page Print) — v6 (Quarter Fold + Readable Fallback)</title>
 <style>
   :root{
     --fg:#111;
@@ -12,10 +12,11 @@
     --border:#d0d0d0;
     --ring:#0b5d47;
     --ringPrint:#000;
-    --groupTeam:#d9d9d9;
     --scale: 1;
-    --gutter: 0.12in;      /* space between quadrants */
-    --foldSafe: 0.06in;    /* extra inner padding near folds */
+
+    /* pamphlet spacing (kept small to avoid shrinking text) */
+    --quadGutter: 0.08in;
+    --foldSafe: 0.03in;
   }
   *{box-sizing:border-box}
   body{
@@ -63,57 +64,27 @@
     border-radius:6px;
     cursor:pointer;
   }
+  .hint{
+    font-size:10px;
+    color:var(--muted);
+    margin-left:6px;
+    white-space:nowrap;
+  }
 
-  /* scaled content wrapper (works for both preview + print) */
+  /* scaled content wrapper */
   .wrap{
     transform: scale(var(--scale));
     transform-origin: top left;
     width: calc(100% / var(--scale));
   }
-  .wrap.use-zoom{
-    transform:none;
-    width:auto;
-  }
+  .wrap.use-zoom{ transform:none; width:auto; }
 
-  /* v6: 2x2 quadrants for fold pamphlet */
-  .quads{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: var(--gutter);
-    align-items:stretch;
-  }
+  .hidden{ display:none !important; }
 
-  .quad{
-    min-width:0;
-    min-height:0;
-    border:0;
-    overflow:hidden; /* keep within quadrant */
-    position:relative;
-    padding: var(--foldSafe);
-  }
-
-  /* rotate the entire quadrant content (top row: Q3, Q2) */
-  .quad.rot180 .quad-inner{
-    transform: rotate(180deg);
-    transform-origin: center;
-  }
-
-  /* stacks inside each quadrant */
-  .quad-inner{
-    width:100%;
-    height:100%;
-  }
-  .stack{
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-    min-width:0;
-  }
-
-  .ring{
-    border:1px solid #000;
-  }
+  /* ===========================
+     Shared ring/group styling
+     =========================== */
+  .ring{ border:1px solid #000; }
   .ring-head{
     background:var(--ring);
     color:#fff;
@@ -124,21 +95,13 @@
   }
 
   /* highlight groups that have a team (gdisplay present) */
-  .group.has-team{
-    background: rgb(204 204 204 / 43%);
-  }
+  .group.has-team{ background: rgb(204 204 204 / 43%); }
+
   .group.has-team .group-head{
     padding-bottom:1px;
     padding-top:4px;
   }
-  @media print{
-    .group.has-team{
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-  }
 
-  /* group_display above group_name */
   .gdisplay{
     font-size:11px;
     font-weight:600;
@@ -159,11 +122,11 @@
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
-    display:none; /* per spec: gname is hidden */
+    display:none;
   }
 
-  .solid{border-top:0px solid var(--line); margin:0;}
-  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
+  .solid{ border-top:0px solid var(--line); margin:0; }
+  .class-list{ padding:3px 6px 4px 6px; border-bottom:1px solid #8e8c8c; }
 
   .c{
     display:grid;
@@ -172,28 +135,63 @@
     line-height:1.05;
     padding:2px 0;
   }
-  .t{font-weight:600; font-size:9px; white-space:nowrap;}
-  .n{
-    font-size:9px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
+  .t{ font-weight:600; font-size:9px; white-space:nowrap; }
+  .n{ font-size:9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .muted{ color:var(--muted); }
+  .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
+
+  /* ===========================
+     v5 layout: 2 columns
+     =========================== */
+  .cols{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.12in;
+    align-items:start;
   }
-  .muted{color:var(--muted);}
-  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
+  .col{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+
+  /* ===========================
+     v6 layout: 4 quadrants
+     =========================== */
+  .quads{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: var(--quadGutter);
+    align-items:stretch;
+  }
+  .quad{
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+    position:relative;
+    padding: var(--foldSafe);
+  }
+  .quad-inner{ width:100%; height:100%; }
+  .quad.rot180 .quad-inner{
+    transform: rotate(180deg);
+    transform-origin: center;
+  }
+  .stack{ display:flex; flex-direction:column; gap:2px; min-width:0; }
 
   /* Print rules */
   @media print{
     @page{ size: Letter; margin: 0.25in; }
 
-    .controls{display:none !important;}
-    .page{box-shadow:none;}
+    /* v6 request: hide title/subtitle/topbar in print */
+    .topbar{ display:none !important; }
 
-    /* ensure colors print */
+    .controls{ display:none !important; }
+    .page{ box-shadow:none; }
+
     body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
-    .ring-head{background:var(--ringPrint);}
+    .ring-head{ background:var(--ringPrint); }
+    .group.has-team, .ring-head{
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
 
-    /* in print, try zoom first (Chromium), else transform */
     .wrap.use-zoom{ zoom: var(--scale); }
     .wrap:not(.use-zoom){
       transform: scale(var(--scale));
@@ -201,11 +199,10 @@
       width: calc(100% / var(--scale));
     }
 
-    /* ultra-tight fallback when scale is low */
+    /* tighter fallback when scale is low */
     body.tight .ring-head{padding:3px 5px; font-size:9px;}
     body.tight .group-head{padding:2px 5px;}
     body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
-    body.tight .gname{font-size:9px;}
     body.tight .class-list{padding:2px 5px 3px 5px;}
     body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
     body.tight .t{font-size:8px;}
@@ -222,28 +219,42 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
+        <span class="hint" id="modeHint"></span>
       </div>
     </div>
 
     <div class="wrap" id="wrap">
-      <!-- v6: 4 quadrants -->
-      <div class="quads" id="quads">
-        <!-- Layout mapping per spec:
+      <!-- v6 layout -->
+      <div id="layoutV6">
+        <!-- mapping per spec:
              Top row (rot180):  Q3 | Q2
              Bottom row:        Q4 | Q1
         -->
-        <div class="quad rot180" id="q3"><div class="quad-inner"><div class="stack" id="stack3"></div></div></div>
-        <div class="quad rot180" id="q2"><div class="quad-inner"><div class="stack" id="stack2"></div></div></div>
-        <div class="quad" id="q4"><div class="quad-inner"><div class="stack" id="stack4"></div></div></div>
-        <div class="quad" id="q1"><div class="quad-inner"><div class="stack" id="stack1"></div></div></div>
+        <div class="quads" id="quads">
+          <div class="quad rot180" id="q3"><div class="quad-inner"><div class="stack" id="stack3"></div></div></div>
+          <div class="quad rot180" id="q2"><div class="quad-inner"><div class="stack" id="stack2"></div></div></div>
+          <div class="quad" id="q4"><div class="quad-inner"><div class="stack" id="stack4"></div></div></div>
+          <div class="quad" id="q1"><div class="quad-inner"><div class="stack" id="stack1"></div></div></div>
+        </div>
+      </div>
+
+      <!-- v5 layout (fallback) -->
+      <div id="layoutV5" class="hidden">
+        <div class="cols">
+          <div class="col" id="colL"></div>
+          <div class="col" id="colR"></div>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
-  // Usage:
-  // schedule_onepage_v6.html#200000044-20251231  -> fetches 200000044-20251231.json (same folder)
-  // Optional: ?data=somefile.json overrides hash.
+  // v6 policy:
+  // - Try 4-quadrant pamphlet layout.
+  // - Compute required scale to fit 1 page.
+  // - If required scale < MIN_READABLE_SCALE, fallback to v5 2-column.
+  const MIN_READABLE_SCALE = 0.82;
+
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
 
@@ -273,10 +284,7 @@
   }
 
   function normTimeKey(s){
-    return String(s ?? "")
-      .trim()
-      .replace(/\s+/g, " ")
-      .toUpperCase();
+    return String(s ?? "").trim().replace(/\s+/g, " ").toUpperCase();
   }
 
   async function fetchJson(url){
@@ -309,6 +317,101 @@
     return ppi;
   }
 
+  function setHeaderFromFirst(rows){
+    const first = rows[0] || {};
+    const showId = first.show_id ?? first.showId ?? "";
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+
+    document.getElementById("title").textContent = reportTitle;
+
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
+    if(showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function buildRingElements(rows){
+    const rings = Array.from(
+      groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries()
+    )
+    .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+    .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringEls = [];
+
+    for(const ring of rings){
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
+
+      const groups = Array.from(
+        groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries()
+      )
+      .map(([gid, items]) => {
+        const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+        const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+        const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+        return { gid, seq, gname, gdisplay: gd, items };
+      })
+      .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+
+      const head = document.createElement("div");
+      head.className = "ring-head";
+      head.textContent = ringTitle;
+      sec.appendChild(head);
+
+      const frag = document.createDocumentFragment();
+
+      for(const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let lastTimeKey = null;
+        let clHtml = "";
+
+        for(const c of classes){
+          const timeRaw = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const timeKey = normTimeKey(timeRaw);
+          const showTime = (timeKey && timeKey !== lastTimeKey);
+          if(timeKey) lastTimeKey = timeKey;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          clHtml += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        const gDiv = document.createElement("div");
+        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="solid"></div>
+          <div class="class-list">${clHtml || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+        frag.appendChild(gDiv);
+      }
+
+      sec.appendChild(frag);
+      ringEls.push(sec);
+    }
+
+    return ringEls;
+  }
+
   function clearStacks(){
     for(const id of ["stack1","stack2","stack3","stack4"]){
       const el = document.getElementById(id);
@@ -317,46 +420,36 @@
   }
 
   function measureRingHeights(ringEls){
-    // Measure each ring element height in the current layout context.
-    // We temporarily append to stack1 for stable measurement.
     const s1 = document.getElementById("stack1");
-    if(!s1) return ringEls.map(()=>0);
-
     s1.innerHTML = "";
-    for(const el of ringEls) s1.appendChild(el);
-
-    // Force layout
-    const heights = ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
-    return heights;
+    const frag = document.createDocumentFragment();
+    for(const el of ringEls) frag.appendChild(el);
+    s1.appendChild(frag);
+    return ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
   }
 
   function splitIntoBucketsByHeight(ringEls, heights, bucketCount){
     const total = heights.reduce((a,b)=>a+b,0);
     const target = total / bucketCount;
 
-    const splits = []; // indices where each bucket ends (exclusive)
+    const splits = [];
     let cum = 0;
     let nextTarget = target;
 
     for(let i=0;i<heights.length;i++){
-      const h = heights[i];
-      if(splits.length >= bucketCount - 1){
-        // last bucket gets remainder
-        continue;
-      }
-      // decide if we should cut after this ring to get close to nextTarget
-      const before = cum;
-      const after = cum + h;
+      if(splits.length >= bucketCount - 1) break;
 
-      // if crossing the target, pick the closer side
+      const before = cum;
+      const after = cum + heights[i];
+
       if(after >= nextTarget){
         const diffAfter = Math.abs(nextTarget - after);
         const diffBefore = Math.abs(nextTarget - before);
+
         if(diffAfter <= diffBefore){
           cum = after;
           splits.push(i+1);
         }else{
-          // cut before current ring (avoid empty bucket)
           const cut = Math.max(1, i);
           if(splits.length === 0 || cut > splits[splits.length-1]){
             splits.push(cut);
@@ -371,7 +464,6 @@
       }
     }
 
-    // Build buckets from splits
     const buckets = [];
     let start = 0;
     for(const end of splits){
@@ -380,173 +472,117 @@
     }
     buckets.push(ringEls.slice(start));
 
-    // Ensure exactly bucketCount buckets
     while(buckets.length < bucketCount) buckets.push([]);
     if(buckets.length > bucketCount){
-      // merge extras into last
       const last = buckets[bucketCount-1];
-      for(let i=bucketCount;i<buckets.length;i++){
-        last.push(...buckets[i]);
-      }
+      for(let i=bucketCount;i<buckets.length;i++) last.push(...buckets[i]);
       buckets.length = bucketCount;
     }
     return buckets;
   }
 
-  function placeIntoQuadrants(buckets){
-    // buckets are ordered by ring_number and then split in order:
-    // bucket1 -> Q1 (bottom-right, upright)  stack1
-    // bucket2 -> Q2 (top-right, rot180)      stack2
-    // bucket3 -> Q3 (top-left,  rot180)      stack3
-    // bucket4 -> Q4 (bottom-left, upright)  stack4
+  function placeV6(buckets){
     clearStacks();
-
     const map = [
       {bucket: 0, stackId: "stack1"}, // Q1
       {bucket: 1, stackId: "stack2"}, // Q2
       {bucket: 2, stackId: "stack3"}, // Q3
       {bucket: 3, stackId: "stack4"}, // Q4
     ];
-
     for(const m of map){
       const stack = document.getElementById(m.stackId);
-      if(!stack) continue;
-      for(const el of buckets[m.bucket] || []){
-        stack.appendChild(el);
-      }
+      const frag = document.createDocumentFragment();
+      for(const el of (buckets[m.bucket] || [])) frag.appendChild(el);
+      stack.appendChild(frag);
     }
   }
 
-  function fitToOnePageV6(){
+  function placeV5FromRingEls(ringEls){
+    const L = document.getElementById("colL");
+    const R = document.getElementById("colR");
+    L.innerHTML = "";
+    R.innerHTML = "";
+
+    const frag = document.createDocumentFragment();
+    for(const el of ringEls) frag.appendChild(el);
+    L.appendChild(frag);
+
+    const heights = ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
+
+    let bestSplit = ringEls.length;
+    let bestDiff = Infinity;
+    let cum = 0;
+    for(let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
+    }
+    for(let i=bestSplit;i<ringEls.length;i++){
+      R.appendChild(ringEls[i]);
+    }
+  }
+
+  function isPrintMode(){
+    return window.matchMedia && window.matchMedia("print").matches;
+  }
+
+  function computeRequiredScaleForOnePage(contentEl){
     const wrap = document.getElementById("wrap");
     const topbar = document.querySelector(".topbar");
-    const quads = document.getElementById("quads");
-    if(!wrap || !topbar || !quads) return;
-
-    // reset
-    wrap.style.setProperty("--scale", "1");
-    wrap.classList.remove("use-zoom");
-    wrap.style.zoom = "";
-    document.body.classList.remove("tight");
-
     const ppi = pxPerInch();
+
     const pageH = (11 - 0.5) * ppi; // 10.5in usable inside @page margin
     const pageW = (8.5 - 0.5) * ppi; // 8.0in usable inside @page margin
 
-    const availH = pageH - topbar.offsetHeight - 6;
+    // In print, topbar is hidden. Do not subtract it.
+    const topH = isPrintMode() ? 0 : (topbar ? topbar.offsetHeight : 0);
+
+    const availH = pageH - topH - 6;
     const availW = pageW;
 
-    // Need size = wrapper content size
-    const needH = quads.scrollHeight || quads.getBoundingClientRect().height;
-    const needW = wrap.scrollWidth || wrap.getBoundingClientRect().width;
+    const needH = contentEl.scrollHeight || contentEl.getBoundingClientRect().height;
+    const needW = contentEl.scrollWidth || wrap.getBoundingClientRect().width;
 
-    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
-    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+    const scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+    const scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
 
     let scale = Math.min(1, scaleH, scaleW);
     scale = Math.max(0.35, Math.min(1, scale));
+    return scale;
+  }
 
-    if(scale < 0.60) document.body.classList.add("tight");
+  function applyScale(scale){
+    const wrap = document.getElementById("wrap");
+    wrap.style.setProperty("--scale", String(scale));
+    wrap.classList.remove("use-zoom");
+    wrap.style.zoom = "";
+    document.body.classList.toggle("tight", scale < 0.60);
 
     const canZoom = ("zoom" in wrap.style);
     if(canZoom){
       wrap.classList.add("use-zoom");
       wrap.style.zoom = String(scale);
     }
-    wrap.style.setProperty("--scale", String(scale));
+  }
 
-    if(document.body.classList.contains("tight")){
-      // Recompute after tight class applied
-      const needH2 = quads.scrollHeight || quads.getBoundingClientRect().height;
-      let scale2 = Math.min(1, (availH / (needH2 || 1)));
-      scale2 = Math.max(0.35, Math.min(1, scale2));
-      if(canZoom) wrap.style.zoom = String(scale2);
-      wrap.style.setProperty("--scale", String(scale2));
+  function showMode(mode, scale){
+    const v6 = document.getElementById("layoutV6");
+    const v5 = document.getElementById("layoutV5");
+    const hint = document.getElementById("modeHint");
+    if(mode === "v6"){
+      v6.classList.remove("hidden");
+      v5.classList.add("hidden");
+      if(hint) hint.textContent = `Pamphlet mode • scale ${(scale*100).toFixed(0)}%`;
+    }else{
+      v6.classList.add("hidden");
+      v5.classList.remove("hidden");
+      if(hint) hint.textContent = `2-column mode • scale ${(scale*100).toFixed(0)}%`;
     }
   }
 
-  function buildRingElements(rows){
-    const first = rows[0] || {};
-    const showId = first.show_id ?? first.showId ?? "";
-    // REQUIRED: header must come from show_days_* fields.
-    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
-    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
-    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
-    document.getElementById("title").textContent = reportTitle;
-    const subParts = [];
-    if(displayDate) subParts.push(String(displayDate));
-    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
-    if(showDayKey) subParts.push(String(showDayKey));
-    document.getElementById("subtitle").textContent = subParts.join("   •   ");
-
-    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
-      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
-      .sort((a,b)=>a.ring_number - b.ring_number);
-
-    const ringEls = [];
-
-    for(const ring of rings){
-      const items0 = ring.items[0] || {};
-      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
-
-      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
-        .map(([gid, items]) => {
-          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
-          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
-          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
-          return { gid, seq, gname, gdisplay: gd, items };
-        })
-        .sort((a,b)=>a.seq - b.seq);
-
-      const sec = document.createElement("section");
-      sec.className = "ring";
-      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
-
-      for(const g of groups){
-        const classes = g.items.slice().sort((a,b)=>{
-          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
-          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
-          return an - bn;
-        });
-
-        let cl = "";
-        let lastTimeKey = null;
-
-        for(const c of classes){
-          const timeRaw = String(c.start_display ?? c.startDisplay ?? "").trim();
-          const timeKey = normTimeKey(timeRaw);
-          const showTime = (timeKey && timeKey !== lastTimeKey);
-          if(timeKey) lastTimeKey = timeKey;
-
-          const num = c.class_number ?? c.classNumber;
-          const name = c.class_name ?? c.className ?? c.name ?? "";
-          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
-            ? `${num} - ${name}`.trim()
-            : String(name).trim();
-
-          cl += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
-        }
-
-        const gDiv = document.createElement("div");
-        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
-        gDiv.innerHTML = `
-          <div class="group-head">
-            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
-            <div class="gname">${esc(g.gname)}</div>
-          </div>
-          <div class="solid"></div>
-          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
-        `;
-        sec.appendChild(gDiv);
-      }
-
-      ringEls.push(sec);
-    }
-
-    return ringEls;
-  }
-
-  (async function main(){
+  async function render(){
     const url = resolveDataUrl();
     const rows = await fetchJson(url);
 
@@ -555,22 +591,42 @@
       return;
     }
 
-    // Build ring elements in sorted ring order
+    setHeaderFromFirst(rows);
+
     const ringEls = buildRingElements(rows);
 
-    // Measure heights, split into 4 buckets, then place into quadrants
+    // Try v6
     const heights = measureRingHeights(ringEls);
     const buckets = splitIntoBucketsByHeight(ringEls, heights, 4);
-    placeIntoQuadrants(buckets);
+    placeV6(buckets);
 
-    // Fit to one page
-    fitToOnePageV6();
-    setTimeout(fitToOnePageV6, 50);
+    const quads = document.getElementById("quads");
+    let v6Scale = computeRequiredScaleForOnePage(quads);
 
-    window.addEventListener("beforeprint", fitToOnePageV6);
-    window.addEventListener("resize", ()=>{ fitToOnePageV6(); });
+    if(v6Scale < MIN_READABLE_SCALE){
+      // fallback to v5
+      showMode("v5", 1);
+      placeV5FromRingEls(ringEls);
+
+      const colsRoot = document.getElementById("layoutV5").querySelector(".cols");
+      const v5Scale = computeRequiredScaleForOnePage(colsRoot);
+      applyScale(v5Scale);
+      showMode("v5", v5Scale);
+      return;
+    }
+
+    showMode("v6", v6Scale);
+    applyScale(v6Scale);
+  }
+
+  (async function main(){
+    await render();
+
+    window.addEventListener("beforeprint", async ()=>{ await render(); });
+    window.addEventListener("resize", ()=>{ render().catch(()=>{}); });
   })().catch(err=>{
-    document.getElementById("stack1").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+    const target = document.getElementById("stack1") || document.getElementById("colL");
+    if(target) target.innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
   });
 </script>
 </body>
