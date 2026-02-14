@@ -38,75 +38,101 @@
     const mount = document.getElementById('app');
     if (!mount) throw new Error('Missing #app mount');
 
-    // Clear (idempotent)
-    mount.innerHTML = '';
-
-    // Header
-    const header = document.createElement('header');
-    header.className = 'app-header';
-
-    const backBtn = document.createElement('button');
-    backBtn.className = 'header-back';
-    backBtn.id = 'header-back';
-    backBtn.type = 'button';
-    backBtn.innerHTML = '<span>&larr;</span>';
-
-    const title = document.createElement('h1');
-    title.className = 'header-title';
-    title.id = 'header-title';
-    title.textContent = 'Start';
-
-    const spacer = document.createElement('div');
-    spacer.className = 'header-spacer';
-    spacer.setAttribute('aria-hidden', 'true');
-
-    header.appendChild(backBtn);
-    header.appendChild(title);
-    header.appendChild(spacer);
-
-    // Main
-    const main = document.createElement('main');
-    main.className = 'app-main';
-    main.id = 'app-main';
-
-    const root = document.createElement('div');
-    root.id = 'screen-root';
-    root.className = 'list-column';
-    main.appendChild(root);
-
-    // Nav
-    const nav = document.createElement('nav');
-    nav.className = 'app-nav';
-
-    const navScroller = document.createElement('div');
-    navScroller.className = 'nav-scroller';
-
-    const navRowEl = document.createElement('div');
-    navRowEl.className = 'nav-row';
-    navRowEl.id = 'nav-row';
-
-    navRowEl.innerHTML = [
-      '<button class="nav-btn" type="button" data-screen="start"><span class="nav-label">Start</span></button>',
-      '<button class="nav-btn" type="button" data-screen="summary"><span class="nav-label">Summary</span></button>',
-      '<button class="nav-btn" type="button" data-screen="horses"><span class="nav-label">Horses</span><span class="nav-agg" data-nav-agg="horses">0</span></button>',
-      '<button class="nav-btn" type="button" data-screen="riders"><span class="nav-label">Riders</span><span class="nav-agg" data-nav-agg="riders">0</span></button>',
-      '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span><span class="nav-agg" data-nav-agg="schedule">0</span></button>',    ].join('');
-
-    navScroller.appendChild(navRowEl);
-    nav.appendChild(navScroller);
-
-    mount.appendChild(header);
-    mount.appendChild(main);
-    mount.appendChild(nav);
-
-    // Refs
     appEl = mount;
-    appMain = main;
-    screenRoot = root;
-    headerTitle = title;
-    headerBack = backBtn;
+
+    const header = mount.querySelector('.app-header');
+    const main = mount.querySelector('#app-main') || mount.querySelector('.app-main');
+    const root = mount.querySelector('#screen-root');
+    const nav = mount.querySelector('.app-nav');
+    const navScroller = nav && nav.querySelector('.nav-scroller');
+    const navRowEl = mount.querySelector('#nav-row');
+
+    if (!header || !main || !root || !nav || !navScroller || !navRowEl) {
+      // Fallback create (keeps idempotence for older shells)
+      mount.innerHTML = '';
+
+      const fallbackHeader = document.createElement('header');
+      fallbackHeader.className = 'app-header';
+
+      const fallbackBack = document.createElement('button');
+      fallbackBack.className = 'header-back';
+      fallbackBack.id = 'header-back';
+      fallbackBack.type = 'button';
+      fallbackBack.innerHTML = '<span>&larr;</span>';
+
+      const fallbackTitle = document.createElement('h1');
+      fallbackTitle.className = 'header-title';
+      fallbackTitle.id = 'header-title';
+      fallbackTitle.textContent = 'Start';
+
+      const fallbackSpacer = document.createElement('div');
+      fallbackSpacer.className = 'header-spacer';
+      fallbackSpacer.setAttribute('aria-hidden', 'true');
+
+      fallbackHeader.appendChild(fallbackBack);
+      fallbackHeader.appendChild(fallbackTitle);
+      fallbackHeader.appendChild(fallbackSpacer);
+
+      const fallbackMain = document.createElement('main');
+      fallbackMain.className = 'app-main';
+      fallbackMain.id = 'app-main';
+
+      const fallbackRoot = document.createElement('div');
+      fallbackRoot.id = 'screen-root';
+      fallbackRoot.className = 'list-column';
+      fallbackMain.appendChild(fallbackRoot);
+
+      const fallbackFilterBottom = document.createElement('div');
+      fallbackFilterBottom.id = 'filterbottom';
+      fallbackFilterBottom.className = 'filterbottom';
+      fallbackMain.appendChild(fallbackFilterBottom);
+
+      const fallbackNav = document.createElement('nav');
+      fallbackNav.className = 'app-nav';
+      fallbackNav.setAttribute('aria-label', 'Primary');
+
+      const fallbackScroller = document.createElement('div');
+      fallbackScroller.className = 'nav-scroller';
+
+      const fallbackNavRow = document.createElement('div');
+      fallbackNavRow.className = 'nav-row';
+      fallbackNavRow.id = 'nav-row';
+      fallbackNavRow.innerHTML = [
+        '<button class="nav-btn" type="button" data-screen="start"><span class="nav-label">Start</span></button>',
+        '<button class="nav-btn" type="button" data-screen="summary"><span class="nav-label">Summary</span></button>',
+        '<button class="nav-btn" type="button" data-screen="horses"><span class="nav-label">Horses</span><span class="nav-agg" data-nav-agg="horses">0</span></button>',
+        '<button class="nav-btn" type="button" data-screen="riders"><span class="nav-label">Riders</span><span class="nav-agg" data-nav-agg="riders">0</span></button>',
+        '<button class="nav-btn" type="button" data-screen="schedule"><span class="nav-label">Schedule</span><span class="nav-agg" data-nav-agg="schedule">0</span></button>'
+      ].join('');
+
+      fallbackScroller.appendChild(fallbackNavRow);
+      fallbackNav.appendChild(fallbackScroller);
+
+      mount.appendChild(fallbackHeader);
+      mount.appendChild(fallbackMain);
+      mount.appendChild(fallbackNav);
+
+      appMain = fallbackMain;
+      screenRoot = fallbackRoot;
+      headerTitle = fallbackTitle;
+      headerBack = fallbackBack;
+      navRow = fallbackNavRow;
+    } else {
+      appMain = main;
+      screenRoot = root;
+      headerTitle = mount.querySelector('#header-title');
+      headerBack = mount.querySelector('#header-back');
+      navRow = navRowEl;
+
+      if (!main.querySelector('#filterbottom')) {
+        const filterBottom = document.createElement('div');
+        filterBottom.id = 'filterbottom';
+        filterBottom.className = 'filterbottom';
+        main.appendChild(filterBottom);
+      }
+    }
+
     headerAction = document.getElementById('header-action'); // optional
-    navRow = navRowEl;
   }
 
   mountShell();
@@ -230,6 +256,7 @@
   // ----------------------------
   function el(tag, clsOrAttrs, text) {
     const n = document.createElement(tag);
+    if (tag === 'button') n.type = 'button';
 
     if (typeof clsOrAttrs === 'string') {
       if (clsOrAttrs) n.className = clsOrAttrs;
@@ -883,6 +910,7 @@
     input.type = 'text';
     input.placeholder = placeholder || 'Search...';
     input.value = state.search[screenKey] || '';
+    input.setAttribute('aria-label', placeholder || 'Search');
 
     input.addEventListener('input', () => {
       state.search[screenKey] = input.value;
@@ -1493,16 +1521,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     }
 
     const bucketItems = buildBucketChipsFromTrips(baseTrips, 30);
-    const activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
-    const hasActive = bucketItems.some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
-    const bucketKey = hasActive ? activeBucket : null;
-
-    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
-
-    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
-    renderBucketFilterBottom(bucketItems, bucketKey);
-
-    applyPendingScroll();
+    const bucketKey = resolveBucketSelection(bucketItems);
+    renderBucketedTrips(baseTrips, sIdx, bucketItems, bucketKey);
   }
 
 // ----------------------------
@@ -2139,6 +2159,20 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
 
 
 
+  function resolveBucketSelection(bucketItems) {
+    const activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
+    const hasActive = (bucketItems || []).some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
+    return hasActive ? activeBucket : null;
+  }
+
+  function renderBucketedTrips(baseTrips, sIdx, bucketItems, bucketKey) {
+    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
+    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
+    renderBucketFilterBottom(bucketItems, bucketKey);
+    applyPendingScroll();
+  }
+
+
   function renderHorseDetail(sIdx, tIdx) {
     clearRoot();
 
@@ -2148,16 +2182,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     const baseTrips = (state.trips || []).filter(t => String(t && t.horseName || '') === horseName);
 
     const bucketItems = buildBucketChipsFromTrips(baseTrips, 30);
-    const activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
-    const hasActive = bucketItems.some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
-    const bucketKey = hasActive ? activeBucket : null;
-
-    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
-
-    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
-    renderBucketFilterBottom(bucketItems, bucketKey);
-
-    applyPendingScroll();
+    const bucketKey = resolveBucketSelection(bucketItems);
+    renderBucketedTrips(baseTrips, sIdx, bucketItems, bucketKey);
   }
 
   // ----------------------------
@@ -2307,16 +2333,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     const baseTrips = (state.trips || []).filter(t => String(t && t.riderName || '') === riderName);
 
     const bucketItems = buildBucketChipsFromTrips(baseTrips, 30);
-    const activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
-    const hasActive = bucketItems.some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
-    const bucketKey = hasActive ? activeBucket : null;
-
-    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
-
-    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
-    renderBucketFilterBottom(bucketItems, bucketKey);
-
-    applyPendingScroll();
+    const bucketKey = resolveBucketSelection(bucketItems);
+    renderBucketedTrips(baseTrips, sIdx, bucketItems, bucketKey);
   }
 
   // ----------------------------
@@ -2337,16 +2355,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     const baseTrips = (state.trips || []).filter(t => String(t && t.class_id || '') === classId);
 
     const bucketItems = buildBucketChipsFromTrips(baseTrips, 30);
-    const activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
-    const hasActive = bucketItems.some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
-    const bucketKey = hasActive ? activeBucket : null;
-
-    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
-
-    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
-    renderBucketFilterBottom(bucketItems, bucketKey);
-
-    applyPendingScroll();
+    const bucketKey = resolveBucketSelection(bucketItems);
+    renderBucketedTrips(baseTrips, sIdx, bucketItems, bucketKey);
   }
 
   // ----------------------------
@@ -2361,23 +2371,13 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
     const bucketItems = buildBucketChipsFromTrips(baseTrips, 30);
 
     // Default timeline to the first real bucket if none selected
-    let activeBucket = (state.filter && state.filter.bucket != null) ? String(state.filter.bucket) : null;
-    const realBuckets = bucketItems.filter(it => it.key != null);
-    if (!activeBucket && realBuckets.length) {
-      activeBucket = String(realBuckets[0].key);
-      state.filter.bucket = activeBucket;
+    if (state.filter.bucket == null) {
+      const realBuckets = bucketItems.filter(it => it.key != null);
+      if (realBuckets.length) state.filter.bucket = String(realBuckets[0].key);
     }
 
-    // If active bucket is not present, fall back to null (All)
-    const hasActive = bucketItems.some(it => (it.key == null && !activeBucket) || (it.key != null && String(it.key) === String(activeBucket)));
-    const bucketKey = hasActive ? activeBucket : null;
-
-    const viewTrips = filterTripsByBucket(baseTrips, bucketKey, 30);
-
-    renderRingCardsFromTrips(viewTrips, sIdx, { skipPeakBar: false });
-    renderBucketFilterBottom(bucketItems, bucketKey);
-
-    applyPendingScroll();
+    const bucketKey = resolveBucketSelection(bucketItems);
+    renderBucketedTrips(baseTrips, sIdx, bucketItems, bucketKey);
   }
 
   // ----------------------------
@@ -2386,9 +2386,8 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   function render() {
     if (!screenRoot || !headerTitle) return;
 
-    
     clearFilterBottom();
-const sIdx = buildScheduleIndex();
+    const sIdx = buildScheduleIndex();
     const tIdx = buildTruthIndex();
 
     renderAggs(sIdx, tIdx);
@@ -2450,7 +2449,6 @@ const sIdx = buildScheduleIndex();
       render();
     });
   }
-  // this is a new comment
   // ----------------------------
   // BOOT
   // ----------------------------
