@@ -3,20 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (Quarter Fold + Readable Fallback)</title>
+<title>CRT Schedule (One Page Print) — v6 (4 Quarters, Per-Quarter Scaling)</title>
 <style>
   :root{
     --fg:#111;
     --muted:#666;
-    --line:#111;
     --border:#d0d0d0;
     --ring:#0b5d47;
     --ringPrint:#000;
-    --scale: 1;
 
-    /* pamphlet spacing (kept small to avoid shrinking text) */
-    --quadGutter: 0.08in;
-    --foldSafe: 0.03in;
+    /* v6: true quarter layout */
+    --quadGutter: 0.10in;
+    --foldSafe: 0.04in;
   }
   *{box-sizing:border-box}
   body{
@@ -71,16 +69,6 @@
     white-space:nowrap;
   }
 
-  /* scaled content wrapper */
-  .wrap{
-    transform: scale(var(--scale));
-    transform-origin: top left;
-    width: calc(100% / var(--scale));
-  }
-  .wrap.use-zoom{ transform:none; width:auto; }
-
-  .hidden{ display:none !important; }
-
   /* ===========================
      Shared ring/group styling
      =========================== */
@@ -94,9 +82,7 @@
     letter-spacing:.02em;
   }
 
-  /* highlight groups that have a team (gdisplay present) */
   .group.has-team{ background: rgb(204 204 204 / 43%); }
-
   .group.has-team .group-head{
     padding-bottom:1px;
     padding-top:4px;
@@ -125,7 +111,7 @@
     display:none;
   }
 
-  .solid{ border-top:0px solid var(--line); margin:0; }
+  .solid{ border-top:0px solid #000; margin:0; }
   .class-list{ padding:3px 6px 4px 6px; border-bottom:1px solid #8e8c8c; }
 
   .c{
@@ -141,17 +127,6 @@
   .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
 
   /* ===========================
-     v5 layout: 2 columns
-     =========================== */
-  .cols{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.12in;
-    align-items:start;
-  }
-  .col{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-
-  /* ===========================
      v6 layout: 4 quadrants
      =========================== */
   .quads{
@@ -159,6 +134,8 @@
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: var(--quadGutter);
+    height: 100%;
+    width: 100%;
     align-items:stretch;
   }
   .quad{
@@ -167,46 +144,36 @@
     overflow:hidden;
     position:relative;
     padding: var(--foldSafe);
+    outline: 0;
   }
-  .quad-inner{ width:100%; height:100%; }
+
+  /* Each quarter scales independently */
+  .quad-inner{
+    width: max-content;          /* allow natural content width */
+    transform-origin: top left;  /* we scale from top-left */
+    will-change: transform;
+  }
   .quad.rot180 .quad-inner{
-    transform: rotate(180deg);
-    transform-origin: center;
+    transform-origin: top left;
   }
+
   .stack{ display:flex; flex-direction:column; gap:2px; min-width:0; }
 
   /* Print rules */
   @media print{
     @page{ size: Letter; margin: 0.25in; }
 
-    /* v6 request: hide title/subtitle/topbar in print */
+    /* Per your request: hide title/subtitle/topbar in print */
     .topbar{ display:none !important; }
-
     .controls{ display:none !important; }
-    .page{ box-shadow:none; }
 
+    .page{ box-shadow:none; }
     body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
     .ring-head{ background:var(--ringPrint); }
     .group.has-team, .ring-head{
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-
-    .wrap.use-zoom{ zoom: var(--scale); }
-    .wrap:not(.use-zoom){
-      transform: scale(var(--scale));
-      transform-origin: top left;
-      width: calc(100% / var(--scale));
-    }
-
-    /* tighter fallback when scale is low */
-    body.tight .ring-head{padding:3px 5px; font-size:9px;}
-    body.tight .group-head{padding:2px 5px;}
-    body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
-    body.tight .class-list{padding:2px 5px 3px 5px;}
-    body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
-    body.tight .t{font-size:8px;}
-    body.tight .n{font-size:8px;}
   }
 </style>
 </head>
@@ -219,41 +186,39 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
-        <span class="hint" id="modeHint"></span>
+        <span class="hint" id="modeHint">Pamphlet mode • per-quarter scale</span>
       </div>
     </div>
 
-    <div class="wrap" id="wrap">
-      <!-- v6 layout -->
-      <div id="layoutV6">
-        <!-- mapping per spec:
-             Top row (rot180):  Q3 | Q2
-             Bottom row:        Q4 | Q1
-        -->
-        <div class="quads" id="quads">
-          <div class="quad rot180" id="q3"><div class="quad-inner"><div class="stack" id="stack3"></div></div></div>
-          <div class="quad rot180" id="q2"><div class="quad-inner"><div class="stack" id="stack2"></div></div></div>
-          <div class="quad" id="q4"><div class="quad-inner"><div class="stack" id="stack4"></div></div></div>
-          <div class="quad" id="q1"><div class="quad-inner"><div class="stack" id="stack1"></div></div></div>
-        </div>
-      </div>
-
-      <!-- v5 layout (fallback) -->
-      <div id="layoutV5" class="hidden">
-        <div class="cols">
-          <div class="col" id="colL"></div>
-          <div class="col" id="colR"></div>
-        </div>
-      </div>
+    <!-- v6: quarter fold layout
+         Spec positioning:
+           3 | 2   (top row upside down)
+           4 | 1   (bottom row upright)
+    -->
+    <div class="quads" id="quads" aria-label="Quarter fold layout">
+      <div class="quad rot180" id="q3"><div class="quad-inner" id="inner3"><div class="stack" id="stack3"></div></div></div>
+      <div class="quad rot180" id="q2"><div class="quad-inner" id="inner2"><div class="stack" id="stack2"></div></div></div>
+      <div class="quad" id="q4"><div class="quad-inner" id="inner4"><div class="stack" id="stack4"></div></div></div>
+      <div class="quad" id="q1"><div class="quad-inner" id="inner1"><div class="stack" id="stack1"></div></div></div>
     </div>
   </div>
 
 <script>
-  // v6 policy:
-  // - Try 4-quadrant pamphlet layout.
-  // - Compute required scale to fit 1 page.
-  // - If required scale < MIN_READABLE_SCALE, fallback to v5 2-column.
-  const MIN_READABLE_SCALE = 0.82;
+  // v6: Per-quarter scaling (min 0.50) + row-balanced bucketing.
+  // - We do NOT globally scale the whole page.
+  // - Each quadrant scales independently to fit its container.
+  //
+  // Row weights (confirmed):
+  // - ring-head = 1
+  // - group-head = 0.5
+  // - each class row (.c) = 1
+
+  const MIN_QUAD_SCALE = 0.50;
+  const MAX_QUAD_SCALE = 1.00;
+
+  const RING_HEAD_WEIGHT = 1.0;
+  const GROUP_HEAD_WEIGHT = 0.5;
+  const CLASS_ROW_WEIGHT = 1.0;
 
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
@@ -305,18 +270,6 @@
     return m;
   }
 
-  function pxPerInch(){
-    const d = document.createElement("div");
-    d.style.width = "1in";
-    d.style.position = "absolute";
-    d.style.left = "-9999px";
-    d.style.top = "-9999px";
-    document.body.appendChild(d);
-    const ppi = d.offsetWidth || 96;
-    d.remove();
-    return ppi;
-  }
-
   function setHeaderFromFirst(rows){
     const first = rows[0] || {};
     const showId = first.show_id ?? first.showId ?? "";
@@ -325,7 +278,6 @@
     const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
 
     document.getElementById("title").textContent = reportTitle;
-
     const subParts = [];
     if(displayDate) subParts.push(String(displayDate));
     if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
@@ -333,14 +285,15 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  function buildRingElements(rows){
+  // Build ring elements AND compute a weighted "row count" per ring
+  function buildRingsWithRowCounts(rows){
     const rings = Array.from(
       groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries()
     )
     .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
     .sort((a,b)=>a.ring_number - b.ring_number);
 
-    const ringEls = [];
+    const out = [];
 
     for(const ring of rings){
       const items0 = ring.items[0] || {};
@@ -357,6 +310,11 @@
       })
       .sort((a,b)=>a.seq - b.seq);
 
+      // Count rows
+      let weightedRows = 0;
+      weightedRows += RING_HEAD_WEIGHT;
+
+      // Build DOM
       const sec = document.createElement("section");
       sec.className = "ring";
 
@@ -368,6 +326,8 @@
       const frag = document.createDocumentFragment();
 
       for(const g of groups){
+        weightedRows += GROUP_HEAD_WEIGHT;
+
         const classes = g.items.slice().sort((a,b)=>{
           const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
           const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
@@ -378,6 +338,8 @@
         let clHtml = "";
 
         for(const c of classes){
+          weightedRows += CLASS_ROW_WEIGHT;
+
           const timeRaw = String(c.start_display ?? c.startDisplay ?? "").trim();
           const timeKey = normTimeKey(timeRaw);
           const showTime = (timeKey && timeKey !== lastTimeKey);
@@ -406,10 +368,15 @@
       }
 
       sec.appendChild(frag);
-      ringEls.push(sec);
+
+      out.push({
+        ring_number: ring.ring_number,
+        el: sec,
+        weightedRows
+      });
     }
 
-    return ringEls;
+    return out;
   }
 
   function clearStacks(){
@@ -417,169 +384,142 @@
       const el = document.getElementById(id);
       if(el) el.innerHTML = "";
     }
+    for(const id of ["inner1","inner2","inner3","inner4"]){
+      const inner = document.getElementById(id);
+      if(inner) inner.style.transform = "scale(1)";
+    }
   }
 
-  function measureRingHeights(ringEls){
-    const s1 = document.getElementById("stack1");
-    s1.innerHTML = "";
-    const frag = document.createDocumentFragment();
-    for(const el of ringEls) frag.appendChild(el);
-    s1.appendChild(frag);
-    return ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
-  }
+  // Greedy balance rings into 4 buckets by weighted rows.
+  // Preserve ring order within each bucket (we always append in ring_number order).
+  function bucketizeGreedy(ringsWithCounts){
+    const buckets = [
+      { sum:0, items:[] }, // Q1
+      { sum:0, items:[] }, // Q2
+      { sum:0, items:[] }, // Q3
+      { sum:0, items:[] }, // Q4
+    ];
 
-  function splitIntoBucketsByHeight(ringEls, heights, bucketCount){
-    const total = heights.reduce((a,b)=>a+b,0);
-    const target = total / bucketCount;
-
-    const splits = [];
-    let cum = 0;
-    let nextTarget = target;
-
-    for(let i=0;i<heights.length;i++){
-      if(splits.length >= bucketCount - 1) break;
-
-      const before = cum;
-      const after = cum + heights[i];
-
-      if(after >= nextTarget){
-        const diffAfter = Math.abs(nextTarget - after);
-        const diffBefore = Math.abs(nextTarget - before);
-
-        if(diffAfter <= diffBefore){
-          cum = after;
-          splits.push(i+1);
-        }else{
-          const cut = Math.max(1, i);
-          if(splits.length === 0 || cut > splits[splits.length-1]){
-            splits.push(cut);
-          }else{
-            splits.push(i+1);
-            cum = after;
-          }
+    // Rings are already in ring_number order; assign each ring to the least-loaded bucket.
+    for(const r of ringsWithCounts){
+      let bestIdx = 0;
+      let bestSum = buckets[0].sum;
+      for(let i=1;i<4;i++){
+        if(buckets[i].sum < bestSum){
+          bestSum = buckets[i].sum;
+          bestIdx = i;
         }
-        nextTarget = target * (splits.length + 1);
-      }else{
-        cum = after;
       }
+      buckets[bestIdx].items.push(r);
+      buckets[bestIdx].sum += r.weightedRows;
     }
 
-    const buckets = [];
-    let start = 0;
-    for(const end of splits){
-      buckets.push(ringEls.slice(start, end));
-      start = end;
-    }
-    buckets.push(ringEls.slice(start));
-
-    while(buckets.length < bucketCount) buckets.push([]);
-    if(buckets.length > bucketCount){
-      const last = buckets[bucketCount-1];
-      for(let i=bucketCount;i<buckets.length;i++) last.push(...buckets[i]);
-      buckets.length = bucketCount;
-    }
     return buckets;
   }
 
-  function placeV6(buckets){
-    clearStacks();
+  // Place buckets into quadrants per spec:
+  // Q1 bottom-right = stack1
+  // Q2 top-right (rot) = stack2
+  // Q3 top-left (rot) = stack3
+  // Q4 bottom-left = stack4
+  function placeBuckets(buckets){
+    // buckets index mapping: [0]=Q1, [1]=Q2, [2]=Q3, [3]=Q4
     const map = [
-      {bucket: 0, stackId: "stack1"}, // Q1
-      {bucket: 1, stackId: "stack2"}, // Q2
-      {bucket: 2, stackId: "stack3"}, // Q3
-      {bucket: 3, stackId: "stack4"}, // Q4
+      {bucket: 0, stackId:"stack1"},
+      {bucket: 1, stackId:"stack2"},
+      {bucket: 2, stackId:"stack3"},
+      {bucket: 3, stackId:"stack4"},
     ];
     for(const m of map){
       const stack = document.getElementById(m.stackId);
       const frag = document.createDocumentFragment();
-      for(const el of (buckets[m.bucket] || [])) frag.appendChild(el);
+      for(const r of buckets[m.bucket].items){
+        frag.appendChild(r.el);
+      }
       stack.appendChild(frag);
     }
   }
 
-  function placeV5FromRingEls(ringEls){
-    const L = document.getElementById("colL");
-    const R = document.getElementById("colR");
-    L.innerHTML = "";
-    R.innerHTML = "";
+  function measureAndScaleQuadrant(quadId, innerId){
+    const quad = document.getElementById(quadId);
+    const inner = document.getElementById(innerId);
+    if(!quad || !inner) return 1;
 
-    const frag = document.createDocumentFragment();
-    for(const el of ringEls) frag.appendChild(el);
-    L.appendChild(frag);
+    // Reset to measure natural size
+    inner.style.transform = "scale(1)";
 
-    const heights = ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
-    const total = heights.reduce((a,b)=>a+b,0);
-    const target = total / 2;
+    // Force layout
+    const availW = quad.clientWidth;
+    const availH = quad.clientHeight;
 
-    let bestSplit = ringEls.length;
-    let bestDiff = Infinity;
-    let cum = 0;
-    for(let i=0;i<heights.length;i++){
-      cum += heights[i];
-      const diff = Math.abs(target - cum);
-      if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
-    }
-    for(let i=bestSplit;i<ringEls.length;i++){
-      R.appendChild(ringEls[i]);
-    }
-  }
+    // Use scroll sizes of the inner (natural content size)
+    const needW = inner.scrollWidth || inner.getBoundingClientRect().width;
+    const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
-  function isPrintMode(){
-    return window.matchMedia && window.matchMedia("print").matches;
-  }
+    if(!needW || !needH || !availW || !availH) return 1;
 
-  function computeRequiredScaleForOnePage(contentEl){
-    const wrap = document.getElementById("wrap");
-    const topbar = document.querySelector(".topbar");
-    const ppi = pxPerInch();
+    let scale = Math.min(availW / needW, availH / needH, MAX_QUAD_SCALE);
+    scale = Math.max(MIN_QUAD_SCALE, Math.min(MAX_QUAD_SCALE, scale));
 
-    const pageH = (11 - 0.5) * ppi; // 10.5in usable inside @page margin
-    const pageW = (8.5 - 0.5) * ppi; // 8.0in usable inside @page margin
+    inner.style.transform = `scale(${scale})`;
 
-    // In print, topbar is hidden. Do not subtract it.
-    const topH = isPrintMode() ? 0 : (topbar ? topbar.offsetHeight : 0);
-
-    const availH = pageH - topH - 6;
-    const availW = pageW;
-
-    const needH = contentEl.scrollHeight || contentEl.getBoundingClientRect().height;
-    const needW = contentEl.scrollWidth || wrap.getBoundingClientRect().width;
-
-    const scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
-    const scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
-
-    let scale = Math.min(1, scaleH, scaleW);
-    scale = Math.max(0.35, Math.min(1, scale));
     return scale;
   }
 
-  function applyScale(scale){
-    const wrap = document.getElementById("wrap");
-    wrap.style.setProperty("--scale", String(scale));
-    wrap.classList.remove("use-zoom");
-    wrap.style.zoom = "";
-    document.body.classList.toggle("tight", scale < 0.60);
+  function applyAllQuadrantScales(){
+    // top row are rotated; we still scale the inner normally (rotation is on quad via class rot180)
+    // For rotation, we rotate the *content* by 180, so scale stays the same.
+    // We'll implement rotation by applying rotate(180deg) in addition to scale for top row.
+    // (We keep it explicit so scale measurements remain accurate.)
 
-    const canZoom = ("zoom" in wrap.style);
-    if(canZoom){
-      wrap.classList.add("use-zoom");
-      wrap.style.zoom = String(scale);
+    // First: reset any rotate so scrollWidth/scrollHeight are natural (scale-only measurement).
+    // We'll apply rotation after scaling.
+    const rotPairs = [
+      { quadId:"q2", innerId:"inner2" },
+      { quadId:"q3", innerId:"inner3" },
+    ];
+    for(const p of rotPairs){
+      const inner = document.getElementById(p.innerId);
+      if(inner) inner.dataset.rot = "1";
     }
+
+    // Scale all (without rotation baked into transform yet)
+    const s1 = measureAndScaleQuadrant("q1","inner1");
+    const s2 = measureAndScaleQuadrant("q2","inner2");
+    const s3 = measureAndScaleQuadrant("q3","inner3");
+    const s4 = measureAndScaleQuadrant("q4","inner4");
+
+    // Now apply rotation for top row as: rotate(180deg) scale(s)
+    // Keep origin top-left; rotation flips, but that's the fold requirement.
+    function applyRot(innerId, scale){
+      const inner = document.getElementById(innerId);
+      if(!inner) return;
+      inner.style.transformOrigin = "top left";
+      inner.style.transform = `rotate(180deg) scale(${scale})`;
+    }
+    function applyNoRot(innerId, scale){
+      const inner = document.getElementById(innerId);
+      if(!inner) return;
+      inner.style.transformOrigin = "top left";
+      inner.style.transform = `scale(${scale})`;
+    }
+
+    applyNoRot("inner1", s1);
+    applyRot("inner2", s2);
+    applyRot("inner3", s3);
+    applyNoRot("inner4", s4);
+
+    return {s1,s2,s3,s4};
   }
 
-  function showMode(mode, scale){
-    const v6 = document.getElementById("layoutV6");
-    const v5 = document.getElementById("layoutV5");
+  function setHint(scales, buckets){
     const hint = document.getElementById("modeHint");
-    if(mode === "v6"){
-      v6.classList.remove("hidden");
-      v5.classList.add("hidden");
-      if(hint) hint.textContent = `Pamphlet mode • scale ${(scale*100).toFixed(0)}%`;
-    }else{
-      v6.classList.add("hidden");
-      v5.classList.remove("hidden");
-      if(hint) hint.textContent = `2-column mode • scale ${(scale*100).toFixed(0)}%`;
-    }
+    if(!hint) return;
+    const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
+    const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
+    hint.textContent =
+      `Pamphlet mode • per-quarter scale • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
+      ` • rows Q1 ${buckets[0].sum.toFixed(1)} Q2 ${buckets[1].sum.toFixed(1)} Q3 ${buckets[2].sum.toFixed(1)} Q4 ${buckets[3].sum.toFixed(1)}`;
   }
 
   async function render(){
@@ -593,30 +533,24 @@
 
     setHeaderFromFirst(rows);
 
-    const ringEls = buildRingElements(rows);
+    clearStacks();
 
-    // Try v6
-    const heights = measureRingHeights(ringEls);
-    const buckets = splitIntoBucketsByHeight(ringEls, heights, 4);
-    placeV6(buckets);
+    // Build + count rows per ring
+    const ringsWithCounts = buildRingsWithRowCounts(rows);
 
-    const quads = document.getElementById("quads");
-    let v6Scale = computeRequiredScaleForOnePage(quads);
+    // Bucketize
+    const buckets = bucketizeGreedy(ringsWithCounts);
 
-    if(v6Scale < MIN_READABLE_SCALE){
-      // fallback to v5
-      showMode("v5", 1);
-      placeV5FromRingEls(ringEls);
+    // Place into quadrants
+    placeBuckets(buckets);
 
-      const colsRoot = document.getElementById("layoutV5").querySelector(".cols");
-      const v5Scale = computeRequiredScaleForOnePage(colsRoot);
-      applyScale(v5Scale);
-      showMode("v5", v5Scale);
-      return;
-    }
+    // Allow DOM to lay out, then scale each quadrant to fit
+    // (one rAF is enough; second makes it more stable across browsers)
+    await new Promise(r => requestAnimationFrame(r));
+    await new Promise(r => requestAnimationFrame(r));
 
-    showMode("v6", v6Scale);
-    applyScale(v6Scale);
+    const scales = applyAllQuadrantScales();
+    setHint(scales, buckets);
   }
 
   (async function main(){
@@ -625,7 +559,7 @@
     window.addEventListener("beforeprint", async ()=>{ await render(); });
     window.addEventListener("resize", ()=>{ render().catch(()=>{}); });
   })().catch(err=>{
-    const target = document.getElementById("stack1") || document.getElementById("colL");
+    const target = document.getElementById("stack1");
     if(target) target.innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
   });
 </script>
