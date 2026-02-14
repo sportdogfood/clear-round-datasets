@@ -144,28 +144,31 @@
     overflow:hidden;
     position:relative;
     padding: var(--foldSafe);
-    outline: 0;
   }
 
   /* Each quarter scales independently */
   .quad-inner{
-    width: max-content;          /* allow natural content width */
-    transform-origin: top left;  /* we scale from top-left */
+    display:inline-block;        /* stable for rotate/scale */
+    width: max-content;          /* natural content width */
+    transform-origin: top left;  /* default; overridden for rotated quads */
     will-change: transform;
   }
-  .quad.rot180 .quad-inner{
-    transform-origin: top left;
-  }
-
   .stack{ display:flex; flex-direction:column; gap:2px; min-width:0; }
 
   /* Print rules */
   @media print{
     @page{ size: Letter; margin: 0.25in; }
 
-    /* Per your request: hide title/subtitle/topbar in print */
+    /* hide title/subtitle/topbar in print */
     .topbar{ display:none !important; }
     .controls{ display:none !important; }
+
+    /* lock a deterministic printable content box:
+       Letter (8.5x11) with 0.25in margins => 8.0in x 10.5in */
+    .quads{
+      width: 8in;
+      height: 10.5in;
+    }
 
     .page{ box-shadow:none; }
     body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
@@ -196,8 +199,8 @@
            4 | 1   (bottom row upright)
     -->
     <div class="quads" id="quads" aria-label="Quarter fold layout">
-      <div class="quad rot180" id="q3"><div class="quad-inner" id="inner3"><div class="stack" id="stack3"></div></div></div>
-      <div class="quad rot180" id="q2"><div class="quad-inner" id="inner2"><div class="stack" id="stack2"></div></div></div>
+      <div class="quad" id="q3"><div class="quad-inner" id="inner3"><div class="stack" id="stack3"></div></div></div>
+      <div class="quad" id="q2"><div class="quad-inner" id="inner2"><div class="stack" id="stack2"></div></div></div>
       <div class="quad" id="q4"><div class="quad-inner" id="inner4"><div class="stack" id="stack4"></div></div></div>
       <div class="quad" id="q1"><div class="quad-inner" id="inner1"><div class="stack" id="stack1"></div></div></div>
     </div>
@@ -205,7 +208,7 @@
 
 <script>
   // v6: Per-quarter scaling (min 0.50) + row-balanced bucketing.
-  // - We do NOT globally scale the whole page.
+  // - No global scale.
   // - Each quadrant scales independently to fit its container.
   //
   // Row weights (confirmed):
@@ -400,7 +403,6 @@
       { sum:0, items:[] }, // Q4
     ];
 
-    // Rings are already in ring_number order; assign each ring to the least-loaded bucket.
     for(const r of ringsWithCounts){
       let bestIdx = 0;
       let bestSum = buckets[0].sum;
@@ -423,7 +425,6 @@
   // Q3 top-left (rot) = stack3
   // Q4 bottom-left = stack4
   function placeBuckets(buckets){
-    // buckets index mapping: [0]=Q1, [1]=Q2, [2]=Q3, [3]=Q4
     const map = [
       {bucket: 0, stackId:"stack1"},
       {bucket: 1, stackId:"stack2"},
@@ -447,12 +448,11 @@
 
     // Reset to measure natural size
     inner.style.transform = "scale(1)";
+    inner.style.transformOrigin = "top left";
 
-    // Force layout
     const availW = quad.clientWidth;
     const availH = quad.clientHeight;
 
-    // Use scroll sizes of the inner (natural content size)
     const needW = inner.scrollWidth || inner.getBoundingClientRect().width;
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
@@ -461,41 +461,24 @@
     let scale = Math.min(availW / needW, availH / needH, MAX_QUAD_SCALE);
     scale = Math.max(MIN_QUAD_SCALE, Math.min(MAX_QUAD_SCALE, scale));
 
-    inner.style.transform = `scale(${scale})`;
-
     return scale;
   }
 
   function applyAllQuadrantScales(){
-    // top row are rotated; we still scale the inner normally (rotation is on quad via class rot180)
-    // For rotation, we rotate the *content* by 180, so scale stays the same.
-    // We'll implement rotation by applying rotate(180deg) in addition to scale for top row.
-    // (We keep it explicit so scale measurements remain accurate.)
-
-    // First: reset any rotate so scrollWidth/scrollHeight are natural (scale-only measurement).
-    // We'll apply rotation after scaling.
-    const rotPairs = [
-      { quadId:"q2", innerId:"inner2" },
-      { quadId:"q3", innerId:"inner3" },
-    ];
-    for(const p of rotPairs){
-      const inner = document.getElementById(p.innerId);
-      if(inner) inner.dataset.rot = "1";
-    }
-
-    // Scale all (without rotation baked into transform yet)
+    // Measure required per quadrant (no rotation applied during measurement)
     const s1 = measureAndScaleQuadrant("q1","inner1");
     const s2 = measureAndScaleQuadrant("q2","inner2");
     const s3 = measureAndScaleQuadrant("q3","inner3");
     const s4 = measureAndScaleQuadrant("q4","inner4");
 
-    // Now apply rotation for top row as: rotate(180deg) scale(s)
-    // Keep origin top-left; rotation flips, but that's the fold requirement.
+    // Apply transforms:
+    // - bottom row: scale from top-left
+    // - top row: rotate 180 around center (prevents negative-space clipping), then scale
     function applyRot(innerId, scale){
       const inner = document.getElementById(innerId);
       if(!inner) return;
-      inner.style.transformOrigin = "top left";
-      inner.style.transform = `rotate(180deg) scale(${scale})`;
+      inner.style.transformOrigin = "center center";
+      inner.style.transform = `scale(${scale}) rotate(180deg)`;
     }
     function applyNoRot(innerId, scale){
       const inner = document.getElementById(innerId);
@@ -535,17 +518,11 @@
 
     clearStacks();
 
-    // Build + count rows per ring
     const ringsWithCounts = buildRingsWithRowCounts(rows);
-
-    // Bucketize
     const buckets = bucketizeGreedy(ringsWithCounts);
-
-    // Place into quadrants
     placeBuckets(buckets);
 
-    // Allow DOM to lay out, then scale each quadrant to fit
-    // (one rAF is enough; second makes it more stable across browsers)
+    // Allow layout to settle
     await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
 
