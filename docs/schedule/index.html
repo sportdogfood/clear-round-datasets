@@ -9,12 +9,21 @@
     :root {
       --bg: #020617;
       --bg-alt: #0b1120;
-      --border: #374151;
-      --border-soft: #4b5563;
+      --border: #334155;
+      --border-soft: #475569;
       --accent: #2563eb;
+      --text-main: #e5e7eb;
+      --text-muted: #94a3b8;
+      --surface: #0f172a;
+      --surface-alt: #111827;
       --pill-radius: 999px;
-      --header-h: 52px;
-      --nav-h: 72px;
+      --header-h: 50px;
+      --nav-h: 68px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --control-h: 42px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -27,11 +36,16 @@
     body { display: flex; justify-content: center; align-items: stretch; }
     [hidden] { display: none !important; }
 
+    :is(.header-back, .nav-btn, .row--tap, .state-search-input):focus-visible {
+      outline: 2px solid rgba(37, 99, 235, 0.95);
+      outline-offset: 1px;
+    }
+
     .app {
       width: 100%;
       max-width: 480px;
       height: 100vh;
-      max-height: 720px;
+      max-height: 740px;
       margin: 4px;
       display: flex;
       flex-direction: column;
@@ -51,7 +65,7 @@
       display: grid;
       grid-template-columns: 60px 1fr 60px;
       align-items: center;
-      padding: 2px;
+      padding: 4px 6px;
       border-bottom: 1px solid rgba(31, 41, 55, 0.95);
       background: #020617;
       -webkit-backdrop-filter: blur(10px);
@@ -86,7 +100,7 @@
     .header-back:active { transform: translateY(1px) scale(0.97); }
 
     .header-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       margin: 0;
       padding: 0;
@@ -100,11 +114,11 @@
       flex: 1;
       display: flex; flex-direction: column; justify-content: space-between;
       overflow-y: auto;
-      padding: 2px 2px 2px;
+      padding: 4px 4px 2px;
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
 
-    .list-column { display: flex; flex-direction: column; gap: 4px; padding: 1px 1px; padding-bottom: 4px; }
+    .list-column { display: flex; flex-direction: column; gap: 6px; padding: 2px; padding-bottom: 6px; }
 
     /* Start logo ------------------------------------------------- */
     .start-logo {
@@ -117,16 +131,16 @@
     /* Rows ------------------------------------------------------- */
     .row {
       width: 100%;
-      min-height: 46px;
-      padding: 10px 16px;
+      min-height: var(--control-h);
+      padding: 8px 14px;
       border-radius: var(--pill-radius);
       border: 1px solid var(--border-soft);
       background: #111827;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 14px;
-      color: #e5e7eb;
+      font-size: 13px;
+      color: var(--text-main);
       box-shadow: 0 1px 0 #020617;
     }
     .row-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
@@ -169,13 +183,13 @@
     .state-search { margin: 4px 4px 2px; }
     .state-search-input {
       width: 100%;
-      padding: 10px 16px;
-      min-height: 46px;
+      padding: 8px 14px;
+      min-height: var(--control-h);
       border-radius: var(--pill-radius);
       border: 1px solid var(--border-soft);
       background: #020617;
       color: #f9fafb;
-      font-size: 14px;
+      font-size: 13px;
       outline: none;
       box-shadow: 0 1px 0 #020617;
     }
@@ -192,7 +206,7 @@
       backdrop-filter: blur(12px);
       display: flex;
       align-items: flex-start;
-      padding: 2px;
+      padding: 4px 6px;
     }
 
     .nav-scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; width: 100%; }
@@ -272,7 +286,7 @@
       border-bottom-color: rgba(37, 99, 235, 0.35);
     }
     .card-title{
-      font-size: 14px; font-weight: 600; color: #f9fafb;
+      font-size: 13px; font-weight: 600; color: #f9fafb;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px;
     }
     /*.card-body{ padding: 6px 0; } */
@@ -529,7 +543,7 @@
       box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.85);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
-      padding: 2px; 
+      padding: 4px 6px; 
 
       
     }
@@ -673,20 +687,25 @@
       <div class="header-spacer" aria-hidden="true"></div>
     </header>
 
-    <main class="app-main" id="app-main">
+    <main class="app-main" id="app-main" aria-live="polite">
       <div id="screen-root" class="list-column"></div>
       <div id="filterbottom" class="filterbottom"></div>
     </main>
 
-    <nav class="app-nav">
+    <nav class="app-nav" aria-label="Primary">
       <div class="nav-scroller">
         <div class="nav-row" id="nav-row">
           <button class="nav-btn" type="button" data-screen="start">
             <span class="nav-label">Start</span>
           </button>
 
+          <button class="nav-btn" type="button" data-screen="summary">
+            <span class="nav-label">Summary</span>
+          </button>
+
           <button class="nav-btn" type="button" data-screen="schedule">
             <span class="nav-label">Schedule</span>
+            <span class="nav-agg" data-nav-agg="schedule">0</span>
           </button>
           
           <button class="nav-btn" type="button" data-screen="horses">
