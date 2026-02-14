@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRT Schedule (One Page Print) — v6 (Quarter Fold)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+    --ringPrint:#000;
+    --groupTeam:#d9d9d9;
+    --scale: 1;
+    --gutter: 0.12in;      /* space between quadrants */
+    --foldSafe: 0.06in;    /* extra inner padding near folds */
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:#fff;
+  }
+
+  /* Screen preview as a single Letter page */
+  .page{
+    width: 8.5in;
+    height: 11in;
+    padding: 0.25in;
+    margin: 12px auto;
+    background:#fff;
+    overflow:hidden;
+  }
+  @media print{
+    body{background:#fff;}
+    .page{
+      width:auto;
+      height:auto;
+      padding:0;
+      margin:0;
+      overflow:visible;
+    }
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+    padding:0 0 6px 0;
+  }
+  .title{font-weight:900; font-size:14px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:10px; margin-top:2px;}
+  .controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    padding:3px 10px;
+    font-size:12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+
+  /* scaled content wrapper (works for both preview + print) */
+  .wrap{
+    transform: scale(var(--scale));
+    transform-origin: top left;
+    width: calc(100% / var(--scale));
+  }
+  .wrap.use-zoom{
+    transform:none;
+    width:auto;
+  }
+
+  /* v6: 2x2 quadrants for fold pamphlet */
+  .quads{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: var(--gutter);
+    align-items:stretch;
+  }
+
+  .quad{
+    min-width:0;
+    min-height:0;
+    border:0;
+    overflow:hidden; /* keep within quadrant */
+    position:relative;
+    padding: var(--foldSafe);
+  }
+
+  /* rotate the entire quadrant content (top row: Q3, Q2) */
+  .quad.rot180 .quad-inner{
+    transform: rotate(180deg);
+    transform-origin: center;
+  }
+
+  /* stacks inside each quadrant */
+  .quad-inner{
+    width:100%;
+    height:100%;
+  }
+  .stack{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+
+  .ring{
+    border:1px solid #000;
+  }
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:4px 6px;
+    font-weight:900;
+    font-size:10px;
+    letter-spacing:.02em;
+  }
+
+  /* highlight groups that have a team (gdisplay present) */
+  .group.has-team{
+    background: rgb(204 204 204 / 43%);
+  }
+  .group.has-team .group-head{
+    padding-bottom:1px;
+    padding-top:4px;
+  }
+  @media print{
+    .group.has-team{
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  /* group_display above group_name */
+  .gdisplay{
+    font-size:11px;
+    font-weight:600;
+    text-align:right;
+    text-transform: uppercase;
+    margin-bottom:-6px;
+    margin-right: 20px;
+    margin-left: 10px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .gname{
+    font-weight:900;
+    font-size:10px;
+    line-height:1.1;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:none; /* per spec: gname is hidden */
+  }
+
+  .solid{border-top:0px solid var(--line); margin:0;}
+  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
+
+  .c{
+    display:grid;
+    grid-template-columns:46px 1fr;
+    column-gap:6px;
+    line-height:1.05;
+    padding:2px 0;
+  }
+  .t{font-weight:600; font-size:9px; white-space:nowrap;}
+  .n{
+    font-size:9px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .muted{color:var(--muted);}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
+
+  /* Print rules */
+  @media print{
+    @page{ size: Letter; margin: 0.25in; }
+
+    .controls{display:none !important;}
+    .page{box-shadow:none;}
+
+    /* ensure colors print */
+    body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    .ring-head{background:var(--ringPrint);}
+
+    /* in print, try zoom first (Chromium), else transform */
+    .wrap.use-zoom{ zoom: var(--scale); }
+    .wrap:not(.use-zoom){
+      transform: scale(var(--scale));
+      transform-origin: top left;
+      width: calc(100% / var(--scale));
+    }
+
+    /* ultra-tight fallback when scale is low */
+    body.tight .ring-head{padding:3px 5px; font-size:9px;}
+    body.tight .group-head{padding:2px 5px;}
+    body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
+    body.tight .gname{font-size:9px;}
+    body.tight .class-list{padding:2px 5px 3px 5px;}
+    body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
+    body.tight .t{font-size:8px;}
+    body.tight .n{font-size:8px;}
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <div class="title" id="title">Schedule</div>
+        <div class="subtitle" id="subtitle"></div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <div class="wrap" id="wrap">
+      <!-- v6: 4 quadrants -->
+      <div class="quads" id="quads">
+        <!-- Layout mapping per spec:
+             Top row (rot180):  Q3 | Q2
+             Bottom row:        Q4 | Q1
+        -->
+        <div class="quad rot180" id="q3"><div class="quad-inner"><div class="stack" id="stack3"></div></div></div>
+        <div class="quad rot180" id="q2"><div class="quad-inner"><div class="stack" id="stack2"></div></div></div>
+        <div class="quad" id="q4"><div class="quad-inner"><div class="stack" id="stack4"></div></div></div>
+        <div class="quad" id="q1"><div class="quad-inner"><div class="stack" id="stack1"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Usage:
+  // schedule_onepage_v6.html#200000044-20251231  -> fetches 200000044-20251231.json (same folder)
+  // Optional: ?data=somefile.json overrides hash.
+  const qs = new URLSearchParams(location.search);
+  const hashKey = (location.hash || "").replace(/^#/, "").trim();
+
+  function resolveDataUrl(){
+    const q = qs.get("data");
+    if(q) return q;
+    if(/^\d+\-\d{8}$/.test(hashKey)) return `${hashKey}.json`;
+    return "docs/schedule/data/print/schedule.json";
+  }
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  function normTimeKey(s){
+    return String(s ?? "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toUpperCase();
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function pxPerInch(){
+    const d = document.createElement("div");
+    d.style.width = "1in";
+    d.style.position = "absolute";
+    d.style.left = "-9999px";
+    d.style.top = "-9999px";
+    document.body.appendChild(d);
+    const ppi = d.offsetWidth || 96;
+    d.remove();
+    return ppi;
+  }
+
+  function clearStacks(){
+    for(const id of ["stack1","stack2","stack3","stack4"]){
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = "";
+    }
+  }
+
+  function measureRingHeights(ringEls){
+    // Measure each ring element height in the current layout context.
+    // We temporarily append to stack1 for stable measurement.
+    const s1 = document.getElementById("stack1");
+    if(!s1) return ringEls.map(()=>0);
+
+    s1.innerHTML = "";
+    for(const el of ringEls) s1.appendChild(el);
+
+    // Force layout
+    const heights = ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
+    return heights;
+  }
+
+  function splitIntoBucketsByHeight(ringEls, heights, bucketCount){
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / bucketCount;
+
+    const splits = []; // indices where each bucket ends (exclusive)
+    let cum = 0;
+    let nextTarget = target;
+
+    for(let i=0;i<heights.length;i++){
+      const h = heights[i];
+      if(splits.length >= bucketCount - 1){
+        // last bucket gets remainder
+        continue;
+      }
+      // decide if we should cut after this ring to get close to nextTarget
+      const before = cum;
+      const after = cum + h;
+
+      // if crossing the target, pick the closer side
+      if(after >= nextTarget){
+        const diffAfter = Math.abs(nextTarget - after);
+        const diffBefore = Math.abs(nextTarget - before);
+        if(diffAfter <= diffBefore){
+          cum = after;
+          splits.push(i+1);
+        }else{
+          // cut before current ring (avoid empty bucket)
+          const cut = Math.max(1, i);
+          if(splits.length === 0 || cut > splits[splits.length-1]){
+            splits.push(cut);
+          }else{
+            splits.push(i+1);
+            cum = after;
+          }
+        }
+        nextTarget = target * (splits.length + 1);
+      }else{
+        cum = after;
+      }
+    }
+
+    // Build buckets from splits
+    const buckets = [];
+    let start = 0;
+    for(const end of splits){
+      buckets.push(ringEls.slice(start, end));
+      start = end;
+    }
+    buckets.push(ringEls.slice(start));
+
+    // Ensure exactly bucketCount buckets
+    while(buckets.length < bucketCount) buckets.push([]);
+    if(buckets.length > bucketCount){
+      // merge extras into last
+      const last = buckets[bucketCount-1];
+      for(let i=bucketCount;i<buckets.length;i++){
+        last.push(...buckets[i]);
+      }
+      buckets.length = bucketCount;
+    }
+    return buckets;
+  }
+
+  function placeIntoQuadrants(buckets){
+    // buckets are ordered by ring_number and then split in order:
+    // bucket1 -> Q1 (bottom-right, upright)  stack1
+    // bucket2 -> Q2 (top-right, rot180)      stack2
+    // bucket3 -> Q3 (top-left,  rot180)      stack3
+    // bucket4 -> Q4 (bottom-left, upright)  stack4
+    clearStacks();
+
+    const map = [
+      {bucket: 0, stackId: "stack1"}, // Q1
+      {bucket: 1, stackId: "stack2"}, // Q2
+      {bucket: 2, stackId: "stack3"}, // Q3
+      {bucket: 3, stackId: "stack4"}, // Q4
+    ];
+
+    for(const m of map){
+      const stack = document.getElementById(m.stackId);
+      if(!stack) continue;
+      for(const el of buckets[m.bucket] || []){
+        stack.appendChild(el);
+      }
+    }
+  }
+
+  function fitToOnePageV6(){
+    const wrap = document.getElementById("wrap");
+    const topbar = document.querySelector(".topbar");
+    const quads = document.getElementById("quads");
+    if(!wrap || !topbar || !quads) return;
+
+    // reset
+    wrap.style.setProperty("--scale", "1");
+    wrap.classList.remove("use-zoom");
+    wrap.style.zoom = "";
+    document.body.classList.remove("tight");
+
+    const ppi = pxPerInch();
+    const pageH = (11 - 0.5) * ppi; // 10.5in usable inside @page margin
+    const pageW = (8.5 - 0.5) * ppi; // 8.0in usable inside @page margin
+
+    const availH = pageH - topbar.offsetHeight - 6;
+    const availW = pageW;
+
+    // Need size = wrapper content size
+    const needH = quads.scrollHeight || quads.getBoundingClientRect().height;
+    const needW = wrap.scrollWidth || wrap.getBoundingClientRect().width;
+
+    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+
+    let scale = Math.min(1, scaleH, scaleW);
+    scale = Math.max(0.35, Math.min(1, scale));
+
+    if(scale < 0.60) document.body.classList.add("tight");
+
+    const canZoom = ("zoom" in wrap.style);
+    if(canZoom){
+      wrap.classList.add("use-zoom");
+      wrap.style.zoom = String(scale);
+    }
+    wrap.style.setProperty("--scale", String(scale));
+
+    if(document.body.classList.contains("tight")){
+      // Recompute after tight class applied
+      const needH2 = quads.scrollHeight || quads.getBoundingClientRect().height;
+      let scale2 = Math.min(1, (availH / (needH2 || 1)));
+      scale2 = Math.max(0.35, Math.min(1, scale2));
+      if(canZoom) wrap.style.zoom = String(scale2);
+      wrap.style.setProperty("--scale", String(scale2));
+    }
+  }
+
+  function buildRingElements(rows){
+    const first = rows[0] || {};
+    const showId = first.show_id ?? first.showId ?? "";
+    // REQUIRED: header must come from show_days_* fields.
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+    document.getElementById("title").textContent = reportTitle;
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
+    if(showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringEls = [];
+
+    for(const ring of rings){
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          return { gid, seq, gname, gdisplay: gd, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
+
+      for(const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTimeKey = null;
+
+        for(const c of classes){
+          const timeRaw = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const timeKey = normTimeKey(timeRaw);
+          const showTime = (timeKey && timeKey !== lastTimeKey);
+          if(timeKey) lastTimeKey = timeKey;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          cl += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        const gDiv = document.createElement("div");
+        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="solid"></div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+        sec.appendChild(gDiv);
+      }
+
+      ringEls.push(sec);
+    }
+
+    return ringEls;
+  }
+
+  (async function main(){
+    const url = resolveDataUrl();
+    const rows = await fetchJson(url);
+
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("stack1").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      return;
+    }
+
+    // Build ring elements in sorted ring order
+    const ringEls = buildRingElements(rows);
+
+    // Measure heights, split into 4 buckets, then place into quadrants
+    const heights = measureRingHeights(ringEls);
+    const buckets = splitIntoBucketsByHeight(ringEls, heights, 4);
+    placeIntoQuadrants(buckets);
+
+    // Fit to one page
+    fitToOnePageV6();
+    setTimeout(fitToOnePageV6, 50);
+
+    window.addEventListener("beforeprint", fitToOnePageV6);
+    window.addEventListener("resize", ()=>{ fitToOnePageV6(); });
+  })().catch(err=>{
+    document.getElementById("stack1").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+</body>
+</html>
