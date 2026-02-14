@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "schema": "shell_profiles.v1",
+    "record_count": 2,
+    "source": "profiles-tapactive (1).csv"
+  },
+  "profiles": [
+    {
+      "profile_id": 79378,
+      "display_name": "LAINEY POSA",
+      "short_name": "Lainey",
+      "profile_img": null,
+      "profile_type": "rider",
+      "trainer_id": 8778,
+      "roles": [
+        "rider",
+        "exerciser"
+      ],
+      "active": true,
+      "sms": "1-631-875-2160",
+      "state": "NY",
+      "usef_no": 5550974,
+      "subscriptions": [
+        "Option 3",
+        "Option 1"
+      ],
+      "sort": 1,
+      "airtable_id": "recpcLIJT5FR1XVA5"
+    },
+    {
+      "profile_id": 9590,
+      "display_name": "TANNER KOROTKIN",
+      "short_name": "Tanner",
+      "profile_img": null,
+      "profile_type": "rider",
+      "trainer_id": 8778,
+      "roles": [
+        "rider",
+        "owner"
+      ],
+      "active": true,
+      "sms": "1-631-804-7950",
+      "state": "FL",
+      "usef_no": 4982223,
+      "subscriptions": [
+        "Option 1"
+      ],
+      "sort": 2,
+      "airtable_id": "recOtfYNmKgXMuDHX"
+    }
+  ]
+}
