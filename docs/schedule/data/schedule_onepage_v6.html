@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (4 Quarters, Per-Quarter Scaling)</title>
+<title>CRT Schedule (One Page Print) — v6 (4 Quarters, Fit-Then-Rotate)</title>
 <style>
   :root{
     --fg:#111;
@@ -12,7 +12,7 @@
     --ring:#0b5d47;
     --ringPrint:#000;
 
-    /* v6: true quarter layout */
+    /* v6 quarters */
     --quadGutter: 0.10in;
     --foldSafe: 0.04in;
   }
@@ -138,22 +138,34 @@
     width: 100%;
     align-items:stretch;
   }
+
+  /* Key change: center the scaled block inside each quarter,
+     so rotate(180) does NOT shove it into negative space and clip. */
   .quad{
     min-width:0;
     min-height:0;
     overflow:hidden;
     position:relative;
     padding: var(--foldSafe);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
 
-  /* Each quarter scales independently */
   .quad-inner{
-    display:inline-block;        /* stable for rotate/scale */
+    display:inline-block;
     width: max-content;          /* natural content width */
-    transform-origin: top left;  /* default; overridden for rotated quads */
+    transform-origin: center center;
     will-change: transform;
   }
-  .stack{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+
+  .stack{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
 
   /* Print rules */
   @media print{
@@ -163,7 +175,7 @@
     .topbar{ display:none !important; }
     .controls{ display:none !important; }
 
-    /* lock a deterministic printable content box:
+    /* lock deterministic printable content box:
        Letter (8.5x11) with 0.25in margins => 8.0in x 10.5in */
     .quads{
       width: 8in;
@@ -189,14 +201,13 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
-        <span class="hint" id="modeHint">Pamphlet mode • per-quarter scale</span>
+        <span class="hint" id="modeHint">Pamphlet mode • fit-then-rotate</span>
       </div>
     </div>
 
-    <!-- v6: quarter fold layout
-         Spec positioning:
-           3 | 2   (top row upside down)
-           4 | 1   (bottom row upright)
+    <!-- Spec positioning:
+         3 | 2   (top row upside down)
+         4 | 1   (bottom row upright)
     -->
     <div class="quads" id="quads" aria-label="Quarter fold layout">
       <div class="quad" id="q3"><div class="quad-inner" id="inner3"><div class="stack" id="stack3"></div></div></div>
@@ -207,14 +218,9 @@
   </div>
 
 <script>
-  // v6: Per-quarter scaling (min 0.50) + row-balanced bucketing.
-  // - No global scale.
+  // v6: Fit each quadrant first (scale only), then rotate Q2/Q3.
   // - Each quadrant scales independently to fit its container.
-  //
-  // Row weights (confirmed):
-  // - ring-head = 1
-  // - group-head = 0.5
-  // - each class row (.c) = 1
+  // - Rotation happens AFTER scaling, and content is centered to avoid clipping.
 
   const MIN_QUAD_SCALE = 0.50;
   const MAX_QUAD_SCALE = 1.00;
@@ -288,7 +294,6 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  // Build ring elements AND compute a weighted "row count" per ring
   function buildRingsWithRowCounts(rows){
     const rings = Array.from(
       groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries()
@@ -313,11 +318,9 @@
       })
       .sort((a,b)=>a.seq - b.seq);
 
-      // Count rows
       let weightedRows = 0;
       weightedRows += RING_HEAD_WEIGHT;
 
-      // Build DOM
       const sec = document.createElement("section");
       sec.className = "ring";
 
@@ -372,11 +375,7 @@
 
       sec.appendChild(frag);
 
-      out.push({
-        ring_number: ring.ring_number,
-        el: sec,
-        weightedRows
-      });
+      out.push({ ring_number: ring.ring_number, el: sec, weightedRows });
     }
 
     return out;
@@ -389,12 +388,13 @@
     }
     for(const id of ["inner1","inner2","inner3","inner4"]){
       const inner = document.getElementById(id);
-      if(inner) inner.style.transform = "scale(1)";
+      if(inner){
+        inner.style.transform = "scale(1)";
+        inner.style.transformOrigin = "center center";
+      }
     }
   }
 
-  // Greedy balance rings into 4 buckets by weighted rows.
-  // Preserve ring order within each bucket (we always append in ring_number order).
   function bucketizeGreedy(ringsWithCounts){
     const buckets = [
       { sum:0, items:[] }, // Q1
@@ -419,36 +419,29 @@
     return buckets;
   }
 
-  // Place buckets into quadrants per spec:
-  // Q1 bottom-right = stack1
-  // Q2 top-right (rot) = stack2
-  // Q3 top-left (rot) = stack3
-  // Q4 bottom-left = stack4
   function placeBuckets(buckets){
     const map = [
-      {bucket: 0, stackId:"stack1"},
-      {bucket: 1, stackId:"stack2"},
-      {bucket: 2, stackId:"stack3"},
-      {bucket: 3, stackId:"stack4"},
+      {bucket: 0, stackId:"stack1"}, // Q1 bottom-right
+      {bucket: 1, stackId:"stack2"}, // Q2 top-right
+      {bucket: 2, stackId:"stack3"}, // Q3 top-left
+      {bucket: 3, stackId:"stack4"}, // Q4 bottom-left
     ];
     for(const m of map){
       const stack = document.getElementById(m.stackId);
       const frag = document.createDocumentFragment();
-      for(const r of buckets[m.bucket].items){
-        frag.appendChild(r.el);
-      }
+      for(const r of buckets[m.bucket].items) frag.appendChild(r.el);
       stack.appendChild(frag);
     }
   }
 
-  function measureAndScaleQuadrant(quadId, innerId){
+  function measureScaleToFit(quadId, innerId){
     const quad = document.getElementById(quadId);
     const inner = document.getElementById(innerId);
     if(!quad || !inner) return 1;
 
-    // Reset to measure natural size
+    // Fit pass: scale-only (no rotation), centered container prevents clipping later.
     inner.style.transform = "scale(1)";
-    inner.style.transformOrigin = "top left";
+    inner.style.transformOrigin = "center center";
 
     const availW = quad.clientWidth;
     const availH = quad.clientHeight;
@@ -460,39 +453,32 @@
 
     let scale = Math.min(availW / needW, availH / needH, MAX_QUAD_SCALE);
     scale = Math.max(MIN_QUAD_SCALE, Math.min(MAX_QUAD_SCALE, scale));
-
     return scale;
   }
 
-  function applyAllQuadrantScales(){
-    // Measure required per quadrant (no rotation applied during measurement)
-    const s1 = measureAndScaleQuadrant("q1","inner1");
-    const s2 = measureAndScaleQuadrant("q2","inner2");
-    const s3 = measureAndScaleQuadrant("q3","inner3");
-    const s4 = measureAndScaleQuadrant("q4","inner4");
+  function applyTransforms(scales){
+    const {s1,s2,s3,s4} = scales;
 
-    // Apply transforms:
-    // - bottom row: scale from top-left
-    // - top row: rotate 180 around center (prevents negative-space clipping), then scale
+    function applyNoRot(innerId, scale){
+      const inner = document.getElementById(innerId);
+      if(!inner) return;
+      inner.style.transformOrigin = "center center";
+      inner.style.transform = `scale(${scale})`;
+    }
     function applyRot(innerId, scale){
       const inner = document.getElementById(innerId);
       if(!inner) return;
       inner.style.transformOrigin = "center center";
       inner.style.transform = `scale(${scale}) rotate(180deg)`;
     }
-    function applyNoRot(innerId, scale){
-      const inner = document.getElementById(innerId);
-      if(!inner) return;
-      inner.style.transformOrigin = "top left";
-      inner.style.transform = `scale(${scale})`;
-    }
 
+    // bottom row upright
     applyNoRot("inner1", s1);
-    applyRot("inner2", s2);
-    applyRot("inner3", s3);
     applyNoRot("inner4", s4);
 
-    return {s1,s2,s3,s4};
+    // top row upside down
+    applyRot("inner2", s2);
+    applyRot("inner3", s3);
   }
 
   function setHint(scales, buckets){
@@ -501,7 +487,7 @@
     const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
     const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
     hint.textContent =
-      `Pamphlet mode • per-quarter scale • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
+      `Pamphlet mode • fit-then-rotate • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
       ` • rows Q1 ${buckets[0].sum.toFixed(1)} Q2 ${buckets[1].sum.toFixed(1)} Q3 ${buckets[2].sum.toFixed(1)} Q4 ${buckets[3].sum.toFixed(1)}`;
   }
 
@@ -515,24 +501,31 @@
     }
 
     setHeaderFromFirst(rows);
-
     clearStacks();
 
     const ringsWithCounts = buildRingsWithRowCounts(rows);
     const buckets = bucketizeGreedy(ringsWithCounts);
     placeBuckets(buckets);
 
-    // Allow layout to settle
+    // Let layout settle
     await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
 
-    const scales = applyAllQuadrantScales();
+    // Fit each quadrant (scale-only)
+    const scales = {
+      s1: measureScaleToFit("q1","inner1"),
+      s2: measureScaleToFit("q2","inner2"),
+      s3: measureScaleToFit("q3","inner3"),
+      s4: measureScaleToFit("q4","inner4"),
+    };
+
+    // Apply scale + rotation after
+    applyTransforms(scales);
     setHint(scales, buckets);
   }
 
   (async function main(){
     await render();
-
     window.addEventListener("beforeprint", async ()=>{ await render(); });
     window.addEventListener("resize", ()=>{ render().catch(()=>{}); });
   })().catch(err=>{
