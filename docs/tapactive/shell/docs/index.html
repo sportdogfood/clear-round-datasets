@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ShellBoard</title>
+  <style>
+    :root {
+      --bg: #040916;
+      --bg2: #0c1324;
+      --card: #111a2d;
+      --line: #25324d;
+      --text: #e5ebf6;
+      --muted: #95a4bf;
+      --accent: #2f6fff;
+      --accent-soft: #1e3a8a;
+      --ok: #22c55e;
+      --warn: #fb7185;
+      --nav-h: 68px;
+      --head-h: 52px;
+      --pill: 999px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: #020617; color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+    [hidden] { display: none !important; }
+    .app { width: 100%; min-height: 100vh; background: linear-gradient(180deg, var(--bg2), var(--bg)); display: flex; flex-direction: column; }
+
+    .app-header {
+      position: sticky; top: 0; z-index: 30; height: var(--head-h);
+      display: grid; grid-template-columns: 56px 1fr 56px; align-items: center;
+      border-bottom: 1px solid #1c2a44; background: rgba(4,9,22,.95); backdrop-filter: blur(8px);
+      transition: transform .2s ease;
+    }
+    .app.hide-header .app-header { transform: translateY(-100%); }
+    .header-btn { margin: 0 8px; height: 34px; border-radius: var(--pill); border: 1px solid #334467; background: #0a1325; color: var(--text); font-size: 12px; }
+    .header-title { text-align: center; font-size: 19px; font-weight: 650; margin: 0; }
+
+    .app-main { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 10px calc(var(--nav-h) + 18px); }
+    .stack { display: flex; flex-direction: column; gap: 8px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px; }
+
+    .row {
+      width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between;
+      border-radius: var(--pill); border: 1px solid #334467; background: #0f1a2f; color: var(--text); padding: 10px 14px;
+    }
+    .row--tap { cursor: pointer; transition: transform .08s ease, border-color .15s ease; user-select: none; }
+    .row--tap:active { transform: translateY(1px) scale(.995); }
+    .row--active { border-color: var(--accent); background: #102448; }
+    .row-meta { color: var(--muted); font-size: 12px; }
+    .badge { min-width: 26px; text-align: center; padding: 3px 10px; border-radius: var(--pill); border: 1px solid #365086; background: #0c1830; font-size: 11px; }
+
+    .tabs, .chips { display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; padding-bottom: 2px; }
+    .chip {
+      border: 1px solid #334467; border-radius: var(--pill); background: #0f1a2f; color: var(--text);
+      padding: 7px 13px; font-size: 13px; cursor: pointer;
+    }
+    .chip--active { background: var(--accent); border-color: #4f84ff; }
+
+    .hero { min-height: 142px; border-radius: 18px; border: 1px solid #384b71; background: linear-gradient(180deg, #1a2a4a, #111a2d); padding: 12px; display: flex; align-items: flex-end; }
+    .hero h2, .hero h3 { margin: 0; }
+    .hero h3 { margin-top: 4px; color: #c9d5eb; font-weight: 500; }
+    .icon-circle { width: 46px; height: 46px; border-radius: 50%; background: #23385f; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: 700; }
+
+    .item-row { border-bottom: 1px solid #233252; padding: 10px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .item-row:last-child { border-bottom: 0; }
+    .item-title { font-weight: 600; }
+    .item-sub { font-size: 12px; color: var(--muted); }
+    .item-row--muted { opacity: .55; }
+
+    .wall-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+    .grid-wall { min-width: 940px; display: grid; grid-template-columns: 170px repeat(4, minmax(150px, 1fr)) 38px; border: 1px solid #32456e; background: #0c1428; }
+    .grid-head, .grid-cell { border-right: 1px solid #253659; border-bottom: 1px solid #253659; padding: 8px; min-height: 96px; }
+    .grid-head { background: #101c35; font-weight: 650; min-height: auto; }
+    .grid-rowlabel { font-weight: 650; }
+    .timecard { font-size: 12px; color: #c3d1e9; margin-bottom: 3px; }
+    .feedline, .extraline, .hayline { font-size: 12px; color: #d6e0f2; }
+    .muted { opacity: .42; }
+
+    .app-nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; height: var(--nav-h); padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+      border-top: 1px solid #1f2e4d; background: rgba(4,9,22,.96); display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px;
+      transition: transform .2s ease;
+    }
+    .app.hide-nav .app-nav { transform: translateY(110%); }
+    .nav-btn { border: 1px solid #334467; border-radius: var(--pill); background: #121a29; color: #dbe3f2; font-size: 14px; }
+    .nav-btn--active { background: #1a3f9f; border-color: #4f84ff; }
+
+    .error-row { border: 1px solid #7f1d1d; background: #3b0b0b; color: #fecaca; border-radius: 12px; padding: 9px; font-size: 12px; }
+
+    @media (max-width: 390px) {
+      .grid-wall { min-width: 820px; grid-template-columns: 130px repeat(4, minmax(120px, 1fr)) 24px; }
+    }
+    @media print {
+      body { background: #fff; color: #000; }
+      .app-header, .app-nav, .tabs, .chips { display: none !important; }
+      .app-main { padding: 0; overflow: visible; }
+      .wall-scroll { overflow: visible; }
+      .grid-wall { min-width: auto; break-inside: avoid; page-break-inside: avoid; font-size: 11px; grid-template-columns: 120px repeat(4, 1fr) 16px; }
+      .grid-head, .grid-cell { min-height: 58px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="app-header">
+      <button class="header-btn" id="back-btn" hidden>Back</button>
+      <h1 class="header-title" id="header-title">ShellBoard</h1>
+      <div></div>
+    </header>
+    <main class="app-main" id="app-main">
+      <div id="screen-root"></div>
+    </main>
+    <nav class="app-nav" id="app-nav">
+      <button class="nav-btn nav-btn--active" data-screen="start">Start</button>
+      <button class="nav-btn" data-screen="horses">Horses</button>
+      <button class="nav-btn" data-screen="plan">Plan</button>
+      <button class="nav-btn" data-screen="share">Share</button>
+    </nav>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
