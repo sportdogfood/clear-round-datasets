@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Cell Min/Max, Fit + RowCap24, Fit-Then-Flip-Top)</title>
+<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Cell Min/Max, Fit-Then-Flip-Top)</title>
 <style>
   :root{
     --fg:#111;
@@ -167,7 +167,7 @@
   /* The scaled+optional-rotated block, full width of container */
   .cell-inner{
     width:100%;
-    transform-origin: top left; /* important: keep scale pinned to TOP */
+    transform-origin: center center;
     will-change: transform;
   }
 
@@ -216,7 +216,7 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
-        <span class="hint" id="modeHint">Pamphlet mode • per-cell fit • rowcap 24 • top row flipped</span>
+        <span class="hint" id="modeHint">Pamphlet mode • per-cell fit • top row flipped</span>
       </div>
     </div>
 
@@ -243,9 +243,6 @@
   // - each cell has its own min/max scale
   // - all content is full width of its cell, flexed to top
   // - fit each cell first (scale only), THEN flip the TOP row (2 & 3)
-  // - NEW tweak: cap each cell at 24 "weighted rows" => if >24, apply extra scale (24/rows)
-
-  const TARGET_MAX_ROWS = 24;
 
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
@@ -259,8 +256,6 @@
 
   const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
-
-  function clamp(min, v, max){ return Math.max(min, Math.min(max, v)); }
 
   function normRollup(s){
     const raw = String(s ?? "").trim();
@@ -314,7 +309,7 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  // Row counting weights (used for bucketing AND row-cap scaling)
+  // Row counting weights (kept, but only used for bucketing balance)
   const RING_HEAD_WEIGHT = 1.0;
   const GROUP_HEAD_WEIGHT = 0.5;
   const CLASS_ROW_WEIGHT = 1.0;
@@ -414,7 +409,7 @@
       const inner = document.getElementById(id);
       if(inner){
         inner.style.transform = "scale(1)";
-        inner.style.transformOrigin = "top left";
+        inner.style.transformOrigin = "center center";
       }
     }
     // ensure top row starts unflipped (we flip after fit)
@@ -422,7 +417,7 @@
     if(rowTop) rowTop.style.transform = "none";
   }
 
-  // Balanced bucketing across 4 cells
+  // Balanced bucketing across 4 cells (keeps order of rings intact within each bucket)
   function bucketizeGreedy(ringsWithCounts){
     const buckets = [
       { sum:0, items:[] }, // Q1
@@ -478,36 +473,29 @@
 
     const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
 
+    // fit pass: scale-only
     inner.style.transform = "scale(1)";
-    inner.style.transformOrigin = "top left";
+    inner.style.transformOrigin = "center center";
 
     const availW = cell.clientWidth;
     const availH = cell.clientHeight;
 
+    // full-width content means width should usually fit;
+    // scale is mostly driven by height.
     const needW = inner.scrollWidth || inner.getBoundingClientRect().width;
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
     if(!needW || !needH || !availW || !availH) return 1;
 
     let scale = Math.min(availW / needW, availH / needH, lim.max);
-    scale = clamp(lim.min, scale, lim.max);
+    scale = Math.max(lim.min, Math.min(lim.max, scale));
     return scale;
-  }
-
-  function rowCapScale(cellId, weightedRows){
-    const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
-    if(!Number.isFinite(weightedRows) || weightedRows <= 0) return 1;
-
-    // Only shrink if above target
-    let s = (weightedRows > TARGET_MAX_ROWS) ? (TARGET_MAX_ROWS / weightedRows) : 1;
-    s = clamp(lim.min, s, lim.max);
-    return s;
   }
 
   function applyScale(innerId, scale){
     const inner = document.getElementById(innerId);
     if(!inner) return;
-    inner.style.transformOrigin = "top left";
+    inner.style.transformOrigin = "center center";
     inner.style.transform = `scale(${scale})`;
   }
 
@@ -525,7 +513,7 @@
     const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
     const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
     hint.textContent =
-      `Pamphlet mode • per-cell fit • rowcap ${TARGET_MAX_ROWS} • top row flipped` +
+      `Pamphlet mode • per-cell fit • top row flipped` +
       ` • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
       ` • rows Q1 ${buckets[0].sum.toFixed(1)} Q2 ${buckets[1].sum.toFixed(1)} Q3 ${buckets[2].sum.toFixed(1)} Q4 ${buckets[3].sum.toFixed(1)}`;
   }
@@ -551,27 +539,11 @@
     await new Promise(r => requestAnimationFrame(r));
 
     // Fit each cell independently (scale only)
-    const fit = {
-      q1: measureScaleToFit("q1","inner1"),
-      q2: measureScaleToFit("q2","inner2"),
-      q3: measureScaleToFit("q3","inner3"),
-      q4: measureScaleToFit("q4","inner4"),
-    };
-
-    // Row-cap scale (based on weighted rows per bucket/cell)
-    const cap = {
-      q1: rowCapScale("q1", buckets[0].sum),
-      q2: rowCapScale("q2", buckets[1].sum),
-      q3: rowCapScale("q3", buckets[2].sum),
-      q4: rowCapScale("q4", buckets[3].sum),
-    };
-
-    // Final scale per cell: min(fit, cap), then clamp to that cell min/max
     const scales = {
-      s1: (()=>{ const lim=SCALE_LIMITS.q1; return clamp(lim.min, Math.min(fit.q1, cap.q1, lim.max), lim.max); })(),
-      s2: (()=>{ const lim=SCALE_LIMITS.q2; return clamp(lim.min, Math.min(fit.q2, cap.q2, lim.max), lim.max); })(),
-      s3: (()=>{ const lim=SCALE_LIMITS.q3; return clamp(lim.min, Math.min(fit.q3, cap.q3, lim.max), lim.max); })(),
-      s4: (()=>{ const lim=SCALE_LIMITS.q4; return clamp(lim.min, Math.min(fit.q4, cap.q4, lim.max), lim.max); })(),
+      s1: measureScaleToFit("q1","inner1"),
+      s2: measureScaleToFit("q2","inner2"),
+      s3: measureScaleToFit("q3","inner3"),
+      s4: measureScaleToFit("q4","inner4"),
     };
 
     applyScale("inner1", scales.s1);
