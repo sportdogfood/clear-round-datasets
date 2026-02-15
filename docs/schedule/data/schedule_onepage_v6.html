@@ -481,8 +481,10 @@
     inner.style.width = "100%";
     inner.style.maxWidth = "none";
     inner.style.transformOrigin = "top left";
-
-    const availH = cell.clientHeight;
+// reserve a little headroom for borders/rounding so the last ring border doesn't clip const availH = cell.clientHeight;
+    const availH = Math.max(0, cell.clientHeight - 6);
+    // tiny safety factor for print rounding
+    let s = Math.min(1, (availH / needH) * 0.992);
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
     if(!needH || !availH) return 1;
