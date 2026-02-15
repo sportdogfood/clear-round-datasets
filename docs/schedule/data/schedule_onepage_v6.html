@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (Row-Cap 24, Per-Cell Min/Max, Mandated Containers Restored)</title>
+<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Cell Min/Max, Fit + RowCap24, Fit-Then-Flip-Top)</title>
 <style>
   :root{
     --fg:#111;
@@ -12,7 +12,7 @@
     --ring:#0b5d47;
     --ringPrint:#000;
 
-    /* mandated layout */
+    /* layout */
     --gutter: 0.10in;
     --foldSafe: 0.04in;
   }
@@ -74,8 +74,7 @@
      =========================== */
   .ring{
     border:1px solid #000;
-    width:100%;           /* mandated: stretch full width */
-    max-width:100%;
+    width:100%;
   }
   .ring-head{
     background:var(--ring);
@@ -128,7 +127,7 @@
   .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
 
   /* ===========================
-     v6 mandated container layout
+     v6 pamphlet layout (2 rows)
      =========================== */
 
   /* Whole printable area (content only) */
@@ -137,55 +136,49 @@
     width:100%;
     display:flex;
     flex-direction:column;
-    gap: var(--gutter);   /* mandated gutter between top/bottom containers */
-    min-height:0;
-    min-width:0;
+    gap: var(--gutter);
   }
 
-  /* Two vertical containers (each full width, 50/50 height) */
+  /* Two full-width row containers (50/50 height) */
   .row{
     flex: 1 1 0;
     width:100%;
     display:grid;
-    grid-template-columns: 1fr 1fr;  /* mandated 50/50 split */
-    gap: var(--gutter);              /* mandated gutter between cells */
+    grid-template-columns: 1fr 1fr;  /* 50/50 split */
+    gap: var(--gutter);
     min-height:0;
     min-width:0;
-    align-items:stretch;
   }
 
-  /* Each cell container */
+  /* Each quarter (cell) */
   .cell{
-    width:100%;
     min-width:0;
     min-height:0;
     overflow:hidden;
     position:relative;
     padding: var(--foldSafe);
 
-    /* mandated: all content flex to top */
+    /* your requirement: content flex to TOP and full width */
     display:flex;
     align-items:flex-start;
     justify-content:flex-start;
   }
 
-  /* mandated: data stretches full width of cell */
+  /* The scaled+optional-rotated block, full width of container */
   .cell-inner{
     width:100%;
-    max-width:100%;
-    transform-origin: top left;
+    transform-origin: top left; /* important: keep scale pinned to TOP */
     will-change: transform;
-    flex: 0 0 auto; /* prevents flex stretching weirdness during flip */
   }
 
+  /* Column stack inside each quarter */
   .stack{
     width:100%;
-    max-width:100%;
     display:flex;
     flex-direction:column;
     gap:2px;
     align-items:stretch;
-    justify-content:flex-start;  /* mandated: top */
+    justify-content:flex-start;  /* force top */
     min-width:0;
   }
 
@@ -197,7 +190,7 @@
     .topbar{ display:none !important; }
     .controls{ display:none !important; }
 
-    /* deterministic printable content box:
+    /* lock deterministic printable content box:
        Letter (8.5x11) with 0.25in margins => 8.0in x 10.5in */
     .sheet{
       width: 8in;
@@ -223,7 +216,7 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
-        <span class="hint" id="modeHint">v6 • cap 24 rows • top row flipped</span>
+        <span class="hint" id="modeHint">Pamphlet mode • per-cell fit • rowcap 24 • top row flipped</span>
       </div>
     </div>
 
@@ -244,8 +237,14 @@
   </div>
 
 <script>
-  // v6: mandated containers + per-cell min/max + top-row flip
-  // NEW: cap weighted rows at 24 (only shrink if > 24)
+  // v6 rules implemented:
+  // - 2 row containers (each full width, 50/50 height)
+  // - each row split 50/50 with gutter
+  // - each cell has its own min/max scale
+  // - all content is full width of its cell, flexed to top
+  // - fit each cell first (scale only), THEN flip the TOP row (2 & 3)
+  // - NEW tweak: cap each cell at 24 "weighted rows" => if >24, apply extra scale (24/rows)
+
   const TARGET_MAX_ROWS = 24;
 
   const qs = new URLSearchParams(location.search);
@@ -260,7 +259,8 @@
 
   const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
-  const clamp = (min,v,max)=> Math.max(min, Math.min(max, v));
+
+  function clamp(min, v, max){ return Math.max(min, Math.min(max, v)); }
 
   function normRollup(s){
     const raw = String(s ?? "").trim();
@@ -314,7 +314,7 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  // Weighted row rules (counts ring-head + group-head + class rows)
+  // Row counting weights (used for bucketing AND row-cap scaling)
   const RING_HEAD_WEIGHT = 1.0;
   const GROUP_HEAD_WEIGHT = 0.5;
   const CLASS_ROW_WEIGHT = 1.0;
@@ -417,6 +417,7 @@
         inner.style.transformOrigin = "top left";
       }
     }
+    // ensure top row starts unflipped (we flip after fit)
     const rowTop = document.getElementById("rowTop");
     if(rowTop) rowTop.style.transform = "none";
   }
@@ -445,7 +446,7 @@
   }
 
   function placeBuckets(buckets){
-    // Layout mapping:
+    // mapping to your layout:
     // top row:  q3 | q2
     // bottom:   q4 | q1
     const map = [
@@ -462,7 +463,7 @@
     }
   }
 
-  // Per-cell min/max (mandated)
+  // Per-cell min/max (each cell has its own set)
   const SCALE_LIMITS = {
     q1: { min: 0.50, max: 1.00 },
     q2: { min: 0.50, max: 1.00 },
@@ -470,10 +471,12 @@
     q4: { min: 0.50, max: 1.00 },
   };
 
-  function measureFitScale(cellId, innerId){
+  function measureScaleToFit(cellId, innerId){
     const cell = document.getElementById(cellId);
     const inner = document.getElementById(innerId);
     if(!cell || !inner) return 1;
+
+    const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
 
     inner.style.transform = "scale(1)";
     inner.style.transformOrigin = "top left";
@@ -485,15 +488,20 @@
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
     if(!needW || !needH || !availW || !availH) return 1;
-    return Math.min(availW / needW, availH / needH);
+
+    let scale = Math.min(availW / needW, availH / needH, lim.max);
+    scale = clamp(lim.min, scale, lim.max);
+    return scale;
   }
 
   function rowCapScale(cellId, weightedRows){
     const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
-    if(!weightedRows || !Number.isFinite(weightedRows) || weightedRows <= 0) return lim.max;
+    if(!Number.isFinite(weightedRows) || weightedRows <= 0) return 1;
 
-    const raw = (weightedRows <= TARGET_MAX_ROWS) ? 1 : (TARGET_MAX_ROWS / weightedRows);
-    return clamp(lim.min, Math.min(lim.max, raw), lim.max);
+    // Only shrink if above target
+    let s = (weightedRows > TARGET_MAX_ROWS) ? (TARGET_MAX_ROWS / weightedRows) : 1;
+    s = clamp(lim.min, s, lim.max);
+    return s;
   }
 
   function applyScale(innerId, scale){
@@ -506,18 +514,18 @@
   function flipTopRowAfterFit(){
     const rowTop = document.getElementById("rowTop");
     if(!rowTop) return;
+    // flip the entire top row once rendered (your requirement)
     rowTop.style.transformOrigin = "center center";
     rowTop.style.transform = "rotate(180deg)";
   }
 
-  function setHint(finalScales, buckets){
+  function setHint(scales, buckets){
     const hint = document.getElementById("modeHint");
     if(!hint) return;
-    const vals = [finalScales.q1, finalScales.q2, finalScales.q3, finalScales.q4];
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
+    const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
+    const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
     hint.textContent =
-      `v6 • cap ${TARGET_MAX_ROWS} rows • top row flipped` +
+      `Pamphlet mode • per-cell fit • rowcap ${TARGET_MAX_ROWS} • top row flipped` +
       ` • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
       ` • rows Q1 ${buckets[0].sum.toFixed(1)} Q2 ${buckets[1].sum.toFixed(1)} Q3 ${buckets[2].sum.toFixed(1)} Q4 ${buckets[3].sum.toFixed(1)}`;
   }
@@ -542,37 +550,39 @@
     await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
 
-    // Fit scale per cell
+    // Fit each cell independently (scale only)
     const fit = {
-      q1: measureFitScale("q1","inner1"),
-      q2: measureFitScale("q2","inner2"),
-      q3: measureFitScale("q3","inner3"),
-      q4: measureFitScale("q4","inner4"),
+      q1: measureScaleToFit("q1","inner1"),
+      q2: measureScaleToFit("q2","inner2"),
+      q3: measureScaleToFit("q3","inner3"),
+      q4: measureScaleToFit("q4","inner4"),
     };
 
-    // Row-cap scale per cell
-    const rowScale = {
+    // Row-cap scale (based on weighted rows per bucket/cell)
+    const cap = {
       q1: rowCapScale("q1", buckets[0].sum),
       q2: rowCapScale("q2", buckets[1].sum),
       q3: rowCapScale("q3", buckets[2].sum),
       q4: rowCapScale("q4", buckets[3].sum),
     };
 
-    // Final per-cell scale = min(fitScale, rowCapScale) clamped by that cell min/max
-    const finalScales = {};
-    for(const cellId of ["q1","q2","q3","q4"]){
-      const lim = SCALE_LIMITS[cellId];
-      const raw = Math.min(fit[cellId] || 1, rowScale[cellId] || 1, lim.max);
-      finalScales[cellId] = clamp(lim.min, raw, lim.max);
-    }
+    // Final scale per cell: min(fit, cap), then clamp to that cell min/max
+    const scales = {
+      s1: (()=>{ const lim=SCALE_LIMITS.q1; return clamp(lim.min, Math.min(fit.q1, cap.q1, lim.max), lim.max); })(),
+      s2: (()=>{ const lim=SCALE_LIMITS.q2; return clamp(lim.min, Math.min(fit.q2, cap.q2, lim.max), lim.max); })(),
+      s3: (()=>{ const lim=SCALE_LIMITS.q3; return clamp(lim.min, Math.min(fit.q3, cap.q3, lim.max), lim.max); })(),
+      s4: (()=>{ const lim=SCALE_LIMITS.q4; return clamp(lim.min, Math.min(fit.q4, cap.q4, lim.max), lim.max); })(),
+    };
 
-    applyScale("inner1", finalScales.q1);
-    applyScale("inner2", finalScales.q2);
-    applyScale("inner3", finalScales.q3);
-    applyScale("inner4", finalScales.q4);
+    applyScale("inner1", scales.s1);
+    applyScale("inner2", scales.s2);
+    applyScale("inner3", scales.s3);
+    applyScale("inner4", scales.s4);
 
+    // Flip the TOP row AFTER everything is fit and painted
     flipTopRowAfterFit();
-    setHint(finalScales, buckets);
+
+    setHint(scales, buckets);
   }
 
   (async function main(){
