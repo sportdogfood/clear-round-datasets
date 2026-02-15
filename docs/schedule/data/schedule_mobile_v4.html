@@ -278,10 +278,12 @@
   .bottom-nav .nav-btn.active{
     border-color:#000;
   }
-/* zebra striping for rows inside each group */
-.group.has-team .class-list > .c:nth-child(even){
-  background-color: rgba(0,0,0,0.04);
+
+/* zebra striping (visible even over tinted group backgrounds) */
+.group .class-list > .c:nth-child(even){
+  background: rgba(255,255,255,0.28);
 }
+
 
 /* keep the border looking clean */
 .class-list .c{
