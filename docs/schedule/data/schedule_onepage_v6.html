@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Cell Min/Max, Full-Width, Top-Flex, Fit-Then-Flip-Top)</title>
+<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Quarter Scale + Width-Comp, Fit-Then-Flip-Top)</title>
 <style>
   :root{
     --fg:#111;
@@ -35,7 +35,13 @@
   }
   @media print{
     body{background:#fff;}
-    .page{ width:auto; height:auto; padding:0; margin:0; overflow:visible; }
+    .page{
+      width:auto;
+      height:auto;
+      padding:0;
+      margin:0;
+      overflow:visible;
+    }
   }
 
   .topbar{
@@ -55,6 +61,12 @@
     font-size:12px;
     border-radius:6px;
     cursor:pointer;
+  }
+  .hint{
+    font-size:10px;
+    color:var(--muted);
+    margin-left:6px;
+    white-space:nowrap;
   }
 
   /* ===========================
@@ -116,10 +128,10 @@
   .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
 
   /* ===========================
-     v6 required pamphlet layout
+     v6 pamphlet layout (2 rows)
      =========================== */
 
-  /* 2 vertical containers (top + bottom), full width, 50/50 height with gutter */
+  /* Whole printable area (content only) */
   .sheet{
     height:100%;
     width:100%;
@@ -130,19 +142,19 @@
     min-width:0;
   }
 
-  /* each vertical container is a row split 50/50 with gutter */
+  /* Two full-width row containers (50/50 height) */
   .row{
     flex: 1 1 0;
     width:100%;
     display:grid;
-    grid-template-columns: 1fr 1fr; /* 50/50 */
+    grid-template-columns: 1fr 1fr;  /* 50/50 split */
     gap: var(--gutter);
     min-height:0;
     min-width:0;
     align-items:stretch;
   }
 
-  /* each quarter container */
+  /* Each quarter (cell) */
   .cell{
     width:100%;
     min-width:0;
@@ -151,17 +163,18 @@
     position:relative;
     padding: var(--foldSafe);
 
-    /* content must be flex to top */
+    /* requirement: content flex to TOP and full width */
     display:flex;
     align-items:flex-start;
     justify-content:flex-start;
   }
 
-  /* data must stretch full width of its container */
+  /* The scaled block MUST stay visually full-width even when scaled:
+     JS will apply: transform: scale(s) AND width: (100/s)%  */
   .cell-inner{
     width:100%;
-    max-width:100%;
-    transform-origin: top left;
+    max-width:none;            /* allow width compensation */
+    transform-origin: top left; /* keep pinned to top-left */
     will-change: transform;
     flex: 0 0 auto;
   }
@@ -173,10 +186,11 @@
     flex-direction:column;
     gap:2px;
     align-items:stretch;
-    justify-content:flex-start; /* top */
+    justify-content:flex-start;  /* force top */
     min-width:0;
   }
 
+  /* Print rules */
   @media print{
     @page{ size: Letter; margin: 0.25in; }
 
@@ -184,8 +198,12 @@
     .topbar{ display:none !important; }
     .controls{ display:none !important; }
 
-    /* lock deterministic printable content box: 8.0in x 10.5in */
-    .sheet{ width: 8in; height: 10.5in; }
+    /* lock deterministic printable content box:
+       Letter (8.5x11) with 0.25in margins => 8.0in x 10.5in */
+    .sheet{
+      width: 8in;
+      height: 10.5in;
+    }
 
     body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
     .ring-head{ background:var(--ringPrint); }
@@ -205,12 +223,13 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
+        <span class="hint" id="modeHint">Pamphlet mode • per-quarter fit • top row flipped</span>
       </div>
     </div>
 
-    <!-- Layout:
-         TOP row (full width): 3 | 2  => FLIP AFTER RENDER
-         BOTTOM row:           4 | 1  => normal
+    <!-- Spec positioning:
+         TOP ROW:   3 | 2   (flip after render)
+         BOTTOM:    4 | 1   (normal)
     -->
     <div class="sheet" id="sheet">
       <div class="row" id="rowTop">
@@ -225,12 +244,15 @@
   </div>
 
 <script>
-  // Exactly as requested:
-  // - 2 vertical containers, full width, each split 50/50 with gutter
-  // - each container has its own min/max scale
-  // - all data stretches full width of container
-  // - all content flexed to top
-  // - top container flips AFTER render; bottom stays as-is
+  // v6 rules:
+  // - 2 vertical containers (top + bottom), full width, 50/50 height with gutter
+  // - each splits again to quarters (50/50)
+  // - each quarter has its own min/max scale
+  // - all content stretches full width of its own quarter, flexed to top
+  // - scale is per quarter
+  // - IMPORTANT: scale-to-fit-height will shrink width; we compensate:
+  //     inner width = (100/scale)% so VISUAL width stays full.
+  // - flip TOP row after everything is rendered/scaled; bottom stays as-is
 
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
@@ -298,7 +320,7 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  // weights used only to balance across 4 quarters
+  // weights used only to balance across quarters
   const RING_HEAD_WEIGHT = 1.0;
   const GROUP_HEAD_WEIGHT = 0.5;
   const CLASS_ROW_WEIGHT = 1.0;
@@ -390,6 +412,8 @@
       const inner = document.getElementById(id);
       if(inner){
         inner.style.transform = "scale(1)";
+        inner.style.width = "100%";
+        inner.style.maxWidth = "none";
         inner.style.transformOrigin = "top left";
       }
     }
@@ -420,6 +444,7 @@
   }
 
   function placeBuckets(buckets){
+    // mapping:
     // top row:  q3 | q2
     // bottom:   q4 | q1
     const map = [
@@ -436,7 +461,7 @@
     }
   }
 
-  // each container has its own min/max
+  // per-quarter min/max (independent)
   const SCALE_LIMITS = {
     q1: { min: 0.50, max: 1.00 },
     q2: { min: 0.50, max: 1.00 },
@@ -444,34 +469,43 @@
     q4: { min: 0.50, max: 1.00 },
   };
 
-  function measureScaleToFit(cellId, innerId){
+  function measureScaleToFitHeight(cellId, innerId){
     const cell = document.getElementById(cellId);
     const inner = document.getElementById(innerId);
     if(!cell || !inner) return 1;
 
     const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
 
+    // reset for accurate measurement
     inner.style.transform = "scale(1)";
+    inner.style.width = "100%";
+    inner.style.maxWidth = "none";
     inner.style.transformOrigin = "top left";
 
-    const availW = cell.clientWidth;
     const availH = cell.clientHeight;
-
-    const needW = inner.scrollWidth || inner.getBoundingClientRect().width;
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
-    if(!needW || !needH || !availW || !availH) return 1;
+    if(!needH || !availH) return 1;
 
-    let scale = Math.min(availW / needW, availH / needH, lim.max);
-    scale = clamp(lim.min, scale, lim.max);
-    return scale;
+    let s = Math.min(1, availH / needH);
+    s = clamp(lim.min, s, lim.max);
+    return s;
   }
 
-  function applyScale(innerId, scale){
+  function applyScaleWithWidthComp(innerId, scale){
     const inner = document.getElementById(innerId);
     if(!inner) return;
+
+    const s = Math.max(0.01, scale);
+
+    // scale down to fit height
     inner.style.transformOrigin = "top left";
-    inner.style.transform = `scale(${scale})`;
+    inner.style.transform = `scale(${s})`;
+
+    // width compensation so VISUAL width stays full:
+    // visualWidth = (cssWidth * s). If cssWidth becomes (100/s)%, visualWidth becomes 100%.
+    inner.style.width = (100 / s) + "%";
+    inner.style.maxWidth = "none";
   }
 
   function flipTopRowAfterFit(){
@@ -479,6 +513,14 @@
     if(!rowTop) return;
     rowTop.style.transformOrigin = "center center";
     rowTop.style.transform = "rotate(180deg)";
+  }
+
+  function setHint(scales){
+    const hint = document.getElementById("modeHint");
+    if(!hint) return;
+    const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
+    const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
+    hint.textContent = `Pamphlet mode • per-quarter fit • width-comp • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}% • top row flipped`;
   }
 
   async function render(){
@@ -497,22 +539,27 @@
     const buckets = bucketizeGreedy(ringsWithCounts);
     placeBuckets(buckets);
 
+    // Let layout settle (must be before measuring heights)
     await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
 
-    // per-cell fit
-    const s1 = measureScaleToFit("q1","inner1");
-    const s2 = measureScaleToFit("q2","inner2");
-    const s3 = measureScaleToFit("q3","inner3");
-    const s4 = measureScaleToFit("q4","inner4");
+    // Fit EACH quarter independently by HEIGHT, then compensate width (per quarter)
+    const scales = {
+      s1: measureScaleToFitHeight("q1","inner1"),
+      s2: measureScaleToFitHeight("q2","inner2"),
+      s3: measureScaleToFitHeight("q3","inner3"),
+      s4: measureScaleToFitHeight("q4","inner4"),
+    };
 
-    applyScale("inner1", s1);
-    applyScale("inner2", s2);
-    applyScale("inner3", s3);
-    applyScale("inner4", s4);
+    applyScaleWithWidthComp("inner1", scales.s1);
+    applyScaleWithWidthComp("inner2", scales.s2);
+    applyScaleWithWidthComp("inner3", scales.s3);
+    applyScaleWithWidthComp("inner4", scales.s4);
 
-    // flip top container AFTER render
+    // flip top container AFTER render+fit; bottom stays as-is
     flipTopRowAfterFit();
+
+    setHint(scales);
   }
 
   (async function main(){
