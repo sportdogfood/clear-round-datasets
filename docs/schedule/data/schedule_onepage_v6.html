@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (4 Quarters, Per-Quarter Scaling, Fixed Rot Print)</title>
+<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Quarter Scale + Width-Comp, Fit-Then-Flip-Top)</title>
 <style>
   :root{
     --fg:#111;
@@ -12,8 +12,8 @@
     --ring:#0b5d47;
     --ringPrint:#000;
 
-    /* v6: true quarter layout */
-    --quadGutter: 0.10in;
+    /* layout */
+    --gutter: 0.10in;
     --foldSafe: 0.04in;
   }
   *{box-sizing:border-box}
@@ -72,7 +72,11 @@
   /* ===========================
      Shared ring/group styling
      =========================== */
-  .ring{ border:1px solid #000; }
+  .ring{
+    border:1px solid #000;
+    width:100%;
+    max-width:100%;
+  }
   .ring-head{
     background:var(--ring);
     color:#fff;
@@ -83,10 +87,7 @@
   }
 
   .group.has-team{ background: rgb(204 204 204 / 43%); }
-  .group.has-team .group-head{
-    padding-bottom:1px;
-    padding-top:4px;
-  }
+  .group.has-team .group-head{ padding-bottom:1px; padding-top:4px; }
 
   .gdisplay{
     font-size:11px;
@@ -127,35 +128,67 @@
   .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
 
   /* ===========================
-     v6 layout: 4 quadrants
+     v6 pamphlet layout (2 rows)
      =========================== */
-  .quads{
+
+  /* Whole printable area (content only) */
+  .sheet{
+    height:100%;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap: var(--gutter);
+    min-height:0;
+    min-width:0;
+  }
+
+  /* Two full-width row containers (50/50 height) */
+  .row{
+    flex: 1 1 0;
+    width:100%;
     display:grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: var(--quadGutter);
-    height: 100%;
-    width: 100%;
+    grid-template-columns: 1fr 1fr;  /* 50/50 split */
+    gap: var(--gutter);
+    min-height:0;
+    min-width:0;
     align-items:stretch;
   }
-  .quad{
+
+  /* Each quarter (cell) */
+  .cell{
+    width:100%;
     min-width:0;
     min-height:0;
     overflow:hidden;
     position:relative;
     padding: var(--foldSafe);
-    outline: 0;
+
+    /* requirement: content flex to TOP and full width */
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-start;
   }
 
-  /* Each quarter scales independently */
-  .quad-inner{
-    display:inline-block;         /* critical: rotate center without negative-space clipping */
-    width: max-content;           /* natural content width */
-    transform-origin: top left;   /* default for non-rotated */
+  /* The scaled block MUST stay visually full-width even when scaled:
+     JS will apply: transform: scale(s) AND width: (100/s)%  */
+  .cell-inner{
+    width:100%;
+    max-width:none;            /* allow width compensation */
+    transform-origin: top left; /* keep pinned to top-left */
     will-change: transform;
+    flex: 0 0 auto;
   }
 
-  .stack{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .stack{
+    width:100%;
+    max-width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    align-items:stretch;
+    justify-content:flex-start;  /* force top */
+    min-width:0;
+  }
 
   /* Print rules */
   @media print{
@@ -165,9 +198,9 @@
     .topbar{ display:none !important; }
     .controls{ display:none !important; }
 
-    /* lock true printable content box:
-       Letter (8.5x11) minus 0.25in margins on each side => 8.0in x 10.5in */
-    .quads{
+    /* lock deterministic printable content box:
+       Letter (8.5x11) with 0.25in margins => 8.0in x 10.5in */
+    .sheet{
       width: 8in;
       height: 10.5in;
     }
@@ -190,38 +223,36 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
-        <span class="hint" id="modeHint">Pamphlet mode • per-quarter scale</span>
+        <span class="hint" id="modeHint">Pamphlet mode • per-quarter fit • top row flipped</span>
       </div>
     </div>
 
-    <!-- v6: quarter fold layout
-         Spec positioning:
-           3 | 2   (top row upside down)
-           4 | 1   (bottom row upright)
+    <!-- Spec positioning:
+         TOP ROW:   3 | 2   (flip after render)
+         BOTTOM:    4 | 1   (normal)
     -->
-    <div class="quads" id="quads" aria-label="Quarter fold layout">
-      <div class="quad" id="q3"><div class="quad-inner" id="inner3"><div class="stack" id="stack3"></div></div></div>
-      <div class="quad" id="q2"><div class="quad-inner" id="inner2"><div class="stack" id="stack2"></div></div></div>
-      <div class="quad" id="q4"><div class="quad-inner" id="inner4"><div class="stack" id="stack4"></div></div></div>
-      <div class="quad" id="q1"><div class="quad-inner" id="inner1"><div class="stack" id="stack1"></div></div></div>
+    <div class="sheet" id="sheet">
+      <div class="row" id="rowTop">
+        <div class="cell" id="q3"><div class="cell-inner" id="inner3"><div class="stack" id="stack3"></div></div></div>
+        <div class="cell" id="q2"><div class="cell-inner" id="inner2"><div class="stack" id="stack2"></div></div></div>
+      </div>
+      <div class="row" id="rowBot">
+        <div class="cell" id="q4"><div class="cell-inner" id="inner4"><div class="stack" id="stack4"></div></div></div>
+        <div class="cell" id="q1"><div class="cell-inner" id="inner1"><div class="stack" id="stack1"></div></div></div>
+      </div>
     </div>
   </div>
 
 <script>
-  // v6: Per-quarter scaling (min 0.50) + row-balanced bucketing.
-  // - Each quadrant scales independently to fit its container.
-  //
-  // Row weights (confirmed):
-  // - ring-head = 1
-  // - group-head = 0.5
-  // - each class row (.c) = 1
-
-  const MIN_QUAD_SCALE = 0.50;
-  const MAX_QUAD_SCALE = 1.00;
-
-  const RING_HEAD_WEIGHT = 1.0;
-  const GROUP_HEAD_WEIGHT = 0.5;
-  const CLASS_ROW_WEIGHT = 1.0;
+  // v6 rules:
+  // - 2 vertical containers (top + bottom), full width, 50/50 height with gutter
+  // - each splits again to quarters (50/50)
+  // - each quarter has its own min/max scale
+  // - all content stretches full width of its own quarter, flexed to top
+  // - scale is per quarter
+  // - IMPORTANT: scale-to-fit-height will shrink width; we compensate:
+  //     inner width = (100/scale)% so VISUAL width stays full.
+  // - flip TOP row after everything is rendered/scaled; bottom stays as-is
 
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
@@ -235,6 +266,7 @@
 
   const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+  const clamp = (min,v,max)=> Math.max(min, Math.min(max, v));
 
   function normRollup(s){
     const raw = String(s ?? "").trim();
@@ -288,7 +320,11 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  // Build ring elements AND compute a weighted "row count" per ring
+  // weights used only to balance across quarters
+  const RING_HEAD_WEIGHT = 1.0;
+  const GROUP_HEAD_WEIGHT = 0.5;
+  const CLASS_ROW_WEIGHT = 1.0;
+
   function buildRingsWithRowCounts(rows){
     const rings = Array.from(
       groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries()
@@ -313,20 +349,12 @@
       })
       .sort((a,b)=>a.seq - b.seq);
 
-      // Count rows
       let weightedRows = 0;
       weightedRows += RING_HEAD_WEIGHT;
 
-      // Build DOM
       const sec = document.createElement("section");
       sec.className = "ring";
-
-      const head = document.createElement("div");
-      head.className = "ring-head";
-      head.textContent = ringTitle;
-      sec.appendChild(head);
-
-      const frag = document.createDocumentFragment();
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
 
       for(const g of groups){
         weightedRows += GROUP_HEAD_WEIGHT;
@@ -338,8 +366,7 @@
         });
 
         let lastTimeKey = null;
-        let clHtml = "";
-
+        let cl = "";
         for(const c of classes){
           weightedRows += CLASS_ROW_WEIGHT;
 
@@ -354,7 +381,7 @@
             ? `${num} - ${name}`.trim()
             : String(name).trim();
 
-          clHtml += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
+          cl += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
         }
 
         const gDiv = document.createElement("div");
@@ -365,18 +392,12 @@
             <div class="gname">${esc(g.gname)}</div>
           </div>
           <div class="solid"></div>
-          <div class="class-list">${clHtml || `<div class="muted">No classes scheduled.</div>`}</div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
         `;
-        frag.appendChild(gDiv);
+        sec.appendChild(gDiv);
       }
 
-      sec.appendChild(frag);
-
-      out.push({
-        ring_number: ring.ring_number,
-        el: sec,
-        weightedRows
-      });
+      out.push({ ring_number: ring.ring_number, el: sec, weightedRows });
     }
 
     return out;
@@ -389,12 +410,17 @@
     }
     for(const id of ["inner1","inner2","inner3","inner4"]){
       const inner = document.getElementById(id);
-      if(inner) inner.style.transform = "scale(1)";
+      if(inner){
+        inner.style.transform = "scale(1)";
+        inner.style.width = "100%";
+        inner.style.maxWidth = "none";
+        inner.style.transformOrigin = "top left";
+      }
     }
+    const rowTop = document.getElementById("rowTop");
+    if(rowTop) rowTop.style.transform = "none";
   }
 
-  // Greedy balance rings into 4 buckets by weighted rows.
-  // Preserve ring order within each bucket (append order is ring_number order).
   function bucketizeGreedy(ringsWithCounts){
     const buckets = [
       { sum:0, items:[] }, // Q1
@@ -402,7 +428,6 @@
       { sum:0, items:[] }, // Q3
       { sum:0, items:[] }, // Q4
     ];
-
     for(const r of ringsWithCounts){
       let bestIdx = 0;
       let bestSum = buckets[0].sum;
@@ -415,16 +440,13 @@
       buckets[bestIdx].items.push(r);
       buckets[bestIdx].sum += r.weightedRows;
     }
-
     return buckets;
   }
 
-  // Place buckets into quadrants per spec:
-  // Q1 bottom-right = stack1
-  // Q2 top-right (rot) = stack2
-  // Q3 top-left (rot) = stack3
-  // Q4 bottom-left = stack4
   function placeBuckets(buckets){
+    // mapping:
+    // top row:  q3 | q2
+    // bottom:   q4 | q1
     const map = [
       {bucket: 0, stackId:"stack1"},
       {bucket: 1, stackId:"stack2"},
@@ -434,76 +456,71 @@
     for(const m of map){
       const stack = document.getElementById(m.stackId);
       const frag = document.createDocumentFragment();
-      for(const r of buckets[m.bucket].items){
-        frag.appendChild(r.el);
-      }
+      for(const r of buckets[m.bucket].items) frag.appendChild(r.el);
       stack.appendChild(frag);
     }
   }
 
-  function measureAndScaleQuadrant(quadId, innerId){
-    const quad = document.getElementById(quadId);
-    const inner = document.getElementById(innerId);
-    if(!quad || !inner) return 1;
+  // per-quarter min/max (independent)
+  const SCALE_LIMITS = {
+    q1: { min: 0.50, max: 1.00 },
+    q2: { min: 0.50, max: 1.00 },
+    q3: { min: 0.50, max: 1.00 },
+    q4: { min: 0.50, max: 1.00 },
+  };
 
-    // Reset to measure natural size
+  function measureScaleToFitHeight(cellId, innerId){
+    const cell = document.getElementById(cellId);
+    const inner = document.getElementById(innerId);
+    if(!cell || !inner) return 1;
+
+    const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
+
+    // reset for accurate measurement
     inner.style.transform = "scale(1)";
+    inner.style.width = "100%";
+    inner.style.maxWidth = "none";
     inner.style.transformOrigin = "top left";
 
-    const availW = quad.clientWidth;
-    const availH = quad.clientHeight;
-
-    const needW = inner.scrollWidth || inner.getBoundingClientRect().width;
+    const availH = cell.clientHeight;
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
-    if(!needW || !needH || !availW || !availH) return 1;
+    if(!needH || !availH) return 1;
 
-    let scale = Math.min(availW / needW, availH / needH, MAX_QUAD_SCALE);
-    scale = Math.max(MIN_QUAD_SCALE, Math.min(MAX_QUAD_SCALE, scale));
-
-    // Apply scale only for now; rotation is applied later for Q2/Q3
-    inner.style.transform = `scale(${scale})`;
-
-    return scale;
+    let s = Math.min(1, availH / needH);
+    s = clamp(lim.min, s, lim.max);
+    return s;
   }
 
-  function applyAllQuadrantScales(){
-    const s1 = measureAndScaleQuadrant("q1","inner1");
-    const s2 = measureAndScaleQuadrant("q2","inner2");
-    const s3 = measureAndScaleQuadrant("q3","inner3");
-    const s4 = measureAndScaleQuadrant("q4","inner4");
+  function applyScaleWithWidthComp(innerId, scale){
+    const inner = document.getElementById(innerId);
+    if(!inner) return;
 
-    // Apply rotation for top row as: scale(s) then rotate(180deg) around center
-    // Center-origin is critical to avoid negative-space clipping under overflow:hidden.
-    function applyRot(innerId, scale){
-      const inner = document.getElementById(innerId);
-      if(!inner) return;
-      inner.style.transformOrigin = "center center";
-      inner.style.transform = `scale(${scale}) rotate(180deg)`;
-    }
-    function applyNoRot(innerId, scale){
-      const inner = document.getElementById(innerId);
-      if(!inner) return;
-      inner.style.transformOrigin = "top left";
-      inner.style.transform = `scale(${scale})`;
-    }
+    const s = Math.max(0.01, scale);
 
-    applyNoRot("inner1", s1);
-    applyRot("inner2", s2);
-    applyRot("inner3", s3);
-    applyNoRot("inner4", s4);
+    // scale down to fit height
+    inner.style.transformOrigin = "top left";
+    inner.style.transform = `scale(${s})`;
 
-    return {s1,s2,s3,s4};
+    // width compensation so VISUAL width stays full:
+    // visualWidth = (cssWidth * s). If cssWidth becomes (100/s)%, visualWidth becomes 100%.
+    inner.style.width = (100 / s) + "%";
+    inner.style.maxWidth = "none";
   }
 
-  function setHint(scales, buckets){
+  function flipTopRowAfterFit(){
+    const rowTop = document.getElementById("rowTop");
+    if(!rowTop) return;
+    rowTop.style.transformOrigin = "center center";
+    rowTop.style.transform = "rotate(180deg)";
+  }
+
+  function setHint(scales){
     const hint = document.getElementById("modeHint");
     if(!hint) return;
     const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
     const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
-    hint.textContent =
-      `Pamphlet mode • per-quarter scale • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
-      ` • rows Q1 ${buckets[0].sum.toFixed(1)} Q2 ${buckets[1].sum.toFixed(1)} Q3 ${buckets[2].sum.toFixed(1)} Q4 ${buckets[3].sum.toFixed(1)}`;
+    hint.textContent = `Pamphlet mode • per-quarter fit • width-comp • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}% • top row flipped`;
   }
 
   async function render(){
@@ -511,7 +528,7 @@
     const rows = await fetchJson(url);
 
     if(!Array.isArray(rows) || rows.length === 0){
-      document.getElementById("stack1").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      document.getElementById("stack4").innerHTML = `<div class="muted">No schedule rows.</div>`;
       return;
     }
 
@@ -522,21 +539,35 @@
     const buckets = bucketizeGreedy(ringsWithCounts);
     placeBuckets(buckets);
 
-    // Let layout settle, then scale/rotate
+    // Let layout settle (must be before measuring heights)
     await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
 
-    const scales = applyAllQuadrantScales();
-    setHint(scales, buckets);
+    // Fit EACH quarter independently by HEIGHT, then compensate width (per quarter)
+    const scales = {
+      s1: measureScaleToFitHeight("q1","inner1"),
+      s2: measureScaleToFitHeight("q2","inner2"),
+      s3: measureScaleToFitHeight("q3","inner3"),
+      s4: measureScaleToFitHeight("q4","inner4"),
+    };
+
+    applyScaleWithWidthComp("inner1", scales.s1);
+    applyScaleWithWidthComp("inner2", scales.s2);
+    applyScaleWithWidthComp("inner3", scales.s3);
+    applyScaleWithWidthComp("inner4", scales.s4);
+
+    // flip top container AFTER render+fit; bottom stays as-is
+    flipTopRowAfterFit();
+
+    setHint(scales);
   }
 
   (async function main(){
     await render();
-
     window.addEventListener("beforeprint", async ()=>{ await render(); });
     window.addEventListener("resize", ()=>{ render().catch(()=>{}); });
   })().catch(err=>{
-    const target = document.getElementById("stack1");
+    const target = document.getElementById("stack4");
     if(target) target.innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
   });
 </script>
