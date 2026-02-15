@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Cell Min/Max, Fit-Then-Flip-Top)</title>
+<title>CRT Schedule (One Page Print) — v6 (2 Rows, 4 Quarters, Per-Cell Min/Max, Full-Width, Top-Flex, Fit-Then-Flip-Top)</title>
 <style>
   :root{
     --fg:#111;
@@ -35,13 +35,7 @@
   }
   @media print{
     body{background:#fff;}
-    .page{
-      width:auto;
-      height:auto;
-      padding:0;
-      margin:0;
-      overflow:visible;
-    }
+    .page{ width:auto; height:auto; padding:0; margin:0; overflow:visible; }
   }
 
   .topbar{
@@ -62,12 +56,6 @@
     border-radius:6px;
     cursor:pointer;
   }
-  .hint{
-    font-size:10px;
-    color:var(--muted);
-    margin-left:6px;
-    white-space:nowrap;
-  }
 
   /* ===========================
      Shared ring/group styling
@@ -75,6 +63,7 @@
   .ring{
     border:1px solid #000;
     width:100%;
+    max-width:100%;
   }
   .ring-head{
     background:var(--ring);
@@ -127,62 +116,67 @@
   .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
 
   /* ===========================
-     v6 pamphlet layout (2 rows)
+     v6 required pamphlet layout
      =========================== */
 
-  /* Whole printable area (content only) */
+  /* 2 vertical containers (top + bottom), full width, 50/50 height with gutter */
   .sheet{
     height:100%;
     width:100%;
     display:flex;
     flex-direction:column;
     gap: var(--gutter);
-  }
-
-  /* Two full-width row containers (50/50 height) */
-  .row{
-    flex: 1 1 0;
-    width:100%;
-    display:grid;
-    grid-template-columns: 1fr 1fr;  /* 50/50 split */
-    gap: var(--gutter);
     min-height:0;
     min-width:0;
   }
 
-  /* Each quarter (cell) */
+  /* each vertical container is a row split 50/50 with gutter */
+  .row{
+    flex: 1 1 0;
+    width:100%;
+    display:grid;
+    grid-template-columns: 1fr 1fr; /* 50/50 */
+    gap: var(--gutter);
+    min-height:0;
+    min-width:0;
+    align-items:stretch;
+  }
+
+  /* each quarter container */
   .cell{
+    width:100%;
     min-width:0;
     min-height:0;
     overflow:hidden;
     position:relative;
     padding: var(--foldSafe);
 
-    /* your requirement: content flex to TOP and full width */
+    /* content must be flex to top */
     display:flex;
     align-items:flex-start;
     justify-content:flex-start;
   }
 
-  /* The scaled+optional-rotated block, full width of container */
+  /* data must stretch full width of its container */
   .cell-inner{
     width:100%;
-    transform-origin: center center;
+    max-width:100%;
+    transform-origin: top left;
     will-change: transform;
+    flex: 0 0 auto;
   }
 
-  /* Column stack inside each quarter */
   .stack{
     width:100%;
+    max-width:100%;
     display:flex;
     flex-direction:column;
     gap:2px;
     align-items:stretch;
-    justify-content:flex-start;  /* force top */
+    justify-content:flex-start; /* top */
     min-width:0;
   }
 
-  /* Print rules */
   @media print{
     @page{ size: Letter; margin: 0.25in; }
 
@@ -190,14 +184,9 @@
     .topbar{ display:none !important; }
     .controls{ display:none !important; }
 
-    /* lock deterministic printable content box:
-       Letter (8.5x11) with 0.25in margins => 8.0in x 10.5in */
-    .sheet{
-      width: 8in;
-      height: 10.5in;
-    }
+    /* lock deterministic printable content box: 8.0in x 10.5in */
+    .sheet{ width: 8in; height: 10.5in; }
 
-    .page{ box-shadow:none; }
     body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
     .ring-head{ background:var(--ringPrint); }
     .group.has-team, .ring-head{
@@ -216,13 +205,12 @@
       </div>
       <div class="controls">
         <button class="btn" onclick="window.print()">Print</button>
-        <span class="hint" id="modeHint">Pamphlet mode • per-cell fit • top row flipped</span>
       </div>
     </div>
 
-    <!-- Spec positioning:
-         TOP ROW:   3 | 2   (flip after render)
-         BOTTOM:    4 | 1   (normal)
+    <!-- Layout:
+         TOP row (full width): 3 | 2  => FLIP AFTER RENDER
+         BOTTOM row:           4 | 1  => normal
     -->
     <div class="sheet" id="sheet">
       <div class="row" id="rowTop">
@@ -237,12 +225,12 @@
   </div>
 
 <script>
-  // v6 rules implemented:
-  // - 2 row containers (each full width, 50/50 height)
-  // - each row split 50/50 with gutter
-  // - each cell has its own min/max scale
-  // - all content is full width of its cell, flexed to top
-  // - fit each cell first (scale only), THEN flip the TOP row (2 & 3)
+  // Exactly as requested:
+  // - 2 vertical containers, full width, each split 50/50 with gutter
+  // - each container has its own min/max scale
+  // - all data stretches full width of container
+  // - all content flexed to top
+  // - top container flips AFTER render; bottom stays as-is
 
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
@@ -256,6 +244,7 @@
 
   const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+  const clamp = (min,v,max)=> Math.max(min, Math.min(max, v));
 
   function normRollup(s){
     const raw = String(s ?? "").trim();
@@ -309,7 +298,7 @@
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  // Row counting weights (kept, but only used for bucketing balance)
+  // weights used only to balance across 4 quarters
   const RING_HEAD_WEIGHT = 1.0;
   const GROUP_HEAD_WEIGHT = 0.5;
   const CLASS_ROW_WEIGHT = 1.0;
@@ -343,13 +332,7 @@
 
       const sec = document.createElement("section");
       sec.className = "ring";
-
-      const head = document.createElement("div");
-      head.className = "ring-head";
-      head.textContent = ringTitle;
-      sec.appendChild(head);
-
-      const frag = document.createDocumentFragment();
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
 
       for(const g of groups){
         weightedRows += GROUP_HEAD_WEIGHT;
@@ -361,8 +344,7 @@
         });
 
         let lastTimeKey = null;
-        let clHtml = "";
-
+        let cl = "";
         for(const c of classes){
           weightedRows += CLASS_ROW_WEIGHT;
 
@@ -377,7 +359,7 @@
             ? `${num} - ${name}`.trim()
             : String(name).trim();
 
-          clHtml += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
+          cl += `<div class="c"><div class="t">${esc(showTime ? timeRaw : "")}</div><div class="n">${esc(label)}</div></div>`;
         }
 
         const gDiv = document.createElement("div");
@@ -388,12 +370,11 @@
             <div class="gname">${esc(g.gname)}</div>
           </div>
           <div class="solid"></div>
-          <div class="class-list">${clHtml || `<div class="muted">No classes scheduled.</div>`}</div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
         `;
-        frag.appendChild(gDiv);
+        sec.appendChild(gDiv);
       }
 
-      sec.appendChild(frag);
       out.push({ ring_number: ring.ring_number, el: sec, weightedRows });
     }
 
@@ -409,15 +390,13 @@
       const inner = document.getElementById(id);
       if(inner){
         inner.style.transform = "scale(1)";
-        inner.style.transformOrigin = "center center";
+        inner.style.transformOrigin = "top left";
       }
     }
-    // ensure top row starts unflipped (we flip after fit)
     const rowTop = document.getElementById("rowTop");
     if(rowTop) rowTop.style.transform = "none";
   }
 
-  // Balanced bucketing across 4 cells (keeps order of rings intact within each bucket)
   function bucketizeGreedy(ringsWithCounts){
     const buckets = [
       { sum:0, items:[] }, // Q1
@@ -441,14 +420,13 @@
   }
 
   function placeBuckets(buckets){
-    // mapping to your layout:
     // top row:  q3 | q2
     // bottom:   q4 | q1
     const map = [
-      {bucket: 0, stackId:"stack1"}, // Q1 bottom-right
-      {bucket: 1, stackId:"stack2"}, // Q2 top-right
-      {bucket: 2, stackId:"stack3"}, // Q3 top-left
-      {bucket: 3, stackId:"stack4"}, // Q4 bottom-left
+      {bucket: 0, stackId:"stack1"},
+      {bucket: 1, stackId:"stack2"},
+      {bucket: 2, stackId:"stack3"},
+      {bucket: 3, stackId:"stack4"},
     ];
     for(const m of map){
       const stack = document.getElementById(m.stackId);
@@ -458,7 +436,7 @@
     }
   }
 
-  // Per-cell min/max (each cell has its own set)
+  // each container has its own min/max
   const SCALE_LIMITS = {
     q1: { min: 0.50, max: 1.00 },
     q2: { min: 0.50, max: 1.00 },
@@ -473,49 +451,34 @@
 
     const lim = SCALE_LIMITS[cellId] || {min:0.50, max:1.00};
 
-    // fit pass: scale-only
     inner.style.transform = "scale(1)";
-    inner.style.transformOrigin = "center center";
+    inner.style.transformOrigin = "top left";
 
     const availW = cell.clientWidth;
     const availH = cell.clientHeight;
 
-    // full-width content means width should usually fit;
-    // scale is mostly driven by height.
     const needW = inner.scrollWidth || inner.getBoundingClientRect().width;
     const needH = inner.scrollHeight || inner.getBoundingClientRect().height;
 
     if(!needW || !needH || !availW || !availH) return 1;
 
     let scale = Math.min(availW / needW, availH / needH, lim.max);
-    scale = Math.max(lim.min, Math.min(lim.max, scale));
+    scale = clamp(lim.min, scale, lim.max);
     return scale;
   }
 
   function applyScale(innerId, scale){
     const inner = document.getElementById(innerId);
     if(!inner) return;
-    inner.style.transformOrigin = "center center";
+    inner.style.transformOrigin = "top left";
     inner.style.transform = `scale(${scale})`;
   }
 
   function flipTopRowAfterFit(){
     const rowTop = document.getElementById("rowTop");
     if(!rowTop) return;
-    // flip the entire top row once rendered (your requirement)
     rowTop.style.transformOrigin = "center center";
     rowTop.style.transform = "rotate(180deg)";
-  }
-
-  function setHint(scales, buckets){
-    const hint = document.getElementById("modeHint");
-    if(!hint) return;
-    const min = Math.min(scales.s1, scales.s2, scales.s3, scales.s4);
-    const max = Math.max(scales.s1, scales.s2, scales.s3, scales.s4);
-    hint.textContent =
-      `Pamphlet mode • per-cell fit • top row flipped` +
-      ` • min ${(min*100).toFixed(0)}% max ${(max*100).toFixed(0)}%` +
-      ` • rows Q1 ${buckets[0].sum.toFixed(1)} Q2 ${buckets[1].sum.toFixed(1)} Q3 ${buckets[2].sum.toFixed(1)} Q4 ${buckets[3].sum.toFixed(1)}`;
   }
 
   async function render(){
@@ -534,27 +497,22 @@
     const buckets = bucketizeGreedy(ringsWithCounts);
     placeBuckets(buckets);
 
-    // Let layout settle
     await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
 
-    // Fit each cell independently (scale only)
-    const scales = {
-      s1: measureScaleToFit("q1","inner1"),
-      s2: measureScaleToFit("q2","inner2"),
-      s3: measureScaleToFit("q3","inner3"),
-      s4: measureScaleToFit("q4","inner4"),
-    };
+    // per-cell fit
+    const s1 = measureScaleToFit("q1","inner1");
+    const s2 = measureScaleToFit("q2","inner2");
+    const s3 = measureScaleToFit("q3","inner3");
+    const s4 = measureScaleToFit("q4","inner4");
 
-    applyScale("inner1", scales.s1);
-    applyScale("inner2", scales.s2);
-    applyScale("inner3", scales.s3);
-    applyScale("inner4", scales.s4);
+    applyScale("inner1", s1);
+    applyScale("inner2", s2);
+    applyScale("inner3", s3);
+    applyScale("inner4", s4);
 
-    // Flip the TOP row AFTER everything is fit and painted
+    // flip top container AFTER render
     flipTopRowAfterFit();
-
-    setHint(scales, buckets);
   }
 
   (async function main(){
