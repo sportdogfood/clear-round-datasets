@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-19T12:23:06-05:00",
+    "generated_at": "2026-02-19T12:28:18-05:00",
     "table": "watch_trips",
     "view": "commit",
     "record_count": 21,
@@ -169,7 +169,7 @@
       "trip_id": 200297959,
       "time_sort": 36000,
       "latestStart": "10:00 AM",
-      "latestStatus": "Underway",
+      "latestStatus": "Completed",
       "total_trips": 41,
       "entry_id": 200150479,
       "backNumber": "1077",
@@ -191,8 +191,8 @@
       "score3": null,
       "lastTime": "67.52",
       "latestGO": "11:14 AM",
-      "runningOOG": 33,
-      "lastOOG": "33"
+      "runningOOG": null,
+      "lastOOG": "38"
     },
     {
       "record_id": "rechfz5hse7dVmSR7",
@@ -640,7 +640,7 @@
       "time_sort": 42618,
       "latestStart": "11:50 AM",
       "latestStatus": "Underway",
-      "total_trips": 32,
+      "total_trips": 33,
       "entry_id": 200141520,
       "backNumber": "4165",
       "entryNumber": "4165",
@@ -687,7 +687,7 @@
       "time_sort": 42618,
       "latestStart": "11:50 AM",
       "latestStatus": "Underway",
-      "total_trips": 32,
+      "total_trips": 33,
       "entry_id": 200141520,
       "backNumber": "4165",
       "entryNumber": "4165",
@@ -734,7 +734,7 @@
       "time_sort": 44100,
       "latestStart": "12:15 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "total_trips": 87,
       "entry_id": 200142676,
       "backNumber": "26",
       "entryNumber": "26",
@@ -745,7 +745,7 @@
       "riderName": "Zoey",
       "latestPlacing": null,
       "lastScore": null,
-      "lastPlace": 6,
+      "lastPlace": 7,
       "lastPosition": null,
       "time_one": 0,
       "time_two": null,
@@ -756,7 +756,7 @@
       "lastTime": null,
       "latestGO": "12:51 PM",
       "runningOOG": null,
-      "lastOOG": "18"
+      "lastOOG": "19"
     },
     {
       "record_id": "recDTIIpu97MJJFiI",
@@ -780,8 +780,8 @@
       "trip_id": 200301939,
       "time_sort": 44100,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "latestStatus": "Underway",
+      "total_trips": 87,
       "entry_id": 200206761,
       "backNumber": "6446",
       "entryNumber": "6446",
@@ -802,8 +802,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "2:41 PM",
-      "runningOOG": null,
-      "lastOOG": "74"
+      "runningOOG": 17,
+      "lastOOG": "17"
     },
     {
       "record_id": "recIxJTfXL8oaxERJ",
@@ -827,8 +827,8 @@
       "trip_id": 200297941,
       "time_sort": 44100,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "latestStatus": "Underway",
+      "total_trips": 87,
       "entry_id": 200149255,
       "backNumber": "1071",
       "entryNumber": "1071",
@@ -849,8 +849,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "12:53 PM",
-      "runningOOG": null,
-      "lastOOG": "19"
+      "runningOOG": 10,
+      "lastOOG": "10"
     },
     {
       "record_id": "recIztOhdr87n9rJu",
@@ -874,8 +874,8 @@
       "trip_id": 200301942,
       "time_sort": 44100,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "latestStatus": "Underway",
+      "total_trips": 87,
       "entry_id": 200206761,
       "backNumber": "6446",
       "entryNumber": "6446",
@@ -896,8 +896,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "12:57 PM",
-      "runningOOG": null,
-      "lastOOG": "21"
+      "runningOOG": 27,
+      "lastOOG": "27"
     },
     {
       "record_id": "recRVomwr9jTdqVP6",
@@ -921,8 +921,8 @@
       "trip_id": 200297925,
       "time_sort": 44100,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "latestStatus": "Underway",
+      "total_trips": 87,
       "entry_id": 200149404,
       "backNumber": "1062",
       "entryNumber": "1062",
@@ -943,8 +943,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "12:55 PM",
-      "runningOOG": null,
-      "lastOOG": "20"
+      "runningOOG": 9,
+      "lastOOG": "9"
     },
     {
       "record_id": "recWPXpx5xPpxV0QW",
@@ -968,8 +968,8 @@
       "trip_id": 200297970,
       "time_sort": 44100,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "latestStatus": "Underway",
+      "total_trips": 87,
       "entry_id": 200149858,
       "backNumber": "1078",
       "entryNumber": "1078",
@@ -989,9 +989,9 @@
       "score2": 0,
       "score3": null,
       "lastTime": null,
-      "latestGO": "1:21 PM",
-      "runningOOG": null,
-      "lastOOG": "34"
+      "latestGO": "1:23 PM",
+      "runningOOG": 11,
+      "lastOOG": "11"
     },
     {
       "record_id": "recZCLh4RA74qnkrN",
@@ -1015,8 +1015,8 @@
       "trip_id": 200297942,
       "time_sort": 44100,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
-      "total_trips": 88,
+      "latestStatus": "Underway",
+      "total_trips": 87,
       "entry_id": 200149255,
       "backNumber": "1071",
       "entryNumber": "1071",
@@ -1036,9 +1036,9 @@
       "score2": 0,
       "score3": null,
       "lastTime": null,
-      "latestGO": "1:19 PM",
-      "runningOOG": null,
-      "lastOOG": "33"
+      "latestGO": "1:21 PM",
+      "runningOOG": 3,
+      "lastOOG": "3"
     }
   ]
 }
