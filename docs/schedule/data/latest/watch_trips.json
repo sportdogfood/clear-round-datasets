@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-20T12:58:19-05:00",
+    "generated_at": "2026-02-20T13:03:44-05:00",
     "table": "watch_trips",
     "view": "commit",
     "record_count": 29,
@@ -367,7 +367,7 @@
       "horseName": "Indy",
       "teamName": "Carsyn",
       "riderName": "Carsyn",
-      "latestPlacing": null,
+      "latestPlacing": "5",
       "lastScore": "83",
       "lastPlace": 10,
       "lastPosition": 10,
@@ -592,7 +592,7 @@
       "trip_id": 200304062,
       "time_sort": 42302,
       "latestStart": "11:45 AM",
-      "latestStatus": "Underway",
+      "latestStatus": "Completed",
       "total_trips": 26,
       "entry_id": 200204808,
       "backNumber": "6065",
@@ -614,8 +614,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "12:00 PM",
-      "runningOOG": 21,
-      "lastOOG": "21"
+      "runningOOG": null,
+      "lastOOG": "7"
     },
     {
       "record_id": "recYot88WdhYSn3M6",
@@ -639,7 +639,7 @@
       "trip_id": 200304045,
       "time_sort": 42302,
       "latestStart": "11:45 AM",
-      "latestStatus": "Underway",
+      "latestStatus": "Completed",
       "total_trips": 26,
       "entry_id": 200149858,
       "backNumber": "1078",
@@ -661,8 +661,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "11:57 AM",
-      "runningOOG": 5,
-      "lastOOG": "5"
+      "runningOOG": null,
+      "lastOOG": "6"
     },
     {
       "record_id": "recPuyalBHWpVCuXx",
@@ -792,7 +792,7 @@
       "riderName": "Sydney",
       "latestPlacing": null,
       "lastScore": null,
-      "lastPlace": 5,
+      "lastPlace": 7,
       "lastPosition": null,
       "time_one": 0,
       "time_two": null,
@@ -802,8 +802,8 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "12:56 PM",
-      "runningOOG": 5,
-      "lastOOG": "5"
+      "runningOOG": 7,
+      "lastOOG": "7"
     },
     {
       "record_id": "recfisdHp0qp69AKa",
@@ -1412,7 +1412,7 @@
       "score2": 0,
       "score3": null,
       "lastTime": null,
-      "latestGO": "3:29 PM",
+      "latestGO": "3:31 PM",
       "runningOOG": null,
       "lastOOG": "25"
     }
