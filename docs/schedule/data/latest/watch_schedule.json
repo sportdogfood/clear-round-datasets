@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-20T06:53:26-05:00",
+    "generated_at": "2026-02-20T07:03:19-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 67,
@@ -25,8 +25,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 36,
-      "trips_linked_unique": 36
+      "trips_total": 34,
+      "trips_linked_unique": 34
     }
   },
   "records": [
@@ -533,21 +533,18 @@
       "class_type": null,
       "latestStart": "1:30 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 52,
+      "total_trips": 51,
       "rollup_entries": [
         "200142676",
-        "200149858",
         "200150711"
       ],
       "rollup_trips": [
-        "DD64974CA9334E5997CD0524663BB6EA",
         "488C9783CF4241B4A33145C057EAC81E",
         "5E94D836376043959FDF6188F8294ABC"
       ],
       "rollup_horses": [
         "Indy",
-        "Jason",
-        "Lenny"
+        "Jason"
       ]
     },
     {
@@ -777,18 +774,15 @@
       "class_type": null,
       "latestStart": "10:00 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 40,
+      "total_trips": 39,
       "rollup_entries": [
-        "200149858",
         "200150711"
       ],
       "rollup_trips": [
-        "52613E813CE542328F5B85A77B3FCF1E",
         "1BF1A72E041F4A9283B2162B234D07C6"
       ],
       "rollup_horses": [
-        "Indy",
-        "Lenny"
+        "Indy"
       ]
     },
     {
@@ -804,7 +798,7 @@
       "class_number": 3035,
       "class_name": "Marshall + Sterling USHJA 3'3\" Junior Jumping Seat Medal Sec. A",
       "class_type": null,
-      "latestStart": "10:40 AM",
+      "latestStart": "10:39 AM",
       "latestStatus": "Upcoming",
       "total_trips": 28,
       "rollup_entries": [
