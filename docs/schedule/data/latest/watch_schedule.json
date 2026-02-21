@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-20T20:11:21-05:00",
+    "generated_at": "2026-02-20T20:17:45-05:00",
     "table": "watch_schedule",
     "view": "commit",
-    "record_count": 102,
+    "record_count": 101,
     "fields": [
       "sid",
       "dt",
@@ -25,31 +25,11 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 37,
-      "trips_linked_unique": 37
+      "trips_total": 36,
+      "trips_linked_unique": 36
     }
   },
   "records": [
-    {
-      "record_id": "recV8BVDYX6KJlpDp",
-      "sid": "200000051",
-      "dt": "2026-02-21",
-      "ring_number": 13,
-      "ringName": "South Ring",
-      "class_groupxclasses_id": 200030750,
-      "class_group_id": 200020174,
-      "group_name": "12-14 Equitation Flat",
-      "class_id": 200020099,
-      "class_number": 3012,
-      "class_name": "12-14 Equitation Flat",
-      "class_type": null,
-      "latestStart": "5:30 PM",
-      "latestStatus": null,
-      "total_trips": 27,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
-    },
     {
       "record_id": "recWY24WnBSalC0nF",
       "sid": "200000051",
@@ -909,16 +889,10 @@
       "class_type": null,
       "latestStart": "1:30 PM",
       "latestStatus": null,
-      "total_trips": 63,
-      "rollup_entries": [
-        "200149703"
-      ],
-      "rollup_trips": [
-        "70755754BA6045B68E1FE670A0C17413"
-      ],
-      "rollup_horses": [
-        "Peri"
-      ]
+      "total_trips": 62,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recSWNu8dGveUz271",
