@@ -3,308 +3,293 @@
 <head>
   <meta charset="UTF-8" />
   <title>Schedules</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <style>
-    :root {
-      --bg: #020617;
-      --bg-alt: #0b1120;
-      --border: #374151;
-      --border-soft: #4b5563;
-      --accent: #2563eb;
-      --accent-soft: #1d4ed8;
-      --pill-radius: 999px;
-      --header-h: 52px;
+    :root{
+      --bg:#020617;
+      --border:#374151;
+      --border-soft:#4b5563;
+      --accent:#2563eb;
+      --pill-radius:999px;
+      --header-h:52px;
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    html, body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 90%);
-      color: #f9fafb;
+      color:#f9fafb;
+      -webkit-text-size-adjust:100%;
+      text-size-adjust:100%;
     }
 
-    /* render like a normal webpage (no flex/gates) */
-    body { display: block; }
-
-    [hidden] {
-      display: none !important;
+    /* NORMAL LANDING PAGE WRAPPER (no gates, no stretch-to-1200) */
+    .page{
+      min-height:100vh;
+      min-height:100dvh;
+      padding: 12px;                 /* gutters so it never hits edges */
+      display:flex;
+      justify-content:center;         /* center the column */
+      align-items:stretch;
     }
 
-    .app {
-      width: 100%;
-      max-width: 474px;       /* responsive landing cap */
-      height: 100vh;          /* full viewport */
-      margin: 0 auto;         /* center */
-      display: flex;
-      flex-direction: column;
+    .app{
+      width:100%;
+      max-width:600px;                /* desktop cap */
+      min-height: calc(100vh - 24px);
+      min-height: calc(100dvh - 24px);
+      display:flex;
+      flex-direction:column;
       background: var(--bg);
       border-radius: 24px;
       border: 1px solid rgba(15, 23, 42, 0.95);
       box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
+      overflow:hidden;
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
-      overflow: hidden;
     }
 
-    /* Header (EXACT TackLists) ----------------------------------- */
-    .app-header {
-      height: var(--header-h);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      border-bottom: 1px solid rgba(31, 41, 55, 0.95);
-      background: #020617;
+    /* Mobile target band: keep the launcher from feeling “tablet wide” */
+    @media (max-width: 520px){
+      .page{ padding: 0; }
+      .app{
+        max-width: 474px;            /* requested mobile cap */
+        min-height: 100vh;
+        min-height: 100dvh;
+        border-radius: 0;            /* feels like a normal phone landing */
+      }
+    }
+
+    /* Header ------------------------------------------------------ */
+    .app-header{
+      height:var(--header-h);
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      padding:0 12px;
+      border-bottom:1px solid rgba(31,41,55,.95);
+      background:#020617;
       backdrop-filter: blur(10px);
     }
 
     .header-back,
-    .header-action {
-      min-width: 60px;
-      height: 34px;
-      padding: 0 16px;
-      border-radius: var(--pill-radius);
-      border: 1px solid var(--border-soft);
-      background: #020617;
-      color: #e5e7eb;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
+    .header-action{
+      min-width:60px;
+      height:34px;
+      padding:0 16px;
+      border-radius:var(--pill-radius);
+      border:1px solid var(--border-soft);
+      background:#020617;
+      color:#e5e7eb;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:13px;
+      font-weight:500;
+      cursor:pointer;
       box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 1),
-        0 3px 10px rgba(0, 0, 0, 0.8);
+        0 0 0 1px rgba(15,23,42,1),
+        0 3px 10px rgba(0,0,0,.8);
       transition:
-        background 0.12s ease-out,
-        border-color 0.12s ease-out,
-        transform 0.08s ease-out,
-        box-shadow 0.12s ease-out,
-        color 0.12s ease-out;
+        background .12s ease-out,
+        border-color .12s ease-out,
+        transform .08s ease-out,
+        box-shadow .12s ease-out,
+        color .12s ease-out;
     }
 
-    .header-action {
-      border-color: rgba(59, 130, 246, 1);
+    .header-action{
+      border-color: rgba(59,130,246,1);
       background: radial-gradient(circle at top, #1d4ed8, #1e3a8a 75%);
-      color: #f9fafb;
+      color:#f9fafb;
     }
 
     .header-back:active,
-    .header-action:active {
-      transform: translateY(1px) scale(0.97);
+    .header-action:active{
+      transform: translateY(1px) scale(.97);
       box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 1),
-        0 2px 6px rgba(0, 0, 0, 0.9);
+        0 0 0 1px rgba(15,23,42,1),
+        0 2px 6px rgba(0,0,0,.9);
     }
 
-    .header-title {
-      flex: 1;
-      text-align: center;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
-      padding: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .header-title{
+      flex:1;
+      text-align:center;
+      font-size:16px;
+      font-weight:600;
+      margin:0;
+      padding:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    /* keep the title truly centered (buttons still occupy space) */
-    .is-invisible{
-      visibility: hidden;
-      pointer-events: none;
-    }
+    .is-invisible{ visibility:hidden; pointer-events:none; }
 
-    /* Main (EXACT TackLists vibe) -------------------------------- */
-    .app-main {
-      flex: 1;
-      overflow-y: auto;
+    /* Main -------------------------------------------------------- */
+    .app-main{
+      flex:1 1 auto;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
       padding: 8px 12px 14px;
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
 
-    .list-column {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-bottom: 12px;
-    }
-
-    .list-group-label {
-      font-size: 12px;
-      color: rgba(148, 163, 184, 0.95);
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      margin: 6px 6px 6px;
-    }
-
-    /* Long pills (EXACT TackLists) -------------------------------- */
-    .row {
-      width: 100%;
-      min-height: 46px;
-      padding: 10px 16px;
-      border-radius: var(--pill-radius);
-      border: 1px solid var(--border-soft);
-      background: #111827;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 14px;
-      color: #e5e7eb;
-      box-shadow: 0 1px 0 #020617;
-      text-decoration: none;
-    }
-
-    .row-title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      padding-right: 8px;
-    }
-
-    .row-tag {
-      min-width: 28px;
-      padding: 3px 10px;
-      border-radius: var(--pill-radius);
-      border: 1px solid var(--border-soft);
-      background: #18181b;
-      color: #e5e7eb;
-      font-size: 11px;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
-      box-shadow: 0 0 0 1px #020617;
-      white-space: nowrap;
-    }
-
-    .row--active {
-      border-color: var(--accent);
-      background: radial-gradient(circle at top, #1f2937, #020617 75%);
-      box-shadow:
-        0 0 0 1px #020617,
-        0 4px 10px rgba(15, 23, 42, 0.75);
-      color: #f9fafb;
-    }
-
-    .row--tap {
-      cursor: pointer;
-      user-select: none;
-      transition:
-        transform 0.08s ease-out,
-        box-shadow 0.12s ease-out,
-        border-color 0.12s ease-out,
-        background 0.12s ease-out;
-    }
-
-    .row--tap:active {
-      transform: translateY(1px) scale(0.995);
-      box-shadow:
-        0 0 0 1px #020617,
-        0 2px 8px rgba(15, 23, 42, 0.95);
-    }
-
-    /* Small meta block */
-    .meta {
+    .meta{
       margin: 6px 4px 10px;
       line-height: 1.25;
       text-align: center;
     }
-    .meta-title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-align: center;
+
+    .meta-title{
+      font-size:18px;
+      font-weight:600;
+      letter-spacing:.04em;
     }
-    .meta-sub {
-      margin-top: 4px;
-      font-size: 12px;
-      color: rgba(209, 213, 219, 0.9);
+
+    .meta-sub{
+      margin-top:4px;
+      font-size:12px;
+      color: rgba(209,213,219,.9);
     }
-    .meta-sub span {
+
+    .meta-sub span{
       font-variant-numeric: tabular-nums;
-      font-weight: 700;
-      color: #f9fafb;
+      font-weight:700;
+      color:#f9fafb;
+    }
+
+    .list-column{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-bottom:12px;
+    }
+
+    /* Rows -------------------------------------------------------- */
+    .row{
+      width:100%;
+      min-height:46px;
+      padding:10px 16px;
+      border-radius:var(--pill-radius);
+      border:1px solid var(--border-soft);
+      background:#111827;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:14px;
+      color:#e5e7eb;
+      box-shadow:0 1px 0 #020617;
+      text-decoration:none;
+    }
+
+    .row-title{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      padding-right:8px;
+    }
+
+    .row-tag{
+      min-width:28px;
+      padding:3px 10px;
+      border-radius:var(--pill-radius);
+      border:1px solid var(--border-soft);
+      background:#18181b;
+      color:#e5e7eb;
+      font-size:11px;
+      text-align:center;
+      font-variant-numeric: tabular-nums;
+      box-shadow:0 0 0 1px #020617;
+      white-space:nowrap;
+    }
+
+    .row--active{
+      border-color: var(--accent);
+      background: radial-gradient(circle at top, #1f2937, #020617 75%);
+      box-shadow:
+        0 0 0 1px #020617,
+        0 4px 10px rgba(15,23,42,.75);
+      color:#f9fafb;
+    }
+
+    .row--tap{
+      cursor:pointer;
+      user-select:none;
+      transition:
+        transform .08s ease-out,
+        box-shadow .12s ease-out,
+        border-color .12s ease-out,
+        background .12s ease-out;
+    }
+
+    .row--tap:active{
+      transform: translateY(1px) scale(.995);
+      box-shadow:
+        0 0 0 1px #020617,
+        0 2px 8px rgba(15,23,42,.95);
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <!-- Header -->
-    <header class="app-header">
-      <!-- keep spacing but invisible -->
-      <button class="header-back is-invisible" type="button"></button>
+  <div class="page">
+    <div class="app">
+      <header class="app-header">
+        <button class="header-back is-invisible" type="button"></button>
+        <h1 class="header-title" id="header-title">Start</h1>
+        <button class="header-action is-invisible" type="button"></button>
+      </header>
 
-      <h1 class="header-title" id="header-title">Start</h1>
-
-      <!-- keep spacing but invisible -->
-      <button class="header-action is-invisible" type="button"></button>
-    </header>
-
-    <!-- Main -->
-    <main class="app-main">
-      <div class="meta">
-        <div class="meta-title">RingStatus.com</div>
-        <div class="meta-sub">
-          <div id="displayDate">— Time: <span id="nowTime">—</span></div>
+      <main class="app-main">
+        <div class="meta">
+          <div class="meta-title">RingStatus.com</div>
+          <div class="meta-sub">
+            <div id="displayDate">— Time: <span id="nowTime">—</span></div>
+          </div>
         </div>
-      </div>
 
-      <div class="list-group-label"></div>
+        <div class="list-column">
+          <a class="row row--tap" id="btnMobile" href="#">
+            <div class="row-title">Schedule Full</div>
+            <div class="row-tag" id="tagMobile">—</div>
+          </a>
 
-      <div class="list-column">
-        <a class="row row--tap" id="btnMobile" href="#">
-          <div class="row-title">Schedule Full</div>
-          <div class="row-tag" id="tagMobile">—</div>
-        </a>
+          <a class="row row--tap" id="btnWatch" href="#">
+            <div class="row-title">Schedule Lite</div>
+            <div class="row-tag" id="tagWatch">—</div>
+          </a>
 
-        <a class="row row--tap" id="btnWatch" href="#">
-          <div class="row-title">Schedule Lite</div>
-          <div class="row-tag" id="tagWatch">—</div>
-        </a>
+          <a class="row row--tap row--active" id="btnPrinted" href="#">
+            <div class="row-title">Schedule Print</div>
+            <div class="row-tag" id="tagPrinted">—</div>
+          </a>
 
-        <a class="row row--tap row--active" id="btnPrinted" href="#">
-          <div class="row-title">Schedule Print</div>
-          <div class="row-tag" id="tagPrinted">—</div>
-        </a>
+          <a class="row row--tap" id="btnPro" href="https://blog.clearroundtravel.com/schedule/index.html">
+            <div class="row-title">Schedule Pro</div>
+            <div class="row-tag">Open</div>
+          </a>
 
-        <a class="row row--tap" id="btnPro" href="https://blog.clearroundtravel.com/schedule/index.html">
-          <div class="row-title">Schedule Pro</div>
-          <div class="row-tag">Open</div>
-        </a>
-
-        <a class="row row--tap" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
-          <div class="row-title">TackReady.com</div>
-          <div class="row-tag">Open</div>
-        </a>
-      </div>
-    </main>
+          <a class="row row--tap" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
+            <div class="row-title">TackReady.com</div>
+            <div class="row-tag">Open</div>
+          </a>
+        </div>
+      </main>
+    </div>
   </div>
 
   <script>
-    /**
-     * schedules.html (in /schedule/data/)
-     *
-     * Latest files live here:
-     *   /schedule/data/latest/schedule.json  (v2 + v5)
-     *   /schedule/data/latest/team.json      (v3)
-     */
-
     const TIMEZONE = "America/New_York";
 
     const LATEST_SCHEDULE_URL = "https://blog.clearroundtravel.com/schedule/data/print/schedule.json";
     const LATEST_TEAM_URL     = "https://blog.clearroundtravel.com/schedule/data/latest/team.json";
 
-    // viewers also live in /schedule/data/ so these should be RELATIVE:
     const DATA_SCHEDULE_REL = "print/schedule.json";
     const DATA_TEAM_REL     = "latest/team.json";
 

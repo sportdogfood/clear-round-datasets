@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <!--<script src="importScripts('https://cdn.pagesense.io/stage-script/sw_ps.js')></script>
 <script src="https://cdn.pagesense.io/js/sportdogfood141/cddc7cd656d44f509188052c2686ac15.js"></script> -->
-<title>CRT Schedule (Landing v4.1)</title>
-
+<title>CRT Schedule (Mobile v4)</title>
 <style>
   :root{
     --fg:#111;
@@ -14,48 +13,48 @@
     --border:#d0d0d0;
     --ring:#0b5d47;
 
-    /* these are dynamically synced in JS */
     --topbar-h: 56px;
     --filterbar-h: 74px;
     --bottom-nav-h: 64px;
 
     --bg:#fff;
   }
-
   *{box-sizing:border-box}
   html{
     scroll-behavior:smooth;
-    height:100%;
-    font-size:16px;
     -webkit-text-size-adjust:100%;
     text-size-adjust:100%;
   }
   body{
     margin:0;
-    min-height:100dvh;
-    height:100%;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     color:var(--fg);
     background:var(--bg);
+    font-size:16px; /* iOS readability floor */
+    min-height:100dvh;
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
   }
 
   /* Sticky top header */
   .topbar{
     position:sticky;
     top:0;
-    z-index:30;
+    z-index:20;
     background:rgba(255,255,255,.96);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
-    padding:12px 14px;
+    padding:10px 12px;
+    min-height:var(--topbar-h);
+    height:var(--topbar-h); /* lock height so filterbar can sit below reliably */
     display:flex;
     flex-direction:column;
     justify-content:center;
     gap:2px;
   }
-  .title{font-weight:900; font-size:18px; line-height:1.1;}
-  .subtitle{color:var(--muted); font-size:14px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .title{font-weight:900; font-size:16px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
   /* Topbar home button */
   .topbar-row{
@@ -72,8 +71,8 @@
   }
   .home-pill{
     flex:0 0 auto;
-    height:38px;
-    padding:0 16px;
+    height:36px;
+    padding:0 14px;
     border-radius:999px;
     border:1px solid var(--border);
     background:#fff;
@@ -85,27 +84,41 @@
     align-items:center;
     justify-content:center;
     line-height:1;
-    white-space:nowrap;
     -webkit-tap-highlight-color: transparent;
   }
-  .home-pill:active{ transform: translateY(1px) scale(0.99); }
+  .home-pill:active{
+    transform: translateY(1px) scale(0.99);
+  }
 
-  /* V4: Sticky filterbar (NOW sticks under the topbar; no overlap / no tap stealing) */
+  /* allow the inner scroller to actually overflow horizontally */
+  .filter-row{
+    overflow:hidden;
+  }
+
+  .filterbar .nav-scroller{
+    flex:1 1 auto;
+    min-width:0;          /* THIS is the key */
+  }
+
+  /* V4: Sticky filterbar (sits below topbar; no overlap / tap-stealing) */
   .filterbar{
     position:sticky;
     top: var(--topbar-h);
     z-index:25;
-    background:rgba(255,255,255,.92);
+    background:rgba(255, 255, 255, 0);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
-    padding:8px 12px;
+    padding:6px 10px 6px 10px;
   }
 
-  /* allow the inner scroller to actually overflow horizontally */
-  .filter-row{ overflow:hidden; }
-  .filterbar .nav-scroller{
-    flex:1 1 auto;
-    min-width:0; /* key */
+  /* filter pills styled exactly like bottom nav pills */
+  .filterbar .nav-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+  }
+  .filterbar .nav-btn.active{
+    border-color:#000;
   }
 
   .filter-row{
@@ -114,6 +127,9 @@
     gap:8px;
     margin:4px 0;
   }
+
+  /* (labels removed in markup, keep rule safe) */
+  .filter-label{display:none;}
 
   /* Reuse nav scroller + pills */
   .nav-scroller{
@@ -135,54 +151,66 @@
     color:#111;
     padding:8px 12px;
     font-size:13px;
-    font-weight:800;
+    font-weight:700;
     border-radius:999px;
     text-decoration:none;
     white-space:nowrap;
     user-select:none;
     cursor:pointer;
-    min-height:36px;
     -webkit-tap-highlight-color: transparent;
   }
-  .nav-btn.active{ border-color:#000; }
+  .nav-btn.active{
+    border-color:#000;
+  }
 
   /* Main list */
   main{
-    padding:10px 10px 12px 10px;
+    padding:6px 6px 6px 6px;
     display:flex;
     flex-direction:column;
-    gap:12px;
+    gap:10px;
   }
 
   .ring{
     border:1px solid #000;
-    border-radius:12px;
+    border-radius:10px;
     overflow:hidden;
     background:#fff;
+    /* anchor offset for sticky topbar + filterbar */
     scroll-margin-top: calc(var(--topbar-h) + var(--filterbar-h) + 10px);
   }
   .ring-head{
     background:var(--ring);
     color:#fff;
-    padding:12px 12px;
-    font-weight:700;
-    font-size:16px;
+    padding:10px 10px;
+    font-weight:600;
+    font-size:15px;
     letter-spacing:.02em;
   }
 
   /* highlight groups that have a team (gdisplay present) */
-  .group.has-team{ background: rgba(255, 255, 255, 0.43); }
+  .group.has-team{
+    background: rgba(255, 255, 255, 0.43);
+  }
 
-  /* shade by group status */
-  .group.has-team[data-status="upcoming"]{ background: rgba(144 151 205 / 15%); }
-  .group.has-team[data-status="underway"]{ background: rgba(118, 219, 155, 0.12); }
-  .group.has-team[data-status="completed"]{ background: rgba(228, 228, 228, 0.55); }
+  /* V4: shade by group status */
+  .group.has-team[data-status="upcoming"]{
+    background: rgba(144 151 205 / 15%);
+  }
+  .group.has-team[data-status="underway"]{
+    background: rgba(118, 219, 155, 0.12);
+  }
+  .group.has-team[data-status="completed"]{
+    background: rgba(228, 228, 228, 0.55);
+  }
 
-  .group-head{ padding:0px 10px 0px 6px; }
+  .group-head{
+    padding:0px 10px 0px 6px;
+  }
 
   /* group_display above group_name */
   .gdisplay{
-    font-size:12px;
+    font-size:11px;
     font-weight:800;
     text-transform: uppercase;
     white-space:nowrap;
@@ -190,37 +218,37 @@
     margin-bottom:-1px;
     text-overflow:ellipsis;
     text-align:right;
-    padding-right: 6px;
-    padding-top: 6px;
+    padding-right: 4px;
+    padding-top: 4px;
     position: relative; z-index: 10;
   }
-  .gname{ display:none; }
+  .gname{
+    display:none; /* per spec: gname is hidden */
+  }
 
-  .class-list{ padding:0 12px 10px 12px; }
+  .class-list{
+    padding:0 10px 6px 10px;
+  }
 
   .c{
     display:grid;
-    grid-template-columns:74px 1fr auto; /* time | label | status */
+    grid-template-columns:70px 1fr auto; /* time | label | status */
     column-gap:10px;
     align-items:center;
     line-height:1.15;
-    padding:10px 0;
+    padding:9px 0;
     border-bottom:1px solid #eee;
-    padding-left: 6px;
-    padding-right: 6px;
-    border-radius: 6px;
   }
   .c:last-child{border-bottom:none;}
-
-  .t{font-weight:800; font-size:14px; white-space:nowrap;}
+  .t{font-weight:800; font-size:13px; white-space:nowrap;}
   .n{
-    font-size:14px;
+    font-size:13px;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
 
-  /* status */
+  /* status pill */
   .s{
     font-size:10px;
     font-weight:800;
@@ -239,32 +267,46 @@
     width:max-content;
   }
 
-  .muted{color:var(--muted); font-size:14px;}
-  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:14px; border:1px solid #b00020; border-radius:10px;}
+  .muted{color:var(--muted); font-size:13px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:13px; border:1px solid #b00020; border-radius:10px;}
+
+  /* Bottom ring nav */
+  .bottom-nav{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:30;
+    background:rgba(255, 255, 255, 0.0);
+    backdrop-filter: blur(6px);
+    border-top:1px solid var(--border);
+    padding:4px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+  }
+
+  /* Bottom nav pill overrides (dark bar) */
+  .bottom-nav .nav-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+  }
+  .bottom-nav .nav-btn.active{
+    border-color:#000;
+  }
 
   /* zebra striping (visible even over tinted group backgrounds) */
   .group .class-list > .c:nth-child(even){
     background: rgba(255,255,255,0.28);
   }
 
-  /* Bottom ring nav (full width, fixed) */
-  .bottom-nav{
-    position:fixed;
-    left:0; right:0; bottom:0;
-    z-index:40;
-    background:rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(6px);
-    border-top:1px solid var(--border);
-    padding:6px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+  /* keep the border looking clean */
+  .class-list .c{
+    padding-left: 6px;
+    padding-right: 6px;
+    border-radius: 6px;
   }
-  .bottom-nav .nav-btn{ border:1px solid var(--border); background:#fff; color:#111; }
-  .bottom-nav .nav-btn.active{ border-color:#000; }
 </style>
 </head>
-
 <body>
 
-<header class="topbar" id="topbar">
+<header class="topbar">
   <div class="topbar-row">
     <div class="topbar-text">
       <div class="title" id="title">Schedule</div>
@@ -274,6 +316,7 @@
   </div>
 </header>
 
+<!-- V4: Sticky filters -->
 <nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
   <div class="filter-row">
     <div class="nav-scroller" id="horseFilters"></div>
@@ -608,12 +651,6 @@
     document.documentElement.style.setProperty("--filterbar-h", Math.ceil(h) + "px");
   }
 
-  function syncTopbarHeight(){
-    const tb = document.getElementById("topbar");
-    const h = tb ? tb.getBoundingClientRect().height : 56;
-    document.documentElement.style.setProperty("--topbar-h", Math.ceil(h) + "px");
-  }
-
   function destroyActiveRingObserver(){
     if(activeIO){
       try { activeIO.disconnect(); } catch(e){}
@@ -626,7 +663,7 @@
 
     const buttons = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
     const sections = Array.from(document.querySelectorAll("section.ring"))
-      .filter(sec => sec.style.display !== "none");
+      .filter(sec => sec.style.display !== "none"); // ignore hidden rings
 
     const btnById = new Map();
     for(const b of buttons){
@@ -636,7 +673,6 @@
 
     const clearActive = ()=>buttons.forEach(b=>b.classList.remove("active"));
 
-    const topbarH = (document.getElementById("topbar")?.getBoundingClientRect().height || 56);
     const filterH = (document.getElementById("filterBar")?.getBoundingClientRect().height || 74);
     const bottomH = (document.getElementById("bottomNav")?.getBoundingClientRect().height || 64);
 
@@ -653,7 +689,7 @@
       if(btn) btn.classList.add("active");
     }, {
       root: null,
-      rootMargin: `-${(topbarH + filterH) + 10}px 0px -${bottomH + 10}px 0px`,
+      rootMargin: `-${filterH + 10}px 0px -${bottomH + 10}px 0px`,
       threshold: [0.2, 0.35, 0.5, 0.65]
     });
 
@@ -805,7 +841,6 @@
 
     updateFilterUI();
     applyFilters();
-
     syncFilterBarHeight();
   }
 
@@ -814,20 +849,16 @@
   -----------------------------*/
 
   function renderRows(rows){
-    syncTopbarHeight();
-
     if(!Array.isArray(rows) || rows.length === 0){
       document.getElementById("rings").innerHTML = `<div class="muted">No schedule rows.</div>`;
       destroyActiveRingObserver();
       document.getElementById("horseFilters").innerHTML = "";
       document.getElementById("statusFilters").innerHTML = "";
       syncFilterBarHeight();
-      syncBottomNavHeight();
       return;
     }
 
     setHeader(rows);
-    syncTopbarHeight(); // title/subtitle may change height
 
     const ringEls = buildRings(rows);
 
@@ -894,16 +925,12 @@
   }
 
   (async function main(){
-    syncTopbarHeight();
-    syncFilterBarHeight();
-    syncBottomNavHeight();
-
     await initialLoad();
 
+    // auto-refresh loop
     setInterval(pollForUpdates, POLL_MS);
 
     window.addEventListener("resize", ()=>{
-      syncTopbarHeight();
       syncBottomNavHeight();
       syncFilterBarHeight();
       setupActiveRingObserver();
