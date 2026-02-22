@@ -17,62 +17,41 @@
       --header-h: 52px;
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 90%);
       color: #f9fafb;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
     body {
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: stretch;
+      overflow: hidden;
     }
 
-    [hidden] {
-      display: none !important;
-    }
+    [hidden] { display: none !important; }
 
-    /* Mobile-only */
-    @media (min-width: 860px){
-      body{align-items:center; justify-content:center; padding:18px;}
-      .desktop-note{
-        max-width:520px;
-        width:100%;
-        border:1px solid var(--border-soft);
-        border-radius:24px;
-        padding:16px;
-        background: var(--bg);
-        color: rgba(229, 231, 235, 0.85);
-        text-align:center;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
-      }
-      .app{display:none;}
-    }
-    @media (max-width: 859px){
-      .desktop-note{display:none;}
-      .app{display:flex;}
-    }
-
+    /* APP: mobile-first full-viewport */
     .app {
-      width: 100%;
-      max-width: 480px;
-      height: 100vh;
-      max-height: 720px;
-      margin: 8px;
+      width: 100vw;              /* fill phone width */
+      max-width: 474px;          /* mobile design cap */
+      height: 100vh;             /* fallback */
+      height: 100dvh;            /* modern iOS/Chrome */
+      margin: 0;
       display: flex;
       flex-direction: column;
       background: var(--bg);
-      border-radius: 24px;
+      border-radius: 0;          /* full-screen on mobile */
       border: 1px solid rgba(15, 23, 42, 0.95);
       box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
       padding-top: env(safe-area-inset-top);
@@ -80,8 +59,19 @@
       overflow: hidden;
     }
 
-    /* Header (EXACT TackLists) ----------------------------------- */
+    /* Desktop/tablet framing */
+    @media (min-width: 640px){
+      body { align-items: center; padding: 18px; overflow: auto; }
+      .app{
+        width: 100%;
+        max-width: 600px;                 /* desktop cap */
+        height: calc(100dvh - 36px);      /* keep visible with body padding */
+        height: calc(100vh - 36px);
+        border-radius: 24px;
+      }
+    }
 
+    /* Header ------------------------------------------------------ */
     .app-header {
       height: var(--header-h);
       flex-shrink: 0;
@@ -145,17 +135,13 @@
       text-overflow: ellipsis;
     }
 
-    /* keep the title truly centered (buttons still occupy space) */
-    .is-invisible{
-      visibility: hidden;
-      pointer-events: none;
-    }
+    .is-invisible { visibility: hidden; pointer-events: none; }
 
-    /* Main (EXACT TackLists vibe) -------------------------------- */
-
+    /* Main -------------------------------------------------------- */
     .app-main {
       flex: 1;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 8px 12px 14px;
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
     }
@@ -175,8 +161,7 @@
       margin: 6px 6px 6px;
     }
 
-    /* Long pills (EXACT TackLists) -------------------------------- */
-
+    /* Rows -------------------------------------------------------- */
     .row {
       width: 100%;
       min-height: 46px;
@@ -240,180 +225,145 @@
         0 2px 8px rgba(15, 23, 42, 0.95);
     }
 
-    /* Small meta block */
-    .meta {
-      margin: 6px 4px 10px;
-      line-height: 1.25;
-      text-align: center;
-    }
-    .meta-title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-align: center;
-    }
-    .meta-sub {
-      margin-top: 4px;
-      font-size: 12px;
-      color: rgba(209, 213, 219, 0.9);
-    }
-    .meta-sub span {
-      font-variant-numeric: tabular-nums;
-      font-weight: 700;
-      color: #f9fafb;
-    }
+    /* Meta -------------------------------------------------------- */
+    .meta { margin: 6px 4px 10px; line-height: 1.25; text-align: center; }
+    .meta-title { font-size: 18px; font-weight: 600; letter-spacing: 0.04em; text-align: center; }
+    .meta-sub { margin-top: 4px; font-size: 12px; color: rgba(209, 213, 219, 0.9); }
+    .meta-sub span { font-variant-numeric: tabular-nums; font-weight: 700; color: #f9fafb; }
   </style>
 </head>
 
 <body>
-
-
   <div class="app">
-    <!-- Header -->
     <header class="app-header">
-      <!-- keep spacing but invisible -->
       <button class="header-back is-invisible" type="button"></button>
-
       <h1 class="header-title" id="header-title">Start</h1>
-
-      <!-- keep spacing but invisible -->
       <button class="header-action is-invisible" type="button"></button>
     </header>
 
-<!-- Main -->
-<main class="app-main">
-  <div class="meta">
-    <div class="meta-title">RingStatus.com</div>
-    <div class="meta-sub">
-      <div id="displayDate">— Time: <span id="nowTime">—</span></div>
-    </div>
+    <main class="app-main">
+      <div class="meta">
+        <div class="meta-title">RingStatus.com</div>
+        <div class="meta-sub">
+          <div id="displayDate">— Time: <span id="nowTime">—</span></div>
+        </div>
+      </div>
+
+      <div class="list-group-label"></div>
+
+      <div class="list-column">
+        <a class="row row--tap" id="btnMobile" href="#">
+          <div class="row-title">Schedule Full</div>
+          <div class="row-tag" id="tagMobile">—</div>
+        </a>
+
+        <a class="row row--tap" id="btnWatch" href="#">
+          <div class="row-title">Schedule Lite</div>
+          <div class="row-tag" id="tagWatch">—</div>
+        </a>
+
+        <a class="row row--tap row--active" id="btnPrinted" href="#">
+          <div class="row-title">Schedule Print</div>
+          <div class="row-tag" id="tagPrinted">—</div>
+        </a>
+
+        <a class="row row--tap" id="btnPro" href="https://blog.clearroundtravel.com/schedule/index.html">
+          <div class="row-title">Schedule Pro</div>
+          <div class="row-tag">Open</div>
+        </a>
+
+        <a class="row row--tap" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
+          <div class="row-title">TackReady.com</div>
+          <div class="row-tag">Open</div>
+        </a>
+      </div>
+    </main>
   </div>
 
-  <div class="list-group-label"></div>
+  <script>
+    /**
+     * schedules.html (in /schedule/data/)
+     *
+     * Latest files live here:
+     *   /schedule/data/latest/schedule.json  (v2 + v5)
+     *   /schedule/data/latest/team.json      (v3)
+     */
+    const TIMEZONE = "America/New_York";
 
-  <div class="list-column">
-   
+    const LATEST_SCHEDULE_URL = "https://blog.clearroundtravel.com/schedule/data/print/schedule.json";
+    const LATEST_TEAM_URL     = "https://blog.clearroundtravel.com/schedule/data/latest/team.json";
 
-    <a class="row row--tap" id="btnMobile" href="#">
-     
-      <div class="row-title">Schedule Full</div>
-      <div class="row-tag" id="tagMobile">—</div>
-    </a>
+    // viewers also live in /schedule/data/ so these should be RELATIVE:
+    const DATA_SCHEDULE_REL = "print/schedule.json";
+    const DATA_TEAM_REL     = "latest/team.json";
 
-    <a class="row row--tap" id="btnWatch" href="#">
-      <div class="row-title">Schedule Lite</div>
-      <div class="row-tag" id="tagWatch">—</div>
-    </a>
+    const fmtDateLong = (ms)=> new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE,
+      weekday:"long",
+      month:"short",
+      day:"numeric",
+      year:"numeric"
+    }).format(new Date(ms));
 
-   <a class="row row--tap row--active" id="btnPrinted" href="#">
-      <div class="row-title">Schedule Print</div>
-    
-      <div class="row-tag" id="tagPrinted">—</div>
-    </a>
-    <a class="row row--tap" id="btnPro" href="https://blog.clearroundtravel.com/schedule/index.html">
+    const fmtTime = (ms)=> new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE,
+      hour:"numeric",
+      minute:"2-digit"
+    }).format(new Date(ms));
 
-      <div class="row-title">Schedule Pro</div>
-      <div class="row-tag">Open</div>
-    </a>
-
-
-    <a class="row row--tap" id="btnTack" href="https://blog.clearroundtravel.com/lists/index.html">
-      <div class="row-title">TackReady.com</div>
-      <div class="row-tag">Open</div>
-    </a>
-  </div>
-</main>
-</div>
-
-
-<script>
-  /**
-   * schedules.html (in /schedule/data/)
-   *
-   * Latest files live here:
-   *   /schedule/data/latest/schedule.json  (v2 + v5)
-   *   /schedule/data/latest/team.json      (v3)
-   */
-
-  const TIMEZONE = "America/New_York";
-
-  const LATEST_SCHEDULE_URL = "https://blog.clearroundtravel.com/schedule/data/print/schedule.json";
-  const LATEST_TEAM_URL     = "https://blog.clearroundtravel.com/schedule/data/latest/team.json";
-
-  // viewers also live in /schedule/data/ so these should be RELATIVE:
-  const DATA_SCHEDULE_REL = "print/schedule.json";
-  const DATA_TEAM_REL     = "latest/team.json";
-
-  const fmtDateLong = (ms)=> new Intl.DateTimeFormat("en-US", {
-    timeZone: TIMEZONE,
-    weekday:"long",
-    month:"short",
-    day:"numeric",
-    year:"numeric"
-  }).format(new Date(ms));
-
-  const fmtTime = (ms)=> new Intl.DateTimeFormat("en-US", {
-    timeZone: TIMEZONE,
-    hour:"numeric",
-    minute:"2-digit"
-  }).format(new Date(ms));
-
-  function setText(id, text){
-    const el = document.getElementById(id);
-    if(el) el.textContent = text || "";
-  }
-
-  async function fetchLastModifiedMs(url){
-    try{
-      const res = await fetch(url, { cache:"no-store" });
-      if(!res.ok) return null;
-      const lastMod = res.headers.get("last-modified");
-      if(!lastMod) return null;
-      const ms = Date.parse(lastMod);
-      return Number.isFinite(ms) ? ms : null;
-    }catch(e){
-      return null;
+    function setText(id, text){
+      const el = document.getElementById(id);
+      if(el) el.textContent = text || "";
     }
-  }
 
-  function startClock(){
-    const tick = ()=>{
-      const now = Date.now();
-      setText("nowTime", fmtTime(now));
-      setText("displayDate", fmtDateLong(now));
-    };
-    tick();
-    setInterval(tick, 1000 * 15);
-  }
+    async function fetchLastModifiedMs(url){
+      try{
+        const res = await fetch(url, { cache:"no-store" });
+        if(!res.ok) return null;
+        const lastMod = res.headers.get("last-modified");
+        if(!lastMod) return null;
+        const ms = Date.parse(lastMod);
+        return Number.isFinite(ms) ? ms : null;
+      }catch(e){
+        return null;
+      }
+    }
 
-  function setLinks(){
-  
-    document.getElementById("btnMobile").href =
-      "https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v4.html?data=" + DATA_SCHEDULE_REL;
+    function startClock(){
+      const tick = ()=>{
+        const now = Date.now();
+        setText("nowTime", fmtTime(now));
+        setText("displayDate", fmtDateLong(now));
+      };
+      tick();
+      setInterval(tick, 1000 * 15);
+    }
 
-    document.getElementById("btnWatch").href =
-      "https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v4.html?data=" + DATA_TEAM_REL;
+    function setLinks(){
+      document.getElementById("btnMobile").href =
+        "https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v4.html?data=" + DATA_SCHEDULE_REL;
 
-    document.getElementById("btnPrinted").href =
-      "https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html?data=" + DATA_SCHEDULE_REL;
+      document.getElementById("btnWatch").href =
+        "https://blog.clearroundtravel.com/schedule/data/schedule_mobile_v4.html?data=" + DATA_TEAM_REL;
 
-  }
+      document.getElementById("btnPrinted").href =
+        "https://blog.clearroundtravel.com/schedule/data/schedule_onepage_v5.html?data=" + DATA_SCHEDULE_REL;
+    }
 
-  async function setPublishedTags(){
-    const schedMs = await fetchLastModifiedMs(LATEST_SCHEDULE_URL);
-    setText("tagPrinted", schedMs ? fmtTime(schedMs) : "—");
-    setText("tagMobile",  schedMs ? fmtTime(schedMs) : "—");
+    async function setPublishedTags(){
+      const schedMs = await fetchLastModifiedMs(LATEST_SCHEDULE_URL);
+      setText("tagPrinted", schedMs ? fmtTime(schedMs) : "—");
+      setText("tagMobile",  schedMs ? fmtTime(schedMs) : "—");
 
-    const teamMs = await fetchLastModifiedMs(LATEST_TEAM_URL);
-    setText("tagWatch", teamMs ? fmtTime(teamMs) : "—");
-  }
+      const teamMs = await fetchLastModifiedMs(LATEST_TEAM_URL);
+      setText("tagWatch", teamMs ? fmtTime(teamMs) : "—");
+    }
 
-  (async function main(){
-    startClock();
-    setLinks();
-    await setPublishedTags();
-  })();
-</script>
-
+    (async function main(){
+      startClock();
+      setLinks();
+      await setPublishedTags();
+    })();
+  </script>
 </body>
 </html>
