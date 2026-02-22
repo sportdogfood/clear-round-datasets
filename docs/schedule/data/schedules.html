@@ -28,44 +28,38 @@
       text-size-adjust:100%;
     }
 
-    /* NORMAL LANDING PAGE WRAPPER (no gates, no stretch-to-1200) */
+    /* SIMPLE LANDING PAGE WRAP */
     .page{
       min-height:100vh;
       min-height:100dvh;
-      padding: 12px;                 /* gutters so it never hits edges */
+      padding:12px;
       display:flex;
-      justify-content:center;         /* center the column */
+      justify-content:center;
       align-items:stretch;
     }
 
+    /* OUTER CARD (never wider than 600) */
     .app{
       width:100%;
-      max-width:600px;                /* desktop cap */
-      min-height: calc(100vh - 24px);
-      min-height: calc(100dvh - 24px);
+      max-width:600px;
+      min-height:calc(100vh - 24px);
+      min-height:calc(100dvh - 24px);
+      margin:0 auto;
+
       display:flex;
       flex-direction:column;
-      background: var(--bg);
-      border-radius: 24px;
-      border: 1px solid rgba(15, 23, 42, 0.95);
-      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
+
+      background:var(--bg);
+      border-radius:24px;
+      border:1px solid rgba(15, 23, 42, 0.95);
+      box-shadow:0 24px 70px rgba(0,0,0,0.95);
       overflow:hidden;
+
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* Mobile target band: keep the launcher from feeling “tablet wide” */
-    @media (max-width: 520px){
-      .page{ padding: 0; }
-      .app{
-        max-width: 474px;            /* requested mobile cap */
-        min-height: 100vh;
-        min-height: 100dvh;
-        border-radius: 0;            /* feels like a normal phone landing */
-      }
-    }
-
-    /* Header ------------------------------------------------------ */
+    /* HEADER */
     .app-header{
       height:var(--header-h);
       flex:0 0 auto;
@@ -77,8 +71,7 @@
       backdrop-filter: blur(10px);
     }
 
-    .header-back,
-    .header-action{
+    .header-back, .header-action{
       min-width:60px;
       height:34px;
       padding:0 16px;
@@ -109,8 +102,7 @@
       color:#f9fafb;
     }
 
-    .header-back:active,
-    .header-action:active{
+    .header-back:active, .header-action:active{
       transform: translateY(1px) scale(.97);
       box-shadow:
         0 0 0 1px rgba(15,23,42,1),
@@ -131,10 +123,10 @@
 
     .is-invisible{ visibility:hidden; pointer-events:none; }
 
-    /* Main -------------------------------------------------------- */
+    /* MAIN */
     .app-main{
       flex:1 1 auto;
-      overflow-y:auto;
+      overflow:auto;
       -webkit-overflow-scrolling:touch;
       padding: 8px 12px 14px;
       background: radial-gradient(circle at top, #111827 0, #020617 52%);
@@ -145,35 +137,41 @@
       line-height: 1.25;
       text-align: center;
     }
-
     .meta-title{
       font-size:18px;
       font-weight:600;
       letter-spacing:.04em;
     }
-
     .meta-sub{
       margin-top:4px;
       font-size:12px;
       color: rgba(209,213,219,.9);
     }
-
     .meta-sub span{
       font-variant-numeric: tabular-nums;
       font-weight:700;
       color:#f9fafb;
     }
 
+    /*
+      THIS IS THE FIX:
+      Always cap the button column to a sane launcher width,
+      so you never get “1200px wide buttons” on desktop.
+    */
     .list-column{
+      width:100%;
+      max-width:474px;       /* launcher column cap */
+      margin:0 auto;         /* center the column inside the card */
       display:flex;
       flex-direction:column;
       gap:8px;
       padding-bottom:12px;
     }
 
-    /* Rows -------------------------------------------------------- */
     .row{
       width:100%;
+      max-width:474px;       /* double-lock width (in case other CSS fights you) */
+      margin:0 auto;         /* keep centered */
       min-height:46px;
       padding:10px 16px;
       border-radius:var(--pill-radius);
@@ -233,6 +231,12 @@
       box-shadow:
         0 0 0 1px #020617,
         0 2px 8px rgba(15,23,42,.95);
+    }
+
+    /* Optional: remove outer padding on very small screens */
+    @media (max-width: 520px){
+      .page{ padding:0; }
+      .app{ border-radius:0; min-height:100vh; min-height:100dvh; }
     }
   </style>
 </head>
