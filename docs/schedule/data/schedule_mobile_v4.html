@@ -6,6 +6,7 @@
 <!--<script src="importScripts('https://cdn.pagesense.io/stage-script/sw_ps.js')></script>
 <script src="https://cdn.pagesense.io/js/sportdogfood141/cddc7cd656d44f509188052c2686ac15.js"></script> -->
 <title>CRT Schedule (Mobile v4)</title>
+
 <style>
   :root{
     --fg:#111;
@@ -18,15 +19,36 @@
     --bottom-nav-h: 64px;
 
     --bg:#fff;
+
+    /* width targets */
+    --app-max: 474px;          /* mobile max width target */
   }
+  @media (min-width: 600px){
+    :root{ --app-max: 600px; } /* desktop max width */
+  }
+
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth;}
+  html{scroll-behavior:smooth; height:100%;}
   body{
     margin:0;
+    min-height:100dvh;
+    height:100%;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     color:var(--fg);
     background:var(--bg);
+    font-size:16px;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Centered shell (mobile-first) */
+  .app-shell{
+    width: min(100vw, var(--app-max));
+    margin: 0 auto;
+    min-height: 100dvh;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   /* Sticky top header */
@@ -37,15 +59,15 @@
     background:rgba(255,255,255,.96);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
-    padding:10px 12px;
+    padding:12px 14px;
     min-height:var(--topbar-h);
     display:flex;
     flex-direction:column;
     justify-content:center;
     gap:2px;
   }
-  .title{font-weight:900; font-size:14px; line-height:1.1;}
-  .subtitle{color:var(--muted); font-size:12px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .title{font-weight:900; font-size:18px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:14px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
   /* Topbar home button */
   .topbar-row{
@@ -62,31 +84,32 @@
   }
   .home-pill{
     flex:0 0 auto;
-    height:34px;
-    padding:0 14px;
+    height:38px;
+    padding:0 16px;
     border-radius:999px;
     border:1px solid var(--border);
     background:#fff;
     color:#111;
-    font-size:12px;
+    font-size:13px;
     font-weight:900;
     text-decoration:none;
     display:inline-flex;
     align-items:center;
     justify-content:center;
     line-height:1;
+    white-space:nowrap;
   }
   .home-pill:active{
     transform: translateY(1px) scale(0.99);
   }
-    /* allow the inner scroller to actually overflow horizontally */
+
+  /* allow the inner scroller to actually overflow horizontally */
   .filter-row{
     overflow:hidden;
   }
-
   .filterbar .nav-scroller{
     flex:1 1 auto;
-    min-width:0;          /* THIS is the key */
+    min-width:0;          /* key for horizontal overflow */
   }
 
   /* V4: Sticky filterbar (covers topbar when scrolling) */
@@ -97,10 +120,10 @@
     background:rgba(255, 255, 255, 0);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
-    padding:6px 10px 6px 10px;
+    padding:8px 12px;
   }
 
-    /* filter pills styled exactly like bottom nav pills */
+  /* filter pills styled exactly like bottom nav pills */
   .filterbar .nav-btn{
     border:1px solid var(--border);
     background:#fff;
@@ -138,14 +161,15 @@
     border:1px solid var(--border);
     background:#fff;
     color:#111;
-    padding:6px 10px;
-    font-size:12px;
-    font-weight:600;
+    padding:8px 12px;
+    font-size:13px;
+    font-weight:800;
     border-radius:999px;
     text-decoration:none;
     white-space:nowrap;
     user-select:none;
     cursor:pointer;
+    min-height:36px;
   }
   .nav-btn.active{
     border-color:#000;
@@ -153,15 +177,15 @@
 
   /* Main list */
   main{
-    padding:4px 4px 4px 4px;
+    padding:8px;
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:12px;
   }
 
   .ring{
     border:1px solid #000;
-    border-radius:10px;
+    border-radius:12px;
     overflow:hidden;
     background:#fff;
     /* anchor offset for sticky topbar + filterbar */
@@ -170,9 +194,9 @@
   .ring-head{
     background:var(--ring);
     color:#fff;
-    padding:10px 10px;
-    font-weight:600;
-    font-size:14px;
+    padding:12px 12px;
+    font-weight:700;
+    font-size:16px;
     letter-spacing:.02em;
   }
 
@@ -198,16 +222,16 @@
 
   /* group_display above group_name */
   .gdisplay{
-    font-size:10px;
-    font-weight:700;
+    font-size:12px;
+    font-weight:800;
     text-transform: uppercase;
     white-space:nowrap;
     overflow:hidden;
     margin-bottom:-1px;
     text-overflow:ellipsis;
     text-align:right;
-    padding-right: 4px;
-    padding-top: 4px;
+    padding-right: 6px;
+    padding-top: 6px;
     position: relative; z-index: 10;
   }
   .gname{
@@ -215,31 +239,31 @@
   }
 
   .class-list{
-    padding:0 10px 6px 10px;
+    padding:0 12px 10px 12px;
   }
 
   .c{
     display:grid;
-    grid-template-columns:62px 1fr auto; /* time | label | status */
+    grid-template-columns:74px 1fr auto; /* time | label | status */
     column-gap:10px;
     align-items:center;
     line-height:1.15;
-    padding:8px 0;
+    padding:10px 0;
     border-bottom:1px solid #eee;
   }
   .c:last-child{border-bottom:none;}
-  .t{font-weight:700; font-size:12px; white-space:nowrap;}
+  .t{font-weight:800; font-size:14px; white-space:nowrap;}
   .n{
-    font-size:12px;
+    font-size:14px;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
 
-  /* status pill */
+  /* status */
   .s{
-    font-size:6px;
-    font-weight:600;
+    font-size:10px;
+    font-weight:800;
     text-transform: uppercase;
     white-space:nowrap;
     padding-right: 4px;
@@ -255,13 +279,17 @@
     width:max-content;
   }
 
-  .muted{color:var(--muted); font-size:12px;}
-  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; border:1px solid #b00020; border-radius:10px;}
+  .muted{color:var(--muted); font-size:14px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:14px; border:1px solid #b00020; border-radius:10px;}
 
   /* Bottom ring nav */
   .bottom-nav{
     position:fixed;
-    left:0; right:0; bottom:0;
+    left:50%;
+    right:auto;
+    bottom:0;
+    transform:translateX(-50%);
+    width: min(100vw, var(--app-max));
     z-index:30;
     background:rgba(255, 255, 255, 0.0);
     backdrop-filter: blur(6px);
@@ -279,48 +307,51 @@
     border-color:#000;
   }
 
-/* zebra striping (visible even over tinted group backgrounds) */
-.group .class-list > .c:nth-child(even){
-  background: rgba(255,255,255,0.28);
-}
+  /* zebra striping (visible even over tinted group backgrounds) */
+  .group .class-list > .c:nth-child(even){
+    background: rgba(255,255,255,0.28);
+  }
 
-
-/* keep the border looking clean */
-.class-list .c{
-  padding-left: 6px;
-  padding-right: 6px;
-  border-radius: 6px;
-}
-
+  /* keep the border looking clean */
+  .class-list .c{
+    padding-left: 6px;
+    padding-right: 6px;
+    border-radius: 6px;
+  }
 </style>
 </head>
+
 <body>
 
-<header class="topbar">
-  <div class="topbar-row">
-    <div class="topbar-text">
-      <div class="title" id="title">Schedule</div>
-      <div class="subtitle" id="subtitle"></div>
-    </div>
-    <a class="home-pill" href="https://ringstatus.com">Home</a>
-  </div>
-</header>
+  <div class="app-shell">
 
-<!-- V4: Sticky filters -->
-<nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
-  <div class="filter-row">
-    <div class="nav-scroller" id="horseFilters"></div>
-  </div>
-  <div class="filter-row">
-    <div class="nav-scroller" id="statusFilters"></div>
-  </div>
-</nav>
+    <header class="topbar">
+      <div class="topbar-row">
+        <div class="topbar-text">
+          <div class="title" id="title">Schedule</div>
+          <div class="subtitle" id="subtitle"></div>
+        </div>
+        <a class="home-pill" href="https://ringstatus.com">Home</a>
+      </div>
+    </header>
 
-<main id="rings"></main>
+    <!-- V4: Sticky filters -->
+    <nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
+      <div class="filter-row">
+        <div class="nav-scroller" id="horseFilters"></div>
+      </div>
+      <div class="filter-row">
+        <div class="nav-scroller" id="statusFilters"></div>
+      </div>
+    </nav>
 
-<nav class="bottom-nav" id="bottomNav">
-  <div class="nav-scroller" id="ringNav"></div>
-</nav>
+    <main id="rings"></main>
+
+    <nav class="bottom-nav" id="bottomNav">
+      <div class="nav-scroller" id="ringNav"></div>
+    </nav>
+
+  </div>
 
 <script>
   // Poll the JSON for changes
@@ -800,8 +831,6 @@
     horseWrap.innerHTML = "";
     statusWrap.innerHTML = "";
 
-  
-
     for(const h of horsesList){
       horseWrap.appendChild(makeFilterButton({
         text: prettyHorseLabel(h.label),
@@ -814,8 +843,6 @@
         }
       }));
     }
-
-
 
     for(const k of ["upcoming","underway","completed"]){
       statusWrap.appendChild(makeFilterButton({
