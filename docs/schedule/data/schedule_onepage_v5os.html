@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRT Schedule (One Page Print)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+    --ringPrint:#000;
+    --groupTeam:#d9d9d9;
+    --scale: 1;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:#fff;
+  }
+
+  /* Screen preview as a single Letter page */
+  .page{
+    width: 8.5in;
+    height: 11in;
+    padding: 0.25in;
+    margin: 12px auto;
+    background:#fff;
+    overflow:hidden;
+  }
+  @media print{
+    body{background:#fff;}
+    .page{
+      width:auto;
+      height:auto;
+      padding:0;
+      margin:0;
+      overflow:visible;
+    }
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+    padding:0 0 6px 0;
+    /*border-bottom:1px solid var(--border);*/
+   /* margin-bottom:6px; */
+  }
+  .title{font-weight:900; font-size:14px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:10px; margin-top:2px;}
+  .controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    padding:3px 10px;
+    font-size:12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+
+  /* scaled content wrapper (works for both preview + print) */
+  .wrap{
+    transform: scale(var(--scale));
+    transform-origin: top left;
+    width: calc(100% / var(--scale));
+  }
+  .wrap.use-zoom{
+    transform:none;
+    width:auto;
+  }
+
+  /* two explicit columns (no CSS multicol) */
+  .cols{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.12in;
+    align-items:start;
+  }
+  .col{display:flex; flex-direction:column; gap:2px; min-width:0;}
+
+  .ring{
+    border:1px solid #000;
+  }
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:4px 6px;
+    font-weight:900;
+    font-size:10px;
+    letter-spacing:.02em;
+  }
+
+  /*.group{border-top:1px solid var(--border);}*/
+  /*.group-head{padding:3px 6px;}*/
+  /*.group.has-team .group-head{background:var(--groupTeam);}*
+/* highlight groups that have a team (gdisplay present) */
+.group.has-team{
+   background: rgb(204 204 204 / 43%);
+
+}
+
+
+/* optional: separate the header area a bit */
+.group.has-team .group-head{
+  padding-bottom: 1px;
+      padding-top: 4px;
+}
+
+/* optional: ensure backgrounds print */
+@media print{
+  .group.has-team{
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+  /* group_display above group_name */
+  .gdisplay{
+    font-size:11px;
+    font-weight:600;
+    text-align:right;
+    text-transform: uppercase;
+    /*line-height:12px;*/
+    margin-bottom:-6px;
+    margin-right: 20px;
+    margin-left: 10px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .gname{
+    font-weight:900;
+    font-size:10px;
+    line-height:1.1;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:none; /* per spec: gname is hidden (display none) */
+  }
+
+  .solid{border-top:0px solid var(--line); margin:0;}
+  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
+
+  .c{
+    display:grid;
+    grid-template-columns:46px 1fr;
+    column-gap:6px;
+    line-height:1.05;
+    padding:2px 0;
+        padding-right: 100px;
+
+  }
+  .t{font-weight:600; font-size:9px; white-space:nowrap;}
+  .n{
+    font-size:9px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .muted{color:var(--muted);}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
+
+  /* Print rules */
+  @media print{
+    @page{ size: Letter; margin: 0.25in; }
+
+    .controls{display:none !important;}
+    .page{box-shadow:none;}
+
+    /* ensure colors print */
+    body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
+
+    .ring-head{background:var(--ringPrint);}
+
+    /* in print, try zoom first (Chromium), else transform */
+    .wrap.use-zoom{
+      zoom: var(--scale);
+    }
+    .wrap:not(.use-zoom){
+      transform: scale(var(--scale));
+      transform-origin: top left;
+      width: calc(100% / var(--scale));
+    }
+
+    /* ultra-tight fallback when scale is low */
+    body.tight .ring-head{padding:3px 5px; font-size:9px;}
+    body.tight .group-head{padding:2px 5px;}
+    body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
+    body.tight .gname{font-size:9px;}
+    body.tight .class-list{padding:2px 5px 3px 5px;}
+    body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
+    body.tight .t{font-size:8px;}
+    body.tight .n{font-size:8px;}
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <div class="title" id="title">Schedule</div>
+        <div class="subtitle" id="subtitle"></div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <div class="wrap" id="wrap">
+      <div class="cols" id="cols">
+        <div class="col" id="colL"></div>
+        <div class="col" id="colR"></div>
+      </div>
+    </div>
+  </div>
+<!-- 1) Load jsPDF (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+/**
+ * printScheduleLetterOnePage(data)
+ * - Generates a SINGLE-PAGE 8.5x11 (Letter) PDF in-browser
+ * - Auto-fits by shrinking font/row height, increasing columns (up to 4),
+ *   and (if needed) switching to compact mode to guarantee 1 page.
+ * - Opens the PDF; user prints THAT PDF (works consistently on iPhone + desktop).
+ */
+function printScheduleLetterOnePage(data){
+  const jspdfNS = window.jspdf;
+  if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
+  const { jsPDF } = jspdfNS;
+
+  const rowsRaw = Array.isArray(data) ? data.slice() : [];
+  if (!rowsRaw.length) throw new Error("No data");
+
+  // ---- helpers ----
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const norm = (v) => (v == null ? "" : String(v));
+  function parseTimeToMin(t){
+    // "7:45 AM"
+    t = norm(t).trim();
+    const m = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return 9999;
+    let hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const ap = m[3].toUpperCase();
+    if (ap === "PM" && hh !== 12) hh += 12;
+    if (ap === "AM" && hh === 12) hh = 0;
+    return hh * 60 + mm;
+  }
+  function ellipsize(doc, text, maxW){
+    text = norm(text);
+    if (maxW <= 0) return "";
+    if (doc.getTextWidth(text) <= maxW) return text;
+    const ell = "…";
+    let lo = 0, hi = text.length;
+    while (lo < hi){
+      const mid = Math.floor((lo + hi) / 2);
+      const t = text.slice(0, mid) + ell;
+      if (doc.getTextWidth(t) <= maxW) lo = mid + 1;
+      else hi = mid;
+    }
+    const cut = Math.max(0, lo - 1);
+    return text.slice(0, cut) + ell;
+  }
+
+  // Sort: ring_number, then start time
+  rowsRaw.sort((a,b) => {
+    const ra = Number(a.ring_number ?? 0) - Number(b.ring_number ?? 0);
+    if (ra) return ra;
+    return parseTimeToMin(a.start_display) - parseTimeToMin(b.start_display);
+  });
+
+  const title = norm(rowsRaw[0].show_days_report_title) || "Schedule";
+  const dateLine = norm(rowsRaw[0].show_days_display_date) || norm(rowsRaw[0].show_date);
+
+  // ---- PDF setup (Letter: 612x792 pt) ----
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter", compress: true });
+  const W = doc.internal.pageSize.getWidth();   // 612
+  const H = doc.internal.pageSize.getHeight();  // 792
+
+  const margin = 36;             // 0.5"
+  const gutter = 14;             // between columns
+  const headerH = 52;            // fixed header height
+  const topY = margin;
+  const bodyY = margin + headerH;
+  const bodyH = H - margin - bodyY;
+
+  // Build row strings (full + compact)
+  function buildRowObjects(mode){
+    // mode: "full" includes class_name, "compact" drops it
+    return rowsRaw.map(r => {
+      const time = norm(r.start_display) || norm(r.start_display2);
+      const ring = `R${norm(r.ring_number)} ${norm(r.ring_nickname)}`.trim();
+      const cls  = norm(r.class_number);
+      const name = norm(r.class_name);
+      const grp  = norm(r.group_display);
+
+      if (mode === "compact"){
+        // minimal line
+        return { left: time, mid: ring, right: cls };
+      }
+
+      // full line (single-line; name will ellipsize later)
+      const right = (cls ? (cls + " ") : "") + name + (grp ? ` — ${grp}` : "");
+      return { left: time, mid: ring, right };
+    });
+  }
+
+  // Fit plan: choose {mode, fontSize, rowH, cols} that guarantees 1 page
+  function makeFitPlan(){
+    const tries = [
+      { mode: "full",   startFont: 9.0, minFont: 3.5, maxCols: 4 },
+      { mode: "compact",startFont: 9.0, minFont: 3.5, maxCols: 4 }
+    ];
+
+    for (const t of tries){
+      const items = buildRowObjects(t.mode);
+
+      for (let cols = 1; cols <= t.maxCols; cols++){
+        let font = t.startFont;
+
+        while (font >= t.minFont){
+          const rowH = font + 3; // tight row
+          const maxRowsPerCol = Math.floor(bodyH / rowH);
+          const cap = maxRowsPerCol * cols;
+
+          if (items.length <= cap){
+            return { mode: t.mode, fontSize: font, rowH, cols, items };
+          }
+          font -= 0.5;
+        }
+      }
+    }
+
+    // Absolute fallback: force 4 cols, tiny font, compact
+    const mode = "compact";
+    const cols = 4;
+    const fontSize = 3.0;
+    const rowH = fontSize + 2.0;
+    const items = buildRowObjects(mode);
+    return { mode, cols, fontSize, rowH, items };
+  }
+
+  const plan = makeFitPlan();
+
+  // ---- draw header ----
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(title, margin, topY + 18);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  if (dateLine) doc.text(dateLine, margin, topY + 36);
+
+  // ---- column geometry ----
+  const usableW = W - margin * 2;
+  const colW = (usableW - gutter * (plan.cols - 1)) / plan.cols;
+
+  // Column sub-widths (tight)
+  // left: time, mid: ring, right: class/name
+  function colParts(doc, colW){
+    // proportions tuned for tightness; right gets most space
+    const wTime = clamp(colW * 0.22, 46, 78);
+    const wRing = clamp(colW * 0.22, 50, 90);
+    const wRight = Math.max(10, colW - wTime - wRing - 8);
+    return { wTime, wRing, wRight };
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(plan.fontSize);
+
+  const maxRowsPerCol = Math.floor(bodyH / plan.rowH);
+  const total = plan.items.length;
+
+  // slice into columns top-down
+  const perCol = Math.ceil(total / plan.cols);
+
+  for (let c = 0; c < plan.cols; c++){
+    const x0 = margin + c * (colW + gutter);
+    const y0 = bodyY;
+
+    const slice = plan.items.slice(c * perCol, (c + 1) * perCol).slice(0, maxRowsPerCol);
+    if (!slice.length) continue;
+
+    const parts = colParts(doc, colW);
+
+    let y = y0 + plan.rowH - 2;
+    for (const it of slice){
+      const left = ellipsize(doc, it.left, parts.wTime);
+      const mid  = ellipsize(doc, it.mid,  parts.wRing);
+      const right= ellipsize(doc, it.right, parts.wRight);
+
+      doc.text(left,  x0, y);
+      doc.text(mid,   x0 + parts.wTime + 4, y);
+      doc.text(right, x0 + parts.wTime + parts.wRing + 8, y);
+
+      y += plan.rowH;
+      if (y > bodyY + bodyH) break;
+    }
+  }
+
+  // ---- open PDF (single page) ----
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+}
+
+/* Example usage:
+   printScheduleLetterOnePage(window.scheduleData);  // scheduleData = your JSON array
+*/
+</script>
+</body>
+</html>
