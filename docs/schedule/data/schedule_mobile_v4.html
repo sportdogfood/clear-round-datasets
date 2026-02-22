@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <!--<script src="importScripts('https://cdn.pagesense.io/stage-script/sw_ps.js')></script>
 <script src="https://cdn.pagesense.io/js/sportdogfood141/cddc7cd656d44f509188052c2686ac15.js"></script> -->
-<title>CRT Schedule (Mobile v4)</title>
+<title>CRT Schedule (Landing v4.1)</title>
 
 <style>
   :root{
@@ -14,21 +14,22 @@
     --border:#d0d0d0;
     --ring:#0b5d47;
 
+    /* these are dynamically synced in JS */
     --topbar-h: 56px;
     --filterbar-h: 74px;
     --bottom-nav-h: 64px;
 
     --bg:#fff;
-
-    /* width targets */
-    --app-max: 474px;          /* mobile max width target */
-  }
-  @media (min-width: 600px){
-    :root{ --app-max: 600px; } /* desktop max width */
   }
 
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth; height:100%;}
+  html{
+    scroll-behavior:smooth;
+    height:100%;
+    font-size:16px;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
   body{
     margin:0;
     min-height:100dvh;
@@ -36,31 +37,18 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     color:var(--fg);
     background:var(--bg);
-    font-size:16px;
-    -webkit-text-size-adjust:100%;
-    text-size-adjust:100%;
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* Centered shell (mobile-first) */
-  .app-shell{
-    width: min(100vw, var(--app-max));
-    margin: 0 auto;
-    min-height: 100dvh;
-    padding-left: env(safe-area-inset-left, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
   }
 
   /* Sticky top header */
   .topbar{
     position:sticky;
     top:0;
-    z-index:20;
+    z-index:30;
     background:rgba(255,255,255,.96);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
     padding:12px 14px;
-    min-height:var(--topbar-h);
     display:flex;
     flex-direction:column;
     justify-content:center;
@@ -98,39 +86,26 @@
     justify-content:center;
     line-height:1;
     white-space:nowrap;
+    -webkit-tap-highlight-color: transparent;
   }
-  .home-pill:active{
-    transform: translateY(1px) scale(0.99);
-  }
+  .home-pill:active{ transform: translateY(1px) scale(0.99); }
 
-  /* allow the inner scroller to actually overflow horizontally */
-  .filter-row{
-    overflow:hidden;
-  }
-  .filterbar .nav-scroller{
-    flex:1 1 auto;
-    min-width:0;          /* key for horizontal overflow */
-  }
-
-  /* V4: Sticky filterbar (covers topbar when scrolling) */
+  /* V4: Sticky filterbar (NOW sticks under the topbar; no overlap / no tap stealing) */
   .filterbar{
     position:sticky;
-    top:0;
+    top: var(--topbar-h);
     z-index:25;
-    background:rgba(255, 255, 255, 0);
+    background:rgba(255,255,255,.92);
     backdrop-filter: blur(6px);
     border-bottom:1px solid var(--border);
     padding:8px 12px;
   }
 
-  /* filter pills styled exactly like bottom nav pills */
-  .filterbar .nav-btn{
-    border:1px solid var(--border);
-    background:#fff;
-    color:#111;
-  }
-  .filterbar .nav-btn.active{
-    border-color:#000;
+  /* allow the inner scroller to actually overflow horizontally */
+  .filter-row{ overflow:hidden; }
+  .filterbar .nav-scroller{
+    flex:1 1 auto;
+    min-width:0; /* key */
   }
 
   .filter-row{
@@ -139,9 +114,6 @@
     gap:8px;
     margin:4px 0;
   }
-
-  /* (labels removed in markup, keep rule safe) */
-  .filter-label{display:none;}
 
   /* Reuse nav scroller + pills */
   .nav-scroller{
@@ -170,14 +142,13 @@
     user-select:none;
     cursor:pointer;
     min-height:36px;
+    -webkit-tap-highlight-color: transparent;
   }
-  .nav-btn.active{
-    border-color:#000;
-  }
+  .nav-btn.active{ border-color:#000; }
 
   /* Main list */
   main{
-    padding:8px;
+    padding:10px 10px 12px 10px;
     display:flex;
     flex-direction:column;
     gap:12px;
@@ -188,7 +159,6 @@
     border-radius:12px;
     overflow:hidden;
     background:#fff;
-    /* anchor offset for sticky topbar + filterbar */
     scroll-margin-top: calc(var(--topbar-h) + var(--filterbar-h) + 10px);
   }
   .ring-head{
@@ -201,24 +171,14 @@
   }
 
   /* highlight groups that have a team (gdisplay present) */
-  .group.has-team{
-    background: rgba(255, 255, 255, 0.43);
-  }
+  .group.has-team{ background: rgba(255, 255, 255, 0.43); }
 
-  /* V4: shade by group status */
-  .group.has-team[data-status="upcoming"]{
-    background: rgba(144 151 205 / 15%);
-  }
-  .group.has-team[data-status="underway"]{
-    background: rgba(118, 219, 155, 0.12);
-  }
-  .group.has-team[data-status="completed"]{
-    background: rgba(228, 228, 228, 0.55);
-  }
+  /* shade by group status */
+  .group.has-team[data-status="upcoming"]{ background: rgba(144 151 205 / 15%); }
+  .group.has-team[data-status="underway"]{ background: rgba(118, 219, 155, 0.12); }
+  .group.has-team[data-status="completed"]{ background: rgba(228, 228, 228, 0.55); }
 
-  .group-head{
-    padding:0px 10px 0px 6px;
-  }
+  .group-head{ padding:0px 10px 0px 6px; }
 
   /* group_display above group_name */
   .gdisplay{
@@ -234,13 +194,9 @@
     padding-top: 6px;
     position: relative; z-index: 10;
   }
-  .gname{
-    display:none; /* per spec: gname is hidden */
-  }
+  .gname{ display:none; }
 
-  .class-list{
-    padding:0 12px 10px 12px;
-  }
+  .class-list{ padding:0 12px 10px 12px; }
 
   .c{
     display:grid;
@@ -250,8 +206,12 @@
     line-height:1.15;
     padding:10px 0;
     border-bottom:1px solid #eee;
+    padding-left: 6px;
+    padding-right: 6px;
+    border-radius: 6px;
   }
   .c:last-child{border-bottom:none;}
+
   .t{font-weight:800; font-size:14px; white-space:nowrap;}
   .n{
     font-size:14px;
@@ -282,107 +242,52 @@
   .muted{color:var(--muted); font-size:14px;}
   .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:14px; border:1px solid #b00020; border-radius:10px;}
 
-  /* Bottom ring nav */
-  .bottom-nav{
-    position:fixed;
-    left:50%;
-    right:auto;
-    bottom:0;
-    transform:translateX(-50%);
-    width: min(100vw, var(--app-max));
-    z-index:30;
-    background:rgba(255, 255, 255, 0.0);
-    backdrop-filter: blur(6px);
-    border-top:1px solid var(--border);
-    padding:4px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
-  }
-
-  /* Bottom nav pill overrides (dark bar) */
-  .bottom-nav .nav-btn{
-    border:1px solid var(--border);
-    background:#fff;
-    color:#111;
-  }
-  .bottom-nav .nav-btn.active{
-    border-color:#000;
-  }
-
   /* zebra striping (visible even over tinted group backgrounds) */
   .group .class-list > .c:nth-child(even){
     background: rgba(255,255,255,0.28);
   }
 
-  /* keep the border looking clean */
-  .class-list .c{
-    padding-left: 6px;
-    padding-right: 6px;
-    border-radius: 6px;
+  /* Bottom ring nav (full width, fixed) */
+  .bottom-nav{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:40;
+    background:rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    border-top:1px solid var(--border);
+    padding:6px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
   }
-
-  /* --- LANDING PAGE OVERRIDES: full width, full height, normal scroll --- */
-
-/* Full-bleed page (no app-width clamp) */
-.app-shell{
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  min-height: 100dvh;
-}
-
-/* Bottom nav should be full width, not centered/clamped */
-.bottom-nav{
-  left: 0;
-  right: 0;
-  transform: none;
-  width: auto;
-}
-
-/* Filterbar sticks below topbar (prevents overlap + “Home not triggering”) */
-.filterbar{
-  top: var(--topbar-h);
-}
-
-/* Make sure iOS doesn’t “tiny text” this */
-html{ font-size: 16px; }
-.gdisplay{ font-size: 12px; }
-.s{ font-size: 10px; }
-.t, .n{ font-size: 14px; }
-
-
+  .bottom-nav .nav-btn{ border:1px solid var(--border); background:#fff; color:#111; }
+  .bottom-nav .nav-btn.active{ border-color:#000; }
 </style>
 </head>
 
 <body>
 
-  <div class="app-shell">
-
-    <header class="topbar">
-      <div class="topbar-row">
-        <div class="topbar-text">
-          <div class="title" id="title">Schedule</div>
-          <div class="subtitle" id="subtitle"></div>
-        </div>
-        <a class="home-pill" href="https://ringstatus.com">Home</a>
-      </div>
-    </header>
-
-    <!-- V4: Sticky filters -->
-    <nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
-      <div class="filter-row">
-        <div class="nav-scroller" id="horseFilters"></div>
-      </div>
-      <div class="filter-row">
-        <div class="nav-scroller" id="statusFilters"></div>
-      </div>
-    </nav>
-
-    <main id="rings"></main>
-
-    <nav class="bottom-nav" id="bottomNav">
-      <div class="nav-scroller" id="ringNav"></div>
-    </nav>
-
+<header class="topbar" id="topbar">
+  <div class="topbar-row">
+    <div class="topbar-text">
+      <div class="title" id="title">Schedule</div>
+      <div class="subtitle" id="subtitle"></div>
+    </div>
+    <a class="home-pill" href="https://ringstatus.com">Home</a>
   </div>
+</header>
+
+<nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
+  <div class="filter-row">
+    <div class="nav-scroller" id="horseFilters"></div>
+  </div>
+  <div class="filter-row">
+    <div class="nav-scroller" id="statusFilters"></div>
+  </div>
+</nav>
+
+<main id="rings"></main>
+
+<nav class="bottom-nav" id="bottomNav">
+  <div class="nav-scroller" id="ringNav"></div>
+</nav>
 
 <script>
   // Poll the JSON for changes
@@ -703,6 +608,12 @@ html{ font-size: 16px; }
     document.documentElement.style.setProperty("--filterbar-h", Math.ceil(h) + "px");
   }
 
+  function syncTopbarHeight(){
+    const tb = document.getElementById("topbar");
+    const h = tb ? tb.getBoundingClientRect().height : 56;
+    document.documentElement.style.setProperty("--topbar-h", Math.ceil(h) + "px");
+  }
+
   function destroyActiveRingObserver(){
     if(activeIO){
       try { activeIO.disconnect(); } catch(e){}
@@ -715,7 +626,7 @@ html{ font-size: 16px; }
 
     const buttons = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
     const sections = Array.from(document.querySelectorAll("section.ring"))
-      .filter(sec => sec.style.display !== "none"); // ignore hidden rings
+      .filter(sec => sec.style.display !== "none");
 
     const btnById = new Map();
     for(const b of buttons){
@@ -725,6 +636,7 @@ html{ font-size: 16px; }
 
     const clearActive = ()=>buttons.forEach(b=>b.classList.remove("active"));
 
+    const topbarH = (document.getElementById("topbar")?.getBoundingClientRect().height || 56);
     const filterH = (document.getElementById("filterBar")?.getBoundingClientRect().height || 74);
     const bottomH = (document.getElementById("bottomNav")?.getBoundingClientRect().height || 64);
 
@@ -741,7 +653,7 @@ html{ font-size: 16px; }
       if(btn) btn.classList.add("active");
     }, {
       root: null,
-      rootMargin: `-${filterH + 10}px 0px -${bottomH + 10}px 0px`,
+      rootMargin: `-${(topbarH + filterH) + 10}px 0px -${bottomH + 10}px 0px`,
       threshold: [0.2, 0.35, 0.5, 0.65]
     });
 
@@ -893,6 +805,7 @@ html{ font-size: 16px; }
 
     updateFilterUI();
     applyFilters();
+
     syncFilterBarHeight();
   }
 
@@ -901,16 +814,20 @@ html{ font-size: 16px; }
   -----------------------------*/
 
   function renderRows(rows){
+    syncTopbarHeight();
+
     if(!Array.isArray(rows) || rows.length === 0){
       document.getElementById("rings").innerHTML = `<div class="muted">No schedule rows.</div>`;
       destroyActiveRingObserver();
       document.getElementById("horseFilters").innerHTML = "";
       document.getElementById("statusFilters").innerHTML = "";
       syncFilterBarHeight();
+      syncBottomNavHeight();
       return;
     }
 
     setHeader(rows);
+    syncTopbarHeight(); // title/subtitle may change height
 
     const ringEls = buildRings(rows);
 
@@ -977,12 +894,16 @@ html{ font-size: 16px; }
   }
 
   (async function main(){
+    syncTopbarHeight();
+    syncFilterBarHeight();
+    syncBottomNavHeight();
+
     await initialLoad();
 
-    // auto-refresh loop
     setInterval(pollForUpdates, POLL_MS);
 
     window.addEventListener("resize", ()=>{
+      syncTopbarHeight();
       syncBottomNavHeight();
       syncFilterBarHeight();
       setupActiveRingObserver();
