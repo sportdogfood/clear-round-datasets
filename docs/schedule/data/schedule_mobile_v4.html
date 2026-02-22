@@ -30,8 +30,8 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     color:var(--fg);
     background:var(--bg);
-    font-size:16px; /* iOS readability floor */
-    min-height:100dvh;
+    font-size:16px;                 /* readability floor on iPhone */
+    min-height:100dvh;              /* full height, normal scroll */
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
     -webkit-text-size-adjust:100%;
     text-size-adjust:100%;
@@ -47,14 +47,13 @@
     border-bottom:1px solid var(--border);
     padding:10px 12px;
     min-height:var(--topbar-h);
-    height:var(--topbar-h); /* lock height so filterbar can sit below reliably */
     display:flex;
     flex-direction:column;
     justify-content:center;
     gap:2px;
   }
-  .title{font-weight:900; font-size:16px; line-height:1.1;}
-  .subtitle{color:var(--muted); font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .title{font-weight:900; font-size:18px; line-height:1.1;}   /* was 14 */
+  .subtitle{color:var(--muted); font-size:14px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} /* was 12 */
 
   /* Topbar home button */
   .topbar-row{
@@ -71,13 +70,13 @@
   }
   .home-pill{
     flex:0 0 auto;
-    height:36px;
-    padding:0 14px;
+    height:40px;                /* was 34 */
+    padding:0 16px;
     border-radius:999px;
     border:1px solid var(--border);
     background:#fff;
     color:#111;
-    font-size:13px;
+    font-size:14px;             /* was 12 */
     font-weight:900;
     text-decoration:none;
     display:inline-flex;
@@ -91,19 +90,16 @@
   }
 
   /* allow the inner scroller to actually overflow horizontally */
-  .filter-row{
-    overflow:hidden;
-  }
-
+  .filter-row{ overflow:hidden; }
   .filterbar .nav-scroller{
     flex:1 1 auto;
-    min-width:0;          /* THIS is the key */
+    min-width:0;
   }
 
-  /* V4: Sticky filterbar (sits below topbar; no overlap / tap-stealing) */
+  /* Sticky filterbar: sit BELOW topbar (prevents overlap/tap issues) */
   .filterbar{
     position:sticky;
-    top: var(--topbar-h);
+    top: var(--topbar-h);       /* was top:0 */
     z-index:25;
     background:rgba(255, 255, 255, 0);
     backdrop-filter: blur(6px);
@@ -117,9 +113,7 @@
     background:#fff;
     color:#111;
   }
-  .filterbar .nav-btn.active{
-    border-color:#000;
-  }
+  .filterbar .nav-btn.active{ border-color:#000; }
 
   .filter-row{
     display:flex;
@@ -127,8 +121,6 @@
     gap:8px;
     margin:4px 0;
   }
-
-  /* (labels removed in markup, keep rule safe) */
   .filter-label{display:none;}
 
   /* Reuse nav scroller + pills */
@@ -149,19 +141,18 @@
     border:1px solid var(--border);
     background:#fff;
     color:#111;
-    padding:8px 12px;
-    font-size:13px;
+    padding:10px 14px;          /* was 6px 10px */
+    font-size:14px;             /* was 12px */
     font-weight:700;
     border-radius:999px;
     text-decoration:none;
     white-space:nowrap;
     user-select:none;
     cursor:pointer;
+    min-height:40px;            /* makes taps reliable */
     -webkit-tap-highlight-color: transparent;
   }
-  .nav-btn.active{
-    border-color:#000;
-  }
+  .nav-btn.active{ border-color:#000; }
 
   /* Main list */
   main{
@@ -176,7 +167,6 @@
     border-radius:10px;
     overflow:hidden;
     background:#fff;
-    /* anchor offset for sticky topbar + filterbar */
     scroll-margin-top: calc(var(--topbar-h) + var(--filterbar-h) + 10px);
   }
   .ring-head{
@@ -184,33 +174,20 @@
     color:#fff;
     padding:10px 10px;
     font-weight:600;
-    font-size:15px;
+    font-size:16px;            /* was 14 */
     letter-spacing:.02em;
   }
 
-  /* highlight groups that have a team (gdisplay present) */
-  .group.has-team{
-    background: rgba(255, 255, 255, 0.43);
-  }
+  .group.has-team{ background: rgba(255, 255, 255, 0.43); }
 
-  /* V4: shade by group status */
-  .group.has-team[data-status="upcoming"]{
-    background: rgba(144 151 205 / 15%);
-  }
-  .group.has-team[data-status="underway"]{
-    background: rgba(118, 219, 155, 0.12);
-  }
-  .group.has-team[data-status="completed"]{
-    background: rgba(228, 228, 228, 0.55);
-  }
+  .group.has-team[data-status="upcoming"]{ background: rgba(144 151 205 / 15%); }
+  .group.has-team[data-status="underway"]{ background: rgba(118, 219, 155, 0.12); }
+  .group.has-team[data-status="completed"]{ background: rgba(228, 228, 228, 0.55); }
 
-  .group-head{
-    padding:0px 10px 0px 6px;
-  }
+  .group-head{ padding:0px 10px 0px 6px; }
 
-  /* group_display above group_name */
   .gdisplay{
-    font-size:11px;
+    font-size:12px;            /* was 10 */
     font-weight:800;
     text-transform: uppercase;
     white-space:nowrap;
@@ -222,42 +199,36 @@
     padding-top: 4px;
     position: relative; z-index: 10;
   }
-  .gname{
-    display:none; /* per spec: gname is hidden */
-  }
+  .gname{ display:none; }
 
-  .class-list{
-    padding:0 10px 6px 10px;
-  }
+  .class-list{ padding:0 10px 6px 10px; }
 
   .c{
     display:grid;
-    grid-template-columns:70px 1fr auto; /* time | label | status */
+    grid-template-columns:74px 1fr auto; /* was 62px ... */
     column-gap:10px;
     align-items:center;
     line-height:1.15;
-    padding:9px 0;
+    padding:10px 0;            /* was 8px */
     border-bottom:1px solid #eee;
   }
   .c:last-child{border-bottom:none;}
-  .t{font-weight:800; font-size:13px; white-space:nowrap;}
+  .t{font-weight:800; font-size:14px; white-space:nowrap;}   /* was 12 */
   .n{
-    font-size:13px;
+    font-size:14px;            /* was 12 */
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
 
-  /* status pill */
   .s{
-    font-size:10px;
+    font-size:11px;            /* was 6 */
     font-weight:800;
     text-transform: uppercase;
     white-space:nowrap;
     padding-right: 4px;
   }
 
-  /* ONLY the time highlights when start_display2 is being used */
   .c.time2 .t{
     background: rgb(11 93 71 / 18%);
     padding:2px 6px;
@@ -267,8 +238,8 @@
     width:max-content;
   }
 
-  .muted{color:var(--muted); font-size:13px;}
-  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:13px; border:1px solid #b00020; border-radius:10px;}
+  .muted{color:var(--muted); font-size:14px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:14px; border:1px solid #b00020; border-radius:10px;}
 
   /* Bottom ring nav */
   .bottom-nav{
@@ -281,26 +252,26 @@
     padding:4px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
   }
 
-  /* Bottom nav pill overrides (dark bar) */
   .bottom-nav .nav-btn{
     border:1px solid var(--border);
     background:#fff;
     color:#111;
   }
-  .bottom-nav .nav-btn.active{
-    border-color:#000;
-  }
+  .bottom-nav .nav-btn.active{ border-color:#000; }
 
-  /* zebra striping (visible even over tinted group backgrounds) */
   .group .class-list > .c:nth-child(even){
     background: rgba(255,255,255,0.28);
   }
 
-  /* keep the border looking clean */
   .class-list .c{
     padding-left: 6px;
     padding-right: 6px;
     border-radius: 6px;
+  }
+
+  /* desktop: keep content readable without changing behavior */
+  @media (min-width: 900px){
+    main{ max-width:600px; margin:0 auto; }
   }
 </style>
 </head>
@@ -316,7 +287,6 @@
   </div>
 </header>
 
-<!-- V4: Sticky filters -->
 <nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
   <div class="filter-row">
     <div class="nav-scroller" id="horseFilters"></div>
@@ -696,10 +666,6 @@
     sections.forEach(sec=>activeIO.observe(sec));
   }
 
-  /* ----------------------------
-     FILTERS
-  -----------------------------*/
-
   function collectFilterCandidatesFromDOM(){
     const horseSet = new Set();
 
@@ -760,7 +726,6 @@
     const horseKey = String(activeHorse).toLowerCase();
     const statusKey = String(activeStatus).toLowerCase();
 
-    // 1) Hide/show groups
     for(const g of groups){
       let ok = true;
 
@@ -777,7 +742,6 @@
       g.style.display = ok ? "" : "none";
     }
 
-    // 2) Hide/show entire rings + bottom-nav buttons
     const ringSections = Array.from(document.querySelectorAll("section.ring"));
     const ringNavBtns = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
 
@@ -797,7 +761,6 @@
       if(btn) btn.style.display = anyVisible ? "" : "none";
     }
 
-    // 3) Rebuild active observer
     setupActiveRingObserver();
   }
 
@@ -843,10 +806,6 @@
     applyFilters();
     syncFilterBarHeight();
   }
-
-  /* ----------------------------
-     RENDER + REFRESH
-  -----------------------------*/
 
   function renderRows(rows){
     if(!Array.isArray(rows) || rows.length === 0){
@@ -927,7 +886,6 @@
   (async function main(){
     await initialLoad();
 
-    // auto-refresh loop
     setInterval(pollForUpdates, POLL_MS);
 
     window.addEventListener("resize", ()=>{
