@@ -318,6 +318,37 @@
     padding-right: 6px;
     border-radius: 6px;
   }
+
+  /* --- LANDING PAGE OVERRIDES: full width, full height, normal scroll --- */
+
+/* Full-bleed page (no app-width clamp) */
+.app-shell{
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-height: 100dvh;
+}
+
+/* Bottom nav should be full width, not centered/clamped */
+.bottom-nav{
+  left: 0;
+  right: 0;
+  transform: none;
+  width: auto;
+}
+
+/* Filterbar sticks below topbar (prevents overlap + “Home not triggering”) */
+.filterbar{
+  top: var(--topbar-h);
+}
+
+/* Make sure iOS doesn’t “tiny text” this */
+html{ font-size: 16px; }
+.gdisplay{ font-size: 12px; }
+.s{ font-size: 10px; }
+.t, .n{ font-size: 14px; }
+
+
 </style>
 </head>
 
