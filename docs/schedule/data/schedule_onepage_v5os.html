@@ -59,20 +59,40 @@
     .page{ margin: 0 auto; }
   }
 
-  /* Header aligns to the same 2-column grid as the body */
+  /* Top bar */
   .topbar{
     display:grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--col-gap);
     align-items:end;
-    padding:0 0 4px 0;
+    padding: 0 0 4px 0;
   }
-  .tb-left{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; min-width:0; }
-  .tb-right{ display:flex; align-items:flex-end; justify-content:flex-start; min-width:0; }
-  .title{ font-weight:900; font-size:13px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .subtitle{ color:var(--muted); font-size:10px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .controls{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .topL{min-width:0;}
+  .topLRow{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:8px;
+    min-width:0;
+  }
+  .topR{min-width:0;}
+  .title{font-weight:900; font-size:14px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .subtitle{color:var(--muted); font-size:10px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .controls{display:flex; align-items:center; gap:8px; flex-wrap:nowrap;}
   .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    padding:4px 10px;
+    font-size:12px;
+    border-radius:6px;
+    cursor:pointer;
+    text-decoration:none;
+    color:inherit;
+    display:inline-flex;
+    align-items:center;
+    line-height:1;
+  }
+.btn{
     border:1px solid var(--border);
     background:#fff;
     padding:4px 10px;
@@ -150,7 +170,7 @@
 
   /* Tight mode (reduces padding/fonts BEFORE scaling) */
   body.tight{
-    --page-pad: 0.08in;
+    --page-pad: 0.10in;
     --col-gap: 0.06in;
 
     --ring-head-pad-y: 3px;
@@ -179,14 +199,16 @@
 <body>
   <div class="page" id="page">
     <div class="topbar">
-      <div class="tb-left">
-        <div class="title" id="title">Schedule</div>
-        <div class="controls">
-          <button class="btn" id="btnPdf" type="button">PDF</button>
-          <a class="btn" id="btnHome" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
+      <div class="topL">
+        <div class="topLRow">
+          <div class="title" id="title">Schedule</div>
+          <div class="controls">
+            <button class="btn" id="btnPdf" type="button">PDF</button>
+            <a class="btn" id="btnHome" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
+          </div>
         </div>
       </div>
-      <div class="tb-right">
+      <div class="topR">
         <div class="subtitle" id="subtitle"></div>
       </div>
     </div>
@@ -301,23 +323,10 @@
     wrap.style.setProperty("--scale", "1");
 
     // Available area inside page (in px)
-    // IMPORTANT: subtract page padding, otherwise we over-estimate and clip rows at the bottom.
     const pageRect = page.getBoundingClientRect();
     const topRect = topbar.getBoundingClientRect();
-
-    const cs = getComputedStyle(page);
-    const padT = parseFloat(cs.paddingTop) || 0;
-    const padB = parseFloat(cs.paddingBottom) || 0;
-    const padL = parseFloat(cs.paddingLeft) || 0;
-    const padR = parseFloat(cs.paddingRight) || 0;
-    const innerH = pageRect.height - padT - padB;
-    const innerW = pageRect.width - padL - padR;
-
-    // Small safety buffer avoids fractional rounding clip in canvas -> PDF.
-    const safety = Math.ceil(pxPerInch() * 0.06);
-
-    const availH = innerH - (topRect.height + safety);
-    const availW = innerW - safety;
+    const availH = (pageRect.height - (topRect.height + 6));
+    const availW = pageRect.width;
 
     // Needed size (in px) at scale 1
     const needH0 = Math.max(colL.scrollHeight, colR.scrollHeight);
@@ -443,6 +452,9 @@
       const controls = document.querySelector(".controls");
       const oldDisplay = controls ? controls.style.display : "";
       if(controls) controls.style.display = "none";
+      // Re-fit after hiding controls to avoid bottom clipping in the capture.
+      try{ fitToOnePage(); }catch(_e){}
+      await new Promise(r => requestAnimationFrame(r));
 
       const canvas = await html2canvas(page, {
         scale: Math.min(2, window.devicePixelRatio || 2),
@@ -493,7 +505,10 @@
     // Fit to one letter page (maximize font first; scale only last)
     fitToOnePage();
     setTimeout(fitToOnePage, 50);
+    setTimeout(fitToOnePage, 250);
+    setTimeout(fitToOnePage, 600);
 
+    window.addEventListener("load", ()=>{ setTimeout(fitToOnePage, 60); });
     window.addEventListener("resize", ()=>{ fitToOnePage(); });
 
     document.getElementById("btnPdf").addEventListener("click", generateOnePagePdf);
