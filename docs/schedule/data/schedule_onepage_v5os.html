@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>CRT Schedule (One Page Print)</title>
+<title>CRT Schedule (One Page Print → PDF)</title>
 
 <style>
   :root{
@@ -13,11 +13,9 @@
     --border:#d0d0d0;
     --ring:#0b5d47;
     --ringPrint:#000;
-    --groupTeam:rgba(204,204,204,.43);
+    --groupTeam:#d9d9d9;
     --scale: 1;
-    --cols: 2;
   }
-
   *{box-sizing:border-box}
   body{
     margin:0;
@@ -35,7 +33,6 @@
     background:#fff;
     overflow:hidden;
   }
-
   @media print{
     body{background:#fff;}
     .page{
@@ -66,27 +63,24 @@
     cursor:pointer;
   }
 
-  /* scaled content wrapper */
+  /* scaled content wrapper (works for preview) */
   .wrap{
     transform: scale(var(--scale));
     transform-origin: top left;
     width: calc(100% / var(--scale));
   }
+  .wrap.use-zoom{ transform:none; width:auto; }
 
-  /* dynamic columns */
+  /* two explicit columns (no CSS multicol) */
   .cols{
     display:grid;
-    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 0.12in;
     align-items:start;
   }
   .col{display:flex; flex-direction:column; gap:2px; min-width:0;}
 
-  .ring{
-    border:1px solid #000;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+  .ring{ border:1px solid #000; }
   .ring-head{
     background:var(--ring);
     color:#fff;
@@ -96,15 +90,23 @@
     letter-spacing:.02em;
   }
 
-  /* highlight groups that have a team (group_display present) */
+  /* highlight groups that have a team (gdisplay present) */
   .group.has-team{
-    background: var(--groupTeam);
-    page-break-inside: avoid;
-    break-inside: avoid;
+    background: rgb(204 204 204 / 43%);
   }
-  .group-head{
-    padding:4px 6px 1px 6px;
+  .group.has-team .group-head{
+    padding-bottom: 1px;
+    padding-top: 4px;
   }
+
+  @media print{
+    .group.has-team{
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  .group-head{ padding:3px 6px; }
 
   /* group_display above group_name */
   .gdisplay{
@@ -130,10 +132,8 @@
     display:none;
   }
 
-  .class-list{
-    padding:3px 6px 4px 6px;
-    border-bottom: 1px solid #8e8c8c;
-  }
+  .solid{border-top:0px solid var(--line); margin:0;}
+  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
 
   .c{
     display:grid;
@@ -141,7 +141,7 @@
     column-gap:6px;
     line-height:1.05;
     padding:2px 0;
-    min-width:0;
+    padding-right: 100px;
   }
   .t{font-weight:600; font-size:9px; white-space:nowrap;}
   .n{
@@ -149,22 +149,28 @@
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
-    min-width:0;
   }
   .muted{color:var(--muted);}
-  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; border:1px solid #b00020;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
 
-  /* Print rules */
+  /* Print rules (HTML print fallback only) */
   @media print{
     @page{ size: Letter; margin: 0.25in; }
     .controls{display:none !important;}
     .page{box-shadow:none;}
     body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
     .ring-head{background:var(--ringPrint);}
+    .wrap.use-zoom{ zoom: var(--scale); }
+    .wrap:not(.use-zoom){
+      transform: scale(var(--scale));
+      transform-origin: top left;
+      width: calc(100% / var(--scale));
+    }
 
     body.tight .ring-head{padding:3px 5px; font-size:9px;}
     body.tight .group-head{padding:2px 5px;}
     body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
+    body.tight .gname{font-size:9px;}
     body.tight .class-list{padding:2px 5px 3px 5px;}
     body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
     body.tight .t{font-size:8px;}
@@ -174,40 +180,262 @@
 </head>
 
 <body>
-  <div class="page" id="page">
-    <div class="topbar" id="topbar">
+  <div class="page">
+    <div class="topbar">
       <div>
         <div class="title" id="title">Schedule</div>
         <div class="subtitle" id="subtitle"></div>
       </div>
       <div class="controls">
-        <button class="btn" id="btnPrint" type="button">Print</button>
+        <button class="btn" id="btnPdf" type="button">PDF (1 page)</button>
       </div>
     </div>
 
     <div class="wrap" id="wrap">
-      <div class="cols" id="cols"></div>
+      <div class="cols" id="cols">
+        <div class="col" id="colL"></div>
+        <div class="col" id="colR"></div>
+      </div>
     </div>
   </div>
 
+<!-- jsPDF (PDF generation) -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
 <script>
-/*
-  EXPECTED:
-    window.scheduleData = [ ...rows... ]
-  Row fields used (safe if missing):
-    show_days_report_title, show_days_display_date,
-    ring_number, ring_nickname,
-    group_display, group_name,
-    start_display, class_number, class_name
-*/
+  // URL rules:
+  //   page.html#200000044-20251231  -> tries 200000044-20251231.json (same folder)
+  //   page.html?data=somefile.json  -> uses that (relative/absolute)
+  //   else                          -> tries schedule.json then docs/schedule/data/print/schedule.json
 
-(function(){
-  const $ = (id) => document.getElementById(id);
+  const qs = new URLSearchParams(location.search);
+  const hashKey = (location.hash || "").replace(/^#/, "").trim();
 
-  function norm(v){ return v == null ? "" : String(v); }
+  function resolveDataUrls(){
+    const out = [];
+    const q = qs.get("data");
+    if (q) out.push(q);
+    if (/^\d+\-\d{8}$/.test(hashKey)) out.push(`${hashKey}.json`);
+    out.push("schedule.json");
+    out.push("docs/schedule/data/print/schedule.json");
+    return Array.from(new Set(out));
+  }
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  async function fetchJsonFirstOk(urls){
+    let lastErr = null;
+    for (const url of urls){
+      try{
+        const res = await fetch(url, {cache:"no-store"});
+        const txt = await res.text();
+        if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+        const json = JSON.parse(txt);
+        return { url, json };
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    const tried = urls.map(u=>`- ${u}`).join("\n");
+    throw new Error(`No data file loaded.\nTried:\n${tried}\n\nLast error:\n${String(lastErr && lastErr.stack ? lastErr.stack : lastErr)}`);
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function pxPerInch(){
+    const d = document.createElement("div");
+    d.style.width = "1in";
+    d.style.position = "absolute";
+    d.style.left = "-9999px";
+    d.style.top = "-9999px";
+    document.body.appendChild(d);
+    const ppi = d.offsetWidth || 96;
+    d.remove();
+    return ppi;
+  }
+
+  function placeRings(ringEls){
+    const L = document.getElementById("colL");
+    const R = document.getElementById("colR");
+    L.innerHTML = "";
+    R.innerHTML = "";
+
+    for(const el of ringEls) L.appendChild(el);
+
+    const heights = ringEls.map(el=> Math.ceil(el.getBoundingClientRect().height || 0));
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
+
+    let bestSplit = ringEls.length;
+    let bestDiff = Infinity;
+    let cum = 0;
+    for(let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
+    }
+
+    for(let i=bestSplit;i<ringEls.length;i++){
+      R.appendChild(ringEls[i]);
+    }
+  }
+
+  function fitToOnePage(){
+    const wrap = document.getElementById("wrap");
+    const topbar = document.querySelector(".topbar");
+    const colL = document.getElementById("colL");
+    const colR = document.getElementById("colR");
+    if(!wrap || !topbar || !colL || !colR) return;
+
+    wrap.style.setProperty("--scale", "1");
+    wrap.classList.remove("use-zoom");
+    wrap.style.zoom = "";
+    document.body.classList.remove("tight");
+
+    const ppi = pxPerInch();
+    const pageH = (11 - 0.5) * ppi; // 10.5in inside padding
+    const pageW = (8.5 - 0.5) * ppi; // 8.0in inside padding
+
+    const availH = pageH - topbar.offsetHeight - 6;
+    const availW = pageW;
+
+    const needH = Math.max(colL.scrollHeight, colR.scrollHeight);
+    const needW = wrap.scrollWidth || wrap.getBoundingClientRect().width;
+
+    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+
+    let scale = Math.min(1, scaleH, scaleW);
+    scale = Math.max(0.35, Math.min(1, scale));
+
+    if(scale < 0.60) document.body.classList.add("tight");
+
+    const canZoom = ("zoom" in wrap.style);
+    if(canZoom){
+      wrap.classList.add("use-zoom");
+      wrap.style.zoom = String(scale);
+    }
+    wrap.style.setProperty("--scale", String(scale));
+
+    if(document.body.classList.contains("tight")){
+      const needH2 = Math.max(colL.scrollHeight, colR.scrollHeight);
+      let scale2 = Math.min(1, (availH / (needH2 || 1)));
+      scale2 = Math.max(0.35, Math.min(1, scale2));
+      if(canZoom) wrap.style.zoom = String(scale2);
+      wrap.style.setProperty("--scale", String(scale2));
+    }
+  }
+
+  function buildRingElements(rows){
+    const first = rows[0] || {};
+    const showId = first.show_id ?? first.showId ?? "";
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+
+    document.getElementById("title").textContent = reportTitle;
+
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(showId !== "" && showId != null) subParts.push(`show_id ${showId}`);
+    if(showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringEls = [];
+
+    for(const ring of rings){
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          return { gid, seq, gname, gdisplay: gd, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
+
+      for(const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTime = null;
+        for(const c of classes){
+          const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          if(time) lastTime = time;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          cl += `<div class="c"><div class="t">${esc(showTime ? time : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        const gDiv = document.createElement("div");
+        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="solid"></div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+        sec.appendChild(gDiv);
+      }
+
+      ringEls.push(sec);
+    }
+
+    return ringEls;
+  }
+
+  // ---------------------------
+  // PDF (single page Letter)
+  // ---------------------------
 
   function parseTimeToMin(t){
-    t = norm(t).trim();
+    t = String(t || "").trim();
     const m = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
     if (!m) return 9999;
     let hh = parseInt(m[1], 10);
@@ -218,204 +446,274 @@
     return hh * 60 + mm;
   }
 
-  function byRing(rows){
-    const map = new Map();
-    for (const r of rows){
-      const rn = norm(r.ring_number);
-      const nick = norm(r.ring_nickname);
-      const key = rn + "||" + nick;
-      if (!map.has(key)) map.set(key, { ring_number: rn, ring_nickname: nick, rows: [] });
-      map.get(key).rows.push(r);
+  function pdfEllipsize(doc, text, maxW){
+    text = String(text ?? "");
+    if (maxW <= 0) return "";
+    if (doc.getTextWidth(text) <= maxW) return text;
+    const ell = "…";
+    let lo = 0, hi = text.length;
+    while (lo < hi){
+      const mid = Math.floor((lo + hi) / 2);
+      const t = text.slice(0, mid) + ell;
+      if (doc.getTextWidth(t) <= maxW) lo = mid + 1;
+      else hi = mid;
     }
-    return Array.from(map.values()).sort((a,b) => (Number(a.ring_number||0) - Number(b.ring_number||0)) || (a.ring_nickname||"").localeCompare(b.ring_nickname||""));
+    const cut = Math.max(0, lo - 1);
+    return text.slice(0, cut) + ell;
   }
 
-  function byGroup(rows){
-    const map = new Map();
-    for (const r of rows){
-      const gdisp = norm(r.group_display);
-      const gname = norm(r.group_name);
-      const key = gdisp + "||" + gname;
-      if (!map.has(key)) map.set(key, { group_display: gdisp, group_name: gname, rows: [] });
-      map.get(key).rows.push(r);
-    }
-    return Array.from(map.values());
-  }
-
-  function el(tag, cls, text){
-    const x = document.createElement(tag);
-    if (cls) x.className = cls;
-    if (text != null) x.textContent = text;
-    return x;
-  }
-
-  function buildRingBlock(ring){
-    // ring container
-    const ringEl = el("div", "ring");
-
-    const head = el("div", "ring-head", `R${norm(ring.ring_number)} ${norm(ring.ring_nickname)}`.trim());
-    ringEl.appendChild(head);
-
-    // groups
-    const groups = byGroup(ring.rows);
-    // stable ordering: group_display then first class time
-    groups.sort((a,b) => {
-      const ad = (a.group_display||"").localeCompare(b.group_display||"");
-      if (ad) return ad;
-      const at = Math.min(...a.rows.map(x => parseTimeToMin(x.start_display)));
-      const bt = Math.min(...b.rows.map(x => parseTimeToMin(x.start_display)));
-      return at - bt;
+  function buildPdfLines(rows){
+    // Sort by ring_number, group seq, class_number, start time
+    const rowsSorted = rows.slice().sort((a,b)=>{
+      const ra = (Number(a.ring_number ?? 0) - Number(b.ring_number ?? 0));
+      if (ra) return ra;
+      const ga = Number(a.class_group_sequence ?? 9999) - Number(b.class_group_sequence ?? 9999);
+      if (ga) return ga;
+      const ta = parseTimeToMin(a.start_display);
+      const tb = parseTimeToMin(b.start_display);
+      if (ta !== tb) return ta - tb;
+      const ca = Number(a.class_number ?? 999999) - Number(b.class_number ?? 999999);
+      if (ca) return ca;
+      return 0;
     });
 
-    for (const g of groups){
-      const hasTeam = !!norm(g.group_display).trim();
-      const gWrap = el("div", "group" + (hasTeam ? " has-team" : ""));
-
-      const gHead = el("div", "group-head");
-      if (hasTeam) gHead.appendChild(el("div", "gdisplay", g.group_display));
-      gHead.appendChild(el("div", "gname", g.group_name));
-      gWrap.appendChild(gHead);
-
-      const list = el("div", "class-list");
-
-      // classes sorted by time then class_number
-      g.rows.sort((a,b) => {
-        const ta = parseTimeToMin(a.start_display);
-        const tb = parseTimeToMin(b.start_display);
-        if (ta !== tb) return ta - tb;
-        const ca = Number(a.class_number || 0);
-        const cb = Number(b.class_number || 0);
-        return ca - cb;
-      });
-
-      for (const r of g.rows){
-        const time = norm(r.start_display);
-        const cn = norm(r.class_number);
-        const name = norm(r.class_name);
-        const line = el("div", "c");
-        line.appendChild(el("div", "t", time));
-        line.appendChild(el("div", "n", (cn ? (cn + " ") : "") + name));
-        list.appendChild(line);
-      }
-
-      gWrap.appendChild(list);
-      ringEl.appendChild(gWrap);
+    const rings = new Map();
+    for(const r of rowsSorted){
+      const key = String(r.ring_number ?? "9999");
+      if(!rings.has(key)) rings.set(key, []);
+      rings.get(key).push(r);
     }
 
-    return ringEl;
+    const ringKeys = Array.from(rings.keys()).sort((a,b)=>Number(a)-Number(b));
+    const lines = [];
+
+    for(const rk of ringKeys){
+      const items = rings.get(rk) || [];
+      const ringTitle = (items[0]?.ring_name ?? items[0]?.ring_nickname ?? items[0]?.ringName ?? items[0]?.ringNickname ?? `Ring ${rk}`).toString();
+      lines.push({ kind:"ring", text:ringTitle });
+
+      // groups
+      const gmap = new Map();
+      for(const r of items){
+        const gid = String(r.class_group_id ?? "");
+        if(!gmap.has(gid)) gmap.set(gid, []);
+        gmap.get(gid).push(r);
+      }
+      const groups = Array.from(gmap.entries()).map(([gid, arr])=>{
+        const seq = Number(arr[0]?.class_group_sequence ?? 9999);
+        const gdisp = normRollup(arr.map(x=>x.group_display).filter(Boolean).join(", "));
+        return { gid, seq, gdisp, arr };
+      }).sort((a,b)=>a.seq-b.seq);
+
+      for(const g of groups){
+        if (g.gdisp) lines.push({ kind:"group", text:g.gdisp, shaded:true });
+
+        let lastTime = null;
+        for(const r of g.arr){
+          const time = String(r.start_display ?? "").trim();
+          const showTime = time && time !== lastTime;
+          if (time) lastTime = time;
+
+          const num = r.class_number ?? "";
+          const name = r.class_name ?? r.className ?? r.name ?? "";
+          const label = (String(num).trim() && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          lines.push({
+            kind:"class",
+            time: showTime ? time : "",
+            text: label
+          });
+        }
+      }
+
+      lines.push({ kind:"spacer" });
+    }
+
+    return lines;
   }
 
-  function chooseColumnCount(rows){
-    // bump columns for huge schedules to reduce scaling
-    const n = rows.length;
-    if (n > 220) return 4;
-    if (n > 140) return 3;
-    return 2;
+  function openOnePageLetterPdf(rows){
+    const jspdfNS = window.jspdf;
+    if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
+    const { jsPDF } = jspdfNS;
+
+    const lines = buildPdfLines(rows);
+
+    const first = rows[0] || {};
+    const title = String(first.show_days_report_title ?? "Schedule");
+    const dateLine = String(first.show_days_display_date ?? first.show_date ?? "").trim();
+
+    const doc = new jsPDF({ orientation:"portrait", unit:"pt", format:"letter", compress:true });
+    const W = doc.internal.pageSize.getWidth();   // 612
+    const H = doc.internal.pageSize.getHeight();  // 792
+
+    const margin = 36;   // 0.5"
+    const gutter = 14;
+    const headerH = 52;
+    const topY = margin;
+    const bodyY = margin + headerH;
+    const bodyH = H - margin - bodyY;
+    const usableW = W - margin*2;
+
+    function makePlan(){
+      const tries = [
+        { fontStart: 9.0, fontMin: 5.0, colsMin: 2, colsMax: 4 },
+        { fontStart: 8.0, fontMin: 4.5, colsMin: 2, colsMax: 4 },
+        { fontStart: 7.0, fontMin: 4.0, colsMin: 2, colsMax: 4 }
+      ];
+
+      for (const t of tries){
+        for (let cols = t.colsMin; cols <= t.colsMax; cols++){
+          let font = t.fontStart;
+          while (font >= t.fontMin){
+            const rowH = font + 3;
+            const rowsPerCol = Math.floor(bodyH / rowH);
+            const cap = rowsPerCol * cols;
+            if (lines.length <= cap){
+              return { cols, fontSize: font, rowH, rowsPerCol, colW: (usableW - gutter*(cols-1))/cols };
+            }
+            font -= 0.5;
+          }
+        }
+      }
+
+      // absolute fallback
+      const cols = 4;
+      const fontSize = 3.5;
+      const rowH = fontSize + 2.5;
+      const rowsPerCol = Math.floor(bodyH / rowH);
+      return { cols, fontSize, rowH, rowsPerCol, colW: (usableW - gutter*(cols-1))/cols };
+    }
+
+    const plan = makePlan();
+
+    // header
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(14);
+    doc.text(title, margin, topY + 18);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+    if (dateLine) doc.text(dateLine, margin, topY + 36);
+
+    // draw lines flow into columns
+    let col = 0;
+    let y = bodyY;
+
+    function colX(c){
+      return margin + c * (plan.colW + gutter);
+    }
+
+    // widths inside column
+    const timeW = Math.max(46, Math.min(78, plan.colW * 0.24));
+    const textW = Math.max(10, plan.colW - timeW - 8);
+
+    doc.setFontSize(plan.fontSize);
+
+    for (let i=0;i<lines.length;i++){
+      if (col >= plan.cols) break;
+
+      const x0 = colX(col);
+
+      // advance column if needed
+      if (y + plan.rowH > bodyY + bodyH){
+        col++;
+        y = bodyY;
+        if (col >= plan.cols) break;
+      }
+
+      const ln = lines[i];
+
+      if (ln.kind === "spacer"){
+        y += plan.rowH * 0.6;
+        continue;
+      }
+
+      // backgrounds
+      if (ln.kind === "ring"){
+        doc.setFillColor(0,0,0);
+        doc.rect(x0, y, plan.colW, plan.rowH, "F");
+        doc.setTextColor(255,255,255);
+        doc.setFont("helvetica","bold");
+        doc.text(pdfEllipsize(doc, ln.text, plan.colW - 8), x0 + 4, y + (plan.rowH - 2));
+        doc.setTextColor(0,0,0);
+        doc.setFont("helvetica","normal");
+        y += plan.rowH;
+        continue;
+      }
+
+      if (ln.kind === "group"){
+        if (ln.shaded){
+          doc.setFillColor(230,230,230);
+          doc.rect(x0, y, plan.colW, plan.rowH, "F");
+        }
+        doc.setFont("helvetica","bold");
+        doc.text(pdfEllipsize(doc, ln.text, plan.colW - 8), x0 + 4, y + (plan.rowH - 2));
+        doc.setFont("helvetica","normal");
+        y += plan.rowH;
+        continue;
+      }
+
+      if (ln.kind === "class"){
+        const t = pdfEllipsize(doc, ln.time || "", timeW);
+        const tx = pdfEllipsize(doc, ln.text || "", textW);
+        doc.setFont("helvetica","normal");
+        doc.text(t,  x0 + 0, y + (plan.rowH - 2));
+        doc.text(tx, x0 + timeW + 8, y + (plan.rowH - 2));
+        y += plan.rowH;
+        continue;
+      }
+
+      // unknown: skip
+      y += plan.rowH;
+    }
+
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
   }
 
-  function renderSchedule(rows){
-    const colsEl = $("cols");
-    colsEl.innerHTML = "";
+  // ---------------------------
+  // Main
+  // ---------------------------
 
-    if (!Array.isArray(rows) || !rows.length){
-      colsEl.appendChild(el("div", "err", "No schedule data found.\nSet window.scheduleData = [...] before this script runs."));
+  let __rows = null;
+
+  (async function main(){
+    const urls = resolveDataUrls();
+    const loaded = await fetchJsonFirstOk(urls);
+    const rows = loaded.json;
+
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("colL").innerHTML = `<div class="muted">No schedule rows.</div>`;
       return;
     }
 
-    // header
-    const t = norm(rows[0].show_days_report_title) || "Schedule";
-    const d = norm(rows[0].show_days_display_date) || "";
-    $("title").textContent = t;
-    $("subtitle").textContent = d;
+    __rows = rows;
 
-    // columns
-    const colCount = chooseColumnCount(rows);
-    document.documentElement.style.setProperty("--cols", String(colCount));
+    const ringEls = buildRingElements(rows);
+    placeRings(ringEls);
 
-    const colEls = [];
-    for (let i=0;i<colCount;i++){
-      const c = el("div", "col");
-      colsEl.appendChild(c);
-      colEls.push(c);
-    }
+    fitToOnePage();
+    setTimeout(fitToOnePage, 50);
 
-    // build ring blocks and greedy-balance by weight
-    const rings = byRing(rows);
-    const weights = new Array(colCount).fill(0);
+    window.addEventListener("beforeprint", fitToOnePage);
+    window.addEventListener("resize", ()=>{ fitToOnePage(); });
 
-    for (const ring of rings){
-      const block = buildRingBlock(ring);
-      const w = 2 + ring.rows.length; // simple weight
-      let best = 0;
-      for (let i=1;i<colCount;i++){
-        if (weights[i] < weights[best]) best = i;
-      }
-      colEls[best].appendChild(block);
-      weights[best] += w;
-    }
-
-    // fit to one page
-    requestAnimationFrame(() => {
-      autoFitToLetter();
-      requestAnimationFrame(autoFitToLetter);
-    });
-  }
-
-  function autoFitToLetter(){
-    const page = $("page");
-    const topbar = $("topbar");
-    const cols = $("cols");
-
-    // reset
-    document.documentElement.style.setProperty("--scale", "1");
-    document.body.classList.remove("tight");
-
-    const availH = page.clientHeight - topbar.offsetHeight - 2;
-    const availW = page.clientWidth;
-
-    // measure unscaled content
-    const contentH = cols.scrollHeight;
-    const contentW = cols.scrollWidth;
-
-    const sH = contentH ? (availH / contentH) : 1;
-    const sW = contentW ? (availW / contentW) : 1;
-
-    const scale = Math.max(0.35, Math.min(1, sH, sW));
-    document.documentElement.style.setProperty("--scale", String(scale));
-
-    if (scale < 0.86) document.body.classList.add("tight");
-  }
-
-  function beforePrint(){
-    autoFitToLetter();
-    // one more pass to settle layout before print dialog
-    autoFitToLetter();
-  }
-
-  $("btnPrint").addEventListener("click", () => {
-    beforePrint();
-    window.print();
+    document.getElementById("btnPdf").disabled = false;
+  })().catch(err=>{
+    document.getElementById("colL").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
   });
 
-  window.addEventListener("resize", () => autoFitToLetter());
-  window.addEventListener("beforeprint", () => beforePrint());
-
-  // expose helper for late injection
-  window.setScheduleData = function(rows){
-    window.scheduleData = rows;
-    renderSchedule(rows);
-  };
-
-  // initial render from whatever global exists
-  const rows =
-    window.scheduleData ||
-    window.SCHEDULE_DATA ||
-    window.schedule_rows ||
-    window.rows ||
-    [];
-
-  renderSchedule(rows);
-})();
+  document.getElementById("btnPdf").addEventListener("click", ()=>{
+    if(!__rows || !__rows.length) return;
+    try{
+      openOnePageLetterPdf(__rows);
+    }catch(e){
+      document.getElementById("colL").innerHTML = `<div class="err">${esc(String(e && e.stack ? e.stack : e))}</div>`;
+    }
+  });
 </script>
 </body>
 </html>
