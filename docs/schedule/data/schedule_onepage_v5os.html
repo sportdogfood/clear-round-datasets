@@ -2,41 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>CRT Schedule (One Page PDF)</title>
-
 <style>
   :root{
     --fg:#111;
     --muted:#666;
+    --line:#111;
     --border:#d0d0d0;
-
-    /* maximize printable area */
-    --page-pad: 0.10in;      /* inside the letter page */
-    --col-gap: 0.08in;       /* gap between the 2 columns */
-
-    /* sizing (base) */
-    --ring-head-pad-y: 4px;
-    --ring-head-pad-x: 6px;
-    --ring-head-font: 10px;
-
-    --gdisplay-font: 11px;
-    --time-font: 9px;
-    --name-font: 9px;
-    --row-pad-y: 2px;
-    --row-gap: 6px;
-    --time-col: 46px;
-
-    /* colors */
     --ring:#0b5d47;
-    --ringPrint:#000;
-    --teamHi: rgba(204,204,204,.43);
-
-    /* scale (only used if content still cannot fit) */
+    --groupTeam:#d9d9d9;
     --scale: 1;
   }
-
-  *{ box-sizing:border-box; }
+  *{box-sizing:border-box}
   body{
     margin:0;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -44,165 +22,165 @@
     background:#fff;
   }
 
-  /* Letter preview */
+  /* Screen preview as a single Letter page */
   .page{
     width: 8.5in;
     height: 11in;
-    padding: var(--page-pad);
-    margin: 10px auto;
+    padding: 0.15in;
+    margin: 12px auto;
     background:#fff;
     overflow:hidden;
   }
 
-  /* keep a consistent preview on screen */
-  @media (max-width: 920px){
-    .page{ margin: 0 auto; }
-  }
-
-  /* Top bar */
-  .topbar{
+  /* Header aligned to columns */
+  .hdr{
     display:grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--col-gap);
+    gap: 0.12in;
     align-items:end;
-    padding:0 0 6px 0;
+    padding:0 0 4px 0;
   }
-  .topbar-left{min-width:0;}
-  .topbar-right{min-width:0;}
-  .title-row{display:flex; align-items:flex-end; justify-content:space-between; gap:10px;}
-  .title-row .title{min-width:0;}
-  .title-row .controls{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+  .hdrL{min-width:0;}
+  .hdrR{min-width:0;}
 
-  .title{ font-weight:900; font-size:13px; line-height:1.1; }
-  .subtitle{ color:var(--muted); font-size:10px; margin-top:0; }
-  .controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .titleRow{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .title{font-weight:900; font-size:13px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .subtitle{color:var(--muted); font-size:9px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .controls{display:flex; align-items:center; gap:6px; flex-wrap:nowrap;}
   .btn{
     border:1px solid var(--border);
     background:#fff;
-    padding:4px 10px;
+    padding:3px 8px;
     font-size:12px;
     border-radius:6px;
     cursor:pointer;
     text-decoration:none;
     color:inherit;
+    line-height:1;
     display:inline-flex;
     align-items:center;
-    gap:6px;
+    justify-content:center;
   }
-  .btn[disabled]{ opacity:.6; cursor:default; }
 
-  /* Scaled content wrapper (only scales DOWN if absolutely necessary) */
+  /* scaled content wrapper (screen preview only) */
   .wrap{
     transform: scale(var(--scale));
     transform-origin: top left;
     width: calc(100% / var(--scale));
   }
 
-  /* 2 explicit columns */
+  /* two explicit columns (no CSS multicol) */
   .cols{
     display:grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--col-gap);
+    gap: 0.12in;
     align-items:start;
   }
-  .col{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .col{display:flex; flex-direction:column; gap:2px; min-width:0;}
 
-  /* Ring container (never split; it moves as a whole to either column) */
-  .ring{ border:1px solid #000; }
+  .ring{
+    border:1px solid #000;
+  }
   .ring-head{
     background:var(--ring);
     color:#fff;
-    padding: var(--ring-head-pad-y) var(--ring-head-pad-x);
+    padding:4px 6px;
     font-weight:900;
-    font-size:var(--ring-head-font);
+    font-size:10px;
     letter-spacing:.02em;
   }
 
-  /* group highlight when group_display is present */
-  .group.has-team{ background: var(--teamHi); }
-  .group-head{ padding: 2px 6px 1px 6px; }
+  /* highlight groups that have a team (gdisplay present) */
+  .group.has-team{ background: rgb(204 204 204 / 43%); }
+  .group.has-team .group-head{ padding-bottom:1px; padding-top:4px; }
 
+  /* group_display above group_name */
   .gdisplay{
-    font-size:var(--gdisplay-font);
+    font-size:11px;
     font-weight:600;
     text-align:right;
     text-transform: uppercase;
-    margin: 0 6px 0 6px;
+    margin-bottom:-6px;
+    margin-right: 20px;
+    margin-left: 10px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
   }
-  .gname{ display:none; }
-
-  .class-list{
-    padding: 3px 6px 4px 6px;
-    border-bottom: 1px solid #8e8c8c;
+  .gname{
+    font-weight:900;
+    font-size:10px;
+    line-height:1.1;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:none;
   }
+
+  .solid{border-top:0px solid var(--line); margin:0;}
+  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
 
   .c{
     display:grid;
-    grid-template-columns: var(--time-col) 1fr;
-    column-gap: var(--row-gap);
+    grid-template-columns:46px 1fr;
+    column-gap:6px;
     line-height:1.05;
-    padding: var(--row-pad-y) 0;
+    padding:2px 0;
   }
-  .t{ font-weight:600; font-size:var(--time-font); white-space:nowrap; }
+  .t{font-weight:600; font-size:9px; white-space:nowrap;}
   .n{
-    font-size:var(--name-font);
+    font-size:9px;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
+  .muted{color:var(--muted);}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
 
-  .muted{ color:var(--muted); }
-  .err{ white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px; }
-
-  /* Tight mode (reduces padding/fonts BEFORE scaling) */
-  body.tight{
-    --page-pad: 0.10in;
-    --col-gap: 0.06in;
-
-    --ring-head-pad-y: 3px;
-    --ring-head-pad-x: 5px;
-    --ring-head-font: 9px;
-
-    --gdisplay-font: 9px;
-    --time-font: 8px;
-    --name-font: 8px;
-    --row-pad-y: 1px;
-    --row-gap: 5px;
-    --time-col: 42px;
-  }
-
-  /* Print (mostly irrelevant because we generate a PDF, but keep sane defaults) */
+  /* Print rules (only for screen print fallback) */
   @media print{
-    @page{ size: Letter; margin: 0in; }
-    .controls{ display:none !important; }
-    body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
-    .page{ margin:0; padding:0; width:auto; height:auto; overflow:visible; }
-    .ring-head{ background:var(--ringPrint); }
+    @page{ size: Letter; margin: 0.15in; }
+    body{background:#fff; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    .controls{display:none !important;}
+    .page{width:auto; height:auto; padding:0; margin:0; overflow:visible;}
+    .ring-head{background:#000;}
+    .group.has-team{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
+
+  /* ultra-tight fallback when scale is low */
+  body.tight .ring-head{padding:3px 5px; font-size:9px;}
+  body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
+  body.tight .class-list{padding:2px 5px 3px 5px;}
+  body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
+  body.tight .t{font-size:8px;}
+  body.tight .n{font-size:8px;}
 </style>
 </head>
-
 <body>
-  <div class="page" id="page">
-    <div class="topbar">
-      <div class="topbar-left">
-        <div class="title-row">
+  <div class="page">
+    <div class="hdr">
+      <div class="hdrL">
+        <div class="titleRow">
           <div class="title" id="title">Schedule</div>
           <div class="controls">
             <button class="btn" id="btnPdf" type="button">PDF</button>
-            <a class="btn" id="btnHome" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
+            <a class="btn" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
           </div>
         </div>
       </div>
-      <div class="topbar-right">
+      <div class="hdrR">
         <div class="subtitle" id="subtitle"></div>
       </div>
     </div>
 
-    <div class="wrap" id="wrap"> id="wrap">
+    <div class="wrap" id="wrap">
       <div class="cols" id="cols">
         <div class="col" id="colL"></div>
         <div class="col" id="colR"></div>
@@ -210,14 +188,13 @@
     </div>
   </div>
 
-<!-- libs (PDF is generated in-browser, consistent for iPhone + desktop) -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- jsPDF (UMD) for iOS-safe one-page Letter PDF generation -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-  // Usage:
-  // schedule_onepage_v6.html#200000044-20251231  -> fetches 200000044-20251231.json (same folder)
-  // Optional: ?data=somefile.json overrides hash.
+  // Data URL resolution:
+  // - ?data=print/schedule.json
+  // - #200000044-20251231  => 200000044-20251231.json
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
 
@@ -264,104 +241,86 @@
     return m;
   }
 
-  function placeRingsBalanced(ringEls){
+  function placeRings(ringEls){
     const L = document.getElementById("colL");
     const R = document.getElementById("colR");
     L.innerHTML = "";
     R.innerHTML = "";
 
-    // Append all to LEFT so we can measure.
+    // Append all rings to LEFT to measure heights, then split (keeps order; never splits a ring).
     for(const el of ringEls) L.appendChild(el);
 
-    // Measure ring heights
     const heights = ringEls.map(el=> Math.ceil(el.getBoundingClientRect().height || 0));
     const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
 
-    // Find split index that MINIMIZES the max column height (keeps ring order)
-    let bestSplit = ringEls.length;
-    let bestMax = Infinity;
-    let prefix = 0;
-
-    for(let i=0;i<=heights.length;i++){
-      const leftH = prefix;
-      const rightH = total - prefix;
-      const m = Math.max(leftH, rightH);
-      if(m < bestMax){
-        bestMax = m;
-        bestSplit = i;
-      }
-      if(i < heights.length) prefix += heights[i];
+    let bestSplit = ringEls.length; // number of rings in LEFT
+    let bestDiff = Infinity;
+    let cum = 0;
+    for(let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
     }
 
-    // Move the remainder (keeps overall order: left column then right column).
     for(let i=bestSplit;i<ringEls.length;i++){
       R.appendChild(ringEls[i]);
     }
   }
 
   function fitToOnePage(){
-    const page = document.getElementById("page");
+    const page = document.querySelector('.page');
     const wrap = document.getElementById("wrap");
-    const topbar = document.querySelector(".topbar");
+    const hdr = document.querySelector('.hdr');
+    const cols = document.getElementById('cols');
     const colL = document.getElementById("colL");
     const colR = document.getElementById("colR");
-    if(!page || !wrap || !topbar || !colL || !colR) return;
+    if(!page || !wrap || !hdr || !cols || !colL || !colR) return;
 
-    // Reset first
-    document.body.classList.remove("tight");
+    // reset scale
     wrap.style.setProperty("--scale", "1");
+    document.body.classList.remove("tight");
 
-    // Available area inside page (in px)
-    const pageRect = page.getBoundingClientRect();
-    const topRect = topbar.getBoundingClientRect();
-    const availH = (pageRect.height - (topRect.height + 6));
-    const availW = pageRect.width;
+    // Force reflow so measurements are unscaled
+    void wrap.getBoundingClientRect();
 
-    // Needed size (in px) at scale 1
-    const needH0 = Math.max(colL.scrollHeight, colR.scrollHeight);
-    const needW0 = wrap.scrollWidth || wrap.getBoundingClientRect().width;
+    const innerW = page.clientWidth;
+    const innerH = page.clientHeight;
+    const availH = innerH - hdr.offsetHeight - 2;
+    const availW = innerW;
 
-    // If it fits, keep base sizing
-    if(needH0 <= availH && needW0 <= availW){
-      return;
-    }
+    const needH = Math.max(colL.scrollHeight, colR.scrollHeight);
+    const needW = cols.scrollWidth || cols.getBoundingClientRect().width;
 
-    // Tight mode first (bigger fonts than scaling-down-everything)
-    document.body.classList.add("tight");
+    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
 
-    const needH1 = Math.max(colL.scrollHeight, colR.scrollHeight);
-    const needW1 = wrap.scrollWidth || wrap.getBoundingClientRect().width;
-    if(needH1 <= availH && needW1 <= availW){
-      return;
-    }
+    // Safety factor avoids bottom clipping by a row on some browsers
+    let scale = Math.min(1, scaleH, scaleW) * 0.975;
+    scale = Math.max(0.35, Math.min(1, scale));
 
-    // Scale only as a last resort to guarantee 1 page
-    let sH = availH / (needH1 || 1);
-    let sW = availW / (needW1 || 1);
-    let s = Math.min(1, sH, sW);
+    if(scale < 0.62) document.body.classList.add("tight");
 
-    // hard clamp so it never becomes unreadable, but still guarantees 1 page
-    s = Math.max(0.55, Math.min(1, s));
-    wrap.style.setProperty("--scale", String(s));
+    wrap.style.setProperty("--scale", String(scale));
   }
 
   function buildRingElements(rows){
     const first = rows[0] || {};
     const showId = first.show_id ?? first.showId ?? "";
 
-    // Header from show_days_* fields
+    // Header must come from show_days_* fields when present
     const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
     const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
     const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
 
-    document.getElementById("title").textContent = reportTitle;
+    document.getElementById("title").textContent = String(reportTitle || "Schedule");
+
     const subParts = [];
     if(displayDate) subParts.push(String(displayDate));
     if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
     if(showDayKey) subParts.push(String(showDayKey));
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
 
-    // Rings: sort by ring_number (numeric)
     const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
       .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
       .sort((a,b)=>a.ring_number - b.ring_number);
@@ -370,7 +329,7 @@
 
     for(const ring of rings){
       const items0 = ring.items[0] || {};
-      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? `Ring ${ring.ring_number}`;
+      const ringTitle = items0.ring_nickname ?? items0.ring_name ?? items0.ringName ?? items0.ringNickname ?? "Ring";
 
       const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
         .map(([gid, items]) => {
@@ -415,6 +374,7 @@
             ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
             <div class="gname">${esc(g.gname)}</div>
           </div>
+          <div class="solid"></div>
           <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
         `;
         sec.appendChild(gDiv);
@@ -426,57 +386,269 @@
     return ringEls;
   }
 
-  async function generateOnePagePdf(){
-    const btn = document.getElementById("btnPdf");
-    btn.disabled = true;
+  // ----------------------------
+  // One-page Letter PDF generator
+  // - 2 columns
+  // - rings are atomic (never split)
+  // - maximum font within 1 page
+  // ----------------------------
 
-    try{
-      // Make sure layout is finalized and fitted to 1 page BEFORE capture.
-      fitToOnePage();
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  function printPdfOnePage(rows){
+    const jspdfNS = window.jspdf;
+    if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
+    const { jsPDF } = jspdfNS;
 
-      const page = document.getElementById("page");
+    if(!Array.isArray(rows) || rows.length === 0) throw new Error("No data");
 
-      // Hide controls in the capture
-      const controls = document.querySelector(".controls");
-      const oldDisplay = controls ? controls.style.display : "";
-      if(controls) controls.style.display = "none";
+    const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+    const norm = (v) => (v == null ? "" : String(v));
 
-      const canvas = await html2canvas(page, {
-        scale: Math.min(2, window.devicePixelRatio || 2),
-        backgroundColor: "#fff",
-        useCORS: true
+    function ellipsize(doc, text, maxW){
+      text = norm(text);
+      if (maxW <= 0) return "";
+      if (doc.getTextWidth(text) <= maxW) return text;
+      const ell = "…";
+      let lo = 0, hi = text.length;
+      while (lo < hi){
+        const mid = Math.floor((lo + hi) / 2);
+        const t = text.slice(0, mid) + ell;
+        if (doc.getTextWidth(t) <= maxW) lo = mid + 1;
+        else hi = mid;
+      }
+      const cut = Math.max(0, lo - 1);
+      return text.slice(0, cut) + ell;
+    }
+
+    // Build model (matches screen logic)
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number)
+      .map(ring => {
+        const items0 = ring.items[0] || {};
+        const ringTitle = norm(items0.ring_nickname ?? items0.ring_name ?? items0.ringName ?? items0.ringNickname ?? "Ring");
+
+        const groups = Array.from(groupBy(ring.items, it => String(it.class_group_id ?? it.classGroupId ?? "")).entries())
+          .map(([gid, items]) => {
+            const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+            const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+            const classes = items.slice().sort((a,b)=>{
+              const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+              const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+              return an - bn;
+            }).map(c => {
+              const num = c.class_number ?? c.classNumber;
+              const name = c.class_name ?? c.className ?? c.name ?? "";
+              const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+                ? `${num} - ${name}`.trim()
+                : String(name).trim();
+              const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+              return { time, label };
+            });
+
+            return { seq, gdisplay: gd, hasTeam: !!gd, classes };
+          })
+          .sort((a,b)=>a.seq - b.seq);
+
+        return { ring_number: ring.ring_number, ringTitle, groups };
       });
 
-      if(controls) controls.style.display = oldDisplay;
+    const first = rows[0] || {};
+    const reportTitle = norm(first.show_days_report_title ?? first.show_report_title ?? "Schedule");
+    const displayDate = norm(first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "");
+    const showId = norm(first.show_id ?? first.showId ?? "");
+    const showDayKey = norm(first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "");
 
-      const imgData = canvas.toDataURL("image/png");
+    const subtitleParts = [];
+    if(displayDate) subtitleParts.push(displayDate);
+    if(showId) subtitleParts.push(`show_id ${showId}`);
+    if(showDayKey) subtitleParts.push(showDayKey);
+    const subtitle = subtitleParts.join("   •   ");
 
-      const jspdfNS = window.jspdf;
-      if(!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
-      const { jsPDF } = jspdfNS;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter", compress: true });
+    const W = doc.internal.pageSize.getWidth();   // 612
+    const H = doc.internal.pageSize.getHeight();  // 792
 
-      const doc = new jsPDF({ orientation:"portrait", unit:"pt", format:"letter", compress:true });
-      const W = doc.internal.pageSize.getWidth();
-      const H = doc.internal.pageSize.getHeight();
+    // Tight margins (maximize coverage)
+    const margin = 14;          // ~0.19"
+    const gutterX = 10;
+    const gutterY = 6;
 
-      doc.addImage(imgData, "PNG", 0, 0, W, H, undefined, "FAST");
+    const usableW = W - margin * 2;
+    const colW = (usableW - gutterX) / 2;
 
-      const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
+    const headerTop = margin;
+    const headerH = 22;         // compact header area
+    const bodyTop = headerTop + headerH;
+    const bodyH = H - margin - bodyTop;
 
-      const w = window.open(url, "_blank");
-      if(!w) window.location.href = url;
+    // Choose largest readable font that fits without splitting rings
+    function measureAndSplit(rowFont){
+      const ringHeadFont = rowFont + 1.5;
+      const groupFont = rowFont + 0.5;
 
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } finally {
-      btn.disabled = false;
+      const ringHeadH = ringHeadFont + 6;
+      const groupHeadH = groupFont + 4;
+      const rowH = rowFont + 2.6;
+
+      const ringHeights = rings.map(r => {
+        let h = 0;
+        h += ringHeadH;
+        for(const g of r.groups){
+          if(g.hasTeam) h += groupHeadH;
+          // class lines (show time only when changes)
+          let lastT = null;
+          for(const c of g.classes){
+            if(c.time) lastT = c.time; // used only for display suppression
+            h += rowH;
+          }
+          h += 3; // group separator
+        }
+        h += 4; // bottom padding
+        return h;
+      });
+
+      const total = ringHeights.reduce((a,b)=>a+b,0) + gutterY * Math.max(0, ringHeights.length - 1);
+      const target = total / 2;
+
+      let bestSplit = ringHeights.length;
+      let bestDiff = Infinity;
+      let cum = 0;
+      for(let i=0;i<ringHeights.length;i++){
+        cum += ringHeights[i] + (i ? gutterY : 0);
+        const diff = Math.abs(target - cum);
+        if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
+      }
+
+      const leftH = ringHeights.slice(0, bestSplit).reduce((a,b)=>a+b,0) + gutterY * Math.max(0, bestSplit - 1);
+      const rightCount = ringHeights.length - bestSplit;
+      const rightH = ringHeights.slice(bestSplit).reduce((a,b)=>a+b,0) + gutterY * Math.max(0, rightCount - 1);
+      const need = Math.max(leftH, rightH);
+
+      return { rowFont, ringHeadFont, groupFont, rowH, ringHeadH, groupHeadH, split: bestSplit, needH: need };
+    }
+
+    let plan = null;
+    for(let f=9.0; f>=5.75; f-=0.25){
+      const m = measureAndSplit(f);
+      if(m.needH <= bodyH){ plan = { ...m, scale: 1 }; break; }
+      const scale = bodyH / m.needH;
+      if(scale >= 0.92){ plan = { ...m, scale }; break; }
+    }
+    if(!plan){
+      const m = measureAndSplit(5.5);
+      plan = { ...m, scale: Math.min(1, bodyH / m.needH) };
+    }
+
+    const s = plan.scale;
+
+    // Header: title over left column, subtitle over right column
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(ellipsize(doc, reportTitle || "Schedule", colW - 2), margin, headerTop + 14);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    if(subtitle) doc.text(ellipsize(doc, subtitle, colW - 2), margin + colW + gutterX, headerTop + 14);
+
+    // Body drawing helpers (scaled)
+    const timeW = 48 * s;
+    const padX = 6 * s;
+
+    function drawRing(x, y, ring){
+      const ringW = colW;
+
+      // Ring head
+      const headH = plan.ringHeadH * s;
+      doc.setDrawColor(0);
+      doc.setLineWidth(1);
+      doc.setFillColor(0, 0, 0);
+      doc.rect(x, y, ringW, headH, "F");
+      doc.setTextColor(255,255,255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(plan.ringHeadFont * s);
+      doc.text(ellipsize(doc, ring.ringTitle, ringW - padX*2), x + padX, y + headH - (3*s));
+      doc.setTextColor(17,17,17);
+
+      let cy = y + headH;
+
+      // Groups + classes
+      for(const g of ring.groups){
+        if(g.hasTeam){
+          const gh = plan.groupHeadH * s;
+          doc.setFillColor(220,220,220);
+          doc.rect(x, cy, ringW, gh, "F");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(plan.groupFont * s);
+          doc.setTextColor(17,17,17);
+          doc.text(ellipsize(doc, String(g.gdisplay).toUpperCase(), ringW - padX*2), x + ringW - padX, cy + gh - (3*s), { align: "right" });
+          cy += gh;
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(plan.rowFont * s);
+
+        let lastTime = null;
+        for(const c of g.classes){
+          const t = String(c.time || "").trim();
+          const showTime = (t && t !== lastTime);
+          if(t) lastTime = t;
+
+          const rowH = plan.rowH * s;
+          const ty = cy + rowH - (2*s);
+
+          const left = showTime ? t : "";
+          const right = c.label || "";
+
+          const rightW = ringW - padX*2 - timeW - (4*s);
+          doc.text(ellipsize(doc, left, timeW), x + padX, ty);
+          doc.text(ellipsize(doc, right, rightW), x + padX + timeW + (4*s), ty);
+
+          cy += rowH;
+        }
+
+        cy += 3*s;
+      }
+
+      // Ring border
+      const totalH = cy - y + (1*s);
+      doc.setDrawColor(0);
+      doc.setLineWidth(1);
+      doc.rect(x, y, ringW, totalH);
+
+      return totalH;
+    }
+
+    const split = plan.split;
+    const leftRings = rings.slice(0, split);
+    const rightRings = rings.slice(split);
+
+    let yL = bodyTop;
+    for(const r of leftRings){
+      const h = drawRing(margin, yL, r);
+      yL += h + gutterY;
+    }
+
+    let yR = bodyTop;
+    for(const r of rightRings){
+      const h = drawRing(margin + colW + gutterX, yR, r);
+      yR += h + gutterY;
+    }
+
+    // Open PDF
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    if(!w){
+      window.location.href = url;
     }
   }
+
+  let SCHEDULE_ROWS = [];
 
   (async function main(){
     const url = resolveDataUrl();
     const rows = await fetchJson(url);
+    SCHEDULE_ROWS = rows;
 
     if(!Array.isArray(rows) || rows.length === 0){
       document.getElementById("colL").innerHTML = `<div class="muted">No schedule rows.</div>`;
@@ -484,19 +656,22 @@
     }
 
     const ringEls = buildRingElements(rows);
+    placeRings(ringEls);
 
-    // Ensure ring order is based on ring_number, and rings are never split.
-    placeRingsBalanced(ringEls);
-
-    // Fit to one letter page (maximize font first; scale only last)
     fitToOnePage();
-    setTimeout(fitToOnePage, 50);
+    setTimeout(fitToOnePage, 60);
 
     window.addEventListener("resize", ()=>{ fitToOnePage(); });
-
-    document.getElementById("btnPdf").addEventListener("click", generateOnePagePdf);
   })().catch(err=>{
     document.getElementById("colL").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+
+  document.getElementById('btnPdf').addEventListener('click', ()=>{
+    try{
+      printPdfOnePage(SCHEDULE_ROWS);
+    }catch(e){
+      alert(String(e && e.message ? e.message : e));
+    }
   });
 </script>
 </body>
