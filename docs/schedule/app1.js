@@ -1,11 +1,3 @@
-
-
-function normalizeThreads(payload) {
-  const records = Array.isArray(payload?.records) ? payload.records : (Array.isArray(payload) ? payload : []);
-  return records
-    .map(r => ({ ...(r || {}) }))
-    .filter(r => r && (r.thread_id || r.title || r.body || r.observed_at));
-}
 // app.js — CRT Daily Show (Legacy UI contract + Cards + Peaks + Schedule/Timeline modes)
 //
 // Data:
@@ -32,7 +24,7 @@ function normalizeThreads(payload) {
   // ----------------------------
   const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
   const DATA_TRIPS_URL = './data/latest/watch_trips.json';
-  const REFRESH_MS = 6 * 60 * 1000;
+  const REFRESH_MS = 8 * 60 * 1000;
 
   // If duration is unknown, assume per-trip duration:
   const DUR_PER_TRIP_SEC = 149; // 2m 29s
@@ -207,7 +199,6 @@ function normalizeThreads(payload) {
   const state = {
     loaded: false,
     schedule: [],
-  threads: [],
     trips: [],
     meta: { dt: null, sid: null, generated_at: null },
     tripSnapshot: null,
@@ -2198,166 +2189,9 @@ function makeCard(title, aggValue, inverseHdr, onClick) {
   // ----------------------------
   // SCREEN: SCHEDULE (rings)
   // ----------------------------
-  
-
-
-function renderFullSchedule(sIdx, tIdx) {
-  setHeader('Full');
-
-  const wrap = el('div', 'list-column');
-
-  const ringKeys = Array.from(sIdx.ringMap.keys()).sort((a, b) => {
-    const na = parseInt(String(a).replace(/\D+/g, ''), 10);
-    const nb = parseInt(String(b).replace(/\D+/g, ''), 10);
-    if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
-    return String(a).localeCompare(String(b));
-  });
-
-  ringKeys.forEach((rkey) => {
-    const ringInfo = sIdx.ringMap.get(rkey);
-    const card = el('div', 'card');
-
-    // header
-    const head = el('div', 'card-head');
-    const title = el('div', 'card-title');
-    title.textContent =
-      ringInfo?.ringName ||
-      (ringInfo?.ring_number ? `Ring ${ringInfo.ring_number}` : String(rkey));
-    head.appendChild(title);
-    card.appendChild(head);
-
-    const body = el('div', 'card-body');
-
-    const classIds = Array.from(ringInfo?.classIds || []);
-    const classes = classIds
-      .map((id) => sIdx.classMap.get(String(id)))
-      .filter(Boolean)
-      .sort((a, b) => {
-        const ta = timeToMinutes(a.latestStart || a.estimated_start || '') ?? 1e9;
-        const tb = timeToMinutes(b.latestStart || b.estimated_start || '') ?? 1e9;
-        if (ta !== tb) return ta - tb;
-        return String(a.class_number || '').localeCompare(String(b.class_number || ''));
-      });
-
-    classes.forEach((c) => {
-      // line 1: time + class name
-      const line1 = el('div', 'row row--tap row--3col full-line');
-      const l = el('div', 'row__l');
-      l.textContent = fmtTimeShort(c.latestStart || c.estimated_start || '');
-      const m = el('div', 'row__m');
-
-      const t1 = el('div', 'row-title');
-      t1.textContent = c.class_name || '';
-      const t2 = el('div', 'row-sub');
-      t2.textContent = [c.class_number, c.group_name, c.class_type].filter(Boolean).join(' • ');
-
-      m.appendChild(t1);
-      m.appendChild(t2);
-
-      const r = el('div', 'row__r');
-      r.textContent = c.latestStatus || c.status || '';
-
-      line1.appendChild(l);
-      line1.appendChild(m);
-      line1.appendChild(r);
-      body.appendChild(line1);
-
-      // line 2: rollup pills (disabled)
-      const classIdKey = String(c.class_id || '');
-      const entryKeys = tIdx.byClass.get(classIdKey) || [];
-      const pills = el('div', 'full-rollup');
-
-      if (entryKeys.length) {
-        entryKeys.forEach((ek) => {
-          const best = tIdx.entryBest.get(ek);
-          if (!best) return;
-
-          const barn = best.barnName || best.barn || best.barn_name || '';
-          const oog = best.lastOOG ?? best.last_order_of_go ?? best.order_of_go ?? '';
-          const go = fmtTimeShort(best.latestGO || best.latest_go || best.estimated_go_time || '');
-
-          const b = el('button', 'entry-chip entry-chip--disabled');
-          b.type = 'button';
-          b.disabled = true;
-          b.tabIndex = -1;
-          b.textContent = [barn || 'Entry', String(oog).trim(), String(go).trim()]
-            .filter(Boolean)
-            .join(' • ');
-          pills.appendChild(b);
-        });
-      } else {
-        const empty = el('div', 'muted');
-        empty.textContent = '—';
-        pills.appendChild(empty);
-      }
-
-      body.appendChild(pills);
-    });
-
-    card.appendChild(body);
-    wrap.appendChild(card);
-  });
-
-  screenRoot.replaceChildren(wrap);
-}
-
-
-function renderThreads() {
-  setHeader('Threads');
-
-  const wrap = el('div', 'list-column');
-
-  const rows = [...state.threads].sort((a,b) => {
-    const ta = Date.parse(a.observed_at || a.created_at || '') || 0;
-    const tb = Date.parse(b.observed_at || b.created_at || '') || 0;
-    return tb - ta;
-  });
-
-  if (!rows.length) {
-    const empty = el('div', 'empty');
-    empty.textContent = 'No threads yet.';
-    wrap.appendChild(empty);
-    screenRoot.replaceChildren(wrap);
-    return;
-  }
-
-  rows.forEach(t => {
-    const card = el('div', 'card');
-    const head = el('div', 'card-head');
-    const title = el('div', 'card-title');
-    title.textContent = t.title || t.thread_id || 'Thread';
-    head.appendChild(title);
-
-    const meta = el('div', 'card-sub');
-    meta.textContent = [t.observed_at, t.type].filter(Boolean).join(' • ');
-    head.appendChild(meta);
-
-    card.appendChild(head);
-
-    const body = el('div', 'card-body');
-    if (t.body) {
-      const p = el('div', 'thread-body');
-      p.textContent = String(t.body);
-      body.appendChild(p);
-    }
-
-    // optional context fields
-    const ctx = [t.ringName || t.ring_name, t.class_name, t.horseName || t.horse_name, t.riderName || t.rider_name].filter(Boolean);
-    if (ctx.length) {
-      const c = el('div', 'muted');
-      c.textContent = ctx.join(' • ');
-      body.appendChild(c);
-    }
-
-    card.appendChild(body);
-    wrap.appendChild(card);
-  });
-
-  screenRoot.replaceChildren(wrap);
-}
-function renderSchedule(sIdx, tIdx) {
+  function renderSchedule(sIdx, tIdx) {
     clearRoot();
-    setHeader('Lite');
+    setHeader('Schedule');
 
     // page-level controls
     screenRoot.appendChild(renderSearch('rings', 'Search rings...'));

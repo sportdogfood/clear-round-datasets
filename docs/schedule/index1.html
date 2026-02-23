@@ -673,19 +673,7 @@
       border-color: rgba(236,72,153,0.24);
     }
 
-  
-/* Full schedule + Threads (read-only) */
-
-.muted { opacity: .72; font-size: 12px; }
-.empty { opacity: .72; padding: 12px; }
-
-.full-line .row__l { font-variant-numeric: tabular-nums; }
-.full-rollup { display:flex; gap:8px; flex-wrap:wrap; padding: 6px 12px 14px; }
-.entry-chip--disabled { opacity: .82; cursor: default; }
-.entry-chip--disabled:disabled { opacity: .82; }
-.thread-body { white-space: pre-wrap; line-height: 1.35; }
-
-</style>
+  </style>
 </head>
 
 <body>
@@ -706,32 +694,34 @@
     <nav class="app-nav" aria-label="Primary">
       <div class="nav-scroller">
         <div class="nav-row" id="nav-row">
-      <button class="nav-btn" data-screen="start">
-        <span class="nav-ic">⎋</span>
-        <span class="nav-lbl">Start</span>
-        <span class="nav-agg" data-nav-agg="start">0</span>
-      </button>
-      <button class="nav-btn" data-screen="summary">
-        <span class="nav-ic">≡</span>
-        <span class="nav-lbl">Summary</span>
-        <span class="nav-agg" data-nav-agg="summary">0</span>
-      </button>
-      <button class="nav-btn" data-screen="schedule">
-        <span class="nav-ic">⏱</span>
-        <span class="nav-lbl">Lite</span>
-        <span class="nav-agg" data-nav-agg="schedule">0</span>
-      </button>
-      <button class="nav-btn" data-screen="full">
-        <span class="nav-ic">▦</span>
-        <span class="nav-lbl">Full</span>
-        <span class="nav-agg" data-nav-agg="full">0</span>
-      </button>
-      <button class="nav-btn" data-screen="threads">
-        <span class="nav-ic">✎</span>
-        <span class="nav-lbl">Threads</span>
-        <span class="nav-agg" data-nav-agg="threads">0</span>
-      </button>
-</div>
+          <button class="nav-btn" type="button" data-screen="start">
+            <span class="nav-label">Start</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="summary">
+            <span class="nav-label">Summary</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="schedule">
+            <span class="nav-label">Schedule</span>
+            <span class="nav-agg" data-nav-agg="schedule">0</span>
+          </button>
+          
+          <button class="nav-btn" type="button" data-screen="horses">
+            <span class="nav-label">Horses</span>
+            <span class="nav-agg" data-nav-agg="horses">0</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-screen="riders">
+            <span class="nav-label">Riders</span>
+            <span class="nav-agg" data-nav-agg="riders">0</span>
+          </button>
+
+
+
+          
+        </div>
+      </div>
     </nav>
   </div>
 
