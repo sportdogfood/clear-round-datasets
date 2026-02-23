@@ -12,8 +12,12 @@
     --border:#d0d0d0;
     --ring:#0b5d47;
     --ringPrint:#000;
-    --scale: 1;
+
+    /* JS will optimize these for “largest readable that still fits 1 page” */
+    --fs: 1;      /* font scale */
+    --scale: 1;   /* whole-page scale (last resort) */
   }
+
   *{box-sizing:border-box}
   html,body{margin:0; padding:0;}
   body{
@@ -22,12 +26,12 @@
     background:#fff;
   }
 
-  /* Single Letter page preview */
+  /* Screen preview as a single Letter page */
   .page{
     width: 8.5in;
     height: 11in;
-    padding: 0.15in;              /* tight “margin” inside the page */
-    margin: 10px auto;
+    padding: 0.10in;         /* push as tight as practical */
+    margin: 8px auto;
     background:#fff;
     overflow:hidden;
   }
@@ -51,26 +55,24 @@
     cursor:pointer;
   }
 
-  /* scaled wrapper */
+  /* scaled content wrapper */
   .wrap{
     transform: scale(var(--scale));
     transform-origin: top left;
     width: calc(100% / var(--scale));
   }
-  .wrap.use-zoom{
-    transform:none;
-    width:auto;
-  }
+  .wrap.use-zoom{ transform:none; width:auto; }
 
   /* TWO columns */
   .cols{
     display:grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.12in;
+    gap: 0.08in;             /* tighter gutter for more coverage */
     align-items:start;
   }
   .col{display:flex; flex-direction:column; gap:2px; min-width:0;}
 
+  /* Ring container must never split */
   .ring{
     border:1px solid #000;
     break-inside: avoid;
@@ -79,9 +81,9 @@
   .ring-head{
     background:var(--ring);
     color:#fff;
-    padding:4px 6px;
+    padding: calc(4px * var(--fs)) calc(6px * var(--fs));
     font-weight:900;
-    font-size:10px;
+    font-size: calc(10px * var(--fs));
     letter-spacing:.02em;
   }
 
@@ -91,25 +93,24 @@
   }
   .group.has-team .group-head{
     padding-bottom: 1px;
-    padding-top: 4px;
+    padding-top: calc(4px * var(--fs));
   }
 
-  /* group_display above group_name */
   .gdisplay{
-    font-size:11px;
+    font-size: calc(11px * var(--fs));
     font-weight:600;
     text-align:right;
     text-transform: uppercase;
-    margin-bottom:-6px;
-    margin-right: 20px;
-    margin-left: 10px;
+    margin-bottom: calc(-6px * var(--fs));
+    margin-right: calc(20px * var(--fs));
+    margin-left: calc(10px * var(--fs));
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
   }
   .gname{
     font-weight:900;
-    font-size:10px;
+    font-size: calc(10px * var(--fs));
     line-height:1.1;
     text-align:left;
     overflow:hidden;
@@ -119,66 +120,58 @@
   }
 
   .solid{border-top:0px solid #111; margin:0;}
-  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
+  .class-list{
+    padding: calc(3px * var(--fs)) calc(6px * var(--fs)) calc(4px * var(--fs)) calc(6px * var(--fs));
+    border-bottom: 1px solid #8e8c8c;
+  }
 
   .c{
     display:grid;
-    grid-template-columns:46px 1fr;
-    column-gap:6px;
+    grid-template-columns: calc(46px * var(--fs)) 1fr;
+    column-gap: calc(6px * var(--fs));
     line-height:1.05;
-    padding:2px 0;
+    padding: calc(2px * var(--fs)) 0;
   }
-  .t{font-weight:600; font-size:9px; white-space:nowrap;}
+  .t{font-weight:600; font-size: calc(9px * var(--fs)); white-space:nowrap;}
   .n{
-    font-size:9px;
+    font-size: calc(9px * var(--fs));
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
+
   .muted{color:var(--muted);}
   .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
 
-  /* Print: maximize coverage + force 1 page layout */
+  /* Print rules */
   @media print{
-    @page{ size: Letter; margin: 0.15in; } /* as tight as most print engines allow */
+    @page{ size: Letter; margin: 0.10in; } /* tight as most engines allow */
     html,body{background:#fff;}
-    body{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body{-webkit-print-color-adjust: exact; print-color-adjust: exact;}
 
     .controls{display:none !important;}
     .page{
       width:auto;
       height:auto;
-      padding:0;                  /* margins handled by @page */
+      padding:0;              /* margins handled by @page */
       margin:0;
       overflow:visible;
     }
 
     .ring-head{background:var(--ringPrint);}
 
-    /* in print, try zoom first (Chromium), else transform */
-    .wrap.use-zoom{
-      zoom: var(--scale);
-    }
+    /* prefer zoom if available, else transform */
+    .wrap.use-zoom{ zoom: var(--scale); }
     .wrap:not(.use-zoom){
       transform: scale(var(--scale));
       transform-origin: top left;
       width: calc(100% / var(--scale));
     }
 
-    /* keep “team highlight” printing */
     .group.has-team{
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-
-    /* ultra-tight fallback */
-    body.tight .ring-head{padding:3px 5px; font-size:9px;}
-    body.tight .group-head{padding:2px 5px;}
-    body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
-    body.tight .class-list{padding:2px 5px 3px 5px;}
-    body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
-    body.tight .t{font-size:8px;}
-    body.tight .n{font-size:8px;}
   }
 </style>
 </head>
@@ -204,9 +197,7 @@
   </div>
 
 <script>
-  // Usage:
-  // schedule_onepage.html#200000044-20251231  -> fetches 200000044-20251231.json (same folder)
-  // Optional: ?data=somefile.json overrides hash.
+  // Data URL resolution (unchanged behavior)
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
 
@@ -269,7 +260,6 @@
     const first = rows[0] || {};
     const showId = first.show_id ?? first.showId ?? "";
 
-    // REQUIRED: header must come from show_days_* fields.
     const reportTitle =
       first.show_days_report_title ??
       first.show_report_title ??
@@ -312,7 +302,6 @@
         items0.ringNickname ??
         `Ring ${ring.ring_number}`;
 
-      // Groups within a ring sorted by class_group_sequence
       const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
         .map(([gid, items]) => {
           const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
@@ -369,50 +358,50 @@
     return ringEls;
   }
 
-  // PLACE rings: fill LEFT top->bottom with WHOLE rings, then RIGHT top->bottom.
-  // Never split a ring across columns.
-  function placeRingsFillDown(ringEls){
+  // Evenly distribute WHOLE ring containers over 2 columns (no splitting), preserving ring order.
+  function placeRingsEven(ringEls){
     const L = document.getElementById("colL");
     const R = document.getElementById("colR");
     L.innerHTML = "";
     R.innerHTML = "";
 
-    // 1) Append to LEFT to measure each ring height at scale=1.
+    // measure: append all to LEFT first
     for(const el of ringEls) L.appendChild(el);
 
-    // Compute available height inside the page for the columns.
-    const ppi = pxPerInch();
-    const pageInnerH = (11 - (0.15*2)) * ppi; // inside @page margin equivalent for preview
-    const topbar = document.querySelector(".topbar");
-    const availH = Math.max(0, pageInnerH - (topbar?.offsetHeight || 0) - 6);
-
     const heights = ringEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
 
-    // 2) Move rings to RIGHT once the next ring would overflow LEFT.
-    let used = 0;
-    let toRightFrom = ringEls.length; // index where we start moving to right
-    for(let i=0;i<ringEls.length;i++){
-      const h = heights[i] || 0;
-      if(i === 0){
-        used = h;
-        continue;
-      }
-      if(used + h <= availH){
-        used += h;
-      }else{
-        toRightFrom = i;
-        break;
+    let bestSplit = ringEls.length; // count of rings in LEFT
+    let bestDiff = Infinity;
+    let cum = 0;
+
+    for(let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if(diff < bestDiff){
+        bestDiff = diff;
+        bestSplit = i + 1;
       }
     }
 
-    // Move overflow rings to RIGHT (keeps order: down left, then down right)
-    for(let i=toRightFrom;i<ringEls.length;i++){
+    // move the remainder to RIGHT (keeps order; never splits a ring)
+    for(let i=bestSplit;i<ringEls.length;i++){
       R.appendChild(ringEls[i]);
     }
   }
 
-  // Scale-to-one-page (tight margins)
-  function fitToOnePage(){
+  function resetFitState(){
+    const wrap = document.getElementById("wrap");
+    if(!wrap) return;
+    wrap.style.setProperty("--scale", "1");
+    document.documentElement.style.setProperty("--fs", "1");
+    wrap.classList.remove("use-zoom");
+    wrap.style.zoom = "";
+  }
+
+  // Choose the largest effective text size that still fits 1 page.
+  function fitToOnePageOptimized(ringEls){
     const wrap = document.getElementById("wrap");
     const topbar = document.querySelector(".topbar");
     const cols = document.getElementById("cols");
@@ -420,44 +409,51 @@
     const colR = document.getElementById("colR");
     if(!wrap || !topbar || !cols || !colL || !colR) return;
 
-    // reset
-    wrap.style.setProperty("--scale", "1");
-    wrap.classList.remove("use-zoom");
-    wrap.style.zoom = "";
-    document.body.classList.remove("tight");
+    resetFitState();
 
     const ppi = pxPerInch();
+    const pageMarginIn = 0.10;            // must match @page margin
+    const availW = (8.5 - (pageMarginIn*2)) * ppi;
+    const availH = (11  - (pageMarginIn*2)) * ppi - topbar.offsetHeight - 6;
 
-    // Match @page margin 0.15in -> printable area = (8.5-0.3) x (11-0.3)
-    const availW = (8.5 - 0.30) * ppi;
-    const availH = (11  - 0.30) * ppi - topbar.offsetHeight - 6;
+    // Try a few font scales; pick the one that maximizes (fs * scale).
+    let best = { fs: 1, scale: 1, eff: 1 };
 
-    const needH = Math.max(colL.scrollHeight, colR.scrollHeight);
-    const needW = cols.scrollWidth || cols.getBoundingClientRect().width || wrap.getBoundingClientRect().width;
+    for(let fs = 1.35; fs >= 0.70; fs -= 0.05){
+      document.documentElement.style.setProperty("--fs", fs.toFixed(2));
 
-    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
-    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+      // re-place rings with current font scale so heights are correct
+      placeRingsEven(ringEls);
 
-    let scale = Math.min(1, scaleH, scaleW);
-    scale = Math.max(0.30, Math.min(1, scale));
+      // measure unscaled needs
+      const needH = Math.max(colL.scrollHeight, colR.scrollHeight);
+      const needW = cols.scrollWidth || cols.getBoundingClientRect().width || wrap.getBoundingClientRect().width;
 
-    if(scale < 0.60) document.body.classList.add("tight");
+      const scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+      const scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+
+      let scale = Math.min(1, scaleH, scaleW);
+      scale = Math.max(0.30, Math.min(1, scale));
+
+      const eff = fs * scale;
+
+      if(eff > best.eff + 0.005){
+        best = { fs, scale, eff };
+      }
+    }
+
+    // apply best
+    document.documentElement.style.setProperty("--fs", best.fs.toFixed(2));
+    wrap.style.setProperty("--scale", best.scale.toFixed(3));
 
     const canZoom = ("zoom" in wrap.style);
     if(canZoom){
       wrap.classList.add("use-zoom");
-      wrap.style.zoom = String(scale);
+      wrap.style.zoom = String(best.scale);
     }
-    wrap.style.setProperty("--scale", String(scale));
 
-    // second pass after tight mode
-    if(document.body.classList.contains("tight")){
-      const needH2 = Math.max(colL.scrollHeight, colR.scrollHeight);
-      let scale2 = Math.min(1, (availH / (needH2 || 1)));
-      scale2 = Math.max(0.30, Math.min(1, scale2));
-      if(canZoom) wrap.style.zoom = String(scale2);
-      wrap.style.setProperty("--scale", String(scale2));
-    }
+    // final place using best fs
+    placeRingsEven(ringEls);
   }
 
   (async function main(){
@@ -471,27 +467,20 @@
 
     const ringEls = buildRingElements(rows);
 
-    // layout pass: no ring splitting; fill down left then down right
-    placeRingsFillDown(ringEls);
+    // stabilize layout (fonts load, etc.)
+    placeRingsEven(ringEls);
+    fitToOnePageOptimized(ringEls);
 
-    // fit pass (do it twice to stabilize measurements)
-    fitToOnePage();
     requestAnimationFrame(() => {
-      fitToOnePage();
-      // if scaling changed heights a lot, keep the “fill left then right” intent
-      // (don’t rebalance; only re-place using the same rule)
-      placeRingsFillDown(ringEls);
-      requestAnimationFrame(fitToOnePage);
+      fitToOnePageOptimized(ringEls);
     });
 
     window.addEventListener("beforeprint", () => {
-      // keep rings intact + re-fit right before print
-      placeRingsFillDown(ringEls);
-      fitToOnePage();
+      fitToOnePageOptimized(ringEls);
     });
+
     window.addEventListener("resize", () => {
-      placeRingsFillDown(ringEls);
-      fitToOnePage();
+      fitToOnePageOptimized(ringEls);
     });
   })().catch(err=>{
     document.getElementById("colL").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
