@@ -65,20 +65,17 @@
     grid-template-columns: 1fr 1fr;
     gap: var(--col-gap);
     align-items:end;
-    padding: 0 0 4px 0;
+    padding:0 0 6px 0;
   }
-  .topL{min-width:0;}
-  .topLRow{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:8px;
-    min-width:0;
-  }
-  .topR{min-width:0;}
-  .title{font-weight:900; font-size:14px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .subtitle{color:var(--muted); font-size:10px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .controls{display:flex; align-items:center; gap:8px; flex-wrap:nowrap;}
+  .topbar-left{min-width:0;}
+  .topbar-right{min-width:0;}
+  .title-row{display:flex; align-items:flex-end; justify-content:space-between; gap:10px;}
+  .title-row .title{min-width:0;}
+  .title-row .controls{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+
+  .title{ font-weight:900; font-size:13px; line-height:1.1; }
+  .subtitle{ color:var(--muted); font-size:10px; margin-top:0; }
+  .controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .btn{
     border:1px solid var(--border);
     background:#fff;
@@ -90,15 +87,7 @@
     color:inherit;
     display:inline-flex;
     align-items:center;
-    line-height:1;
-  }
-.btn{
-    border:1px solid var(--border);
-    background:#fff;
-    padding:4px 10px;
-    font-size:12px;
-    border-radius:6px;
-    cursor:pointer;
+    gap:6px;
   }
   .btn[disabled]{ opacity:.6; cursor:default; }
 
@@ -199,8 +188,8 @@
 <body>
   <div class="page" id="page">
     <div class="topbar">
-      <div class="topL">
-        <div class="topLRow">
+      <div class="topbar-left">
+        <div class="title-row">
           <div class="title" id="title">Schedule</div>
           <div class="controls">
             <button class="btn" id="btnPdf" type="button">PDF</button>
@@ -208,12 +197,12 @@
           </div>
         </div>
       </div>
-      <div class="topR">
+      <div class="topbar-right">
         <div class="subtitle" id="subtitle"></div>
       </div>
     </div>
 
-    <div class="wrap" id="wrap">
+    <div class="wrap" id="wrap"> id="wrap">
       <div class="cols" id="cols">
         <div class="col" id="colL"></div>
         <div class="col" id="colR"></div>
@@ -452,9 +441,6 @@
       const controls = document.querySelector(".controls");
       const oldDisplay = controls ? controls.style.display : "";
       if(controls) controls.style.display = "none";
-      // Re-fit after hiding controls to avoid bottom clipping in the capture.
-      try{ fitToOnePage(); }catch(_e){}
-      await new Promise(r => requestAnimationFrame(r));
 
       const canvas = await html2canvas(page, {
         scale: Math.min(2, window.devicePixelRatio || 2),
@@ -505,10 +491,7 @@
     // Fit to one letter page (maximize font first; scale only last)
     fitToOnePage();
     setTimeout(fitToOnePage, 50);
-    setTimeout(fitToOnePage, 250);
-    setTimeout(fitToOnePage, 600);
 
-    window.addEventListener("load", ()=>{ setTimeout(fitToOnePage, 60); });
     window.addEventListener("resize", ()=>{ fitToOnePage(); });
 
     document.getElementById("btnPdf").addEventListener("click", generateOnePagePdf);
