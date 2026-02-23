@@ -1,1037 +1,906 @@
-/* Ring Status — TapActive Rings v2.1 (Flyups)
-   Screens: Start | Summary | Lite | Full | Threads
-   - Lite uses watch_trips.json (interactive + flyups)
-   - Full uses watch_schedule.json (read-only rollups)
-   - Threads uses threads.json (read-only)
-
-   Data URLs must match your published structure:
-     ./data/latest/watch_trips.json
-     ./data/latest/watch_schedule.json
-     ./data/latest/threads.json
+/* app.js (FULL DROP) */
+/* tapactive-rings-v2_1 — app.js
+   - Uses your v2.1 template UI (same CSS grammar)
+   - Data: watch_trips.json + watch_schedule.json + threads.json
+   - Pages: Start | Summary | Lite | Full | Threads
+   - Lite = interactive (filters + flyups)
+   - Full = view-only (no flyups / no filters)
 */
-
-(() => {
+(function(){
   'use strict';
 
   //////////////////////
-  // Config
+  // 0) DOM refs
   //////////////////////
-  const URL_TRIPS = './data/latest/watch_trips.json';
-  const URL_SCHEDULE = './data/latest/watch_schedule.json';
-  const URL_THREADS = './data/latest/threads.json';
+  const app = document.getElementById('app');
+  const main = document.getElementById('main');
 
-  // Refresh every 6 minutes (360_000 ms)
+  const topTitle = document.getElementById('topTitle');
+
+  const peaksWrap = document.getElementById('peaksWrap');
+  const peakbar = document.getElementById('peakbar');
+
+  const horsesWrap = document.getElementById('horsesWrap');
+  const horsebar = document.getElementById('horsebar');
+
+  const startContainer = document.getElementById('start_container');
+  const summaryContainer = document.getElementById('summary_container');
+  const liteContainer = document.getElementById('lite_container');
+  const fullContainer = document.getElementById('full_container');
+  const threadsContainer = document.getElementById('threads_container');
+
+  const aggStart = document.getElementById('aggStart');
+  const aggSummary = document.getElementById('aggSummary');
+  const aggLite = document.getElementById('aggLite');
+  const aggFull = document.getElementById('aggFull');
+  const aggThreads = document.getElementById('aggThreads');
+
+  //////////////////////
+  // 1) Config
+  //////////////////////
   const REFRESH_MS = 6 * 60 * 1000;
 
-  //////////////////////
-  // DOM helpers
-  //////////////////////
-  const qs = (sel, root = document) => root.querySelector(sel);
-  const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  // Primary (your current working convention)
+  const URL_TRIPS_PRIMARY = './data/latest/watch_trips.json';
+  const URL_SCHEDULE_PRIMARY = './data/latest/watch_schedule.json';
+  const URL_THREADS_PRIMARY = './data/latest/threads.json';
 
-  const el = (tag, attrs = {}, children = []) => {
-    const n = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs || {})) {
-      if (k === 'class') n.className = v;
-      else if (k === 'text') n.textContent = v;
-      else if (k === 'html') n.innerHTML = v;
-      else if (k.startsWith('data-')) n.setAttribute(k, v);
-      else if (k === 'style') n.setAttribute('style', v);
-      else if (k === 'aria') {
-        for (const [ak, av] of Object.entries(v || {})) n.setAttribute(`aria-${ak}`, av);
-      } else n.setAttribute(k, v);
-    }
-    for (const c of (children || [])) {
-      if (c == null) continue;
-      if (typeof c === 'string') n.appendChild(document.createTextNode(c));
-      else n.appendChild(c);
-    }
-    return n;
-  };
-
-  const safe = (v, fallback = '—') => {
-    if (v === null || v === undefined) return fallback;
-    const s = String(v).trim();
-    return s ? s : fallback;
-  };
+  // Fallbacks (so local testing works without moving files)
+  const URL_TRIPS_FALLBACK = './watch_trips.json';
+  const URL_SCHEDULE_FALLBACK = './watch_schedule.json';
+  const URL_THREADS_FALLBACK = './threads.json';
 
   //////////////////////
-  // Time helpers
+  // 2) State
   //////////////////////
-  // Accepts: "8:05A", "8:05AM", "8A", "12:00P".
-  function parseClock12(s) {
-    if (!s) return null;
-    const t = String(s).trim().toUpperCase();
-    const m = t.match(/^\s*(\d{1,2})(?::(\d{2}))?\s*([AP])M?\s*$/);
-    if (!m) return null;
-    let hh = parseInt(m[1], 10);
-    const mm = parseInt(m[2] || '0', 10);
-    const ap = m[3];
-    if (hh === 12) hh = 0;
-    if (ap === 'P') hh += 12;
-    return { hh, mm };
+  let page = 'start'; // start | summary | lite | full | threads
+
+  let globalStatus = ''; // '', 'U', 'L', 'C' (Lite only)
+  let activeHorse = '';  // '' or horse name (Lite only)
+  const ringFilters = new Map(); // ringNumber -> '', 'U'|'L'|'C' (Lite only)
+
+  let dataTrips = null;     // { meta, records[] }
+  let dataSchedule = null;  // { meta, records[] }
+  let dataThreads = null;   // { meta, records[] }
+
+  let lastRefreshAt = 0;
+
+  //////////////////////
+  // 3) Helpers
+  //////////////////////
+  function esc(s){
+    return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  function dateFromDtAndClock(dt, clockStr) {
-    const p = parseClock12(clockStr);
-    if (!dt || !p) return null;
-    // Local time
-    return new Date(`${dt}T${String(p.hh).padStart(2, '0')}:${String(p.mm).padStart(2, '0')}:00`);
+  function uniq(arr){
+    const set = new Set(arr);
+    return Array.from(set);
   }
 
-  function fmtInMinutes(ms) {
-    const mins = Math.round(ms / 60000);
-    if (!Number.isFinite(mins)) return null;
-    const abs = Math.abs(mins);
-    if (abs < 1) return 'now';
-    if (abs < 60) return mins > 0 ? `in ${abs}m` : `${abs}m ago`;
-    const h = Math.floor(abs / 60);
-    const m = abs % 60;
-    const tail = m ? `${h}h ${m}m` : `${h}h`;
-    return mins > 0 ? `in ${tail}` : `${tail} ago`;
+  function statusToCode(latestStatus){
+    // watch_trips.json uses: Upcoming / Underway / Completed
+    const s = String(latestStatus || '').toLowerCase();
+    if (s === 'underway' || s === 'live') return 'L';
+    if (s === 'completed' || s === 'complete') return 'C';
+    if (s === 'upcoming') return 'U';
+    return ''; // unknown
   }
 
-  //////////////////////
-  // Status mapping
-  //////////////////////
-  function statusCode(statusRaw) {
-    const s = String(statusRaw || '').toLowerCase();
-    if (!s) return 'U';
-    if (s.startsWith('under') || s.startsWith('live') || s.startsWith('running')) return 'L';
-    if (s.startsWith('comp') || s.startsWith('done') || s.startsWith('final')) return 'C';
-    return 'U';
-  }
-
-  function statusLabel(code) {
-    if (code === 'L') return 'Underway';
-    if (code === 'C') return 'Completed';
-    return 'Upcoming';
-  }
-
-  //////////////////////
-  // Data normalize
-  //////////////////////
-  function groupByRingsFromTrips(tripRecords) {
-    const rings = new Map();
-
-    for (const r of tripRecords) {
-      const rn = Number(r.ring_number ?? r.ringNumber);
-      if (!Number.isFinite(rn)) continue;
-
-      const ringKey = String(rn);
-      if (!rings.has(ringKey)) {
-        rings.set(ringKey, {
-          ring_number: rn,
-          ringName: r.ringName || r.ring_name || `Ring ${rn}`,
-          classes: new Map(),
-        });
+  function fmtTimeLike(v){
+    // Keep what Airtable already provides (often "8:05A", "11:15 AM").
+    // If ISO string, format to h:mmA (no seconds).
+    const s = String(v ?? '').trim();
+    if (!s) return '';
+    if (s.includes('T') && s.includes(':')){
+      const d = new Date(s);
+      if (!isNaN(d.getTime())){
+        const hh = d.getHours();
+        const mm = String(d.getMinutes()).padStart(2,'0');
+        const ap = hh >= 12 ? 'P' : 'A';
+        const h12 = ((hh + 11) % 12) + 1;
+        return `${h12}:${mm}${ap}`;
       }
-      const ring = rings.get(ringKey);
-
-      const cid = String(r.class_id ?? r.classId ?? `${rn}-${r.class_number ?? r.classNumber ?? ''}-${r.class_name ?? r.className ?? ''}`);
-      if (!ring.classes.has(cid)) {
-        const code = statusCode(r.latestStatus ?? r.status);
-        ring.classes.set(cid, {
-          class_id: cid,
-          ring_number: rn,
-          ringName: ring.ringName,
-          class_group_id: r.class_group_id ?? r.classGroupId ?? null,
-          group_name: r.group_name ?? r.groupName ?? null,
-          class_number: r.class_number ?? r.classNumber ?? null,
-          class_name: r.class_name ?? r.className ?? null,
-          class_type: r.class_type ?? r.classType ?? null,
-          schedule_sequencetype: r.schedule_sequencetype ?? r.scheduleSequenceType ?? null,
-          latestStatus: r.latestStatus ?? r.status ?? null,
-          status_code: code,
-          latestStart: r.latestStart ?? r.estimated_start_time ?? r.estimatedStart ?? null,
-          time_sort: r.time_sort ?? null,
-          estimated_end_time: r.estimated_end_time ?? null,
-          total_trips: r.total_trips ?? null,
-          dt: r.dt ?? null,
-          entries: [],
-        });
-      }
-
-      const cls = ring.classes.get(cid);
-      // Ensure most recent status/time wins if records differ
-      const code = statusCode(r.latestStatus ?? r.status);
-      if (code === 'L' && cls.status_code !== 'L') cls.status_code = 'L';
-      if (code === 'C' && cls.status_code === 'U') cls.status_code = 'C';
-      if (r.latestStart) cls.latestStart = r.latestStart;
-      if (r.time_sort != null) cls.time_sort = r.time_sort;
-      if (r.total_trips != null) cls.total_trips = r.total_trips;
-
-      const entry = {
-        entry_id: String(r.entry_id ?? r.entryId ?? ''),
-        backNumber: r.backNumber ?? r.entryNumber ?? r.back_number ?? null,
-        barnName: r.barnName ?? r.barn_name ?? null,
-        horseName: r.horseName ?? r.horse_name ?? null,
-        riderName: r.riderName ?? r.rider_name ?? null,
-        teamName: r.teamName ?? null,
-        runningOOG: r.runningOOG ?? null,
-        lastOOG: r.lastOOG ?? null,
-        latestGO: r.latestGO ?? null,
-        lastGoneIn: r.lastGoneIn ?? null,
-        lastPlacing: r.lastPlacing ?? r.latestPlacing ?? null,
-        latestPlacing: r.latestPlacing ?? null,
-        lastPosition: r.lastPosition ?? null,
-        lastPlace: r.lastPlace ?? null,
-        lastScore: r.lastScore ?? null,
-        lastTime: r.lastTime ?? null,
-        score1: r.score1 ?? null,
-        score2: r.score2 ?? null,
-        score3: r.score3 ?? null,
-        time_one: r.time_one ?? null,
-        time_two: r.time_two ?? null,
-        time_three: r.time_three ?? null,
-        dt: r.dt ?? cls.dt ?? null,
-        class_type: cls.class_type,
-        schedule_sequencetype: cls.schedule_sequencetype,
-        class_id: cls.class_id,
-        ring_number: rn,
-      };
-      // Entry-level "gone in" is independent of class completion.
-      entry.goneIn = Boolean(entry.lastPosition || entry.lastScore || entry.lastTime || entry.lastPlace || entry.latestPlacing);
-
-      cls.entries.push(entry);
     }
-
-    const ringArr = Array.from(rings.values());
-    ringArr.sort((a, b) => a.ring_number - b.ring_number);
-
-    for (const ring of ringArr) {
-      ring.classesArr = Array.from(ring.classes.values());
-      ring.classesArr.sort((a, b) => {
-        const ta = (a.time_sort == null ? 1e15 : Number(a.time_sort));
-        const tb = (b.time_sort == null ? 1e15 : Number(b.time_sort));
-        if (ta !== tb) return ta - tb;
-        const na = Number(a.class_number ?? 1e15);
-        const nb = Number(b.class_number ?? 1e15);
-        return na - nb;
-      });
-    }
-
-    return ringArr;
+    return s;
   }
 
-  function groupByRingsFromSchedule(scheduleRecords) {
-    const rings = new Map();
-    for (const r of scheduleRecords) {
-      const rn = Number(r.ring_number ?? r.ringNumber);
-      if (!Number.isFinite(rn)) continue;
-      const ringKey = String(rn);
-      if (!rings.has(ringKey)) {
-        rings.set(ringKey, {
-          ring_number: rn,
-          ringName: r.ringName || r.ring_name || `Ring ${rn}`,
-          classes: [],
-        });
-      }
-      const ring = rings.get(ringKey);
-
-      ring.classes.push({
-        class_id: String(r.class_id ?? r.classId ?? `${rn}-${r.class_number ?? ''}-${r.class_name ?? ''}`),
-        ring_number: rn,
-        ringName: ring.ringName,
-        class_group_id: r.class_group_id ?? null,
-        group_name: r.group_name ?? null,
-        class_number: r.class_number ?? null,
-        class_name: r.class_name ?? null,
-        class_type: r.class_type ?? null,
-        schedule_sequencetype: r.schedule_sequencetype ?? null,
-        status_raw: r.latestStatus ?? r.status ?? null,
-        status_code: statusCode(r.latestStatus ?? r.status),
-        estStart: r.latestStart ?? r.estimated_start_time ?? r.estimated_start ?? null,
-        time_sort: r.time_sort ?? null,
-        estimated_end_time: r.estimated_end_time ?? null,
-        total_trips: r.total_trips ?? null,
-        rollup_horses: Array.isArray(r.rollup_horses) ? r.rollup_horses : [],
-      });
-    }
-
-    const ringArr = Array.from(rings.values());
-    ringArr.sort((a, b) => a.ring_number - b.ring_number);
-    for (const ring of ringArr) {
-      ring.classes.sort((a, b) => {
-        const ta = (a.time_sort == null ? 1e15 : Number(a.time_sort));
-        const tb = (b.time_sort == null ? 1e15 : Number(b.time_sort));
-        if (ta !== tb) return ta - tb;
-        const na = Number(a.class_number ?? 1e15);
-        const nb = Number(b.class_number ?? 1e15);
-        return na - nb;
-      });
-    }
-    return ringArr;
+  function cacheBust(url){
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}t=${Date.now()}`;
   }
 
-  //////////////////////
-  // UI state
-  //////////////////////
-  const state = {
-    screen: 'start',
-    lastRefreshAt: null,
-    lastError: null,
-
-    tripsRaw: [],
-    scheduleRaw: [],
-    threadsRaw: [],
-
-    ringsLite: [],
-    ringsFull: [],
-
-    filters: {
-      status: 'ALL',
-      horse: null,
-    },
-
-    // Per-ring eyelid filters: { [ring_number]: 'ALL'|'U'|'L'|'C' }
-    ringFilters: {},
-
-    horses: [],
-  };
-
-  //////////////////////
-  // Flyup
-  //////////////////////
-  const fly = {
-    root: null,
-    title: null,
-    body: null,
-    closeBtn: null,
-  };
-
-  function flyOpen(title, kvPairs) {
-    fly.title.textContent = title || 'Details';
-    fly.body.innerHTML = '';
-
-    const kv = el('div', { class: 'kv' });
-    for (const { k, v } of kvPairs) {
-      kv.appendChild(
-        el('div', { class: 'kv__item' }, [
-          el('div', { class: 'kv__k', text: k }),
-          el('div', { class: 'kv__v mono', text: safe(v) }),
-        ])
-      );
-    }
-
-    fly.body.appendChild(kv);
-
-    fly.root.classList.add('is-on');
-    fly.root.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function flyClose() {
-    fly.root.classList.remove('is-on');
-    fly.root.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
-
-  //////////////////////
-  // Render helpers
-  //////////////////////
-  function setTop(title, sub) {
-    qs('#topTitle').textContent = title;
-    qs('#topSub').textContent = sub || '';
-  }
-
-  function setView(screen) {
-    state.screen = screen;
-
-    const map = {
-      start: ['Start', statusSub()],
-      summary: ['Summary', statusSub()],
-      lite: ['Lite', statusSub()],
-      full: ['Full', statusSub()],
-      threads: ['Threads', statusSub()],
+  async function fetchJsonWithFallback(primaryUrl, fallbackUrl){
+    const tryFetch = async (u) => {
+      const res = await fetch(cacheBust(u), { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${u}`);
+      return res.json();
     };
-
-    const [t, s] = map[screen] || ['Ring Status', statusSub()];
-    setTop(t, s);
-
-    // Views
-    for (const v of qsa('.view')) v.classList.remove('is-on');
-    const viewEl = qs(`#view${screen.charAt(0).toUpperCase()}${screen.slice(1)}`);
-    if (viewEl) viewEl.classList.add('is-on');
-
-    // Nav
-    for (const b of qsa('.nav-btn')) b.classList.toggle('is-on', b.dataset.screen === screen);
-
-    // Peaks + horses visibility
-    const peaksWrap = qs('#peaksWrap');
-    const horsesWrap = qs('#horsesWrap');
-
-    if (screen === 'lite') {
-      peaksWrap.style.display = '';
-      horsesWrap.style.display = '';
-    } else if (screen === 'full') {
-      peaksWrap.style.display = '';
-      horsesWrap.style.display = 'none';
-    } else {
-      peaksWrap.style.display = 'none';
-      horsesWrap.style.display = 'none';
+    try{
+      return await tryFetch(primaryUrl);
+    }catch(_e){
+      return await tryFetch(fallbackUrl);
     }
-
-    // Render current
-    render();
   }
 
-  function statusSub() {
-    const t = state.lastRefreshAt ? new Date(state.lastRefreshAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
-    return `Last refresh ${t}`;
-  }
+  //////////////////////
+  // 4) Chrome hide/show on scroll (down hides, up shows)
+  //////////////////////
+  let lastY = 0;
+  let ticking = false;
 
-  function renderEmpty(msg) {
-    return el('div', { class: 'empty', text: msg });
-  }
+  function onScroll(){
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = main.scrollTop || 0;
+      const dy = y - lastY;
 
-  function render() {
-    if (state.screen === 'start') renderStart();
-    if (state.screen === 'summary') renderSummary();
-    if (state.screen === 'lite') renderLite();
-    if (state.screen === 'full') renderFull();
-    if (state.screen === 'threads') renderThreads();
-  }
-
-  function renderStart() {
-    const root = qs('#viewStart');
-    root.innerHTML = '';
-
-    const counts = computeCountsFromTrips();
-
-    root.appendChild(
-      el('div', { class: 'stack' }, [
-        el('div', { class: 'card' }, [
-          el('div', { class: 'card__hd' }, [
-            el('div', { class: 'card__title', text: 'System' }),
-            el('div', { class: 'card__meta', text: state.lastError ? 'Partial' : 'OK' }),
-          ]),
-          el('div', { class: 'rows' }, [
-            infoRow('Trips', `${counts.totalEntries} entries / ${counts.totalClasses} classes`),
-            infoRow('Underway', `${counts.underway}`),
-            infoRow('Upcoming', `${counts.upcoming}`),
-            infoRow('Completed', `${counts.completed}`),
-            infoRow('Error', state.lastError ? state.lastError : '—'),
-          ])
-        ]),
-        el('div', { class: 'card' }, [
-          el('div', { class: 'card__hd' }, [
-            el('div', { class: 'card__title', text: 'Quick' }),
-            el('div', { class: 'card__meta', text: 'Open screens' }),
-          ]),
-          el('div', { class: 'rows' }, [
-            navRow('Summary', 'At-a-glance', 'summary'),
-            navRow('Lite', 'Your trips + flyups', 'lite'),
-            navRow('Full', 'All classes (read-only)', 'full'),
-            navRow('Threads', 'Refresh log', 'threads'),
-          ])
-        ])
-      ])
-    );
-  }
-
-  function renderSummary() {
-    const root = qs('#viewSummary');
-    root.innerHTML = '';
-
-    const counts = computeCountsFromTrips();
-    const live = listClassesFromTrips({ status: 'L', limit: 8 });
-    const up = listClassesFromTrips({ status: 'U', limit: 8 });
-
-    root.appendChild(
-      el('div', { class: 'stack' }, [
-        el('div', { class: 'card' }, [
-          el('div', { class: 'card__hd' }, [
-            el('div', { class: 'card__title', text: 'At a glance' }),
-            el('div', { class: 'card__meta', text: `${counts.totalEntries} entries` }),
-          ]),
-          el('div', { class: 'rows' }, [
-            infoRow('Underway', `${counts.underway}`),
-            infoRow('Upcoming', `${counts.upcoming}`),
-            infoRow('Completed', `${counts.completed}`),
-          ])
-        ]),
-        el('div', { class: 'card' }, [
-          el('div', { class: 'card__hd' }, [
-            el('div', { class: 'card__title', text: 'Live now' }),
-            el('div', { class: 'card__meta', text: live.length ? '' : '—' }),
-          ]),
-          live.length ? el('div', { class: 'rows' }, live.map(c => classRow(c, true))) : el('div', { style: 'padding:12px' }, [renderEmpty('No underway classes in trips feed.')])
-        ]),
-        el('div', { class: 'card' }, [
-          el('div', { class: 'card__hd' }, [
-            el('div', { class: 'card__title', text: 'Next up' }),
-            el('div', { class: 'card__meta', text: up.length ? '' : '—' }),
-          ]),
-          up.length ? el('div', { class: 'rows' }, up.map(c => classRow(c, true))) : el('div', { style: 'padding:12px' }, [renderEmpty('No upcoming classes in trips feed.')])
-        ])
-      ])
-    );
-  }
-
-  function renderLite() {
-    buildPeaks(state.ringsLite);
-    buildStatusFilters();
-    buildHorseChips();
-
-    const root = qs('#viewLite');
-    root.innerHTML = '';
-
-    if (!state.ringsLite.length) {
-      root.appendChild(renderEmpty('No trips data loaded.'));
-      return;
-    }
-
-    root.appendChild(
-      el('div', { class: 'stack', id: 'liteStack' }, state.ringsLite.map(r => ringCardLite(r)))
-    );
-  }
-
-  function renderFull() {
-    buildPeaks(state.ringsFull);
-    buildStatusFilters();
-
-    const root = qs('#viewFull');
-    root.innerHTML = '';
-
-    if (!state.ringsFull.length) {
-      root.appendChild(renderEmpty('No schedule data loaded.'));
-      return;
-    }
-
-    root.appendChild(
-      el('div', { class: 'stack', id: 'fullStack' }, state.ringsFull.map(r => ringCardFull(r)))
-    );
-  }
-
-  function renderThreads() {
-    const root = qs('#viewThreads');
-    root.innerHTML = '';
-
-    const rows = Array.isArray(state.threadsRaw) ? state.threadsRaw : [];
-    if (!rows.length) {
-      root.appendChild(renderEmpty('No threads yet.'));
-      return;
-    }
-
-    const cards = el('div', { class: 'stack' });
-
-    for (const t of rows.slice(0, 200)) {
-      const when = t.observed_at ? new Date(t.observed_at).toLocaleString() : '—';
-      const title = t.title || 'Update';
-      const body = t.body || '';
-      const meta = [];
-      if (t.ring_number) meta.push(`Ring ${t.ring_number}`);
-      if (t.class_id) meta.push(`Class ${t.class_id}`);
-      if (t.entry_id) meta.push(`Entry ${t.entry_id}`);
-
-      cards.appendChild(
-        el('div', { class: 'card' }, [
-          el('div', { class: 'card__hd' }, [
-            el('div', { class: 'card__title', text: title }),
-            el('div', { class: 'card__meta', text: when }),
-          ]),
-          el('div', { class: 'rows' }, [
-            el('div', { class: 'row' }, [
-              el('div', { class: 'row__l', text: safe(t.level, 'info') }),
-              el('div', { class: 'row__m' }, [
-                el('div', { class: 'line1', text: body || '—' }),
-                el('div', { class: 'line2', text: meta.join(' • ') || '—' }),
-              ]),
-              el('div', { class: 'row__r', text: '' }),
-            ])
-          ])
-        ])
-      );
-    }
-
-    root.appendChild(cards);
-  }
-
-  function infoRow(k, v) {
-    return el('div', { class: 'row' }, [
-      el('div', { class: 'row__l', text: k }),
-      el('div', { class: 'row__m' }, [
-        el('div', { class: 'line1', text: v }),
-      ]),
-      el('div', { class: 'row__r', text: '' }),
-    ]);
-  }
-
-  function navRow(title, subtitle, screen) {
-    const r = el('div', { class: 'row row--tap', 'data-screen': screen }, [
-      el('div', { class: 'row__l', text: '' }),
-      el('div', { class: 'row__m' }, [
-        el('div', { class: 'line1', text: title }),
-        el('div', { class: 'line2', text: subtitle }),
-      ]),
-      el('div', { class: 'row__r', text: '' }),
-    ]);
-    r.addEventListener('click', () => setView(screen));
-    return r;
-  }
-
-  function classRow(cls, interactive) {
-    const left = safe(cls.latestStart, '—');
-    const right = statusLabel(cls.status_code);
-    const mid1 = `${safe(cls.class_number)} • ${safe(cls.class_name)}`;
-    const mid2 = `${safe(cls.group_name)} • ${safe(cls.class_type)} • ${safe(cls.schedule_sequencetype)}`;
-
-    const r = el('div', { class: `row ${interactive ? 'row--tap' : ''}` }, [
-      el('div', { class: 'row__l mono', text: left }),
-      el('div', { class: 'row__m' }, [
-        el('div', { class: 'line1', text: mid1 }),
-        el('div', { class: 'line2', text: mid2 }),
-      ]),
-      el('div', { class: 'row__r', text: right }),
-    ]);
-
-    if (interactive) {
-      r.addEventListener('click', () => openClassFly(cls));
-    }
-
-    return r;
-  }
-
-  function ringCardLite(ring) {
-    const card = el('div', { class: 'card', id: `ring-${ring.ring_number}` });
-
-    const underwayCount = ring.classesArr.filter(c => c.status_code === 'L').length;
-    const upcomingCount = ring.classesArr.filter(c => c.status_code === 'U').length;
-    const completedCount = ring.classesArr.filter(c => c.status_code === 'C').length;
-
-    card.appendChild(
-      el('div', { class: 'card__hd' }, [
-        el('div', { class: 'card__title', text: safe(ring.ringName, `Ring ${ring.ring_number}`) }),
-        el('div', { class: 'card__meta', text: `U:${upcomingCount} • L:${underwayCount} • C:${completedCount}` }),
-      ])
-    );
-
-    // Ring eyelid filter
-    card.appendChild(ringFilterBar(ring.ring_number));
-
-    const rows = el('div', { class: 'rows' });
-
-    const filtered = applyClassFilters(ring.classesArr, ring.ring_number);
-    for (const cls of filtered) {
-      // class row
-      const cr = classRow(cls, true);
-      // status shading at card-level is by class; we apply via data-status on an inner wrapper.
-      const classWrap = el('div', { class: 'card', 'data-status': cls.status_code, style: 'margin:10px; overflow:hidden;' });
-      classWrap.appendChild(el('div', { class: 'rows' }, [cr, entryRowLite(cls)]));
-      rows.appendChild(classWrap);
-    }
-
-    if (!filtered.length) {
-      rows.appendChild(el('div', { style: 'padding:12px' }, [renderEmpty('No classes match filters.') ]));
-    }
-
-    card.appendChild(rows);
-    return card;
-  }
-
-  function ringCardFull(ring) {
-    const card = el('div', { class: 'card', id: `ring-${ring.ring_number}` });
-
-    const underwayCount = ring.classes.filter(c => c.status_code === 'L').length;
-    const upcomingCount = ring.classes.filter(c => c.status_code === 'U').length;
-    const completedCount = ring.classes.filter(c => c.status_code === 'C').length;
-
-    card.appendChild(
-      el('div', { class: 'card__hd' }, [
-        el('div', { class: 'card__title', text: safe(ring.ringName, `Ring ${ring.ring_number}`) }),
-        el('div', { class: 'card__meta', text: `U:${upcomingCount} • L:${underwayCount} • C:${completedCount}` }),
-      ])
-    );
-
-    // Ring eyelid filter
-    card.appendChild(ringFilterBar(ring.ring_number));
-
-    const rows = el('div', { class: 'rows' });
-
-    const filtered = applyClassFilters(ring.classes, ring.ring_number);
-    for (const cls of filtered) {
-      const classWrap = el('div', { class: 'card', 'data-status': cls.status_code, style: 'margin:10px; overflow:hidden;' });
-      classWrap.appendChild(el('div', { class: 'rows' }, [classRow(cls, false), entryRowFull(cls)]));
-      rows.appendChild(classWrap);
-    }
-
-    if (!filtered.length) {
-      rows.appendChild(el('div', { style: 'padding:12px' }, [renderEmpty('No classes match filters.') ]));
-    }
-
-    card.appendChild(rows);
-    return card;
-  }
-
-  function applyClassFilters(classesArr, ringNumber) {
-    const ringWant = state.ringFilters[String(ringNumber)] || 'ALL';
-    const want = ringWant !== 'ALL' ? ringWant : state.filters.status;
-    const horse = state.filters.horse;
-
-    return classesArr.filter(c => {
-      if (want !== 'ALL' && c.status_code !== want) return false;
-      if (horse && c.entries) {
-        // Lite only
-        const has = c.entries.some(e => (e.horseName || '').toLowerCase() === horse.toLowerCase());
-        if (!has) return false;
+      if (Math.abs(dy) > 6){
+        if (dy > 0) app.classList.add('chrome--hidden');
+        else app.classList.remove('chrome--hidden');
       }
-      return true;
+
+      lastY = y;
+      ticking = false;
+    });
+  }
+  main.addEventListener('scroll', onScroll, { passive: true });
+
+  //////////////////////
+  // 5) Flyups (shared)
+  //////////////////////
+  const fly = document.getElementById('fly');
+  const flyTitle = document.getElementById('flyTitle');
+  const flyBody = document.getElementById('flyBody');
+  const flyClose = document.getElementById('flyClose');
+  const flyBackdrop = document.getElementById('flyBackdrop');
+
+  function openFly(title, blocks){
+    flyTitle.textContent = String(title || 'Details');
+    flyBody.innerHTML = '';
+
+    (blocks || []).forEach(({k,v}) => {
+      const box = document.createElement('div');
+      box.className = 'fly_kv';
+      box.innerHTML = '<div class="fly_k"></div><div class="fly_v"></div>';
+      box.querySelector('.fly_k').textContent = String(k || '');
+      box.querySelector('.fly_v').textContent = String(v ?? '—');
+      flyBody.appendChild(box);
+    });
+
+    fly.classList.add('is-open');
+  }
+
+  function closeFly(){
+    fly.classList.remove('is-open');
+  }
+
+  flyClose.addEventListener('click', closeFly);
+  flyBackdrop.addEventListener('click', closeFly);
+
+  //////////////////////
+  // 6) Data shaping
+  //////////////////////
+  function buildTripsIndex(trips){
+    const recs = (trips && trips.records) ? trips.records : [];
+
+    const byClass = new Map(); // class_id -> { classFields, entries[] }
+    const rings = new Map();   // ring_number -> { ring_number, ringName, groups: Map(group_id -> {...}) }
+
+    recs.forEach(r => {
+      const ringNum = Number(r.ring_number || 0);
+      const ringName = String(r.ringName || (ringNum ? `Ring ${ringNum}` : 'Ring')).trim() || (ringNum ? `Ring ${ringNum}` : 'Ring');
+
+      const classId = String(r.class_id || '').trim() || `class-${esc(r.class_number||'')}-${esc(r.class_name||'')}-${ringNum}`;
+      const groupId = String(r.group_id || '').trim() || `group-${ringNum}-${String(r.group_name||'').trim()}`;
+      const groupName = String(r.group_name || '').trim() || 'Group';
+
+      const cls = byClass.get(classId) || {
+        class_id: classId,
+        ring_number: ringNum,
+        ringName,
+        group_id: groupId,
+        group_name: groupName,
+        class_number: String(r.class_number || '').trim(),
+        class_name: String(r.class_name || '').trim(),
+        class_type: String(r.class_type || '').trim(),
+        schedule_sequencetype: String(r.schedule_sequencetype || '').trim(),
+        latestStatus: String(r.latestStatus || '').trim(),
+        latestStart: r.latestStart,
+        latest_calendarStart: r.latest_calendarStart,
+        latest_calendarEnd: r.latest_calendarEnd,
+        class_total: r.class_total,
+        entries: []
+      };
+
+      cls.entries.push(r);
+      byClass.set(classId, cls);
+
+      if (!rings.has(ringNum)){
+        rings.set(ringNum, { ring_number: ringNum, ringName, groups: new Map() });
+      }
+      const ring = rings.get(ringNum);
+      if (!ring.groups.has(groupId)){
+        ring.groups.set(groupId, { group_id: groupId, group_name: groupName, classIds: [] });
+      }
+      const grp = ring.groups.get(groupId);
+      if (!grp.classIds.includes(classId)) grp.classIds.push(classId);
+    });
+
+    return { byClass, rings };
+  }
+
+  function buildScheduleIndex(schedule){
+    const recs = (schedule && schedule.records) ? schedule.records : [];
+
+    const byClass = new Map(); // class_id -> schedule record
+    const rings = new Map();   // ring_number -> { ring_number, ringName, groups: Map(group_id->...) }
+
+    recs.forEach(r => {
+      const ringNum = Number(r.ring_number || 0);
+      const ringName = String(r.ringName || (ringNum ? `Ring ${ringNum}` : 'Ring')).trim() || (ringNum ? `Ring ${ringNum}` : 'Ring');
+
+      const classId = String(r.class_id || '').trim() || `class-${esc(r.class_number||'')}-${esc(r.class_name||'')}-${ringNum}`;
+      const groupId = String(r.group_id || '').trim() || `group-${ringNum}-${String(r.group_name||'').trim()}`;
+      const groupName = String(r.group_name || '').trim() || 'Group';
+
+      byClass.set(classId, r);
+
+      if (!rings.has(ringNum)){
+        rings.set(ringNum, { ring_number: ringNum, ringName, groups: new Map() });
+      }
+      const ring = rings.get(ringNum);
+      if (!ring.groups.has(groupId)){
+        ring.groups.set(groupId, { group_id: groupId, group_name: groupName, classIds: [] });
+      }
+      const grp = ring.groups.get(groupId);
+      if (!grp.classIds.includes(classId)) grp.classIds.push(classId);
+    });
+
+    return { byClass, rings };
+  }
+
+  //////////////////////
+  // 7) UI builders
+  //////////////////////
+  function buildRingCardHTML({ ringNum, ringName, groups, byClass, mode }){
+    // mode: 'lite' or 'full'
+    const ringFilter = ringFilters.get(ringNum) || '';
+
+    // ring head eyelid only in Lite
+    const eyelid = (mode === 'lite')
+      ? `<div class="ring_eyelid" aria-label="${esc(ringName)} status filter">
+          <button class="sbtn" type="button" data-ring-status="U" data-ring="${ringNum}" title="Upcoming">U</button>
+          <button class="sbtn" type="button" data-ring-status="L" data-ring="${ringNum}" title="Live">L</button>
+          <button class="sbtn" type="button" data-ring-status="C" data-ring="${ringNum}" title="Completed">C</button>
+        </div>`
+      : `<div class="ring_eyelid" aria-hidden="true"></div>`;
+
+    const groupBlocks = Array.from(groups.values()).map(grp => {
+      const classCards = (grp.classIds || []).map(classId => {
+        const cls = byClass.get(classId);
+        if (!cls) return '';
+
+        const statusCode = statusToCode(cls.latestStatus);
+        const classTime = fmtTimeLike(cls.latestStart || cls.latest_calendarStart || '');
+        const classLabelRaw = [
+          cls.class_number ? cls.class_number : '',
+          cls.class_name ? cls.class_name : ''
+        ].filter(Boolean).join(' ');
+        const classLabel = classLabelRaw || 'Class';
+
+        // entries pills
+        const entries = (cls.entries || []);
+
+        // Pill label contract: barnName • lastOOG • latestGO
+        const pillNodes = entries.map((e, idx) => {
+          const barnName = String(e.barnName || '').trim() || String(e.barn || '').trim();
+          const lastOOG = (e.lastOOG !== undefined && e.lastOOG !== null && String(e.lastOOG).trim() !== '') ? String(e.lastOOG) : '';
+          const latestGO = fmtTimeLike(e.latestGO || e.runningGO || e.running_go_time || e.latest_go_time || '');
+
+          const left = barnName || '—';
+          const mid = lastOOG || '—';
+          const right = latestGO || '—';
+
+          const pillText = `${left} • ${mid} • ${right}`;
+
+          const sharedAttrs =
+            `data-horse="${esc(e.horseName || e.horse || '')}"
+             data-rider="${esc(e.riderName || e.rider || '')}"
+             data-trn="${esc(e.barnName || '')}"
+             data-ogo="${esc(e.lastOOG ?? '')}"
+             data-eta="${esc(latestGO)}"
+             data-entry-number="${esc(e.backNumber ?? e.entry_number ?? '')}"
+             data-running-ogo="${esc(e.runningOOG ?? '')}"
+             data-running-go="${esc(fmtTimeLike(e.runningGO ?? ''))}"
+             data-place="${esc(e.place ?? '')}"
+             data-score="${esc(e.score ?? '')}"
+             data-time="${esc(e.time ?? '')}"`;
+
+          if (mode === 'lite'){
+            const entryId = String(e.entry_id || e.record_id || `e-${classId}-${idx}`);
+            return `<button class="epill" type="button" data-open-entry="${esc(entryId)}" ${sharedAttrs}>${esc(pillText)}</button>`;
+          }
+          // Full view: no interactions
+          return `<div class="epill" aria-disabled="true" ${sharedAttrs}>${esc(pillText)}</div>`;
+        }).join('');
+
+        const entriesRow = `
+          <div class="row--tap row--line line--entries">
+            <div class="row__l"></div>
+            <div class="line__m">
+              <div class="entries_scroller">
+                ${pillNodes || ''}
+              </div>
+            </div>
+            <div class="line__r" aria-hidden="true"></div>
+          </div>
+        `;
+
+        const classLineAttrs = (mode === 'lite')
+          ? `data-open-class="${esc(cls.class_id)}"`
+          : '';
+
+        const classCard = `
+          <div class="class_card" data-status="${esc(statusCode || 'U')}"
+               data-class-id="${esc(cls.class_id)}"
+               data-class-number="${esc(cls.class_number || '')}"
+               data-class-total="${esc(cls.class_total ?? '')}"
+               data-class-name="${esc(classLabel)}"
+               data-class-time="${esc(classTime)}"
+               data-ring-number="${esc(ringNum)}"
+               data-ring-name="${esc(ringName)}"
+               data-group-name="${esc(grp.group_name)}"
+               data-class-type="${esc(cls.class_type || '')}"
+               data-seq="${esc(cls.schedule_sequencetype || '')}"
+               data-latest-status="${esc(cls.latestStatus || '')}">
+            <div class="row--tap row--line line--class" ${classLineAttrs}>
+              <div class="row__l">${esc(classTime || '')}</div>
+              <div class="line__m">${esc(classLabel)}</div>
+              <div class="line__r" aria-hidden="true"></div>
+            </div>
+            ${entriesRow}
+          </div>
+        `;
+        return classCard;
+      }).join('');
+
+      return `
+        <div class="class_group_id" data-group-id="${esc(grp.group_id)}">
+          ${classCards}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <section class="ring_card" id="ring-${esc(ringNum)}" data-ring-number="${esc(ringNum)}" data-ring-filter="${esc(ringFilter)}">
+        <div class="ring_line">
+          <div class="ring_title">${esc(ringName)}</div>
+          ${eyelid}
+        </div>
+        ${groupBlocks}
+      </section>
+    `;
+  }
+
+  function renderLite(){
+    const trips = dataTrips || { records: [] };
+    const idx = buildTripsIndex(trips);
+
+    // build peaks + horses (Lite only)
+    buildRingPeaks(Array.from(idx.rings.keys()).sort((a,b)=>a-b));
+    buildHorseChipsFromTrips(trips);
+
+    // default ringFilters map initialization
+    Array.from(idx.rings.keys()).forEach(rn => { if (!ringFilters.has(rn)) ringFilters.set(rn, ''); });
+
+    const ringsSorted = Array.from(idx.rings.values()).sort((a,b)=>a.ring_number-b.ring_number);
+    const html = ringsSorted.map(ring => buildRingCardHTML({
+      ringNum: ring.ring_number,
+      ringName: ring.ringName,
+      groups: ring.groups,
+      byClass: idx.byClass,
+      mode: 'lite'
+    })).join('');
+
+    liteContainer.innerHTML = html || buildEmptyCard('No trips in watch_trips.json');
+    wireRingFilterButtons(); // per ring eyelids
+    applyLiteFilters();
+  }
+
+  function renderFull(){
+    const schedule = dataSchedule || { records: [] };
+    const schedIdx = buildScheduleIndex(schedule);
+    const tripsIdx = buildTripsIndex(dataTrips || { records: [] });
+
+    // Merge: for each schedule class, attach entries from trips if any
+    const byClassMerged = new Map();
+    schedIdx.byClass.forEach((rec, classId) => {
+      const ringNum = Number(rec.ring_number || 0);
+      const ringName = String(rec.ringName || (ringNum ? `Ring ${ringNum}` : 'Ring')).trim() || (ringNum ? `Ring ${ringNum}` : 'Ring');
+
+      const merged = {
+        class_id: String(rec.class_id || classId),
+        ring_number: ringNum,
+        ringName,
+        group_id: String(rec.group_id || ''),
+        group_name: String(rec.group_name || ''),
+        class_number: String(rec.class_number || '').trim(),
+        class_name: String(rec.class_name || '').trim(),
+        class_type: String(rec.class_type || '').trim(),
+        schedule_sequencetype: String(rec.schedule_sequencetype || '').trim(),
+        latestStatus: String(rec.latestStatus || '').trim(),
+        latestStart: rec.latestStart || rec.class_start || rec.class_time || rec.classTime || rec.start_time || rec.start,
+        latest_calendarStart: rec.latest_calendarStart,
+        latest_calendarEnd: rec.latest_calendarEnd,
+        class_total: rec.class_total,
+        entries: []
+      };
+
+      const tripClass = tripsIdx.byClass.get(String(rec.class_id || classId));
+      if (tripClass && Array.isArray(tripClass.entries)) merged.entries = tripClass.entries;
+
+      if ((!merged.class_total || merged.class_total === '') && tripClass && tripClass.class_total) merged.class_total = tripClass.class_total;
+
+      // status preference: if schedule doesn't have it, use tripClass.latestStatus
+      if (!merged.latestStatus && tripClass && tripClass.latestStatus) merged.latestStatus = tripClass.latestStatus;
+      if (!merged.latestStart && tripClass && tripClass.latestStart) merged.latestStart = tripClass.latestStart;
+
+      byClassMerged.set(String(rec.class_id || classId), merged);
+    });
+
+    const ringsSorted = Array.from(schedIdx.rings.values()).sort((a,b)=>a.ring_number-b.ring_number);
+    const html = ringsSorted.map(ring => buildRingCardHTML({
+      ringNum: ring.ring_number,
+      ringName: ring.ringName,
+      groups: ring.groups,
+      byClass: byClassMerged,
+      mode: 'full'
+    })).join('');
+
+    fullContainer.innerHTML = html || buildEmptyCard('No classes in watch_schedule.json');
+  }
+
+  function renderStart(){
+    const tripsCount = (dataTrips && dataTrips.records) ? dataTrips.records.length : 0;
+    const schedCount = (dataSchedule && dataSchedule.records) ? dataSchedule.records.length : 0;
+    const threadCount = (dataThreads && dataThreads.records) ? dataThreads.records.length : 0;
+
+    const ringsTrips = uniq((dataTrips?.records || []).map(r => Number(r.ring_number || 0)).filter(Boolean)).length;
+    const ringsSched = uniq((dataSchedule?.records || []).map(r => Number(r.ring_number || 0)).filter(Boolean)).length;
+
+    const last = lastRefreshAt ? new Date(lastRefreshAt) : null;
+    const lastStr = last ? last.toLocaleString() : '—';
+
+    startContainer.innerHTML = `
+      <section class="ring_card">
+        <div class="ring_line"><div class="ring_title">Status</div><div class="ring_eyelid" aria-hidden="true"></div></div>
+        <div class="class_group_id">
+          <div class="class_card" data-status="U">
+            <div class="row--tap row--line line--class">
+              <div class="row__l">Trips</div>
+              <div class="line__m">${esc(tripsCount)} (${esc(ringsTrips)} rings)</div>
+              <div class="line__r" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="class_card" data-status="U">
+            <div class="row--tap row--line line--class">
+              <div class="row__l">Sched</div>
+              <div class="line__m">${esc(schedCount)} (${esc(ringsSched)} rings)</div>
+              <div class="line__r" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="class_card" data-status="U">
+            <div class="row--tap row--line line--class">
+              <div class="row__l">Threads</div>
+              <div class="line__m">${esc(threadCount)}</div>
+              <div class="line__r" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="class_card" data-status="U">
+            <div class="row--tap row--line line--class">
+              <div class="row__l">Refresh</div>
+              <div class="line__m">${esc(lastStr)}</div>
+              <div class="line__r" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderSummary(){
+    const recs = (dataTrips && dataTrips.records) ? dataTrips.records : [];
+    const idx = buildTripsIndex({ records: recs });
+
+    // pick one row per class (dedupe)
+    const classes = Array.from(idx.byClass.values()).map(cls => {
+      const status = String(cls.latestStatus || '');
+      const statusCode = statusToCode(status) || 'U';
+      const time = fmtTimeLike(cls.latestStart || cls.latest_calendarStart || '');
+      const label = [cls.class_number || '', cls.class_name || ''].filter(Boolean).join(' ') || 'Class';
+      const ringLabel = cls.ring_number ? `R${cls.ring_number}` : '';
+      return { ...cls, status, statusCode, time, label, ringLabel, class_total: (cls.class_total ?? (cls.entries && cls.entries[0] ? cls.entries[0].class_total : '')) };
+    });
+
+    const live = classes.filter(c => c.statusCode === 'L').sort((a,b)=>a.ring_number-b.ring_number);
+    const up = classes.filter(c => c.statusCode === 'U').sort((a,b)=>a.ring_number-b.ring_number);
+    const done = classes.filter(c => c.statusCode === 'C').sort((a,b)=>a.ring_number-b.ring_number);
+
+    function block(title, arr){
+      const rows = arr.slice(0, 25).map(c => `
+        <div class="class_card" data-status="${esc(c.statusCode)}"
+             data-class-id="${esc(c.class_id)}"
+             data-class-number="${esc(c.class_number || '')}"
+             data-class-total="${esc(c.class_total ?? '')}"
+             data-class-name="${esc(c.label)}"
+             data-class-time="${esc(c.time)}"
+             data-ring-number="${esc(c.ring_number)}"
+             data-ring-name="${esc(c.ringName)}"
+             data-group-name="${esc(c.group_name)}"
+             data-class-type="${esc(c.class_type || '')}"
+             data-seq="${esc(c.schedule_sequencetype || '')}"
+             data-latest-status="${esc(c.latestStatus || '')}">
+          <div class="row--tap row--line line--class" data-open-class="${esc(c.class_id)}">
+            <div class="row__l">${esc(c.time || '')}</div>
+            <div class="line__m">${esc((c.ringLabel ? `[${c.ringLabel}] ` : '') + c.label)}</div>
+            <div class="line__r" aria-hidden="true"></div>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <section class="ring_card">
+          <div class="ring_line"><div class="ring_title">${esc(title)}</div><div class="ring_eyelid" aria-hidden="true"></div></div>
+          <div class="class_group_id">
+            ${rows || `<div class="row--tap row--line"><div class="row__l"></div><div class="line__m">—</div><div class="line__r" aria-hidden="true"></div></div>`}
+          </div>
+        </section>
+      `;
+    }
+
+    summaryContainer.innerHTML = [
+      block('Live', live),
+      block('Upcoming', up),
+      block('Completed', done)
+    ].join('');
+  }
+
+  function renderThreads(){
+    const recs = (dataThreads && dataThreads.records) ? dataThreads.records : [];
+    const items = recs.slice(0, 50).map(r => {
+      const title = String(r.title || r.thread_title || r.name || 'Thread');
+      const body = String(r.body || r.message || r.text || '').trim();
+      const ts = String(r.ts || r.timestamp || r.time || '').trim();
+      const left = ts ? fmtTimeLike(ts) : '';
+      const mid = body ? body : '—';
+      return `
+        <div class="class_card" data-status="U">
+          <div class="row--tap row--line">
+            <div class="row__l">${esc(left)}</div>
+            <div class="line__m">${esc(title)}${body ? ` — ${esc(mid)}` : ''}</div>
+            <div class="line__r" aria-hidden="true"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    threadsContainer.innerHTML = `
+      <section class="ring_card">
+        <div class="ring_line"><div class="ring_title">Threads</div><div class="ring_eyelid" aria-hidden="true"></div></div>
+        <div class="class_group_id">
+          ${items || `<div class="row--tap row--line"><div class="row__l"></div><div class="line__m">No threads</div><div class="line__r" aria-hidden="true"></div></div>`}
+        </div>
+      </section>
+    `;
+  }
+
+  function buildEmptyCard(msg){
+    return `
+      <section class="ring_card">
+        <div class="ring_line"><div class="ring_title">${esc(msg)}</div><div class="ring_eyelid" aria-hidden="true"></div></div>
+        <div class="class_group_id"></div>
+      </section>
+    `;
+  }
+
+  //////////////////////
+  // 8) Lite-only controls (peaks + chips + filters)
+  //////////////////////
+  function buildRingPeaks(ringNums){
+    peakbar.innerHTML = '';
+    ringNums.forEach((rn, idx) => {
+      const b = document.createElement('button');
+      b.className = 'peakbtn' + (idx === 0 ? ' is-active' : '');
+      b.type = 'button';
+      b.textContent = `R${rn}`;
+      b.setAttribute('data-peak-target', `#ring-${rn}`);
+      b.addEventListener('click', () => {
+        setActivePeak(b);
+        scrollToTarget(b.getAttribute('data-peak-target'));
+      });
+      peakbar.appendChild(b);
     });
   }
 
-  function ringFilterBar(ringNumber) {
-    const rn = String(ringNumber);
-    if (!state.ringFilters[rn]) state.ringFilters[rn] = 'ALL';
-
-    const wrap = el('div', { style: 'padding:8px 12px; border-bottom:1px solid rgba(148,163,184,.14); background:rgba(2,6,23,.22);' });
-    const bar = el('div', { class: 'filterbar' });
-    const opts = [
-      { k: 'ALL', label: 'All' },
-      { k: 'U', label: 'U' },
-      { k: 'L', label: 'L' },
-      { k: 'C', label: 'C' },
-    ];
-
-    for (const o of opts) {
-      const b = el('button', { class: 'fbtn', type: 'button', text: o.label });
-      if (state.ringFilters[rn] === o.k) b.classList.add('is-on');
-      b.addEventListener('click', () => {
-        state.ringFilters[rn] = o.k;
-        render();
-      });
-      bar.appendChild(b);
-    }
-
-    wrap.appendChild(bar);
-    return wrap;
+  function setActivePeak(btn){
+    Array.from(peakbar.querySelectorAll('.peakbtn')).forEach(b => b.classList.toggle('is-active', b === btn));
   }
 
-  function entryRowLite(cls) {
-    const pills = el('div', { class: 'pills' });
+  function scrollToTarget(sel){
+    const el = document.querySelector(sel);
+    if (!el) return;
 
-    const entries = Array.isArray(cls.entries) ? cls.entries : [];
-    if (!entries.length) {
-      pills.appendChild(el('span', { class: 'pill', text: '—', 'aria-disabled': 'true' }));
-    } else {
-      for (const e of entries) {
-        const label = `${safe(e.barnName || e.horseName)} • ${safe(e.lastOOG)} • ${safe(e.latestGO)}`;
-        const pill = el('button', {
-          class: 'pill',
-          type: 'button',
-          text: label,
-          'data-open-entry': e.entry_id,
+    const overlay =
+      (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 48) +
+      (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--peaks-h')) || 74) +
+      28;
+
+    const mainRect = main.getBoundingClientRect();
+    const elTopInMain = el.getBoundingClientRect().top - mainRect.top + main.scrollTop;
+
+    main.scrollTo({ top: Math.max(0, elTopInMain - overlay), behavior: 'smooth' });
+  }
+
+  function buildHorseChipsFromTrips(trips){
+    const horses = uniq(Array.from((trips.records || []))
+      .map(r => String(r.horseName || r.horse || '').trim())
+      .filter(Boolean)
+    ).sort((a,b)=>a.localeCompare(b));
+
+    horsebar.innerHTML = '';
+
+    horses.forEach(name => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hchip';
+      b.textContent = name;
+      b.setAttribute('data-horse-chip', name);
+      b.addEventListener('click', () => {
+        activeHorse = (activeHorse === name) ? '' : name;
+        Array.from(horsebar.querySelectorAll('.hchip')).forEach(x => x.classList.toggle('is-on', x.getAttribute('data-horse-chip') === activeHorse && !!activeHorse));
+        applyLiteFilters();
+      });
+      horsebar.appendChild(b);
+    });
+  }
+
+  function wireGlobalStatusButtons(){
+    const globalBtns = Array.from(document.querySelectorAll('[data-global-status]'));
+    globalBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (page !== 'lite') return;
+        const v = btn.getAttribute('data-global-status') || '';
+        globalStatus = (globalStatus === v) ? '' : v;
+        globalBtns.forEach(b => b.classList.toggle('is-on', (b.getAttribute('data-global-status') === globalStatus) && !!globalStatus));
+        applyLiteFilters();
+      });
+    });
+  }
+
+  function wireRingFilterButtons(){
+    // set button on/off to match ringFilters
+    Array.from(document.querySelectorAll('[data-ring-status][data-ring]')).forEach(btn => {
+      const rn = Number(btn.getAttribute('data-ring') || 0);
+      const v = btn.getAttribute('data-ring-status') || '';
+      const cur = ringFilters.get(rn) || '';
+      btn.classList.toggle('is-on', !!cur && cur === v);
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        if (page !== 'lite') return;
+        const current = ringFilters.get(rn) || '';
+        const next = (current === v) ? '' : v;
+        ringFilters.set(rn, next);
+
+        // update only within that ring card
+        const ring = document.querySelector(`.ring_card[data-ring-number="${rn}"]`);
+        if (ring){
+          ring.setAttribute('data-ring-filter', next);
+          Array.from(ring.querySelectorAll('[data-ring-status]')).forEach(b => {
+            b.classList.toggle('is-on', (b.getAttribute('data-ring-status') === next) && !!next);
+          });
+        }
+        applyLiteFilters();
+      };
+    });
+  }
+
+  function applyLiteFilters(){
+    if (page !== 'lite') return;
+
+    const ringCards = Array.from(liteContainer.querySelectorAll('.ring_card'));
+    ringCards.forEach(ring => {
+      const ringNum = Number(ring.getAttribute('data-ring-number') || 0);
+      const ringFilter = ringFilters.get(ringNum) || '';
+
+      const classes = Array.from(ring.querySelectorAll('.class_card'));
+      let anyVisibleClass = false;
+
+      classes.forEach(cls => {
+        const clsStatus = (cls.getAttribute('data-status') || '').trim();
+
+        const statusOk =
+          (!globalStatus || clsStatus === globalStatus) &&
+          (!ringFilter || clsStatus === ringFilter);
+
+        // Horse filtering happens at entry-pill level
+        const pills = Array.from(cls.querySelectorAll('.epill[data-horse]'));
+        let anyVisiblePill = false;
+
+        pills.forEach(p => {
+          const h = (p.getAttribute('data-horse') || '').trim();
+          const show = (!activeHorse || h === activeHorse);
+          p.classList.toggle('is-hidden', !show);
+          if (show) anyVisiblePill = true;
         });
-        const placing = Number(e.latestPlacing ?? e.lastPlacing ?? e.lastPlace);
-        if (Number.isFinite(placing) && placing >= 1 && placing <= 8) pill.setAttribute('data-place', String(placing));
-        pill.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          openEntryFly(e, cls);
-        });
-        pills.appendChild(pill);
-      }
-    }
 
-    return el('div', { class: 'row row--entries' }, [
-      el('div', { class: 'row__l', text: '' }),
-      el('div', { class: 'row__m' }, [pills]),
-      el('div', { class: 'row__r', text: '' }),
-    ]);
-  }
-
-  function entryRowFull(cls) {
-    const pills = el('div', { class: 'pills' });
-
-    const horses = Array.isArray(cls.rollup_horses) ? cls.rollup_horses : [];
-    if (!horses.length) {
-      pills.appendChild(el('span', { class: 'pill', text: '—', 'aria-disabled': 'true' }));
-    } else {
-      for (const h of horses.slice(0, 12)) {
-        const pill = el('span', { class: 'pill', text: safe(h), 'aria-disabled': 'true' });
-        pills.appendChild(pill);
-      }
-      if (horses.length > 12) pills.appendChild(el('span', { class: 'pill', text: `+${horses.length - 12}`, 'aria-disabled': 'true' }));
-    }
-
-    return el('div', { class: 'row row--entries' }, [
-      el('div', { class: 'row__l', text: '' }),
-      el('div', { class: 'row__m' }, [pills]),
-      el('div', { class: 'row__r', text: '' }),
-    ]);
-  }
-
-  //////////////////////
-  // Flyup content
-  //////////////////////
-  function openClassFly(cls) {
-    const dt = cls.dt;
-    const startClock = cls.latestStart;
-    const startDate = dateFromDtAndClock(dt, startClock);
-    const tt = startDate ? fmtInMinutes(startDate.getTime() - Date.now()) : null;
-
-    flyOpen(
-      `Class ${safe(cls.class_number)} • ${safe(cls.class_name)}`,
-      [
-        { k: 'Ring', v: cls.ringName },
-        { k: 'Ring #', v: cls.ring_number },
-        { k: 'Group', v: safe(cls.group_name) },
-        { k: 'Group ID', v: safe(cls.class_group_id) },
-        { k: 'Class Type', v: safe(cls.class_type) },
-        { k: 'Sequence', v: safe(cls.schedule_sequencetype) },
-        { k: 'Status', v: safe(cls.latestStatus ?? statusLabel(cls.status_code)) },
-        { k: 'Total Trips', v: safe(cls.total_trips) },
-        { k: 'Est Start', v: safe(cls.latestStart) },
-        { k: 'Time Till', v: tt || '—' },
-      ]
-    );
-  }
-
-  function openEntryFly(entry, cls) {
-    const dt = entry.dt;
-    const goClock = entry.latestGO;
-    const goDate = dateFromDtAndClock(dt, goClock);
-    const ttGo = goDate ? fmtInMinutes(goDate.getTime() - Date.now()) : null;
-
-    const classType = (entry.class_type || cls?.class_type || '').toLowerCase();
-    const seq = (entry.schedule_sequencetype || cls?.schedule_sequencetype || '').toLowerCase();
-    const isJumpers = classType.includes('jump');
-    const isFlat = seq.includes('saddle') || seq.includes('flat');
-
-    const scoreOrTimeKey = isJumpers ? 'Time' : 'Score';
-    const scoreOrTimeVal = isJumpers ? (entry.lastTime ?? entry.time_one ?? entry.time_two ?? entry.time_three) : (entry.lastScore ?? entry.score1 ?? entry.score2 ?? entry.score3);
-
-    // Placing preference: latestPlacing (1-8) first, then lastPlace/lastPosition.
-    const placing = entry.latestPlacing ?? entry.lastPlacing ?? entry.lastPlace ?? entry.lastPosition;
-
-    flyOpen(
-      `${safe(entry.backNumber)} • ${safe(entry.horseName)} • ${safe(entry.riderName)}`,
-      [
-        { k: 'Barn', v: safe(entry.barnName) },
-        { k: 'Class', v: `${safe(cls?.class_number)} • ${safe(cls?.class_name)}` },
-        { k: 'Ring', v: safe(cls?.ringName) },
-        { k: 'Order (Target)', v: safe(entry.lastOOG) },
-        { k: 'Order (Running)', v: safe(entry.runningOOG) },
-        { k: 'GO (Est)', v: safe(entry.latestGO) },
-        { k: 'Time Till GO', v: ttGo || '—' },
-        { k: 'Placing', v: safe(placing) },
-        { k: scoreOrTimeKey, v: isFlat ? safe(scoreOrTimeVal, '—') : safe(scoreOrTimeVal, '—') },
-        { k: 'Gone In', v: entry.goneIn ? 'Yes' : 'No' },
-      ]
-    );
-  }
-
-  //////////////////////
-  // Peaks + Filters + Horses
-  //////////////////////
-  function buildPeaks(rings) {
-    const peaks = qs('#peaks');
-    peaks.innerHTML = '';
-
-    for (const r of rings) {
-      const b = el('button', { class: 'peak', type: 'button', text: `Ring ${r.ring_number}` });
-      b.addEventListener('click', () => {
-        // Scroll to ring card anchor
-        const target = qs(`#ring-${r.ring_number}`);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // UI on-state
-        for (const p of qsa('.peak', peaks)) p.classList.remove('is-on');
-        b.classList.add('is-on');
+        const showClass = statusOk && (activeHorse ? anyVisiblePill : true);
+        cls.classList.toggle('is-hidden', !showClass);
+        if (showClass) anyVisibleClass = true;
       });
-      peaks.appendChild(b);
-    }
-  }
 
-  function buildStatusFilters() {
-    const bar = qs('#statusFilters');
-    bar.innerHTML = '';
-
-    const opts = [
-      { k: 'ALL', label: 'All' },
-      { k: 'U', label: 'Upcoming' },
-      { k: 'L', label: 'Underway' },
-      { k: 'C', label: 'Completed' },
-    ];
-
-    for (const o of opts) {
-      const b = el('button', { class: 'fbtn', type: 'button', text: o.label, 'data-k': o.k });
-      if (state.filters.status === o.k) b.classList.add('is-on');
-      b.addEventListener('click', () => {
-        state.filters.status = o.k;
-        buildStatusFilters();
-        render();
-      });
-      bar.appendChild(b);
-    }
-  }
-
-  function buildHorseChips() {
-    const wrap = qs('#horses');
-    wrap.innerHTML = '';
-
-    const all = el('button', { class: 'chip', type: 'button', text: 'All Horses' });
-    all.classList.toggle('is-on', !state.filters.horse);
-    all.addEventListener('click', () => {
-      state.filters.horse = null;
-      buildHorseChips();
-      render();
+      ring.classList.toggle('is-hidden', !anyVisibleClass);
     });
-    wrap.appendChild(all);
+  }
 
-    for (const h of state.horses) {
-      const b = el('button', { class: 'chip', type: 'button', text: h });
-      b.classList.toggle('is-on', state.filters.horse === h);
-      b.addEventListener('click', () => {
-        state.filters.horse = (state.filters.horse === h) ? null : h;
-        buildHorseChips();
-        render();
-      });
-      wrap.appendChild(b);
+  //////////////////////
+  // 9) Flyups (Lite + Summary only)
+  //////////////////////
+  document.addEventListener('click', (e) => {
+    const clsLine = e.target.closest('[data-open-class]');
+    if (!clsLine) return;
+
+    if (!(page === 'lite' || page === 'summary')) return;
+
+    const card = clsLine.closest('.class_card');
+    if (!card) return;
+
+    const name = card.getAttribute('data-class-name') || 'Class';
+    const time = card.getAttribute('data-class-time') || '—';
+
+    // Contract fields requested (class fly)
+    openFly(name, [
+      { k: 'Group', v: card.getAttribute('data-group-name') || '—' },
+      { k: 'Ring', v: card.getAttribute('data-ring-name') || '—' },
+      { k: 'Class #', v: card.getAttribute('data-class-number') || '—' },
+      { k: 'Class Type', v: card.getAttribute('data-class-type') || '—' },
+      { k: 'Schedule Type', v: card.getAttribute('data-seq') || '—' },
+      { k: 'Status', v: card.getAttribute('data-latest-status') || '—' },
+      { k: 'Total Trips', v: card.getAttribute('data-class-total') || '—' },
+      { k: 'Estimated Start', v: time },
+      { k: 'Time till Start', v: '—' }
+    ]);
+  });
+
+  document.addEventListener('click', (e) => {
+    const pill = e.target.closest('[data-open-entry]');
+    if (!pill) return;
+
+    if (page !== 'lite') return;
+
+    e.stopPropagation();
+
+    const horse = pill.getAttribute('data-horse') || 'Horse';
+
+    openFly(horse, [
+      { k: 'Entry #', v: pill.getAttribute('data-entry-number') || '—' },
+      { k: 'Horse', v: pill.getAttribute('data-horse') || '—' },
+      { k: 'Rider', v: pill.getAttribute('data-rider') || '—' },
+      { k: 'Order of Go', v: pill.getAttribute('data-ogo') || '—' },
+      { k: 'Estimated Go', v: pill.getAttribute('data-eta') || '—' },
+      { k: 'Time till Go', v: '—' },
+      { k: 'Running OOG', v: pill.getAttribute('data-running-ogo') || '—' },
+      { k: 'Running Go', v: pill.getAttribute('data-running-go') || '—' },
+      { k: 'Placing', v: pill.getAttribute('data-place') || '—' },
+      { k: 'Score', v: pill.getAttribute('data-score') || '—' },
+      { k: 'Time', v: pill.getAttribute('data-time') || '—' }
+    ]);
+  });
+
+  //////////////////////
+  // 10) Navigation / Pages
+  //////////////////////
+  function setPage(next){
+    page = next;
+
+    // page panels
+    Array.from(document.querySelectorAll('.page')).forEach(p => p.classList.remove('is-active'));
+    const el = document.getElementById(`page-${next}`);
+    if (el) el.classList.add('is-active');
+
+    // title
+    topTitle.textContent = ({
+      start: 'Start',
+      summary: 'Summary',
+      lite: 'Lite',
+      full: 'Full',
+      threads: 'Threads'
+    }[next] || 'Rings');
+
+    // peaks + horses only on Lite
+    const showOverlays = (next === 'lite');
+    peaksWrap.hidden = !showOverlays;
+    horsesWrap.hidden = !showOverlays;
+
+    // adjust main padding so non-lite pages don't reserve overlay space
+    if (showOverlays){
+      main.style.paddingTop = '';
+      main.style.paddingBottom = '';
+    }else{
+      main.style.paddingTop = `calc(env(safe-area-inset-top) + var(--topbar-h) + 18px)`;
+      main.style.paddingBottom = `calc(env(safe-area-inset-bottom) + var(--nav-h) + 18px)`;
+      // reset lite filters when leaving lite
+      globalStatus = '';
+      activeHorse = '';
+      Array.from(document.querySelectorAll('[data-global-status]')).forEach(b => b.classList.remove('is-on'));
+      Array.from(horsebar.querySelectorAll('.hchip')).forEach(b => b.classList.remove('is-on'));
     }
+
+    // render the selected page
+    renderCurrent();
+
+    // scroll to top
+    main.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  function renderCurrent(){
+    if (page === 'start') renderStart();
+    else if (page === 'summary') renderSummary();
+    else if (page === 'lite') renderLite();
+    else if (page === 'full') renderFull();
+    else if (page === 'threads') renderThreads();
+
+    // nav visual state
+    document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('is-active'));
+    const activeBtn = document.querySelector(`.nav-btn[data-nav="${page}"]`);
+    if (activeBtn) activeBtn.classList.add('is-active');
+  }
+
+  Array.from(document.querySelectorAll('.nav-btn[data-nav]')).forEach(b => {
+    b.addEventListener('click', () => setPage(b.getAttribute('data-nav')));
+  });
+
+  //////////////////////
+  // 11) Aggregates (bottom nav pills)
+  //////////////////////
+  function updateAggs(){
+    const trips = (dataTrips && dataTrips.records) ? dataTrips.records : [];
+    const schedule = (dataSchedule && dataSchedule.records) ? dataSchedule.records : [];
+    const threads = (dataThreads && dataThreads.records) ? dataThreads.records : [];
+
+    const tripClasses = uniq(trips.map(r => String(r.class_id || '')).filter(Boolean)).length;
+
+    aggStart.textContent = String(trips.length || '—');
+    aggSummary.textContent = String(tripClasses || '—');
+    aggLite.textContent = String(tripClasses || '—');
+    aggFull.textContent = String(schedule.length || '—');
+    aggThreads.textContent = String(threads.length || '—');
   }
 
   //////////////////////
-  // Counts
+  // 12) Load + refresh
   //////////////////////
-  function computeCountsFromTrips() {
-    const classes = listAllTripClasses();
-    const totalClasses = classes.length;
-    const totalEntries = state.tripsRaw.length;
-    const underway = classes.filter(c => c.status_code === 'L').length;
-    const upcoming = classes.filter(c => c.status_code === 'U').length;
-    const completed = classes.filter(c => c.status_code === 'C').length;
-    return { totalClasses, totalEntries, underway, upcoming, completed };
-  }
-
-  function listAllTripClasses() {
-    const out = [];
-    for (const r of state.ringsLite) {
-      for (const c of (r.classesArr || [])) out.push(c);
-    }
-    return out;
-  }
-
-  function listClassesFromTrips({ status, limit = 10 }) {
-    const all = listAllTripClasses();
-    const filtered = all.filter(c => c.status_code === status);
-    filtered.sort((a, b) => {
-      const ta = (a.time_sort == null ? 1e15 : Number(a.time_sort));
-      const tb = (b.time_sort == null ? 1e15 : Number(b.time_sort));
-      return ta - tb;
-    });
-    return filtered.slice(0, limit);
-  }
-
-  //////////////////////
-  // Load
-  //////////////////////
-  async function fetchJson(url) {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return await res.json();
-  }
-
-  async function loadAll() {
-    state.lastError = null;
-
-    const [tripsRes, schedRes, threadsRes] = await Promise.allSettled([
-      fetchJson(URL_TRIPS),
-      fetchJson(URL_SCHEDULE),
-      fetchJson(URL_THREADS),
+  async function loadAll(){
+    const [trips, sched, threads] = await Promise.all([
+      fetchJsonWithFallback(URL_TRIPS_PRIMARY, URL_TRIPS_FALLBACK).catch(() => ({ meta:{}, records:[] })),
+      fetchJsonWithFallback(URL_SCHEDULE_PRIMARY, URL_SCHEDULE_FALLBACK).catch(() => ({ meta:{}, records:[] })),
+      fetchJsonWithFallback(URL_THREADS_PRIMARY, URL_THREADS_FALLBACK).catch(() => ({ meta:{}, records:[] })),
     ]);
 
-    // Trips (required for Lite)
-    if (tripsRes.status === 'fulfilled') {
-      const recs = Array.isArray(tripsRes.value?.records) ? tripsRes.value.records : (Array.isArray(tripsRes.value) ? tripsRes.value : []);
-      state.tripsRaw = recs;
-      state.ringsLite = groupByRingsFromTrips(recs);
-      state.horses = buildHorseListFromTrips(recs);
-    } else {
-      state.tripsRaw = [];
-      state.ringsLite = [];
-      state.horses = [];
-      state.lastError = `Trips: ${String(tripsRes.reason?.message || tripsRes.reason)}`;
-    }
+    dataTrips = trips;
+    dataSchedule = sched;
+    dataThreads = threads;
+    lastRefreshAt = Date.now();
 
-    // Schedule (optional)
-    if (schedRes.status === 'fulfilled') {
-      const recs = Array.isArray(schedRes.value?.records) ? schedRes.value.records : (Array.isArray(schedRes.value) ? schedRes.value : []);
-      state.scheduleRaw = recs;
-      state.ringsFull = groupByRingsFromSchedule(recs);
-    } else {
-      state.scheduleRaw = [];
-      state.ringsFull = [];
-      state.lastError = state.lastError ? `${state.lastError} | Schedule: ${String(schedRes.reason?.message || schedRes.reason)}` : `Schedule: ${String(schedRes.reason?.message || schedRes.reason)}`;
-    }
-
-    // Threads (optional)
-    if (threadsRes.status === 'fulfilled') {
-      const recs = Array.isArray(threadsRes.value?.records) ? threadsRes.value.records : (Array.isArray(threadsRes.value) ? threadsRes.value : []);
-      state.threadsRaw = recs;
-    } else {
-      state.threadsRaw = [];
-      // don't elevate
-    }
-
-    state.lastRefreshAt = Date.now();
-
-    // Keep screen stable; re-render
-    setTop(qs('#topTitle').textContent, statusSub());
-    render();
-  }
-
-  function buildHorseListFromTrips(recs) {
-    const set = new Set();
-    for (const r of recs) {
-      const h = (r.horseName || r.horse_name || '').trim();
-      if (h) set.add(h);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    updateAggs();
+    renderCurrent();
   }
 
   //////////////////////
-  // Init
+  // 13) Init
   //////////////////////
-  function bindUI() {
-    // bottom nav
-    for (const b of qsa('.nav-btn')) {
-      b.addEventListener('click', () => setView(b.dataset.screen));
-    }
+  wireGlobalStatusButtons();
+  loadAll();
+  setInterval(loadAll, REFRESH_MS);
 
-    // refresh
-    qs('#btnRefresh').addEventListener('click', () => loadAll().catch(err => {
-      state.lastError = String(err?.message || err);
-      render();
-    }));
-
-    // fly close
-    fly.root = qs('#fly');
-    fly.title = qs('#flyTitle');
-    fly.body = qs('#flyBody');
-    fly.closeBtn = qs('#flyClose');
-    fly.closeBtn.addEventListener('click', flyClose);
-    fly.root.addEventListener('click', (e) => {
-      if (e.target === fly.root) flyClose();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && fly.root.classList.contains('is-on')) flyClose();
-    });
-  }
-
-  function boot() {
-    bindUI();
-    setView('start');
-    loadAll().catch(err => {
-      state.lastError = String(err?.message || err);
-      render();
-    });
-    setInterval(() => {
-      loadAll().catch(() => {});
-    }, REFRESH_MS);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
 })();

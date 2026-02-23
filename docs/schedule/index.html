@@ -1,319 +1,710 @@
+<!-- index.html (FULL DROP) -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Ring Status</title>
+  <title>Tap-Active — Rings (v2.1)</title>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#020617;
-      --fg:#f9fafb;
-      --muted:#9ca3af;
-      --muted2:#6b7280;
-      --stroke:rgba(148,163,184,.22);
-      --surface:rgba(15,23,42,.72);
-      --surface2:rgba(17,24,39,.68);
-      --chip:rgba(30,41,59,.85);
-      --chipOn:rgba(37,99,235,.28);
-      --accent:#60a5fa;
-      --good:#34d399;
-      --warn:#fbbf24;
-      --bad:#fb7185;
-      --radius:16px;
-      --pill:999px;
-      --topbarH:54px;
-      --bottomH:62px;
-      --pad:12px;
+      --bg:#070b14;
+      --surface: rgba(15, 20, 35, .58);
+      --surface2: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.10);
+      --line2: rgba(255,255,255,.14);
 
-      /* Ribbon palette (typical H/J) */
-      --rb1:#2563eb; /* blue */
-      --rb2:#dc2626; /* red */
-      --rb3:#facc15; /* yellow */
-      --rb4:#f9fafb; /* white */
-      --rb5:#f472b6; /* pink */
-      --rb6:#16a34a; /* green */
-      --rb7:#7c3aed; /* purple */
-      --rb8:#8b5a2b; /* brown */
+      --text: rgba(255,255,255,.94);
+      --muted: rgba(255,255,255,.62);
+
+      --accent:#2f6bff;
+
+      --r-2: 12px;
+      --r-pill: 999px;
+
+      /* dense-mobile (target ~370-390vw) */
+      --fs-0: 9.75px;
+      --fs-1: 10.5px;
+      --fs-2: 11.25px;
+      --fs-3: 12px;
+      --fs-4: 13px;
+
+      --topbar-h: 48px;
+      --nav-h: 62px;
+      --peaks-h: 74px; /* global U/L/C + rings peaks */
+      --horses-h: 54px;
+
+      /* row grammar */
+      --row-a: 52px;  /* left slot (time) */
+      --row-end: 18px; /* right endcap */
+
+      --pad: 10px;
+      --gap: 8px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+
+    @media (max-width: 380px){
+      :root{
+        --row-a: 48px;
+        --fs-0: 9.5px;
+        --fs-1: 10.25px;
+        --fs-2: 11px;
+        --fs-3: 11.75px;
+        --fs-4: 12.75px;
+      }
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html,body{ height:100%; }
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color:var(--fg);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(900px 500px at 30% -10%, rgba(37,99,235,.22), transparent 55%),
-        radial-gradient(900px 500px at 90% 0%, rgba(16,185,129,.14), transparent 55%),
-        radial-gradient(900px 600px at 10% 110%, rgba(251,191,36,.10), transparent 55%),
+        radial-gradient(1200px 700px at 50% -20%, rgba(47,107,255,.16), rgba(0,0,0,0) 55%),
+        radial-gradient(900px 520px at 10% 0%, rgba(255,255,255,.06), rgba(0,0,0,0) 55%),
         var(--bg);
+      color: var(--text);
       overflow:hidden;
     }
+    a{ color: inherit; text-decoration:none; }
+    [hidden]{ display:none !important; }
 
-    .app{height:100%; display:flex; flex-direction:column;}
+    /* ---------------------------------------------------------
+       APP CHROME + SCROLL BEHAVIOR
+    --------------------------------------------------------- */
+    .app{
+      width:100%;
+      height:100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+
+      /* dynamic offsets (change when chrome hides) */
+      --peaks-top: calc(env(safe-area-inset-top) + var(--topbar-h) + 8px);
+      --horses-bottom: calc(env(safe-area-inset-bottom) + var(--nav-h) + 10px);
+    }
+    .app.chrome--hidden{
+      --peaks-top: 20px;
+      --horses-bottom: 20px;
+    }
 
     .topbar{
-      height:var(--topbarH);
-      display:grid;
-      grid-template-columns: 1fr 2fr 1fr;
-      align-items:center;
-      padding:0 var(--pad);
-      border-bottom:1px solid var(--stroke);
-      background:rgba(2,6,23,.78);
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: calc(var(--topbar-h) + env(safe-area-inset-top));
+      padding-top: env(safe-area-inset-top);
+      z-index: 50;
+      background: rgba(7,11,20,.78);
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      transition: transform .18s ease;
     }
-    .topbar__btn{
-      justify-self:start;
-      background:transparent;
-      border:1px solid var(--stroke);
-      color:var(--fg);
-      padding:8px 10px;
-      border-radius:12px;
-      font-size:12px;
+    .app.chrome--hidden .topbar{
+      transform: translateX(-50%) translateY(calc(-1 * (var(--topbar-h) + env(safe-area-inset-top))));
     }
-    .topbar__btn.right{justify-self:end;}
-    .topbar__title{justify-self:center; font-weight:700; letter-spacing:.2px;}
-    .topbar__sub{justify-self:center; font-size:11px; color:var(--muted); margin-top:-2px;}
-
-    .peaks-wrap{padding:10px var(--pad) 6px; border-bottom:1px solid var(--stroke); background:rgba(2,6,23,.55);}
-    .peaks{display:flex; gap:8px; overflow:auto; padding-bottom:6px;}
-    .peak{
-      flex:0 0 auto;
-      border:1px solid var(--stroke);
-      background:rgba(15,23,42,.55);
-      color:var(--fg);
-      padding:8px 10px;
-      border-radius:var(--pill);
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .peak.is-on{background:rgba(37,99,235,.26); border-color:rgba(96,165,250,.45);}
-
-    .filters{display:flex; gap:8px; align-items:center; justify-content:space-between;}
-    .filterbar{display:flex; gap:8px; overflow:auto; padding-bottom:4px;}
-    .fbtn{
-      flex:0 0 auto;
-      border:1px solid var(--stroke);
-      background:rgba(15,23,42,.55);
-      color:var(--fg);
-      padding:7px 10px;
-      border-radius:var(--pill);
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .fbtn.is-on{background:rgba(96,165,250,.20); border-color:rgba(96,165,250,.42);}
-
-    .horses-wrap{padding:10px var(--pad) 10px; border-bottom:1px solid var(--stroke); background:rgba(2,6,23,.45);}
-    .horses{display:flex; gap:8px; overflow:auto;}
-    .chip{
-      flex:0 0 auto;
-      border:1px solid var(--stroke);
-      background:var(--chip);
-      color:var(--fg);
-      padding:7px 10px;
-      border-radius:var(--pill);
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .chip.is-on{background:var(--chipOn); border-color:rgba(96,165,250,.42);}
-
-    .main{
-      flex:1;
-      overflow:auto;
-      padding:10px var(--pad) calc(var(--bottomH) + 12px);
-    }
-
-    .view{display:none;}
-    .view.is-on{display:block;}
-
-    .stack{display:flex; flex-direction:column; gap:10px;}
-
-    .card{
-      border:1px solid var(--stroke);
-      border-radius:var(--radius);
-      background:var(--surface);
-      box-shadow: 0 12px 40px rgba(0,0,0,.28);
-      overflow:hidden;
-    }
-    .card__hd{
-      display:flex; justify-content:space-between; align-items:center;
-      padding:10px 12px;
-      border-bottom:1px solid var(--stroke);
-      background:rgba(2,6,23,.35);
-    }
-    .card__title{font-weight:700; font-size:13px;}
-    .card__meta{font-size:11px; color:var(--muted);}
-
-    .ring-badge{font-size:11px; color:var(--muted);}
-
-    .rows{display:flex; flex-direction:column;}
-
-    .row{
+    .topbar__inner{
+      height: var(--topbar-h);
       display:grid;
-      grid-template-columns: 88px 1fr 56px;
-      gap:10px;
+      grid-template-columns: 1fr auto 1fr;
       align-items:center;
-      padding:10px 12px;
-      border-top:1px solid rgba(148,163,184,.14);
+      padding: 0 var(--pad);
+      gap: 8px;
     }
-    .row--tap{cursor:pointer;}
-    .row--tap:active{background:rgba(96,165,250,.10)}
-
-    .row__l{font-variant-numeric: tabular-nums; font-size:12px; color:var(--muted);}
-    .row__m{min-width:0;}
-    .row__r{text-align:right; font-size:11px; color:var(--muted2);}
-
-    .line1{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .line2{font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;}
-
-    .row--entries{
-      grid-template-columns: 88px 1fr 56px;
-      padding-top:8px;
-      padding-bottom:12px;
-      background:rgba(2,6,23,.18);
+    .topbar__l,
+    .topbar__r{
+      min-width: 28px;
+      height: 28px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      opacity: .45;
+    }
+    .topbar__c{
+      font-size: var(--fs-3);
+      font-weight: 500;
+      letter-spacing: .01em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-align:center;
+      color: rgba(255,255,255,.92);
+      line-height: 1.1;
+      user-select:none;
     }
 
-    .pills{display:flex; gap:6px; flex-wrap:wrap;}
-    .pill{
-      border:1px solid rgba(148,163,184,.22);
-      background:rgba(15,23,42,.55);
-      color:var(--fg);
-      padding:6px 9px;
-      border-radius:var(--pill);
-      font-size:12px;
-      line-height:1;
+    .bottomnav{
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 40;
+      border-top: 1px solid rgba(255,255,255,.08);
+      background: rgba(7,11,20,.78);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform .18s ease;
+    }
+    .app.chrome--hidden .bottomnav{
+      transform: translateX(-50%) translateY(calc(var(--nav-h) + env(safe-area-inset-bottom) + 6px));
+    }
+    .nav-scroller{
+      height: var(--nav-h);
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px var(--pad);
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:none;
+    }
+    .nav-scroller::-webkit-scrollbar{ display:none; }
+    .nav-btn{
+      height: 42px;
+      min-width: 92px;
+      padding: 0 12px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.88);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      font-size: var(--fs-2);
+      font-weight: 500;
+      user-select:none;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    .nav-btn:active{ transform: translateY(1px) scale(.995); }
+    .nav-btn.is-active{
+      border-color: rgba(47,107,255,.55);
+      background: rgba(47,107,255,.16);
+      color:#fff;
+    }
+    .nav-agg{
+      min-width: 26px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: rgba(255,255,255,.92);
+      font-size: var(--fs-1);
+      font-variant-numeric: tabular-nums;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .nav-agg.is-on{
+      border-color: rgba(47,107,255,.55);
+      background: rgba(47,107,255,.18);
+      color:#fff;
+    }
+
+    /* MAIN scroll */
+    .main{
+      position: relative;
+      height: 100vh;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding: calc(env(safe-area-inset-top) + var(--topbar-h) + var(--peaks-h) + 22px) var(--pad)
+               calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--horses-h) + 18px);
+      scrollbar-width: none;
+    }
+    .main::-webkit-scrollbar{ display:none; }
+
+    /* ---------------------------------------------------------
+       PEAKS (GLOBAL U/L/C + RING PEAKS)
+       --------------------------------------------------------- */
+    .peaksWrap{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      top: var(--peaks-top);
+      width: 100%;
+      max-width: 480px;
+      z-index: 45;
+      padding: 0 var(--pad);
+      transition: top .18s ease;
+      pointer-events: none; /* allow only inner controls */
+    }
+    .peaks{
+      pointer-events: auto;
+      border-radius: var(--r-2);
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 8px;
+      display:grid;
+      gap: 8px;
+    }
+
+    /* Global status controls */
+    .statusbar{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:none;
+    }
+    .statusbar::-webkit-scrollbar{ display:none; }
+
+    .sbtn{
+      height: 28px;
+      min-width: 34px;
+      padding: 0 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.86);
+      font-size: var(--fs-2);
+      font-weight: 500;
+      letter-spacing: .02em;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      cursor:pointer;
+      line-height: 1;
+      white-space:nowrap;
+    }
+    .sbtn:active{ transform: translateY(1px) scale(.995); }
+    .sbtn.is-on{
+      border-color: rgba(47,107,255,.55);
+      background: rgba(47,107,255,.16);
+      color:#fff;
+    }
+
+    /* Ring peaks (jump) */
+    .peakbar{
+      display:flex;
+      gap: 8px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:none;
+      padding-bottom: 1px;
+    }
+    .peakbar::-webkit-scrollbar{ display:none; }
+    .peakbtn{
+      height: 30px;
+      min-width: 44px;
+      padding: 0 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.86);
+      font-size: var(--fs-2);
+      font-weight: 500;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      white-space:nowrap;
+      cursor:pointer;
+      line-height: 1;
+    }
+    .peakbtn:active{ transform: translateY(1px) scale(.995); }
+    .peakbtn.is-active{
+      border-color: rgba(47,107,255,.55);
+      background: rgba(47,107,255,.16);
+      color:#fff;
+    }
+
+    /* ---------------------------------------------------------
+       HORSES (single filter chips)
+    --------------------------------------------------------- */
+    .horsesWrap{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: var(--horses-bottom);
+      width: 100%;
+      max-width: 480px;
+      z-index: 44;
+      padding: 0 var(--pad);
+      transition: bottom .18s ease;
+      pointer-events: none;
+    }
+    .horses{
+      pointer-events: auto;
+      border-radius: var(--r-2);
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 8px;
+    }
+    .horsebar{
+      display:flex;
+      gap: 8px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:none;
+    }
+    .horsebar::-webkit-scrollbar{ display:none; }
+    .hchip{
+      height: 30px;
+      padding: 0 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.86);
+      font-size: var(--fs-2);
+      font-weight: 500;
       white-space:nowrap;
       cursor:pointer;
       user-select:none;
-    }
-    .pill[aria-disabled="true"]{cursor:default; opacity:.78;}
-
-    /* status shading */
-    .card[data-status="U"]{background:rgba(15,23,42,.70);}
-    .card[data-status="L"]{background:rgba(17,24,39,.70); border-color:rgba(96,165,250,.30);}
-    .card[data-status="C"]{background:rgba(17,24,39,.55); opacity:.86;}
-
-    /* ribbon placing (1-8) */
-    .pill[data-place="1"]{border-color:var(--rb1)}
-    .pill[data-place="2"]{border-color:var(--rb2)}
-    .pill[data-place="3"]{border-color:var(--rb3)}
-    .pill[data-place="4"]{border-color:var(--rb4)}
-    .pill[data-place="5"]{border-color:var(--rb5)}
-    .pill[data-place="6"]{border-color:var(--rb6)}
-    .pill[data-place="7"]{border-color:var(--rb7)}
-    .pill[data-place="8"]{border-color:var(--rb8)}
-
-    .bottom-nav{
-      height:var(--bottomH);
-      border-top:1px solid var(--stroke);
-      background:rgba(2,6,23,.78);
-      backdrop-filter: blur(10px);
-      display:grid;
-      grid-template-columns: repeat(5, 1fr);
-    }
-    .nav-btn{
-      background:transparent;
-      border:0;
-      color:var(--muted);
-      font-size:12px;
-      display:flex;
-      flex-direction:column;
+      display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:3px;
+      line-height: 1;
+    }
+    .hchip:active{ transform: translateY(1px) scale(.995); }
+    .hchip.is-on{
+      border-color: rgba(47,107,255,.55);
+      background: rgba(47,107,255,.16);
+      color:#fff;
+    }
+
+    /* ---------------------------------------------------------
+       RINGS / CLASSES / ENTRIES
+    --------------------------------------------------------- */
+    .rings_container{
+      display:grid;
+      gap: 12px;
+    }
+
+    .ring_card{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: var(--r-2);
+      overflow:hidden;
+    }
+
+    /* Ring head (1 line only) */
+    .ring_line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.02);
+    }
+    .ring_title{
+      font-size: var(--fs-3);
+      font-weight: 500;
+      color: rgba(255,255,255,.92);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height: 1.1;
+    }
+    .ring_eyelid{
+      display:flex;
+      gap: 6px;
+      align-items:center;
+      flex: 0 0 auto;
+    }
+    .ring_eyelid .sbtn{
+      height: 26px;
+      min-width: 30px;
+      padding: 0 9px;
+      font-size: var(--fs-2);
+    }
+
+    /* group container (css-only grouping hook) */
+    .class_group_id{
+      padding: 6px 0 10px;
+      display:grid;
+      gap: 8px;
+    }
+
+    /* Row-line base */
+    .row--tap{ user-select:none; }
+    .row--line{
+      width:100%;
+      display:grid;
+      grid-template-columns: var(--row-a) minmax(0,1fr) var(--row-end);
+      gap: 8px;
+      align-items:center;
+      padding: 8px 10px;
+    }
+
+    .row__l{
+      font-size: var(--fs-2);
+      color: rgba(255,255,255,.72);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      min-height: 1em;
+      line-height: 1.1;
+    }
+
+    /* Renamed mid + right per your instruction */
+    .line__m{
+      min-width:0;
+      min-height: 1em;
+      line-height: 1.1;
+    }
+    .line__r{
+      justify-self:end;
+      width: var(--row-end);
+      height: 18px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+
+    /* Class line (1 line only) */
+    .line--class{
       cursor:pointer;
     }
-    .nav-btn.is-on{color:var(--fg);}
-
-    /* Flyup */
-    .fly{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      background:rgba(0,0,0,.55);
-      z-index:50;
-    }
-    .fly.is-on{display:flex;}
-    .fly__sheet{
-      width:min(640px, 100%);
-      max-height:86vh;
-      background:rgba(2,6,23,.94);
-      border:1px solid var(--stroke);
-      border-radius: 20px 20px 0 0;
+    .line--class .line__m{
+      font-size: var(--fs-3);
+      font-weight: 500;
+      color: rgba(255,255,255,.90);
+      white-space:nowrap;
       overflow:hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,.55);
+      text-overflow:ellipsis;
     }
-    .fly__hd{display:flex; justify-content:space-between; align-items:center; padding:12px 12px; border-bottom:1px solid var(--stroke);}
-    .fly__title{font-weight:800; font-size:14px;}
-    .fly__close{background:transparent; border:1px solid var(--stroke); color:var(--fg); padding:8px 10px; border-radius:12px; font-size:12px;}
-    .fly__body{padding:12px; overflow:auto; max-height: calc(86vh - 54px);}
-    .kv{display:grid; grid-template-columns: 1fr 1fr; gap:8px;}
-    .kv__item{border:1px solid rgba(148,163,184,.16); background:rgba(15,23,42,.55); border-radius:14px; padding:10px;}
-    .kv__k{font-size:10px; color:var(--muted); letter-spacing:.2px; text-transform:uppercase;}
-    .kv__v{font-size:13px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .line--class:active{ transform: translateY(1px); }
 
-    .mono{font-variant-numeric: tabular-nums;}
-
-    .empty{
-      border:1px dashed rgba(148,163,184,.25);
-      border-radius:var(--radius);
-      padding:14px;
-      color:var(--muted);
-      background:rgba(15,23,42,.35);
+    /* Entries line (tightened to belong to class) */
+    .line--entries{
+      padding-top: 4px;
+      padding-bottom: 8px;
+      margin-top: -2px;
     }
+    .line--entries .row__l{ color: rgba(255,255,255,.40); }
+    .entries_scroller{
+      display:flex;
+      gap: 8px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:none;
+      padding-bottom: 2px;
+    }
+    .entries_scroller::-webkit-scrollbar{ display:none; }
 
-    @media (min-width: 820px){
-      body{display:flex; justify-content:center;}
-      .app{width: 620px; border-left:1px solid rgba(148,163,184,.12); border-right:1px solid rgba(148,163,184,.12);}
+    .epill{
+      height: 26px;
+      padding: 0 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.86);
+      font-size: var(--fs-1);
+      font-weight: 500;
+      white-space:nowrap;
+      cursor:pointer;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+    .epill:active{ transform: translateY(1px) scale(.995); }
+
+    /* status tint (subtle, by class status) */
+    .class_card[data-status="L"] .line--class{ box-shadow: inset 3px 0 0 rgba(255,90,122,.45); }
+    .class_card[data-status="C"] .line--class{ box-shadow: inset 3px 0 0 rgba(61,220,151,.45); }
+    .class_card[data-status="U"] .line--class{ box-shadow: inset 3px 0 0 rgba(77,163,255,.45); }
+
+    /* visibility helpers */
+    .is-hidden{ display:none !important; }
+
+    /* ---------------------------------------------------------
+       PAGES (minimal)
+    --------------------------------------------------------- */
+    .page{ display:none; }
+    .page.is-active{ display:block; }
+
+    /* ---------------------------------------------------------
+       FLYUPS (simple)
+    --------------------------------------------------------- */
+    .fly{
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display:none;
+    }
+    .fly.is-open{ display:block; }
+    .fly_backdrop{
+      position:absolute;
+      inset:0;
+      background: rgba(0,0,0,.55);
+    }
+    .fly_sheet{
+      position:absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 16px 16px 0 0;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(7,11,20,.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 12px 12px calc(env(safe-area-inset-bottom) + 14px);
+    }
+    .fly_head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      margin-bottom: 10px;
+    }
+    .fly_title{
+      font-size: var(--fs-3);
+      font-weight: 500;
+      color: rgba(255,255,255,.92);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height: 1.1;
+    }
+    .fly_close{
+      height: 32px;
+      min-width: 52px;
+      padding: 0 12px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.88);
+      font-size: var(--fs-2);
+      font-weight: 500;
+      cursor:pointer;
+      user-select:none;
+    }
+    .fly_close:active{ transform: translateY(1px) scale(.995); }
+    .fly_body{
+      display:grid;
+      gap: 8px;
+      color: rgba(255,255,255,.86);
+      font-size: var(--fs-2);
+      line-height: 1.35;
+    }
+    .fly_kv{
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .fly_k{ color: rgba(255,255,255,.62); font-size: var(--fs-1); letter-spacing:.08em; text-transform: uppercase; }
+    .fly_v{ margin-top: 4px; color: rgba(255,255,255,.92); font-size: var(--fs-3); font-weight: 500; }
+
+    /* Focus */
+    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.epill,.fly_close):focus-visible{
+      outline: 2px solid rgba(47,107,255,.95);
+      outline-offset: 2px;
     }
   </style>
 </head>
+
 <body>
   <div class="app" id="app">
-    <header class="topbar">
-      <button class="topbar__btn" id="btnBack" type="button" style="visibility:hidden">Back</button>
-      <div style="text-align:center; line-height:1.05;">
-        <div class="topbar__title" id="topTitle">Ring Status</div>
-        <div class="topbar__sub" id="topSub"></div>
-      </div>
-      <button class="topbar__btn right" id="btnRefresh" type="button">Refresh</button>
-    </header>
-
-    <div class="peaks-wrap" id="peaksWrap">
-      <div class="peaks" id="peaks"></div>
-      <div class="filters" style="margin-top:6px;">
-        <div class="filterbar" id="statusFilters"></div>
+    <!-- TOPBAR (3 divs, centered title, no subs) -->
+    <div class="topbar" id="topbar">
+      <div class="topbar__inner">
+        <div class="topbar__l" aria-hidden="true"></div>
+        <div class="topbar__c" id="topTitle">Start</div>
+        <div class="topbar__r" aria-hidden="true"></div>
       </div>
     </div>
 
-    <div class="horses-wrap" id="horsesWrap">
-      <div class="horses" id="horses"></div>
-    </div>
-
-    <main class="main" id="main">
-      <section class="view" id="viewStart"></section>
-      <section class="view" id="viewSummary"></section>
-      <section class="view" id="viewLite"></section>
-      <section class="view" id="viewFull"></section>
-      <section class="view" id="viewThreads"></section>
-    </main>
-
-    <nav class="bottom-nav" id="bottomNav">
-      <button class="nav-btn" data-screen="start" type="button">Start</button>
-      <button class="nav-btn" data-screen="summary" type="button">Summary</button>
-      <button class="nav-btn" data-screen="lite" type="button">Lite</button>
-      <button class="nav-btn" data-screen="full" type="button">Full</button>
-      <button class="nav-btn" data-screen="threads" type="button">Threads</button>
-    </nav>
-
-    <div class="fly" id="fly" aria-hidden="true">
-      <div class="fly__sheet" role="dialog" aria-modal="true" aria-labelledby="flyTitle">
-        <div class="fly__hd">
-          <div class="fly__title" id="flyTitle">Details</div>
-          <button class="fly__close" id="flyClose" type="button">Close</button>
+    <!-- PEAKS (global U/L/C + ring peaks) -->
+    <div class="peaksWrap" id="peaksWrap">
+      <div class="peaks">
+        <div class="statusbar" aria-label="Global status filter">
+          <button class="sbtn" type="button" data-global-status="U" title="Upcoming">U</button>
+          <button class="sbtn" type="button" data-global-status="L" title="Live">L</button>
+          <button class="sbtn" type="button" data-global-status="C" title="Completed">C</button>
         </div>
-        <div class="fly__body" id="flyBody"></div>
+
+        <div class="peakbar" id="peakbar" aria-label="Ring peaks">
+          <!-- built by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- HORSES (single filter chips) -->
+    <div class="horsesWrap" id="horsesWrap">
+      <div class="horses">
+        <div class="horsebar" id="horsebar" aria-label="Horse filter chips">
+          <!-- built by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="main">
+      <!-- Start -->
+      <div class="page is-active" id="page-start">
+        <div class="rings_container" id="start_container"></div>
+      </div>
+
+      <!-- Summary -->
+      <div class="page" id="page-summary">
+        <div class="rings_container" id="summary_container"></div>
+      </div>
+
+      <!-- Lite -->
+      <div class="page" id="page-lite">
+        <div class="rings_container" id="lite_container"></div>
+      </div>
+
+      <!-- Full -->
+      <div class="page" id="page-full">
+        <div class="rings_container" id="full_container"></div>
+      </div>
+
+      <!-- Threads -->
+      <div class="page" id="page-threads">
+        <div class="rings_container" id="threads_container"></div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottomnav" id="bottomnav">
+      <div class="nav-scroller" aria-label="Bottom navigation">
+        <div class="nav-btn is-active" data-nav="start"><span>Start</span><span class="nav-agg" id="aggStart">—</span></div>
+        <div class="nav-btn" data-nav="summary"><span>Summary</span><span class="nav-agg" id="aggSummary">—</span></div>
+        <div class="nav-btn" data-nav="lite"><span>Lite</span><span class="nav-agg" id="aggLite">—</span></div>
+        <div class="nav-btn" data-nav="full"><span>Full</span><span class="nav-agg" id="aggFull">—</span></div>
+        <div class="nav-btn" data-nav="threads"><span>Threads</span><span class="nav-agg" id="aggThreads">—</span></div>
+      </div>
+    </div>
+
+    <!-- FLYUP -->
+    <div class="fly" id="fly">
+      <div class="fly_backdrop" id="flyBackdrop"></div>
+      <div class="fly_sheet" role="dialog" aria-modal="true" aria-label="Details">
+        <div class="fly_head">
+          <div class="fly_title" id="flyTitle">Details</div>
+          <button class="fly_close" type="button" id="flyClose">Close</button>
+        </div>
+        <div class="fly_body" id="flyBody"></div>
       </div>
     </div>
   </div>
