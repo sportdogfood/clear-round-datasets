@@ -134,6 +134,11 @@
     line-height:1.05;
     padding:2px 0;
   }
+
+  /* zebra striping for readability */
+  .class-list .c:nth-child(even){
+    background: rgba(0,0,0,0.04);
+  }
   .t{font-weight:600; font-size:9px; white-space:nowrap;}
   .n{
     font-size:9px;
@@ -571,6 +576,8 @@
 
       let cy = y + headH;
 
+      let ringRowIndex = 0;
+
       // Groups + classes
       for(const g of ring.groups){
         if(g.hasTeam){
@@ -594,6 +601,13 @@
           if(t) lastTime = t;
 
           const rowH = plan.rowH * s;
+
+          ringRowIndex++;
+          if(ringRowIndex % 2 === 0){
+            doc.setFillColor(245,245,245);
+            doc.rect(x, cy, ringW, rowH, "F");
+          }
+
           const ty = cy + rowH - (2*s);
 
           const left = showTime ? t : "";
