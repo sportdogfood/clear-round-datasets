@@ -6,8 +6,9 @@
 */
 
 (() => {
-  const URL_SCHEDULE = './watch_schedule.json';
-  const URL_TRIPS = './watch_trips.json';
+   const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
+  const DATA_TRIPS_URL = './data/latest/watch_trips.json';
+ 
 
   const el = {
     topTitle: document.getElementById('topTitle'),
