@@ -42,9 +42,9 @@
       --gap: 8px;
 
       /* class line columns */
-      --col-time: 64px;
-      --col-num: 54px;
-      --col-badge: 64px;
+      --col-time: 78px;
+      --col-num: 42px;
+      --col-badge: var(--col-time);
     }
 
     @media (max-width: 380px){
@@ -54,9 +54,9 @@
         --fs-2: 11px;
         --fs-3: 11.75px;
         --fs-4: 12.75px;
-        --col-time: 60px;
-        --col-num: 50px;
-        --col-badge: 56px;
+        --col-time: 74px;
+        --col-num: 40px;
+        --col-badge: var(--col-time);
       }
     }
 
@@ -462,7 +462,7 @@
     .class_line{
       width:100%;
       display:grid;
-      grid-template-columns: var(--col-time) var(--col-num) minmax(0,1fr) var(--col-time);
+      grid-template-columns: var(--col-time) var(--col-num) minmax(0,1fr) var(--col-badge);
       gap: 8px;
       align-items:center;
       padding: 10px 10px 8px;
@@ -514,7 +514,7 @@
       text-overflow:ellipsis;
     }
     .c_badge{
-      min-width: var(--col-time);
+      min-width: var(--col-badge);
       display:flex;
       justify-content:flex-end;
       align-items:center;
@@ -532,6 +532,7 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
+      gap: 6px;
       white-space:nowrap;
       line-height: 1;
       text-transform: uppercase;
@@ -546,7 +547,7 @@
       min-width: var(--col-time);
       height: 1px;
     }
-    .rollup_scroller{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+    .rollup_scroller{ display:flex; justify-content:flex-end; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
     .rollup_scroller::-webkit-scrollbar{ display:none; }
 
     .epill{
@@ -623,7 +624,7 @@
       text-overflow:ellipsis;
       line-height: 1.1;
     }
-    .fly_close{
+    .fly_btn{
       height: 32px;
       min-width: 72px;
       padding: 0 12px;
@@ -636,7 +637,7 @@
       cursor:pointer;
       user-select:none;
     }
-    .fly_close:active{ transform: translateY(1px) scale(.995); }
+    .fly_btn:active{ transform: translateY(1px) scale(.995); }
 
     .fly_body{ display:grid; gap: 10px; }
     .fly_group{
@@ -670,8 +671,76 @@
       white-space:nowrap;
     }
 
-    /* Focus */
-    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.epill,.fly_close,.tb-btn,.ring_btn):focus-visible{
+    
+    /* Icons (inline SVG) */
+    .ico{ display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px; }
+    .ico svg{ width:12px; height:12px; display:block; }
+
+    /* Flyup header buttons */
+    .fly_actions{ display:flex; gap:8px; align-items:center; }
+    .fly_btn{
+      height: 32px;
+      padding: 0 12px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.88);
+      font-size: var(--fs-2);
+      font-weight: 800;
+      cursor:pointer;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      line-height: 1;
+      white-space:nowrap;
+    }
+    .fly_btn:active{ transform: translateY(1px) scale(.995); }
+    .fly_btn--icon{
+      width: 32px;
+      padding: 0;
+      justify-content:center;
+    }
+    .fly_btn_txt{ display:inline-block; }
+
+    /* Flyup rows: 3-column contract */
+    .fly_label{
+      font-size: var(--fs-1);
+      font-weight: 800;
+      color: rgba(255,255,255,.60);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding-top: 2px;
+    }
+    .fly_row3{
+      display:flex;
+      gap: 10px;
+      align-items:baseline;
+      font-size: var(--fs-2);
+      color: rgba(255,255,255,.86);
+      font-variant-numeric: tabular-nums;
+      --fly-side: 96px;
+    }
+    .fly_c1,.fly_c3{
+      flex: 0 0 var(--fly-side);
+      min-width: var(--fly-side);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight: 800;
+      color: rgba(255,255,255,.92);
+    }
+    .fly_c2{
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight: 700;
+      color: rgba(255,255,255,.90);
+    }
+/* Focus */
+    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.epill,.fly_btn,.tb-btn,.ring_btn):focus-visible{
       outline: 2px solid rgba(47,107,255,.95);
       outline-offset: 2px;
     }
@@ -765,8 +834,23 @@
       <div class="fly_sheet" role="dialog" aria-modal="true" aria-label="Details">
         <div class="fly_head">
           <div class="fly_title" id="flyTitle">Details</div>
-          <button class="fly_close fly_sms" type="button" id="flySMS"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>SMS</span></button>
-          <button class="fly_close fly_x" type="button" id="flyClose" aria-label="Close">✕</button>
+          <div class="fly_actions">
+            <button class="fly_btn" type="button" id="flySMS" aria-label="SMS">
+              <span class="ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+                </svg>
+              </span>
+              <span class="fly_btn_txt">SMS</span>
+            </button>
+            <button class="fly_btn fly_btn--icon" type="button" id="flyClose" aria-label="Close">
+              <span class="ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
         <div class="fly_body" id="flyBody"></div>
       </div>
