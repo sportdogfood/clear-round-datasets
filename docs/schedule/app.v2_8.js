@@ -1,19 +1,4 @@
-/* ta
-  const ICONS = {
-    up:   '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    live: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 2 3 14h7l-1 8 12-14h-7l-1-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
-    done: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7 12 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    sms:  '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
-    fence:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4v16M19 4v16M5 9h14M5 15h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    saddle:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 14c1-4 7-5 9-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 14h12c0 4-3 7-6 7s-6-3-6-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
-  };
-  const statusIcon = (code) => code === 'U' ? ICONS.up : code === 'L' ? ICONS.live : code === 'C' ? ICONS.done : '';
-  const safeText = (v, fallback='—') => {
-    const s = String(v ?? '').trim();
-    return s ? s : fallback;
-  };
-  const entryLabelId = (e) => safeText(e?.backNumber ?? e?.entry_number ?? e?.entry_id, '—');
-pactive-rings-v2.1 — app.v2_1.js
+/* tapactive-rings-v2.1 — app.v2_1.js
    - Data paths: RELATIVE (./data/latest/*) to avoid deployment-base issues
    - Views: Start | Summary | Lite | Full | Threads | Horses
    - Lite: interactive (class + entry flyups)
@@ -140,6 +125,24 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[m]));
 
+
+  // ------------------------------------------------
+  // Icons (inline SVG, currentColor)
+  // ------------------------------------------------
+  function icoClock(){
+    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>`;
+  }
+  function icoBolt(){
+    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 12-14h-7l1-6z"/></svg></span>`;
+  }
+  function icoCheckCircle(){
+    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2 2 6-6"/></svg></span>`;
+  }
+  function statusIco(code){
+    return code === 'U' ? icoClock() : code === 'L' ? icoBolt() : code === 'C' ? icoCheckCircle() : '';
+  }
+
+
   function uniq(arr){
     return Array.from(new Set(arr));
   }
@@ -244,7 +247,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       document.querySelectorAll('[data-global-status]').forEach(b => {
         b.classList.toggle('is-on', (b.getAttribute('data-global-status') === state.globalStatus) && !!state.globalStatus);
       });
-      renderLiteAndFull();
+      /* TBD: no filtering yet */
     });
   });
 
@@ -619,6 +622,11 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       ringSec.innerHTML = `
         <div class="ring_line">
           <div class="ring_title">${esc(ringName)}</div>
+          <div class="ring_actions">
+            <button class="ring_btn" type="button" data-ring-action="up">Up</button>
+            <button class="ring_btn" type="button" data-ring-action="now">Now</button>
+            <button class="ring_btn" type="button" data-ring-action="done">Done</button>
+          </div>
         </div>
         <div class="group_wrap"></div>
       `;
@@ -627,7 +635,6 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
       ringClasses.forEach(c => {
         const statusCode = toStatusCode(c.latestStatus);
-        if (state.globalStatus && state.globalStatus !== statusCode) return;
 
         // entry filter (horse)
         const entries = c.entries.filter(e => !state.activeHorse || String(e.horseName||'').trim() === state.activeHorse);
@@ -649,7 +656,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
             <div class="c_name">
               <div class="c_name_main">${esc(nameTxt)}</div>
             </div>
-            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIcon(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
+            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIco(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
           </div>
           ${entries.length ? `<div class="rollup_line"><div class="rollup_scroller"></div></div>` : ``}
         `;
@@ -663,16 +670,17 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
           btn.className = 'epill';
           btn.setAttribute('data-open-entry', String(e.entry_id || ''));
           btn.setAttribute('data-horse', String(e.horseName || '').trim());
-          btn.textContent = `${entryLabelId(e)} • ${safeText(e.horseName, '—')} • ${safeText(e.lastOOG, '—')} • ${safeText(e.latestGO, '—')}`;
+          btn.textContent = `${e.entry_id || '—'} • ${e.horseName || '—'} • ${ (e.lastOOG != null && String(e.lastOOG) !== '') ? e.lastOOG : '—' } • ${e.latestGO || '—'}`;
           sc.appendChild(btn);
         });
+
+        requestAnimationFrame(() => { try { sc.scrollLeft = sc.scrollWidth; } catch(e){} });
 
         // hide rollup line if no entries (should not happen in Lite, but safe)
         if (!entries.length) classCard.querySelector('.rollup_line').classList.add('is-hidden');
 
         gw.appendChild(classCard);
       });
-
 
       // only add ring if it has visible classes
       if (gw.children.length) ringsLiteEl.appendChild(ringSec);
@@ -714,6 +722,11 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       ringSec.innerHTML = `
         <div class="ring_line">
           <div class="ring_title">${esc(ringName)}</div>
+          <div class="ring_actions">
+            <button class="ring_btn" type="button" data-ring-action="up">Up</button>
+            <button class="ring_btn" type="button" data-ring-action="now">Now</button>
+            <button class="ring_btn" type="button" data-ring-action="done">Done</button>
+          </div>
         </div>
         <div class="group_wrap"></div>
       `;
@@ -722,7 +735,6 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
       ringRows.forEach(r => {
         const statusCode = toStatusCode(r.latestStatus);
-        if (state.globalStatus && state.globalStatus !== statusCode) return;
 
         const timeTxt = r.latestStart || '—';
         const numTxt = r.class_number || '—';
@@ -749,7 +761,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
             <div class="c_name">
               <div class="c_name_main">${esc(nameTxt)}</div>
             </div>
-            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIcon(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
+            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIco(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
           </div>
           <div class="rollup_line"><div class="rollup_scroller"></div></div>
         `;
@@ -765,7 +777,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
             const pill = document.createElement('div');
             pill.className = 'epill epill--disabled';
             pill.setAttribute('data-horse', String(e.horseName||'').trim());
-            pill.textContent = `${entryLabelId(e)} • ${safeText(e.horseName, '—')} • ${safeText(e.lastOOG, '—')} • ${safeText(e.latestGO, '—')}`;
+            pill.textContent = `${e.barnName || e.horseName || '—'} • ${((e.lastOOG != null) && String(e.lastOOG) !== '') ? e.lastOOG : '—'} • ${e.latestGO || '—'}`;
             scroller.appendChild(pill);
           });
         }
@@ -804,7 +816,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'sbtn';
-      b.innerHTML = `${ICONS.sms}<span>SMS</span>`;
+      b.textContent = 'SMS';
       b.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const lines = [];
@@ -834,63 +846,52 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     const url = 'sms:?&body=' + encodeURIComponent(String(body));
     window.location.href = url;
   }
-  function openFly(title, lines, smsBody){
+  function openFly(title, rows, smsBody){
     flyTitle.textContent = title || 'Details';
     flyBody.innerHTML = '';
     state.flySmsBody = smsBody || '';
 
-    (lines || []).forEach(line => {
-      if (line.label){
+    const box = document.createElement('div');
+    box.className = 'fly_group';
+
+    (rows || []).forEach(r => {
+      if (r && r.label){
         const lab = document.createElement('div');
         lab.className = 'fly_label';
-        lab.textContent = String(line.label);
-        flyBody.appendChild(lab);
+        lab.textContent = String(r.label);
+        box.appendChild(lab);
       }
 
       const row = document.createElement('div');
-      row.className = 'fly_line';
-      if (line.rowClass) row.classList.add(line.rowClass);
+      row.className = 'fly_row3';
 
-      const c1 = document.createElement('div'); c1.className = 'fly_c1';
-      const c2 = document.createElement('div'); c2.className = 'fly_c2';
-      const c3 = document.createElement('div'); c3.className = 'fly_c3';
+      const c1 = document.createElement('div');
+      c1.className = 'fly_c1';
+      const c2 = document.createElement('div');
+      c2.className = 'fly_c2';
+      const c3 = document.createElement('div');
+      c3.className = 'fly_c3';
 
-      setFlyCell(c1, line.c1);
-      setFlyCell(c2, line.c2);
-      setFlyCell(c3, line.c3);
+      const a = (r && (r.a != null)) ? String(r.a) : '';
+      const b = (r && (r.b != null)) ? String(r.b) : '';
+      const c = (r && (r.c != null)) ? String(r.c) : '';
 
-      row.appendChild(c1); row.appendChild(c2); row.appendChild(c3);
-      flyBody.appendChild(row);
+      if (r && r.aHtml != null) c1.innerHTML = r.aHtml;
+      else c1.textContent = a || ' ';
+      if (r && r.bHtml != null) c2.innerHTML = r.bHtml;
+      else c2.textContent = b || ' ';
+      if (r && r.cHtml != null) c3.innerHTML = r.cHtml;
+      else c3.textContent = c || ' ';
+
+      row.appendChild(c1);
+      row.appendChild(c2);
+      row.appendChild(c3);
+      box.appendChild(row);
     });
 
-    flyWrap.classList.add('is-open');
-    document.body.classList.add('fly-open');
-    setTimeout(() => { try { flyCloseBtn.focus(); } catch(_){} }, 0);
+    flyBody.appendChild(box);
+    fly.classList.add('is-open');
   }
-
-  function setFlyCell(el, cell){
-    if (cell == null){ el.textContent = ''; return; }
-
-    // primitive
-    if (typeof cell === 'string' || typeof cell === 'number'){
-      el.textContent = String(cell);
-      return;
-    }
-
-    // object: { text, icon, cls, rib }
-    if (cell.cls) el.classList.add(cell.cls);
-
-    if (cell.rib != null){
-      const n = String(cell.rib);
-      el.innerHTML = `<span class="rib rib--${esc(n)}">${esc(n)}</span>`;
-      return;
-    }
-
-    const iconSvg = cell.icon ? (ICONS[cell.icon] || '') : '';
-    const txt = esc(String(cell.text ?? ''));
-    el.innerHTML = iconSvg ? `${iconSvg}<span>${txt}</span>` : txt;
-  }
-
 
   function closeFly(){
     fly.classList.remove('is-open');
@@ -911,25 +912,24 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       if (!one) return;
 
       const statusCode = toStatusCode(one.latestStatus);
-      const seqType = String(one.schedule_sequencetype || '').trim();
-      const seqIcon = /jumper/i.test(seqType) ? 'fence' : (seqType ? 'saddle' : '');
-      const statusIconKey = statusCode === 'U' ? 'up' : statusCode === 'L' ? 'live' : statusCode === 'C' ? 'done' : '';
-      const estStart = one.lastStart || one.latestStart;
+      const estStart = one.lastStart || one.latestStart || '—';
+      const till = (one.timetillstart != null && String(one.timetillstart) !== '') ? one.timetillstart : '—';
 
-      const lines = [
-        { label: 'Ring',  c1: safeText(one.ring_number, '—'),       c2: safeText(one.ringName || one.ring_nickname, '—'), c3: '' },
-        { label: 'Group', c1: safeText(one.class_group_id, '—'),    c2: safeText(one.group_name, '—'),                    c3: '' },
-        { label: 'Class', c1: safeText(one.class_number, '—'),      c2: safeText(one.class_name, '—'),                    c3: '' },
-        {                c1: { text: safeText(seqType, '—'), icon: seqIcon || undefined }, c2: { text: statusLabel(statusCode), icon: statusIconKey || undefined }, c3: '' },
-        {                c1: { text: safeText(estStart, '—'), cls: 't_start' }, c2: safeText(one.timetillstart, '—'), c3: '' },
+      const rows = [
+        { label: 'Ring',  a: (one.ring_number ?? '—'),      b: (one.ringName || '—'),        c: '' },
+        { label: 'Group', a: (one.class_group_id ?? '—'),   b: (one.group_name || '—'),      c: '' },
+        { label: 'Class', a: (one.class_number ?? '—'),     b: (one.class_name || '—'),      c: '' },
+        {               a: (one.schedule_sequencetype || '—'), b: statusLabel(statusCode),   c: '' },
+        {               a: String(estStart),                b: String(till),                 c: '' },
       ];
 
       const smsBody = [
         `*** ${statusLabel(statusCode)} ***`,
-        `${String(estStart || '—')} | Ring ${String(one.ring_number ?? '—')} | #${String(one.class_number ?? '—')} ${String(one.class_name || '—')}`,
+        `${String(estStart)} | Ring ${String(one.ring_number ?? '—')} | #${String(one.class_number ?? '—')} ${String(one.class_name || '—')}`,
+        `${String(one.group_name || '—')} | Trips: ${String(one.total_trips ?? '—')}`
       ].join('\n');
 
-      openFly(one.class_name || 'Class', lines, smsBody);
+      openFly(one.class_name || 'Class', rows, smsBody);
       return;
     }
 
@@ -941,37 +941,43 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       if (!r) return;
 
       const code = toStatusCode(r.latestStatus);
-      const statusIconKey = code === 'U' ? 'up' : code === 'L' ? 'live' : code === 'C' ? 'done' : '';
-      const ringName = r.ringName || r.ring_nickname || '';
-      const entryDisp = entryLabelId(r);
 
-      const lines = [
-        { label: 'Ring',  c1: safeText(r.ring_number, '—'), c2: safeText(ringName, '—'), c3: '' },
-        { label: 'Entry', c1: entryDisp,                      c2: safeText(r.horseName, '—'), c3: '' },
-        { label: 'Trip',  c1: '', c2: safeText(r.riderName, '—'), c3: r.lastGoneIn ? { text: 'GONE', icon: statusIconKey || undefined, cls: 't_go' } : '' },
-        {               c1: '', c2: safeText(r.lastOOG, '—'), c3: { text: safeText(r.latestGO, '—'), cls: 't_go' } },
-        {               c1: '', c2: safeText(r.runningOOG, '—'), c3: { text: safeText(r.timetillgo, '—'), cls: 't_go' } },
+      const entryNo = (r.backNumber != null && String(r.backNumber) !== '') ? r.backNumber
+                    : (r.entryNumber != null && String(r.entryNumber) !== '') ? r.entryNumber
+                    : (r.entry_number != null && String(r.entry_number) !== '') ? r.entry_number
+                    : '—';
+
+      // runningOOG (fallbacks)
+      let running = (r.runningOOG != null && String(r.runningOOG) !== '') ? r.runningOOG : null;
+      if (running == null && r.completed_trips != null && r.total_trips != null){
+        const cTrips = Number(r.completed_trips);
+        const tTrips = Number(r.total_trips);
+        if (!Number.isNaN(cTrips) && !Number.isNaN(tTrips)) running = cTrips + 1;
+      }
+      if (running == null && r.remaining_trips != null && r.total_trips != null){
+        const rem = Number(r.remaining_trips);
+        const tot = Number(r.total_trips);
+        if (!Number.isNaN(rem) && !Number.isNaN(tot)) running = (tot - rem) + 1;
+      }
+      if (running == null && r.lastPosition != null && String(r.lastPosition) !== '') running = r.lastPosition;
+
+      const rows = [
+        { label: 'Ring',  a: (r.ring_number ?? '—'),     b: (r.ringName || '—'),     c: '' },
+        { label: 'Entry', a: String(entryNo),           b: (r.horseName || '—'),    c: '' },
+        { label: 'Trip',  a: '',                        b: (r.riderName || '—'),    c: (r.lastGoneIn ?? '—') },
+        {               a: '',                          b: (r.lastOOG ?? '—'),      c: (r.latestGO || '—') },
+        {               a: '',                          b: (running != null ? String(running) : '—'), c: (r.timetillgo ?? '—') },
+        {               a: '—',                         b: '—',                     c: '—' } // scores-line placeholder (TBD)
       ];
 
-      if (code === 'C'){
-        const placing = String(r.lastPlacing ?? '').trim();
-        const preferTime = (String(r.schedule_sequencetype || '').toLowerCase().includes('jumper'));
-        const metric = preferTime ? (r.lastTime || r.lastScore || '') : (r.lastScore || r.lastTime || '');
-        lines.push({
-          label: 'Result',
-          c1: safeText(r.lastPlace, ''),
-          c2: placing && /^[1-8]$/.test(placing) ? { rib: placing } : safeText(placing, ''),
-          c3: safeText(metric, ''),
-        });
-      }
-
+      const oogVal = (running != null && String(running) !== '') ? running : ((r.lastOOG != null && String(r.lastOOG) !== '') ? r.lastOOG : (r.lastPosition != null ? r.lastPosition : '—'));
       const smsBody = [
         `*** ${statusLabel(code)} ***`,
-        `${safeText(r.latestGO, '—')} | Ring ${safeText(r.ring_number, '—')} | ${safeText(r.class_name, '—')} | ${safeText(r.horseName, '—')} (${entryDisp})`,
+        `${String(r.latestGO || '—')} | Ring ${String(r.ring_number ?? '—')} | #${String(r.class_number ?? '—')} ${String(r.class_name || '—')}`,
+        `${String(r.horseName || '—')} (${String(entryNo)}) | OOG ${String(oogVal)} | GO ${String(r.latestGO || '—')}`
       ].join('\n');
 
-      openFly(r.horseName || 'Entry', lines, smsBody);
-      return;
+      openFly(r.horseName || 'Entry', rows, smsBody);
     }
   });
 
