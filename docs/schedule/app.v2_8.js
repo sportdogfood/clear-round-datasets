@@ -89,6 +89,10 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const sum_underway = document.getElementById('sum_underway');
   const sum_upcoming = document.getElementById('sum_upcoming');
   const sum_completed = document.getElementById('sum_completed');
+  const topmoversEl = document.getElementById('topmovers');
+  const timeRangeEl = document.getElementById('timeRange');
+  const btnCompare = document.getElementById('btnCompare');
+
 
   // Flyup
   const fly = document.getElementById('fly');
@@ -126,23 +130,38 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   }[m]));
 
 
-  // ------------------------------------------------
-  // Icons (inline SVG, currentColor)
-  // ------------------------------------------------
-  function icoClock(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>`;
+  // Inline SVG icons (LOCKED)
+  function svgWrap(pathD){
+    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${pathD}</svg></span>`;
   }
-  function icoBolt(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 12-14h-7l1-6z"/></svg></span>`;
-  }
-  function icoCheckCircle(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2 2 6-6"/></svg></span>`;
-  }
-  function statusIco(code){
+  function icoClock(){ return svgWrap('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'); }
+  function icoBolt(){ return svgWrap('<path d="M13 2L3 14h7l-1 8 12-14h-7l1-6z"/>'); }
+  function icoCheckCircle(){ return svgWrap('<circle cx="12" cy="12" r="9"/><path d="M8 12l2 2 6-6"/>'); }
+  function icoIdBadge(){ return svgWrap('<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M8 10h8"/><path d="M8 14h5"/>'); }
+  function icoFence(){ return svgWrap('<path d="M4 16V8"/><path d="M8 16V8"/><path d="M12 16V8"/><path d="M16 16V8"/><path d="M20 16V8"/><path d="M4 10h16"/><path d="M4 14h16"/>'); }
+  function icoHorse(){ return svgWrap('<path d="M6 19v-7l5-5 4 2 3-2 2 3-3 2v7H6z"/><path d="M10 12h4"/><path d="M9 6l-2-2"/>'); }
+
+  function statusIcon(code){
     return code === 'U' ? icoClock() : code === 'L' ? icoBolt() : code === 'C' ? icoCheckCircle() : '';
   }
+  function typeIcon(seq){
+    const s = String(seq || '').toLowerCase();
+    if (s.includes('over')) return icoFence();
+    if (s.includes('under') || s.includes('flat') || s.includes('saddle')) return icoHorse();
+    return '';
+  }
 
-
+  function parseTimeToMin(s){
+    const m = String(s || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!m) return null;
+    let h = Number(m[1]);
+    const mm = Number(m[2]);
+    const ap = String(m[3]).toUpperCase();
+    if (ap === 'PM' && h < 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    if (Number.isNaN(h) || Number.isNaN(mm)) return null;
+    return h * 60 + mm;
+  }
   function uniq(arr){
     return Array.from(new Set(arr));
   }
@@ -247,7 +266,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       document.querySelectorAll('[data-global-status]').forEach(b => {
         b.classList.toggle('is-on', (b.getAttribute('data-global-status') === state.globalStatus) && !!state.globalStatus);
       });
-      /* TBD: no filtering yet */
+      renderLiteAndFull();
     });
   });
 
@@ -467,7 +486,60 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     state.ringsIndex = Array.from(rings.values()).filter(r => r.ring_number > 0);
   }
 
-  function updateStartSummary(){
+  
+  function renderTopMovers(){
+    if (!topmoversEl) return;
+
+    // Reference render (no filtering logic yet)
+    const rows = [];
+    const seen = new Set();
+
+    // Sort by GO time when available (stable, display-only)
+    const sorted = state.trips
+      .slice()
+      .filter(r => r && r.latestGO)
+      .sort((a,b) => {
+        const ta = parseTimeToMin(a.latestGO);
+        const tb = parseTimeToMin(b.latestGO);
+        if (ta == null && tb == null) return 0;
+        if (ta == null) return 1;
+        if (tb == null) return -1;
+        return ta - tb;
+      });
+
+    for (const r of sorted){
+      const id = String(r.entry_id || '');
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+
+      const go = String(r.latestGO || '—');
+      const horse = String(r.horseName || '—');
+      const rider = String(r.riderName || '—');
+      const ring = String(r.ringName || (r.ring_number != null ? `Ring ${r.ring_number}` : '—'));
+
+      rows.push({ go, horse, rider, ring });
+      if (rows.length >= 8) break;
+    }
+
+    if (!rows.length){
+      topmoversEl.innerHTML = '<div class="panel__line"><div>No movers</div><div>—</div></div>';
+      return;
+    }
+
+    topmoversEl.innerHTML = rows.map(x => `
+      <div class="tm_row">
+        <div class="tm_go"><span class="t_go">${esc(x.go)}</span></div>
+        <div class="tm_mid">
+          <div class="tm_horse">${esc(x.horse)}</div>
+          <div class="tm_meta">${esc(x.rider)}</div>
+        </div>
+        <div class="tm_ring">${esc(x.ring)}</div>
+      </div>
+    `).join('');
+      renderTopMovers();
+}
+
+function updateStartSummary(){
     const tripsN = state.trips.length;
     const classesN = state.schedule.length;
     const threadsN = state.threads.length;
@@ -651,12 +723,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
         classCard.innerHTML = `
           <div class="class_line" data-open-class="${esc(c.class_id)}">
-            <div class="c_time">${esc(timeTxt)}</div>
+            <div class="c_time"><span class="t_start">${esc(timeTxt)}</span></div>
             <div class="c_num">${esc(numTxt)}</div>
             <div class="c_name">
               <div class="c_name_main">${esc(nameTxt)}</div>
             </div>
-            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIco(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
+            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIcon(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
           </div>
           ${entries.length ? `<div class="rollup_line"><div class="rollup_scroller"></div></div>` : ``}
         `;
@@ -670,7 +742,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
           btn.className = 'epill';
           btn.setAttribute('data-open-entry', String(e.entry_id || ''));
           btn.setAttribute('data-horse', String(e.horseName || '').trim());
-          btn.textContent = `${e.entry_id || '—'} • ${e.horseName || '—'} • ${ (e.lastOOG != null && String(e.lastOOG) !== '') ? e.lastOOG : '—' } • ${e.latestGO || '—'}`;
+          const lastOOG = (e.lastOOG != null && String(e.lastOOG) !== '') ? String(e.lastOOG) : '—';
+          const latestGO = (e.latestGO != null && String(e.latestGO) !== '') ? String(e.latestGO) : '—';
+          btn.innerHTML = `${esc(e.entry_id || '—')} • ${esc(e.horseName || '—')} • ${esc(lastOOG)} • <span class="t_go">${esc(latestGO)}</span>`;
           sc.appendChild(btn);
         });
 
@@ -756,12 +830,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
         classCard.innerHTML = `
           <div class="class_line" data-full-readonly="1">
-            <div class="c_time">${esc(timeTxt)}</div>
+            <div class="c_time"><span class="t_start">${esc(timeTxt)}</span></div>
             <div class="c_num">${esc(numTxt)}</div>
             <div class="c_name">
               <div class="c_name_main">${esc(nameTxt)}</div>
             </div>
-            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIco(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
+            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${statusIcon(statusCode)}<span>${esc(statusLabel(statusCode))}</span></div></div>
           </div>
           <div class="rollup_line"><div class="rollup_scroller"></div></div>
         `;
@@ -912,21 +986,24 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       if (!one) return;
 
       const statusCode = toStatusCode(one.latestStatus);
+
       const estStart = one.lastStart || one.latestStart || '—';
-      const till = (one.timetillstart != null && String(one.timetillstart) !== '') ? one.timetillstart : '—';
+      const tillStart = (one.timetillstart != null && String(one.timetillstart) !== '') ? String(one.timetillstart) : '—';
 
       const rows = [
-        { label: 'Ring',  a: (one.ring_number ?? '—'),      b: (one.ringName || '—'),        c: '' },
-        { label: 'Group', a: (one.class_group_id ?? '—'),   b: (one.group_name || '—'),      c: '' },
-        { label: 'Class', a: (one.class_number ?? '—'),     b: (one.class_name || '—'),      c: '' },
-        {               a: (one.schedule_sequencetype || '—'), b: statusLabel(statusCode),   c: '' },
-        {               a: String(estStart),                b: String(till),                 c: '' },
+        { label: 'Ring',  a: (one.ring_number ?? '—'),      b: (one.ringName || '—'),      c: '' },
+        { label: 'Group', a: (one.class_group_id ?? '—'),   b: (one.group_name || '—'),    c: '' },
+        { label: 'Class', aHtml: `${icoIdBadge()}<span>${esc(one.class_number ?? '—')}</span>`, b: (one.class_name || '—'), c: '' },
+        { aHtml: `${typeIcon(one.schedule_sequencetype)}<span>${esc(one.schedule_sequencetype || '—')}</span>`,
+          bHtml: `${statusIcon(statusCode)}<span>${statusIcon(statusCode)}<span>${esc(statusLabel(statusCode))}</span></span>`,
+          c: '' },
+        { aHtml: `<span class="t_start">${esc(estStart)}</span>`, b: tillStart, c: '' },
       ];
 
       const smsBody = [
         `*** ${statusLabel(statusCode)} ***`,
         `${String(estStart)} | Ring ${String(one.ring_number ?? '—')} | #${String(one.class_number ?? '—')} ${String(one.class_name || '—')}`,
-        `${String(one.group_name || '—')} | Trips: ${String(one.total_trips ?? '—')}`
+        `${String(one.group_name || '—')} | ${String(one.schedule_sequencetype || '—')} | Trips: ${String(one.total_trips ?? '—')}`
       ].join('\n');
 
       openFly(one.class_name || 'Class', rows, smsBody);
@@ -942,10 +1019,11 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
       const code = toStatusCode(r.latestStatus);
 
-      const entryNo = (r.backNumber != null && String(r.backNumber) !== '') ? r.backNumber
-                    : (r.entryNumber != null && String(r.entryNumber) !== '') ? r.entryNumber
-                    : (r.entry_number != null && String(r.entry_number) !== '') ? r.entry_number
-                    : '—';
+      const entryNo =
+        (r.entry_number != null && String(r.entry_number) !== '') ? String(r.entry_number) :
+        (r.entryNumber != null && String(r.entryNumber) !== '') ? String(r.entryNumber) :
+        (r.backNumber != null && String(r.backNumber) !== '') ? String(r.backNumber) :
+        '—';
 
       // runningOOG (fallbacks)
       let running = (r.runningOOG != null && String(r.runningOOG) !== '') ? r.runningOOG : null;
@@ -961,20 +1039,26 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       }
       if (running == null && r.lastPosition != null && String(r.lastPosition) !== '') running = r.lastPosition;
 
+      const lastGoneIn = (r.lastGoneIn != null && String(r.lastGoneIn) !== '') ? String(r.lastGoneIn) : '—';
+      const lastOOG = (r.lastOOG != null && String(r.lastOOG) !== '') ? String(r.lastOOG) :
+                      (r.lastPosition != null && String(r.lastPosition) !== '') ? String(r.lastPosition) : '—';
+      const latestGO = (r.latestGO != null && String(r.latestGO) !== '') ? String(r.latestGO) : '—';
+      const ttgo = (r.timetillgo != null && String(r.timetillgo) !== '') ? String(r.timetillgo) :
+                   (r.timetillGO != null && String(r.timetillGO) !== '') ? String(r.timetillGO) : '—';
+
       const rows = [
-        { label: 'Ring',  a: (r.ring_number ?? '—'),     b: (r.ringName || '—'),     c: '' },
-        { label: 'Entry', a: String(entryNo),           b: (r.horseName || '—'),    c: '' },
-        { label: 'Trip',  a: '',                        b: (r.riderName || '—'),    c: (r.lastGoneIn ?? '—') },
-        {               a: '',                          b: (r.lastOOG ?? '—'),      c: (r.latestGO || '—') },
-        {               a: '',                          b: (running != null ? String(running) : '—'), c: (r.timetillgo ?? '—') },
-        {               a: '—',                         b: '—',                     c: '—' } // scores-line placeholder (TBD)
+        { label: 'Ring',  a: (r.ring_number ?? '—'), b: (r.ringName || '—'), c: '' },
+        { label: 'Entry', aHtml: `${icoIdBadge()}<span>${esc(entryNo)}</span>`, b: (r.horseName || '—'), c: '' },
+        { label: 'Trip',  a: '', b: (r.riderName || '—'), c: lastGoneIn },
+        { a: '', b: lastOOG, cHtml: `<span class="t_go">${esc(latestGO)}</span>` },
+        { a: '', b: (running != null ? String(running) : '—'), cHtml: `<span class="t_go_soft">${esc(ttgo)}</span>` },
+        { a: '—', b: '—', c: '—' }, // scores-line placeholder (TBD)
       ];
 
-      const oogVal = (running != null && String(running) !== '') ? running : ((r.lastOOG != null && String(r.lastOOG) !== '') ? r.lastOOG : (r.lastPosition != null ? r.lastPosition : '—'));
       const smsBody = [
         `*** ${statusLabel(code)} ***`,
-        `${String(r.latestGO || '—')} | Ring ${String(r.ring_number ?? '—')} | #${String(r.class_number ?? '—')} ${String(r.class_name || '—')}`,
-        `${String(r.horseName || '—')} (${String(entryNo)}) | OOG ${String(oogVal)} | GO ${String(r.latestGO || '—')}`
+        `${String(latestGO)} | Ring ${String(r.ring_number ?? '—')} | #${String(r.class_number ?? '—')} ${String(r.class_name || '—')}`,
+        `${String(r.horseName || '—')} (${String(entryNo)}) | OOG ${String(lastOOG)} | GO ${String(latestGO)}`
       ].join('\n');
 
       openFly(r.horseName || 'Entry', rows, smsBody);

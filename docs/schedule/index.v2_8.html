@@ -54,9 +54,9 @@
         --fs-2: 11px;
         --fs-3: 11.75px;
         --fs-4: 12.75px;
-        --col-time: 74px;
-        --col-num: 40px;
-        --col-badge: var(--col-time);
+        --col-time: 60px;
+        --col-num: 50px;
+        --col-badge: 56px;
       }
     }
 
@@ -532,7 +532,6 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap: 6px;
       white-space:nowrap;
       line-height: 1;
       text-transform: uppercase;
@@ -547,7 +546,7 @@
       min-width: var(--col-time);
       height: 1px;
     }
-    .rollup_scroller{ display:flex; justify-content:flex-end; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+    .rollup_scroller{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
     .rollup_scroller::-webkit-scrollbar{ display:none; }
 
     .epill{
@@ -624,7 +623,7 @@
       text-overflow:ellipsis;
       line-height: 1.1;
     }
-    .fly_btn{
+    .fly_close{
       height: 32px;
       min-width: 72px;
       padding: 0 12px;
@@ -637,7 +636,7 @@
       cursor:pointer;
       user-select:none;
     }
-    .fly_btn:active{ transform: translateY(1px) scale(.995); }
+    .fly_close:active{ transform: translateY(1px) scale(.995); }
 
     .fly_body{ display:grid; gap: 10px; }
     .fly_group{
@@ -671,37 +670,59 @@
       white-space:nowrap;
     }
 
-    
+    /* Focus */
+    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.epill,.fly_close,.tb-btn,.ring_btn):focus-visible{
+      outline: 2px solid rgba(47,107,255,.95);
+      outline-offset: 2px;
+    }
+  
+    /* ---- v2_8 Contract Additions (no layout redesign) ---- */
+
+    /* Summary reference blocks */
+    .panel__spacer{ height: 8px; }
+    .seg{ display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+    .segbtn{
+      height: 26px;
+      padding: 0 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: rgba(255,255,255,.88);
+      font-size: var(--fs-1);
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      user-select:none;
+      white-space:nowrap;
+      cursor: default;
+      opacity: .9;
+    }
+    .topmovers{ display:grid; gap: 8px; margin-top: 6px; }
+    .tm_row{
+      display:grid;
+      grid-template-columns: 64px minmax(0,1fr) 86px;
+      gap: 10px;
+      align-items:center;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .tm_go{ font-weight: 900; font-variant-numeric: tabular-nums; }
+    .tm_mid{ min-width:0; }
+    .tm_horse{ font-weight: 800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tm_meta{ margin-top: 2px; font-size: var(--fs-1); color: rgba(255,255,255,.62); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tm_ring{ text-align:right; font-weight: 800; color: rgba(255,255,255,.72); white-space:nowrap; }
+
+
     /* Icons (inline SVG) */
-    .ico{ display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px; }
+    .ico{ display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px; vertical-align: -1px; }
     .ico svg{ width:12px; height:12px; display:block; }
 
     /* Flyup header buttons */
-    .fly_actions{ display:flex; gap:8px; align-items:center; }
-    .fly_btn{
-      height: 32px;
-      padding: 0 12px;
-      border-radius: var(--r-pill);
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      color: rgba(255,255,255,.88);
-      font-size: var(--fs-2);
-      font-weight: 800;
-      cursor:pointer;
-      user-select:none;
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      line-height: 1;
-      white-space:nowrap;
-    }
-    .fly_btn:active{ transform: translateY(1px) scale(.995); }
-    .fly_btn--icon{
-      width: 32px;
-      padding: 0;
-      justify-content:center;
-    }
-    .fly_btn_txt{ display:inline-block; }
+    .fly_close{ display:inline-flex; align-items:center; gap:8px; }
+    .fly_close__txt{ display:inline-block; }
+    .fly_close--x{ width: 34px; justify-content:center; padding: 0; }
 
     /* Flyup rows: 3-column contract */
     .fly_label{
@@ -739,11 +760,34 @@
       font-weight: 700;
       color: rgba(255,255,255,.90);
     }
-/* Focus */
-    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.epill,.fly_btn,.tb-btn,.ring_btn):focus-visible{
-      outline: 2px solid rgba(47,107,255,.95);
-      outline-offset: 2px;
+
+    /* Rollups start at right and extend left */
+    .rollup_scroller{ justify-content:flex-end; scrollbar-width:none; }
+    .rollup_scroller::-webkit-scrollbar{ display:none; }
+
+    /* Start vs Go tint */
+    :root{
+      --t-start: rgba(255,255,255,.78);
+      --t-go: rgba(77,163,255,.92);
+      --t-go-soft: rgba(77,163,255,.72);
     }
+    .t_start{ color: var(--t-start); }
+    .t_go{ color: var(--t-go); }
+    .t_go_soft{ color: var(--t-go-soft); }
+
+    /* State pills fills (Up/Now/Done) */
+
+    .sbtn[data-global-status="U"]{ background: rgba(255,255,255,.04); }
+    .sbtn[data-global-status="L"]{ background: rgba(47,107,255,.06); }
+    .sbtn[data-global-status="C"]{ background: rgba(255,255,255,.03); }
+
+    .sbtn.is-on[data-global-status="U"]{ background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
+    .sbtn.is-on[data-global-status="L"]{ background: rgba(47,107,255,.18); border-color: rgba(47,107,255,.45); }
+    .sbtn.is-on[data-global-status="C"]{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); color: rgba(255,255,255,.74); }
+
+    /* Badge: allow icon + text */
+    .badge{ gap: 6px; }
+
   </style>
 </head>
 
@@ -792,6 +836,37 @@
           <div class="panel__line"><div>Underway</div><div id="sum_underway">—</div></div>
           <div class="panel__line"><div>Upcoming</div><div id="sum_upcoming">—</div></div>
           <div class="panel__line"><div>Completed</div><div id="sum_completed">—</div></div>
+
+          <div class="panel__spacer"></div>
+
+          <div class="panel__title" style="margin-top:10px;">Time Range</div>
+          <div class="panel__line">
+            <div>Selector</div>
+            <div class="seg" id="timeRange">
+              <button class="segbtn" type="button" data-range="tbd1">TBD</button>
+              <button class="segbtn" type="button" data-range="tbd2">TBD</button>
+              <button class="segbtn" type="button" data-range="tbd3">TBD</button>
+            </div>
+          </div>
+
+          <div class="panel__title" style="margin-top:10px;">Compare</div>
+          <div class="panel__line">
+            <div>Reference</div>
+            <button class="tb-btn" type="button" id="btnCompare" disabled>Compare</button>
+          </div>
+
+          <div class="panel__title" style="margin-top:10px;">Top Movers</div>
+          <div id="topmovers" class="topmovers"></div>
+
+          <div class="panel__title" style="margin-top:10px;">Graphics Lib</div>
+          <div class="graphicslib" id="graphicslib">
+            <div class="panel__line"><div>Up Badge</div><div class="badge badge--upcoming"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Up</span></div></div>
+            <div class="panel__line"><div>Now Badge</div><div class="badge badge--underway"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 12-14h-7l1-6z"/></svg></span><span>Now</span></div></div>
+            <div class="panel__line"><div>Done Badge</div><div class="badge badge--completed"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2 2 6-6"/></svg></span><span>Done</span></div></div>
+            <div class="panel__line"><div>Start Tint</div><div class="t_start">10:30 AM</div></div>
+            <div class="panel__line"><div>Go Tint</div><div class="t_go">10:45 AM</div></div>
+          </div>
+
         </div>
       </div>
 
@@ -834,29 +909,27 @@
       <div class="fly_sheet" role="dialog" aria-modal="true" aria-label="Details">
         <div class="fly_head">
           <div class="fly_title" id="flyTitle">Details</div>
-          <div class="fly_actions">
-            <button class="fly_btn" type="button" id="flySMS" aria-label="SMS">
-              <span class="ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
-                </svg>
-              </span>
-              <span class="fly_btn_txt">SMS</span>
-            </button>
-            <button class="fly_btn fly_btn--icon" type="button" id="flyClose" aria-label="Close">
-              <span class="ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </span>
-            </button>
-          </div>
-        </div>
+          <button class="fly_close" type="button" id="flySMS" aria-label="SMS">
+            <span class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+              </svg>
+            </span>
+            <span class="fly_close__txt">SMS</span>
+          </button>
+          <button class="fly_close fly_close--x" type="button" id="flyClose" aria-label="Close">
+            <span class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </span>
+          </button>
+</div>
         <div class="fly_body" id="flyBody"></div>
       </div>
     </div>
   </div>
 
-  <script src="./app.v2_8.js"></script>
+  <script src="./app.v2_8.contract.js"></script>
 </body>
 </html>
