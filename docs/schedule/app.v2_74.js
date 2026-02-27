@@ -1021,8 +1021,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         `*** ${statusTxt.toUpperCase()} ***`,
         `${String(one.latestStart || '—')} | Ring ${String(one.ring_number ?? '—')} | #${String(one.class_number ?? '—')} ${String(one.class_name || '—')}`,
         `${String(one.group_name || '—')} | Trips: ${String(one.total_trips ?? '—')}`
-      ].join('
-');
+      ].join('\n');
 
       openFly5(one.class_name || 'Class', lines, smsBody);
       return;
@@ -1069,8 +1068,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         `*** ${statusTxt.toUpperCase()} ***`,
         `${String(r.latestGO || '—')} | Ring ${String(r.ring_number ?? '—')} | #${String(r.class_number ?? '—')} ${String(r.class_name || '—')}`,
         `${String(r.horseName || '—')} (${String(entryNumber)}) | OOG ${String(r.lastOOG ?? '—')} | GO ${String(r.latestGO || '—')}`
-      ].join('
-');
+      ].join('\n');
 
       openFly5(r.horseName || 'Entry', lines, smsBody2);
       return;
