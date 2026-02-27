@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-27T11:15:09-05:00",
+    "generated_at": "2026-02-27T11:20:00-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 76,
@@ -25,8 +25,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 20,
-      "trips_linked_unique": 20
+      "trips_total": 19,
+      "trips_linked_unique": 19
     }
   },
   "records": [
@@ -529,7 +529,7 @@
       "class_number": 2116,
       "class_name": "$210 Young Hunter 3'3\" (7 & Under) U/S",
       "class_type": null,
-      "latestStart": "11:50 AM",
+      "latestStart": "11:45 AM",
       "latestStatus": null,
       "total_trips": 10,
       "rollup_entries": [],
@@ -746,7 +746,7 @@
       "class_type": null,
       "latestStart": "11:15 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 47,
+      "total_trips": 46,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1085,7 +1085,7 @@
       "class_type": null,
       "latestStart": "1:04 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 11,
+      "total_trips": 10,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1105,7 +1105,7 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Underway",
-      "total_trips": 50,
+      "total_trips": 48,
       "rollup_entries": [
         "200204809"
       ],
@@ -1131,7 +1131,7 @@
       "class_type": null,
       "latestStart": "8:00 AM",
       "latestStatus": "Underway",
-      "total_trips": 36,
+      "total_trips": 34,
       "rollup_entries": [
         "200150916",
         "200204809"
@@ -1180,20 +1180,17 @@
       "class_type": null,
       "latestStart": "12:15 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 60,
+      "total_trips": 59,
       "rollup_entries": [
         "200141522",
-        "200150715",
         "200209673"
       ],
       "rollup_trips": [
         "69C861D711294F9EBEED2DCE8391751E",
-        "1F5CE05301E84994B0F8654551E4A9A2",
-        "BCEFF9EC6F6B4F20AE0665E91883B0B2"
+        "1F5CE05301E84994B0F8654551E4A9A2"
       ],
       "rollup_horses": [
         "Calypso",
-        "Indy",
         "Kudos"
       ]
     },
