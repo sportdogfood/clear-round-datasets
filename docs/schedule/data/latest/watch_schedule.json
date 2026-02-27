@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-27T11:27:15-05:00",
+    "generated_at": "2026-02-27T11:36:37-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 76,
@@ -25,8 +25,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 19,
-      "trips_linked_unique": 19
+      "trips_total": 20,
+      "trips_linked_unique": 20
     }
   },
   "records": [
@@ -1179,17 +1179,22 @@
       "class_name": "1.0m Training Jumper (Table II)",
       "class_type": null,
       "latestStart": "12:15 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 60,
       "rollup_entries": [
         "200141522",
-        "200209673"
+        "200209673",
+        "200214662"
       ],
       "rollup_trips": [
         "69C861D711294F9EBEED2DCE8391751E",
-        "1F5CE05301E84994B0F8654551E4A9A2"
+        "1F5CE05301E84994B0F8654551E4A9A2",
+        "1D421F72902F4B299CD19C155AB6E0DB"
       ],
       "rollup_horses": [
+        null,
         "Calypso",
         "Kudos"
       ]
@@ -1633,7 +1638,7 @@
       "class_number": 3077,
       "class_name": "SFHJA Adult Amateur Hunter Seat Medal (Flat Phase)",
       "class_type": null,
-      "latestStart": "2:20 PM",
+      "latestStart": "2:30 PM",
       "latestStatus": [
         "Not Started"
       ],
