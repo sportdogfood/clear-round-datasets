@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-02-27T22:05:03-05:00",
+    "generated_at": "2026-02-28T10:04:23-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 93,
@@ -25,8 +25,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 29,
-      "trips_linked_unique": 29
+      "trips_total": 24,
+      "trips_linked_unique": 24
     }
   },
   "records": [
@@ -44,8 +44,8 @@
       "class_name": "$17,500 SJHOF 1.45m Amateur Jumper Classic II2b",
       "class_type": null,
       "latestStart": "8:30 AM",
-      "latestStatus": null,
-      "total_trips": 46,
+      "latestStatus": "Underway",
+      "total_trips": 44,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -64,7 +64,7 @@
       "class_name": "$50,000 Hèrmes 1.50m National Grand Prix (Top 50 Riders from Class 200)",
       "class_type": null,
       "latestStart": "11:30 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 23,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -84,7 +84,7 @@
       "class_name": "$150,000 FEI Nations Cup Presented by Florida Coast Equipment",
       "class_type": null,
       "latestStart": "6:00 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 33,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -104,7 +104,7 @@
       "class_name": "$500 Amateur Owner Hunter 3'6\" 18-35",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Completed",
       "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -124,7 +124,7 @@
       "class_name": "$735 Amateur Owner Hunter 3'6\" 18-35 Handy",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Completed",
       "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -144,7 +144,7 @@
       "class_name": "$500 Amateur Owner Hunter 3'6\" 36 & Over",
       "class_type": null,
       "latestStart": "9:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 11,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -164,7 +164,7 @@
       "class_name": "$1,000 Amateur Owner Hunter 3'6\" 36 & Over Stake",
       "class_type": null,
       "latestStart": "9:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 11,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -204,7 +204,7 @@
       "class_name": "$500 Small Junior Hunter 3'6\" 15 & Under",
       "class_type": null,
       "latestStart": "10:30 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 6,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -224,7 +224,7 @@
       "class_name": "$800 Small Junior Hunter 3'6\" 15 & Under Stake",
       "class_type": null,
       "latestStart": "10:30 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 6,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -264,8 +264,8 @@
       "class_name": "$500 Large Junior Hunter 3'6\" 16-17",
       "class_type": null,
       "latestStart": "11:15 AM",
-      "latestStatus": null,
-      "total_trips": 15,
+      "latestStatus": "Upcoming",
+      "total_trips": 16,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -284,8 +284,8 @@
       "class_name": "$735 Large Junior Hunter 3'6\" 16-17 Handy",
       "class_type": null,
       "latestStart": "11:15 AM",
-      "latestStatus": null,
-      "total_trips": 15,
+      "latestStatus": "Upcoming",
+      "total_trips": 16,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -305,7 +305,7 @@
       "class_type": null,
       "latestStart": "12:45 PM",
       "latestStatus": null,
-      "total_trips": 15,
+      "total_trips": 16,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -324,8 +324,8 @@
       "class_name": "$500 Small Junior Hunter 3'6\" 16-17",
       "class_type": null,
       "latestStart": "1:00 PM",
-      "latestStatus": null,
-      "total_trips": 10,
+      "latestStatus": "Upcoming",
+      "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -344,8 +344,8 @@
       "class_name": "$735 Small Junior Hunter 3'6\" 16-17 Handy",
       "class_type": null,
       "latestStart": "1:00 PM",
-      "latestStatus": null,
-      "total_trips": 10,
+      "latestStatus": "Upcoming",
+      "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -364,7 +364,7 @@
       "class_name": "$500 Large Junior Hunter 3'6\" 15 & Under",
       "class_type": null,
       "latestStart": "2:00 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 7,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -384,7 +384,7 @@
       "class_name": "$735 Large Junior Hunter 3'6\" 15 & Under Handy",
       "class_type": null,
       "latestStart": "2:00 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 7,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -444,7 +444,7 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 36 & Over",
       "class_type": null,
       "latestStart": "3:15 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 11,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -464,7 +464,7 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 36 & Over",
       "class_type": null,
       "latestStart": "3:15 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 11,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -484,7 +484,7 @@
       "class_name": "$500 Junior Hunter 3'3\" 15 & Under",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Underway",
       "total_trips": 16,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -504,7 +504,7 @@
       "class_name": "$735 Junior Hunter 3'3\" 15 & Under Handy",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Underway",
       "total_trips": 16,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -523,8 +523,8 @@
       "class_number": 2812,
       "class_name": "$500 Junior Hunter 3'3\" 16-17",
       "class_type": null,
-      "latestStart": "9:30 AM",
-      "latestStatus": null,
+      "latestStart": "9:31 AM",
+      "latestStatus": "Upcoming",
       "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -543,8 +543,8 @@
       "class_number": 2813,
       "class_name": "$735 Junior Hunter 3'3\" 16-17 Handy",
       "class_type": null,
-      "latestStart": "9:30 AM",
-      "latestStatus": null,
+      "latestStart": "9:31 AM",
+      "latestStatus": "Upcoming",
       "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -564,10 +564,8 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 18-35",
       "class_type": null,
       "latestStart": "10:40 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 16,
+      "latestStatus": "Upcoming",
+      "total_trips": 15,
       "rollup_entries": [
         "200142584"
       ],
@@ -592,10 +590,8 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 18-35 Handy",
       "class_type": null,
       "latestStart": "10:40 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 16,
+      "latestStatus": "Upcoming",
+      "total_trips": 15,
       "rollup_entries": [
         "200142584"
       ],
@@ -623,7 +619,7 @@
       "latestStatus": [
         "Not Started"
       ],
-      "total_trips": 16,
+      "total_trips": 15,
       "rollup_entries": [
         "200142584"
       ],
@@ -648,7 +644,7 @@
       "class_name": "$630 Adult Amateur Hunter 36-54 (Sec B)",
       "class_type": null,
       "latestStart": "12:45 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 8,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -668,7 +664,7 @@
       "class_name": "$630 Adult Amateur Hunter 36-54 (Sec B)",
       "class_type": null,
       "latestStart": "12:45 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 8,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -688,10 +684,8 @@
       "class_name": "$630 Adult Amateur Hunter 18-35 (Sec B)",
       "class_type": null,
       "latestStart": "1:30 PM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 17,
+      "latestStatus": "Upcoming",
+      "total_trips": 16,
       "rollup_entries": [
         "200150113"
       ],
@@ -716,10 +710,8 @@
       "class_name": "$630 Adult Amateur Hunter 18-35 (Sec B)",
       "class_type": null,
       "latestStart": "1:30 PM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 17,
+      "latestStatus": "Upcoming",
+      "total_trips": 16,
       "rollup_entries": [
         "200150113"
       ],
@@ -744,8 +736,8 @@
       "class_name": "$1,500 Masters Jumper (1.10m Amateur) Table II",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
-      "total_trips": 34,
+      "latestStatus": "Underway",
+      "total_trips": 33,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -763,8 +755,8 @@
       "class_number": 1047,
       "class_name": "$1,500 1.10m Amateur Jumper 36+ II2d",
       "class_type": null,
-      "latestStart": "9:15 AM",
-      "latestStatus": null,
+      "latestStart": "9:30 AM",
+      "latestStatus": "Upcoming",
       "total_trips": 26,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -783,9 +775,9 @@
       "class_number": 1036,
       "class_name": "$1,500 1.20m Amateur Jumper II2d",
       "class_type": null,
-      "latestStart": "10:40 AM",
-      "latestStatus": null,
-      "total_trips": 71,
+      "latestStart": "10:45 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 66,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -803,8 +795,8 @@
       "class_number": 1066,
       "class_name": "$1,500 1.30m Junior Jumper II2d",
       "class_type": null,
-      "latestStart": "2:30 PM",
-      "latestStatus": null,
+      "latestStart": "2:00 PM",
+      "latestStatus": "Upcoming",
       "total_trips": 19,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -824,8 +816,8 @@
       "class_name": "$1,500 1.40m Junior Jumper II2d",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
-      "total_trips": 9,
+      "latestStatus": "Completed",
+      "total_trips": 8,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -843,8 +835,8 @@
       "class_number": 1031,
       "class_name": "$1,500 1.30m Amateur Jumper II2d",
       "class_type": null,
-      "latestStart": "8:40 AM",
-      "latestStatus": null,
+      "latestStart": "8:45 AM",
+      "latestStatus": "Underway",
       "total_trips": 57,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -864,8 +856,8 @@
       "class_name": "$1,500 1.20m Junior Jumper II2d",
       "class_type": null,
       "latestStart": "11:30 AM",
-      "latestStatus": null,
-      "total_trips": 22,
+      "latestStatus": "Upcoming",
+      "total_trips": 20,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -884,10 +876,8 @@
       "class_name": "$1,500 1.10m Amateur Jumper 18-35 II2d",
       "class_type": null,
       "latestStart": "1:00 PM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 37,
+      "latestStatus": "Upcoming",
+      "total_trips": 36,
       "rollup_entries": [
         "200150196",
         "200150274"
@@ -915,8 +905,8 @@
       "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2d",
       "class_type": null,
       "latestStart": "3:00 PM",
-      "latestStatus": null,
-      "total_trips": 19,
+      "latestStatus": "Upcoming",
+      "total_trips": 18,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -935,7 +925,7 @@
       "class_name": "$1,500 Modified Adult Amateur Jumper II2d",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Completed",
       "total_trips": 17,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -954,20 +944,12 @@
       "class_number": 1081,
       "class_name": "$1,500 1.10m Junior Jumper 15-17 II2d",
       "class_type": null,
-      "latestStart": "8:55 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 23,
-      "rollup_entries": [
-        "200214662"
-      ],
-      "rollup_trips": [
-        "425DC80D24EE43B5A54F61DB3154D66E"
-      ],
-      "rollup_horses": [
-        "Celly"
-      ]
+      "latestStart": "9:00 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 22,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recbMLfyZVPI1prOo",
@@ -983,19 +965,11 @@
       "class_name": "$1,500 1.10m Junior Jumper 15-17  II2b",
       "class_type": null,
       "latestStart": "10:00 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 20,
-      "rollup_entries": [
-        "200214662"
-      ],
-      "rollup_trips": [
-        "4D23DAF151AA41B99D3BE24D0B9989B5"
-      ],
-      "rollup_horses": [
-        "Celly"
-      ]
+      "latestStatus": "Upcoming",
+      "total_trips": 13,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recwkBVFmCpt50ylO",
@@ -1011,8 +985,8 @@
       "class_name": "15-17 Equitation (3'3\") CALI @ 30+",
       "class_type": null,
       "latestStart": "11:00 AM",
-      "latestStatus": null,
-      "total_trips": 41,
+      "latestStatus": "Upcoming",
+      "total_trips": 38,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1031,8 +1005,8 @@
       "class_name": "15-17 Equitation (3'3\") CALI @ 30+",
       "class_type": null,
       "latestStart": "11:00 AM",
-      "latestStatus": null,
-      "total_trips": 41,
+      "latestStatus": "Upcoming",
+      "total_trips": 38,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1052,7 +1026,7 @@
       "class_type": null,
       "latestStart": "3:15 PM",
       "latestStatus": null,
-      "total_trips": 40,
+      "total_trips": 37,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1071,10 +1045,8 @@
       "class_name": "THIS Children's Medal 15-17",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 24,
+      "latestStatus": "Completed",
+      "total_trips": 23,
       "rollup_entries": [
         "200142683"
       ],
@@ -1098,11 +1070,11 @@
       "class_number": 3076,
       "class_name": "SFHJA Junior Hunter Seat Medal 15-17 (Flat Phase)",
       "class_type": null,
-      "latestStart": "9:15 AM",
+      "latestStart": "9:10 AM",
       "latestStatus": [
-        "Not Started"
+        "Completed"
       ],
-      "total_trips": 11,
+      "total_trips": 9,
       "rollup_entries": [
         "200142683"
       ],
@@ -1126,9 +1098,9 @@
       "class_number": 2872,
       "class_name": "Children's Hunter 15-17",
       "class_type": null,
-      "latestStart": "9:45 AM",
-      "latestStatus": null,
-      "total_trips": 10,
+      "latestStart": "9:35 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 7,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1146,9 +1118,9 @@
       "class_number": 2873,
       "class_name": "Children's Hunter 15-17",
       "class_type": null,
-      "latestStart": "9:45 AM",
-      "latestStatus": null,
-      "total_trips": 10,
+      "latestStart": "9:35 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 7,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1167,10 +1139,8 @@
       "class_name": "THIS Children's Medal 14 & Under",
       "class_type": null,
       "latestStart": "11:00 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 32,
+      "latestStatus": "Upcoming",
+      "total_trips": 31,
       "rollup_entries": [
         "200151013",
         "200204809"
@@ -1197,11 +1167,11 @@
       "class_number": 3075,
       "class_name": "SFHJA Junior Hunter Seat Medal 14 & Under (Flat Phase)",
       "class_type": null,
-      "latestStart": "12:40 PM",
+      "latestStart": "12:25 PM",
       "latestStatus": [
         "Not Started"
       ],
-      "total_trips": 15,
+      "total_trips": 16,
       "rollup_entries": [
         "200151013",
         "200204809"
@@ -1229,8 +1199,8 @@
       "class_name": "Children's Hunter 14 & Under",
       "class_type": null,
       "latestStart": "1:10 PM",
-      "latestStatus": null,
-      "total_trips": 22,
+      "latestStatus": "Upcoming",
+      "total_trips": 21,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1249,7 +1219,7 @@
       "class_name": "Children's Hunter 14 & Under",
       "class_type": null,
       "latestStart": "1:10 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 21,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1270,7 +1240,7 @@
       "class_type": null,
       "latestStart": "3:15 PM",
       "latestStatus": null,
-      "total_trips": 19,
+      "total_trips": 18,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1289,10 +1259,8 @@
       "class_name": "1.0m Junior Jumper II2b CALI",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 61,
+      "latestStatus": "Underway",
+      "total_trips": 59,
       "rollup_entries": [
         "200150916",
         "200214662"
@@ -1319,21 +1287,16 @@
       "class_number": 1737,
       "class_name": "1.0m Junior Jumper II2d CALI",
       "class_type": null,
-      "latestStart": "11:30 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 62,
+      "latestStart": "11:20 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 47,
       "rollup_entries": [
-        "200150916",
-        "200214662"
+        "200150916"
       ],
       "rollup_trips": [
-        "3764006E408E48ACA569D6746DD8D012",
         "359C0734A6F24FEA8C35CC8C3370C107"
       ],
       "rollup_horses": [
-        "Celly",
         "Cervin"
       ]
     },
@@ -1350,11 +1313,9 @@
       "class_number": 1769,
       "class_name": "1.0m Amateur Jumper 36 & Over II2d",
       "class_type": null,
-      "latestStart": "2:00 PM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 21,
+      "latestStart": "1:30 PM",
+      "latestStatus": "Upcoming",
+      "total_trips": 20,
       "rollup_entries": [
         "200141522"
       ],
@@ -1378,11 +1339,9 @@
       "class_number": 1768,
       "class_name": "1.0m Amateur Jumper 36 & Over II2b",
       "class_type": null,
-      "latestStart": "3:15 PM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 19,
+      "latestStart": "2:45 PM",
+      "latestStatus": "Upcoming",
+      "total_trips": 18,
       "rollup_entries": [
         "200141522"
       ],
@@ -1406,9 +1365,9 @@
       "class_number": 1076,
       "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
       "class_type": null,
-      "latestStart": "4:15 PM",
-      "latestStatus": null,
-      "total_trips": 19,
+      "latestStart": "3:45 PM",
+      "latestStatus": "Upcoming",
+      "total_trips": 17,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1427,7 +1386,7 @@
       "class_name": "$1,500 Modified Children's Jumper II2b",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Completed",
       "total_trips": 10,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1447,8 +1406,8 @@
       "class_name": "$1,500 Modified Children's Jumper II2d",
       "class_type": null,
       "latestStart": "8:45 AM",
-      "latestStatus": null,
-      "total_trips": 12,
+      "latestStatus": "Underway",
+      "total_trips": 5,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1466,10 +1425,8 @@
       "class_number": 1766,
       "class_name": "1.0m Amateur Jumper 18-35 II2d",
       "class_type": null,
-      "latestStart": "10:00 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
+      "latestStart": "9:02 AM",
+      "latestStatus": "Upcoming",
       "total_trips": 26,
       "rollup_entries": [
         "200209673",
@@ -1497,10 +1454,8 @@
       "class_number": 1765,
       "class_name": "1.0m Amateur Jumper 18-35 II2b",
       "class_type": null,
-      "latestStart": "11:45 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
+      "latestStart": "10:30 AM",
+      "latestStatus": "Upcoming",
       "total_trips": 24,
       "rollup_entries": [
         "200209673",
@@ -1528,9 +1483,9 @@
       "class_number": 1127,
       "class_name": "Itty Bitty Jumper (.65m) II2b CALi",
       "class_type": null,
-      "latestStart": "1:15 PM",
-      "latestStatus": null,
-      "total_trips": 40,
+      "latestStart": "12:00 PM",
+      "latestStatus": "Upcoming",
+      "total_trips": 37,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1548,9 +1503,9 @@
       "class_number": 1126,
       "class_name": "Itty Bitty Jumper (.65m) II2d CALI",
       "class_type": null,
-      "latestStart": "3:00 PM",
-      "latestStatus": null,
-      "total_trips": 37,
+      "latestStart": "2:00 PM",
+      "latestStatus": "Upcoming",
+      "total_trips": 34,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1569,7 +1524,7 @@
       "class_name": "$400 Small Green Pony Hunter",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Completed",
       "total_trips": 11,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1589,7 +1544,7 @@
       "class_name": "$400 Small Green Pony Hunter",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Completed",
       "total_trips": 11,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1608,9 +1563,9 @@
       "class_number": 2902,
       "class_name": "$630 Small Pony Hunter CALI @ 30+",
       "class_type": null,
-      "latestStart": "9:00 AM",
-      "latestStatus": null,
-      "total_trips": 34,
+      "latestStart": "9:01 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 32,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1628,9 +1583,9 @@
       "class_number": 2903,
       "class_name": "$500 Small Pony Hunter CALI @ 30+",
       "class_type": null,
-      "latestStart": "9:00 AM",
-      "latestStatus": null,
-      "total_trips": 34,
+      "latestStart": "9:01 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 32,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1648,8 +1603,8 @@
       "class_number": 2952,
       "class_name": "$400 Medium Green Pony Hunter",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": null,
+      "latestStart": "12:15 PM",
+      "latestStatus": "Upcoming",
       "total_trips": 8,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1668,8 +1623,8 @@
       "class_number": 2953,
       "class_name": "$400 Medium Green Pony Conformation Hunter",
       "class_type": null,
-      "latestStart": "12:30 PM",
-      "latestStatus": null,
+      "latestStart": "12:15 PM",
+      "latestStatus": "Upcoming",
       "total_trips": 8,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1688,7 +1643,7 @@
       "class_number": 2951,
       "class_name": "$100 Medium Green Pony Hunter U/S",
       "class_type": null,
-      "latestStart": "1:15 PM",
+      "latestStart": "1:00 PM",
       "latestStatus": null,
       "total_trips": 8,
       "rollup_entries": [],
@@ -1709,7 +1664,7 @@
       "class_name": "$630 Medium Pony Hunter CALI @ 30+",
       "class_type": null,
       "latestStart": "1:30 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 32,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1729,7 +1684,7 @@
       "class_name": "$500 Medium Pony Hunter CALI @ 30+",
       "class_type": null,
       "latestStart": "1:30 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 32,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1749,7 +1704,7 @@
       "class_name": "Small/Medium Children's Pony Hunter",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Underway",
       "total_trips": 18,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1769,7 +1724,7 @@
       "class_name": "Small/Medium Children's Pony Hunter",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
+      "latestStatus": "Underway",
       "total_trips": 18,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1788,8 +1743,8 @@
       "class_number": 2892,
       "class_name": "Large Children's Pony Hunter",
       "class_type": null,
-      "latestStart": "9:45 AM",
-      "latestStatus": null,
+      "latestStart": "9:30 AM",
+      "latestStatus": "Upcoming",
       "total_trips": 6,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1808,7 +1763,7 @@
       "class_number": 2891,
       "class_name": "Large Children's Pony Hunter U/S",
       "class_type": null,
-      "latestStart": "10:00 AM",
+      "latestStart": "9:50 AM",
       "latestStatus": null,
       "total_trips": 6,
       "rollup_entries": [],
@@ -1828,21 +1783,16 @@
       "class_number": 4077,
       "class_name": "Low Children's Hunter CALI @ 30+",
       "class_type": null,
-      "latestStart": "10:15 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 42,
+      "latestStart": "10:00 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 41,
       "rollup_entries": [
-        "200149192",
-        "200189484"
+        "200149192"
       ],
       "rollup_trips": [
-        "CF4E16DB1AA445EAAAB0B571136D51E6",
-        "3DDE2CCDE0D14FD7A880335D8C31F8C2"
+        "CF4E16DB1AA445EAAAB0B571136D51E6"
       ],
       "rollup_horses": [
-        "Corny",
         "Tank"
       ]
     },
@@ -1859,21 +1809,16 @@
       "class_number": 4078,
       "class_name": "Low Children's Hunter CALI @ 30+",
       "class_type": null,
-      "latestStart": "10:15 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 42,
+      "latestStart": "10:00 AM",
+      "latestStatus": "Upcoming",
+      "total_trips": 41,
       "rollup_entries": [
-        "200149192",
-        "200189484"
+        "200149192"
       ],
       "rollup_trips": [
-        "62E8953996354C90893FEDAB8445CF26",
-        "64FAA33AB8F341989417DD898D74D366"
+        "62E8953996354C90893FEDAB8445CF26"
       ],
       "rollup_horses": [
-        "Corny",
         "Tank"
       ]
     },
@@ -1891,7 +1836,7 @@
       "class_name": "$400 Large Green Pony Hunter",
       "class_type": null,
       "latestStart": "1:45 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1911,7 +1856,7 @@
       "class_name": "$400 Large Green Pony Conformation Hunter",
       "class_type": null,
       "latestStart": "1:45 PM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -1951,8 +1896,8 @@
       "class_name": "$630 Large Pony Hunter",
       "class_type": null,
       "latestStart": "3:00 PM",
-      "latestStatus": null,
-      "total_trips": 10,
+      "latestStatus": "Upcoming",
+      "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1971,8 +1916,8 @@
       "class_name": "$500 Large Pony  Conformation Hunter",
       "class_type": null,
       "latestStart": "3:00 PM",
-      "latestStatus": null,
-      "total_trips": 10,
+      "latestStatus": "Upcoming",
+      "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1992,7 +1937,7 @@
       "class_type": null,
       "latestStart": "4:00 PM",
       "latestStatus": null,
-      "total_trips": 10,
+      "total_trips": 9,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2011,8 +1956,8 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
-      "total_trips": 33,
+      "latestStatus": "Underway",
+      "total_trips": 31,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2031,8 +1976,8 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": null,
       "latestStart": "8:00 AM",
-      "latestStatus": null,
-      "total_trips": 32,
+      "latestStatus": "Underway",
+      "total_trips": 29,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2051,7 +1996,7 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B)",
       "class_type": null,
       "latestStart": "10:50 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 13,
       "rollup_entries": [],
       "rollup_trips": [],
@@ -2071,7 +2016,7 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B)",
       "class_type": null,
       "latestStart": "10:50 AM",
-      "latestStatus": null,
+      "latestStatus": "Upcoming",
       "total_trips": 13,
       "rollup_entries": [],
       "rollup_trips": [],
