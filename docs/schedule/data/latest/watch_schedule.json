@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-01T15:15:36-05:00",
+    "generated_at": "2026-03-01T15:21:42-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 119,
@@ -19,6 +19,7 @@
       "latestStart",
       "latestStatus",
       "total_trips",
+      "time_sort",
       "rollup_entries",
       "rollup_trips",
       "rollup_horses"
@@ -46,6 +47,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 36,
+      "time_sort": 28803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -66,6 +68,7 @@
       "latestStart": "9:25 AM",
       "latestStatus": "Completed",
       "total_trips": 33,
+      "time_sort": 33902,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -86,6 +89,7 @@
       "latestStart": "10:30 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 37802,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -106,6 +110,7 @@
       "latestStart": "12:45 PM",
       "latestStatus": "Completed",
       "total_trips": 29,
+      "time_sort": 45902,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -126,6 +131,7 @@
       "latestStart": "7:45 AM",
       "latestStatus": null,
       "total_trips": 9,
+      "time_sort": 27900,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -146,6 +152,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 9,
+      "time_sort": 28803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -166,6 +173,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 9,
+      "time_sort": 28803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -186,6 +194,7 @@
       "latestStart": "8:55 AM",
       "latestStatus": "Completed",
       "total_trips": 14,
+      "time_sort": 32102,
       "rollup_entries": [
         "200142584"
       ],
@@ -212,6 +221,7 @@
       "latestStart": "8:55 AM",
       "latestStatus": "Completed",
       "total_trips": 13,
+      "time_sort": 32102,
       "rollup_entries": [
         "200142584"
       ],
@@ -238,6 +248,7 @@
       "latestStart": "10:25 AM",
       "latestStatus": null,
       "total_trips": 12,
+      "time_sort": 37502,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -258,6 +269,7 @@
       "latestStart": "10:50 AM",
       "latestStatus": "Completed",
       "total_trips": 11,
+      "time_sort": 39003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -278,6 +290,7 @@
       "latestStart": "10:50 AM",
       "latestStatus": "Completed",
       "total_trips": 11,
+      "time_sort": 39003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -300,6 +313,7 @@
         "Completed"
       ],
       "total_trips": 15,
+      "time_sort": 43203,
       "rollup_entries": [
         "200150113"
       ],
@@ -326,6 +340,7 @@
       "latestStart": "12:15 PM",
       "latestStatus": "Completed",
       "total_trips": 14,
+      "time_sort": 44103,
       "rollup_entries": [
         "200150113"
       ],
@@ -352,6 +367,7 @@
       "latestStart": "12:15 PM",
       "latestStatus": "Completed",
       "total_trips": 14,
+      "time_sort": 44103,
       "rollup_entries": [
         "200150113"
       ],
@@ -378,6 +394,7 @@
       "latestStart": "1:45 PM",
       "latestStatus": null,
       "total_trips": 6,
+      "time_sort": 49500,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -398,6 +415,7 @@
       "latestStart": "2:00 PM",
       "latestStatus": "Completed",
       "total_trips": 8,
+      "time_sort": 50400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -418,6 +436,7 @@
       "latestStart": "2:00 PM",
       "latestStatus": "Completed",
       "total_trips": 8,
+      "time_sort": 50400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -438,6 +457,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": null,
       "total_trips": 7,
+      "time_sort": 28800,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -458,6 +478,7 @@
       "latestStart": "8:15 AM",
       "latestStatus": "Completed",
       "total_trips": 7,
+      "time_sort": 29700,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -478,6 +499,7 @@
       "latestStart": "8:15 AM",
       "latestStatus": "Completed",
       "total_trips": 7,
+      "time_sort": 29700,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -498,6 +520,7 @@
       "latestStart": "8:50 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "time_sort": 31803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -518,6 +541,7 @@
       "latestStart": "9:10 AM",
       "latestStatus": "Completed",
       "total_trips": 8,
+      "time_sort": 33000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -538,6 +562,7 @@
       "latestStart": "9:10 AM",
       "latestStatus": "Completed",
       "total_trips": 8,
+      "time_sort": 33000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -558,6 +583,7 @@
       "latestStart": "10:10 AM",
       "latestStatus": "Completed",
       "total_trips": 16,
+      "time_sort": 36603,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -578,6 +604,7 @@
       "latestStart": "10:10 AM",
       "latestStatus": "Completed",
       "total_trips": 16,
+      "time_sort": 36603,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -598,6 +625,7 @@
       "latestStart": "11:58 AM",
       "latestStatus": null,
       "total_trips": 13,
+      "time_sort": 43108,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -618,6 +646,7 @@
       "latestStart": "12:30 PM",
       "latestStatus": "Completed",
       "total_trips": 16,
+      "time_sort": 45003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -638,6 +667,7 @@
       "latestStart": "12:30 PM",
       "latestStatus": "Completed",
       "total_trips": 16,
+      "time_sort": 45003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -658,6 +688,7 @@
       "latestStart": "2:12 PM",
       "latestStatus": null,
       "total_trips": 9,
+      "time_sort": 51177,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -678,6 +709,7 @@
       "latestStart": "2:30 PM",
       "latestStatus": "Underway",
       "total_trips": 9,
+      "time_sort": 52203,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -698,6 +730,7 @@
       "latestStart": "2:30 PM",
       "latestStatus": "Underway",
       "total_trips": 9,
+      "time_sort": 52203,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -718,6 +751,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 23,
+      "time_sort": 28800,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -738,6 +772,7 @@
       "latestStart": "9:30 AM",
       "latestStatus": "Completed",
       "total_trips": 19,
+      "time_sort": 34200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -758,6 +793,7 @@
       "latestStart": "11:05 AM",
       "latestStatus": "Completed",
       "total_trips": 50,
+      "time_sort": 39903,
       "rollup_entries": [
         "200149708",
         "200154170"
@@ -787,6 +823,7 @@
       "latestStart": "2:05 PM",
       "latestStatus": "Underway",
       "total_trips": 26,
+      "time_sort": 50703,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -807,6 +844,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 62,
+      "time_sort": 28804,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -827,6 +865,7 @@
       "latestStart": "11:45 AM",
       "latestStatus": "Completed",
       "total_trips": 31,
+      "time_sort": 42303,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -847,6 +886,7 @@
       "latestStart": "1:50 PM",
       "latestStatus": "Completed",
       "total_trips": 11,
+      "time_sort": 49803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -867,6 +907,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 28,
+      "time_sort": 28804,
       "rollup_entries": [
         "200150196",
         "200150274"
@@ -896,6 +937,7 @@
       "latestStart": "10:00 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 36005,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -916,6 +958,7 @@
       "latestStart": "11:50 AM",
       "latestStatus": "Completed",
       "total_trips": 13,
+      "time_sort": 42604,
       "rollup_entries": [
         "200151057"
       ],
@@ -942,6 +985,7 @@
       "latestStart": "12:55 PM",
       "latestStatus": "Completed",
       "total_trips": 12,
+      "time_sort": 46503,
       "rollup_entries": [
         "200151057"
       ],
@@ -968,6 +1012,7 @@
       "latestStart": "1:35 PM",
       "latestStatus": null,
       "total_trips": 7,
+      "time_sort": 48903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -988,6 +1033,7 @@
       "latestStart": "1:55 PM",
       "latestStatus": "Completed",
       "total_trips": 7,
+      "time_sort": 50103,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1008,6 +1054,7 @@
       "latestStart": "1:55 PM",
       "latestStatus": "Completed",
       "total_trips": 7,
+      "time_sort": 50103,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1028,6 +1075,7 @@
       "latestStart": "2:50 PM",
       "latestStatus": "Underway",
       "total_trips": 16,
+      "time_sort": 53404,
       "rollup_entries": [
         "200204809"
       ],
@@ -1054,6 +1102,7 @@
       "latestStart": "2:50 PM",
       "latestStatus": "Underway",
       "total_trips": 16,
+      "time_sort": 53404,
       "rollup_entries": [
         "200204809"
       ],
@@ -1082,6 +1131,7 @@
         "Not Started"
       ],
       "total_trips": 16,
+      "time_sort": 57600,
       "rollup_entries": [
         "200204809"
       ],
@@ -1108,6 +1158,7 @@
       "latestStart": "7:45 AM",
       "latestStatus": null,
       "total_trips": 23,
+      "time_sort": 27900,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1128,6 +1179,7 @@
       "latestStart": "8:10 AM",
       "latestStatus": "Completed",
       "total_trips": 26,
+      "time_sort": 29400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1148,6 +1200,7 @@
       "latestStart": "8:10 AM",
       "latestStatus": "Completed",
       "total_trips": 25,
+      "time_sort": 29400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1168,6 +1221,7 @@
       "latestStart": "11:06 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "time_sort": 39979,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1188,6 +1242,7 @@
       "latestStart": "11:25 AM",
       "latestStatus": "Completed",
       "total_trips": 9,
+      "time_sort": 41104,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1208,6 +1263,7 @@
       "latestStart": "11:25 AM",
       "latestStatus": "Completed",
       "total_trips": 9,
+      "time_sort": 41104,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1228,6 +1284,7 @@
       "latestStart": "12:30 PM",
       "latestStatus": null,
       "total_trips": 11,
+      "time_sort": 45000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1248,6 +1305,7 @@
       "latestStart": "12:50 PM",
       "latestStatus": "Completed",
       "total_trips": 14,
+      "time_sort": 46200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1268,6 +1326,7 @@
       "latestStart": "12:50 PM",
       "latestStatus": "Completed",
       "total_trips": 14,
+      "time_sort": 46200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1288,6 +1347,7 @@
       "latestStart": "2:25 PM",
       "latestStatus": "Underway",
       "total_trips": 6,
+      "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1308,6 +1368,7 @@
       "latestStart": "2:25 PM",
       "latestStatus": "Underway",
       "total_trips": 6,
+      "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1328,6 +1389,7 @@
       "latestStart": "2:25 PM",
       "latestStatus": "Underway",
       "total_trips": 6,
+      "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1348,6 +1410,7 @@
       "latestStart": "2:25 PM",
       "latestStatus": "Underway",
       "total_trips": 6,
+      "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1365,9 +1428,10 @@
       "class_number": 2931,
       "class_name": "$100 Large Pony Hunter U/S",
       "class_type": null,
-      "latestStart": "3:31 PM",
+      "latestStart": "3:36 PM",
       "latestStatus": null,
       "total_trips": 6,
+      "time_sort": 56184,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1388,6 +1452,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 28805,
       "rollup_entries": [
         "200150715"
       ],
@@ -1414,6 +1479,7 @@
       "latestStart": "9:45 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 35104,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1434,6 +1500,7 @@
       "latestStart": "11:35 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 41704,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1454,6 +1521,7 @@
       "latestStart": "1:20 PM",
       "latestStatus": "Completed",
       "total_trips": 23,
+      "time_sort": 48003,
       "rollup_entries": [
         "200150715"
       ],
@@ -1480,6 +1548,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 44,
+      "time_sort": 28800,
       "rollup_entries": [
         "200150916",
         "200214662"
@@ -1509,6 +1578,7 @@
       "latestStart": "10:40 AM",
       "latestStatus": "Completed",
       "total_trips": 17,
+      "time_sort": 38404,
       "rollup_entries": [
         "200141522"
       ],
@@ -1535,6 +1605,7 @@
       "latestStart": "12:05 PM",
       "latestStatus": "Completed",
       "total_trips": 19,
+      "time_sort": 43503,
       "rollup_entries": [
         "200209673",
         "200217086"
@@ -1564,6 +1635,7 @@
       "latestStart": "1:30 PM",
       "latestStatus": "Completed",
       "total_trips": 11,
+      "time_sort": 48600,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1584,6 +1656,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 11,
+      "time_sort": 28805,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1604,6 +1677,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": "Completed",
       "total_trips": 11,
+      "time_sort": 28805,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1624,6 +1698,7 @@
       "latestStart": "9:20 AM",
       "latestStatus": null,
       "total_trips": 11,
+      "time_sort": 33604,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1644,6 +1719,7 @@
       "latestStart": "9:41 AM",
       "latestStatus": "Completed",
       "total_trips": 7,
+      "time_sort": 34919,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1664,6 +1740,7 @@
       "latestStart": "9:41 AM",
       "latestStatus": "Completed",
       "total_trips": 7,
+      "time_sort": 34919,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1684,6 +1761,7 @@
       "latestStart": "10:25 AM",
       "latestStatus": "Completed",
       "total_trips": 8,
+      "time_sort": 37504,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1704,6 +1782,7 @@
       "latestStart": "10:25 AM",
       "latestStatus": "Completed",
       "total_trips": 8,
+      "time_sort": 37504,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1724,6 +1803,7 @@
       "latestStart": "11:30 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "time_sort": 41405,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1744,6 +1824,7 @@
       "latestStart": "11:55 AM",
       "latestStatus": null,
       "total_trips": 18,
+      "time_sort": 42904,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1764,6 +1845,7 @@
       "latestStart": "11:57 AM",
       "latestStatus": "Completed",
       "total_trips": 18,
+      "time_sort": 43030,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1784,6 +1866,7 @@
       "latestStart": "12:40 PM",
       "latestStatus": "Completed",
       "total_trips": 6,
+      "time_sort": 45604,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1804,6 +1887,7 @@
       "latestStart": "12:40 PM",
       "latestStatus": "Completed",
       "total_trips": 6,
+      "time_sort": 45604,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1824,6 +1908,7 @@
       "latestStart": "1:50 PM",
       "latestStatus": null,
       "total_trips": 33,
+      "time_sort": 49804,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1844,6 +1929,7 @@
       "latestStart": "2:05 PM",
       "latestStatus": "Underway",
       "total_trips": 39,
+      "time_sort": 50704,
       "rollup_entries": [
         "200149192"
       ],
@@ -1870,6 +1956,7 @@
       "latestStart": "2:05 PM",
       "latestStatus": "Underway",
       "total_trips": 39,
+      "time_sort": 50704,
       "rollup_entries": [
         "200149192"
       ],
@@ -1896,6 +1983,7 @@
       "latestStart": "8:10 AM",
       "latestStatus": "Completed",
       "total_trips": 32,
+      "time_sort": 29404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1916,6 +2004,7 @@
       "latestStart": "8:10 AM",
       "latestStatus": "Completed",
       "total_trips": 31,
+      "time_sort": 29404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1936,6 +2025,7 @@
       "latestStart": "8:10 AM",
       "latestStatus": "Completed",
       "total_trips": 27,
+      "time_sort": 29404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1956,6 +2046,7 @@
       "latestStart": "1:10 PM",
       "latestStatus": null,
       "total_trips": 33,
+      "time_sort": 47404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1976,6 +2067,7 @@
       "latestStart": "1:30 PM",
       "latestStatus": "Completed",
       "total_trips": 16,
+      "time_sort": 48605,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1996,6 +2088,7 @@
       "latestStart": "1:30 PM",
       "latestStatus": "Completed",
       "total_trips": 12,
+      "time_sort": 48605,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2016,6 +2109,7 @@
       "latestStart": "3:05 PM",
       "latestStatus": null,
       "total_trips": 18,
+      "time_sort": 54304,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2036,6 +2130,7 @@
       "latestStart": "3:20 PM",
       "latestStatus": "Upcoming",
       "total_trips": 11,
+      "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2056,6 +2151,7 @@
       "latestStart": "3:20 PM",
       "latestStatus": "Upcoming",
       "total_trips": 11,
+      "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2076,6 +2172,7 @@
       "latestStart": "3:20 PM",
       "latestStatus": "Upcoming",
       "total_trips": 11,
+      "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2096,6 +2193,7 @@
       "latestStart": "3:20 PM",
       "latestStatus": "Upcoming",
       "total_trips": 11,
+      "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2116,6 +2214,7 @@
       "latestStart": "5:15 PM",
       "latestStatus": null,
       "total_trips": 11,
+      "time_sort": 62100,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2136,6 +2235,7 @@
       "latestStart": "8:00 AM",
       "latestStatus": null,
       "total_trips": 6,
+      "time_sort": 28800,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2156,6 +2256,7 @@
       "latestStart": "8:10 AM",
       "latestStatus": null,
       "total_trips": 5,
+      "time_sort": 29405,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2176,6 +2277,7 @@
       "latestStart": "8:16 AM",
       "latestStatus": null,
       "total_trips": 5,
+      "time_sort": 29809,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2196,6 +2298,7 @@
       "latestStart": "8:20 AM",
       "latestStatus": null,
       "total_trips": 4,
+      "time_sort": 30004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2216,6 +2319,7 @@
       "latestStart": "8:31 AM",
       "latestStatus": null,
       "total_trips": 24,
+      "time_sort": 30683,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2236,6 +2340,7 @@
       "latestStart": "8:58 AM",
       "latestStatus": null,
       "total_trips": 5,
+      "time_sort": 32301,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2256,6 +2361,7 @@
       "latestStart": "9:03 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2276,6 +2382,7 @@
       "latestStart": "9:03 AM",
       "latestStatus": "Completed",
       "total_trips": 24,
+      "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2296,6 +2403,7 @@
       "latestStart": "9:03 AM",
       "latestStatus": "Completed",
       "total_trips": 6,
+      "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2316,6 +2424,7 @@
       "latestStart": "9:03 AM",
       "latestStatus": "Completed",
       "total_trips": 6,
+      "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2336,6 +2445,7 @@
       "latestStart": "11:15 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "time_sort": 40505,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2356,6 +2466,7 @@
       "latestStart": "11:25 AM",
       "latestStatus": null,
       "total_trips": 10,
+      "time_sort": 41100,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2376,6 +2487,7 @@
       "latestStart": "11:40 AM",
       "latestStatus": "Completed",
       "total_trips": 9,
+      "time_sort": 42004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2396,6 +2508,7 @@
       "latestStart": "11:40 AM",
       "latestStatus": "Completed",
       "total_trips": 9,
+      "time_sort": 42004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2416,6 +2529,7 @@
       "latestStart": "12:45 PM",
       "latestStatus": null,
       "total_trips": 3,
+      "time_sort": 45905,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2436,6 +2550,7 @@
       "latestStart": "12:56 PM",
       "latestStatus": null,
       "total_trips": 5,
+      "time_sort": 46617,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2456,6 +2571,7 @@
       "latestStart": "1:05 PM",
       "latestStatus": "Completed",
       "total_trips": 4,
+      "time_sort": 47105,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2476,6 +2592,7 @@
       "latestStart": "1:05 PM",
       "latestStatus": "Completed",
       "total_trips": 4,
+      "time_sort": 47105,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2496,6 +2613,7 @@
       "latestStart": "1:35 PM",
       "latestStatus": "Completed",
       "total_trips": 3,
+      "time_sort": 48904,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2516,6 +2634,7 @@
       "latestStart": "1:35 PM",
       "latestStatus": "Completed",
       "total_trips": 3,
+      "time_sort": 48904,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2536,6 +2655,7 @@
       "latestStart": "2:10 PM",
       "latestStatus": null,
       "total_trips": 3,
+      "time_sort": 51004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
