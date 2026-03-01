@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-01T15:56:47-05:00",
+    "generated_at": "2026-03-01T16:10:58-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 119,
@@ -19,6 +19,7 @@
       "latestStart",
       "latestStatus",
       "total_trips",
+      "schedule_sequencetype",
       "time_sort",
       "rollup_entries",
       "rollup_trips",
@@ -32,7 +33,7 @@
   },
   "records": [
     {
-      "record_id": "rechv8dHDtL5y7UnJ",
+      "record_id": "rec3ErcvtXXfmLU8Z",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 1,
@@ -45,15 +46,16 @@
       "class_name": "$10,000 NAL/WIHS Masters Jumper Classic Rd1 (1.15m Amateur) ",
       "class_type": "Jumpers",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 36,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recPUhz9PBMrpqdtz",
+      "record_id": "recr35gnqg78rzQBx",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 1,
@@ -66,15 +68,16 @@
       "class_name": "$10,000 NAL/WIHS Masters Jumper Classic Rd2 (1.15m Amateur) ",
       "class_type": "Jumpers",
       "latestStart": "9:25 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 33,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 33902,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec5heQLnbyvwZUpJ",
+      "record_id": "recVLSK1B9E1rwiL5",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 1,
@@ -87,15 +90,16 @@
       "class_name": "$15,000 SJHOF 1.45m Junior Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "10:30 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 37802,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recpdU3zMd4H3EbYn",
+      "record_id": "recILzms075p2GUl6",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 1,
@@ -108,15 +112,16 @@
       "class_name": "$200,000 JTWG Inc CSIO4* Grand Prix 220.2.1.2 (JO)",
       "class_type": "Jumpers",
       "latestStart": "12:45 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 29,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 45902,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recTTibBqmGMPv603",
+      "record_id": "recpan80VJZPpscYV",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -131,13 +136,14 @@
       "latestStart": "7:45 AM",
       "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 27900,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recP0SrUxpVC3VmqQ",
+      "record_id": "recrdDJOSAM2MkSQQ",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -150,15 +156,16 @@
       "class_name": "$500 Amateur Owner Hunter 3'6\" 18-35",
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recyYRTjpc8QLIgTG",
+      "record_id": "rec9kPqC7C7qELmSi",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -171,15 +178,16 @@
       "class_name": "$1,000 Amateur Owner Hunter 3'6\" 18-35 Stake",
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recFmmlgEvNCJIgs0",
+      "record_id": "recscN2SsU9YHwJaw",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -192,8 +200,11 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 18-35",
       "class_type": "Hunters",
       "latestStart": "8:55 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 32102,
       "rollup_entries": [
         "200142584"
@@ -206,7 +217,7 @@
       ]
     },
     {
-      "record_id": "rec4K6e0AYBHOnrQq",
+      "record_id": "recnwu9y9dkzO0a2M",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -219,8 +230,11 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 18-35",
       "class_type": "Hunters",
       "latestStart": "8:55 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 13,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 32102,
       "rollup_entries": [
         "200142584"
@@ -233,7 +247,7 @@
       ]
     },
     {
-      "record_id": "recPbWRue5xNXUZ80",
+      "record_id": "recNIxdqWleQsoM4k",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -248,13 +262,14 @@
       "latestStart": "10:25 AM",
       "latestStatus": null,
       "total_trips": 12,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 37502,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec3fn019Z5f3kd2o",
+      "record_id": "reclvXxE8XAudPYna",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -267,15 +282,16 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B)",
       "class_type": "Hunters",
       "latestStart": "10:50 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 39003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recnfnDIG9PrRa2ws",
+      "record_id": "recJ7PFHmfddXO3l7",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -288,15 +304,16 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B)",
       "class_type": "Hunters",
       "latestStart": "10:50 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 39003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "reckXdP4sl0qQYM9l",
+      "record_id": "recupg5hj16sPysBM",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -313,6 +330,7 @@
         "Completed"
       ],
       "total_trips": 15,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 43203,
       "rollup_entries": [
         "200150113"
@@ -325,7 +343,7 @@
       ]
     },
     {
-      "record_id": "recZWU9T52144qxNO",
+      "record_id": "recLIHe53cMyMpuE7",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -338,8 +356,11 @@
       "class_name": "$630 Adult Amateur Hunter 18-35 (Sec B)",
       "class_type": "Hunters",
       "latestStart": "12:15 PM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 44103,
       "rollup_entries": [
         "200150113"
@@ -352,7 +373,7 @@
       ]
     },
     {
-      "record_id": "recx8Dmv0ankjkLUu",
+      "record_id": "recQVAjqdhmLaiSjE",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -365,8 +386,11 @@
       "class_name": "$630 Adult Amateur Hunter 18-35 (Sec B)",
       "class_type": "Hunters",
       "latestStart": "12:15 PM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 44103,
       "rollup_entries": [
         "200150113"
@@ -379,7 +403,7 @@
       ]
     },
     {
-      "record_id": "recT9Wlxw4SuKRkuD",
+      "record_id": "recseUt0gTauYTap8",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -394,13 +418,14 @@
       "latestStart": "1:45 PM",
       "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 49500,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec6ZMKjOL2PAnSQR",
+      "record_id": "recuuDRfBp3dCBL8K",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -413,15 +438,16 @@
       "class_name": "$630 Adult Amateur Hunter 36-54 (Sec B)",
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recM2yivUl61ZOILt",
+      "record_id": "recYHgBBtqwGH1iTl",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 2,
@@ -434,15 +460,16 @@
       "class_name": "$630 Adult Amateur Hunter 36-54 (Sec B)",
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recKPuTtqGrx54Pnb",
+      "record_id": "recgTSZDKL0Ea0AJQ",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -457,13 +484,14 @@
       "latestStart": "8:00 AM",
       "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 28800,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec8FCSUNLbSV7vtK",
+      "record_id": "recQ2UjNB7XQfJ6pd",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -476,15 +504,16 @@
       "class_name": "$500 Large Junior Hunter 3'6\" 15 & Under",
       "class_type": "Hunters",
       "latestStart": "8:15 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29700,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recQ4ruLXtwkFrqdC",
+      "record_id": "reclSthggrY9o65yW",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -497,15 +526,16 @@
       "class_name": "$800 Large Junior Hunter 3'6\" 15 & Under Stake",
       "class_type": "Hunters",
       "latestStart": "8:15 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29700,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recXX8TVx6lfbvOlT",
+      "record_id": "recgLdTlbAAOGSket",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -520,13 +550,14 @@
       "latestStart": "8:50 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 31803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recO044JbU1rqaqOY",
+      "record_id": "recFrdJ7DM2SofOhM",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -539,15 +570,16 @@
       "class_name": "$500 Small Junior Hunter 3'6\" 16-17",
       "class_type": "Hunters",
       "latestStart": "9:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 33000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recL9yK1eJvoBmich",
+      "record_id": "recXhsm3Eq1t6zb0t",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -560,15 +592,16 @@
       "class_name": "$800 Small Junior Hunter 3'6\" 16-17 Stake",
       "class_type": "Hunters",
       "latestStart": "9:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 33000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec9t29trpmryOaCg",
+      "record_id": "rec53BWVpWDp2nvZX",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -581,15 +614,16 @@
       "class_name": "$500 Large Junior Hunter 3'6\" 16-17",
       "class_type": "Hunters",
       "latestStart": "10:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 16,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 36603,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recqrmIwZQojp76rO",
+      "record_id": "recSnVsWzyArX0vJU",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -602,15 +636,16 @@
       "class_name": "$800 Large Junior Hunter 3'6\" 16-17 Stake",
       "class_type": "Hunters",
       "latestStart": "10:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 16,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 36603,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recR6OQTOEvp9gl6T",
+      "record_id": "recnIUD66P2gFJyhk",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -625,13 +660,14 @@
       "latestStart": "11:58 AM",
       "latestStatus": null,
       "total_trips": 13,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 43108,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "reckCcYPCbdUjGv3n",
+      "record_id": "recn9RVR8FrMOCfaW",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -644,15 +680,16 @@
       "class_name": "$500 Junior Hunter 3'3\" 15 & Under",
       "class_type": "Hunters",
       "latestStart": "12:30 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 16,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 45003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec1lNbloEIfTFeC5",
+      "record_id": "recijuFdEAhZTRg8E",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -665,15 +702,16 @@
       "class_name": "$800 Junior Hunter 3'3\" 15 & Under Stake",
       "class_type": "Hunters",
       "latestStart": "12:30 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 16,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 45003,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rectkNXScWKmBbunv",
+      "record_id": "recucNW6XMnIhhc6g",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -688,13 +726,14 @@
       "latestStart": "2:12 PM",
       "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 51177,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recAkAaPyt9wZRMFS",
+      "record_id": "recneqNA2srnk5C4h",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -707,15 +746,16 @@
       "class_name": "$500 Junior Hunter 3'3\" 16-17",
       "class_type": "Hunters",
       "latestStart": "2:30 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 52203,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec2x924ZRrDL9J3d",
+      "record_id": "recdniNzPGVat8peZ",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 3,
@@ -728,15 +768,16 @@
       "class_name": "$800 Junior Hunter 3'3\" 16-17 Stake",
       "class_type": "Hunters",
       "latestStart": "2:30 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 52203,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rechv8ZWZD7ggkdJZ",
+      "record_id": "rec8G7gxauEcNphNS",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 4,
@@ -749,15 +790,16 @@
       "class_name": "$2,500 Modified Adult Amateur Jumper II2b",
       "class_type": "Jumpers",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 23,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28800,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recODD9vL74dGRq5E",
+      "record_id": "recYRICOIeXUO2Tzm",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 4,
@@ -770,15 +812,16 @@
       "class_name": "$4,000 NAL/WIHS 1.15m Junior Jumper Classic 14 & Under II2b",
       "class_type": "Jumpers",
       "latestStart": "9:30 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 19,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 34200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recJaAfOT54P4eKSx",
+      "record_id": "recs4PakpMSXYW2MZ",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 4,
@@ -791,8 +834,11 @@
       "class_name": "$15,000 NAL 1.35m Amateur Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "11:05 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 50,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 39903,
       "rollup_entries": [
         "200149708",
@@ -808,7 +854,7 @@
       ]
     },
     {
-      "record_id": "recGvvumTQwJhvHLI",
+      "record_id": "recEal1I058oW8ZQD",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 4,
@@ -821,15 +867,16 @@
       "class_name": "$15,000 NAL 1.35m Junior Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "2:05 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 26,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50703,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recfMQE4Y1uAqt8ZG",
+      "record_id": "recoWGec9u7XgrhNS",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 5,
@@ -842,15 +889,16 @@
       "class_name": "$15,000 NAL 1.25m Amateur Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 62,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28804,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recXlQU6KlOZCW1Xx",
+      "record_id": "recDkV446WvFa4dTw",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 5,
@@ -863,15 +911,16 @@
       "class_name": "$15,000 NAL 1.25m Junior Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "11:45 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 31,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 42303,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recDrXHTC8kG0Szbu",
+      "record_id": "rec6ikFslgGGhw4re",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 5,
@@ -884,15 +933,16 @@
       "class_name": "$2,500 Modified Children's Jumper II2b",
       "class_type": "Jumpers",
       "latestStart": "1:50 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 49803,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec8C3NF9KucJt5jG",
+      "record_id": "recWN4svNeayrnzfS",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -905,8 +955,11 @@
       "class_name": "$10,000 NAL/WIHS 1.15m Amateur Jumper Classic 18-35 II2b",
       "class_type": "Jumpers",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 28,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28804,
       "rollup_entries": [
         "200150196",
@@ -922,7 +975,7 @@
       ]
     },
     {
-      "record_id": "recV8wQxIGzKsL64a",
+      "record_id": "recNRyv6fu2HdlQQ9",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -935,15 +988,16 @@
       "class_name": "$10,000 NAL/WIHS 1.15m Amateur Jumper Classic 36+ II2b",
       "class_type": "Jumpers",
       "latestStart": "10:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 36005,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recvoPz6kZdThkEzw",
+      "record_id": "rec94FCWLF7yAQwYn",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -956,8 +1010,11 @@
       "class_name": "THIS NHS Adult Medal",
       "class_type": "Equitation",
       "latestStart": "11:50 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 13,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 42604,
       "rollup_entries": [
         "200151057"
@@ -970,7 +1027,7 @@
       ]
     },
     {
-      "record_id": "recIDzwpFISq09KzA",
+      "record_id": "rec4ccmNrbk4mDmfC",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -983,8 +1040,11 @@
       "class_name": "Bruno Delgrange Palm Beach Adult Medal",
       "class_type": "Equitation",
       "latestStart": "12:55 PM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 12,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 46503,
       "rollup_entries": [
         "200151057"
@@ -997,7 +1057,7 @@
       ]
     },
     {
-      "record_id": "recPVXJVsFpldhMaw",
+      "record_id": "recKxt3U8S60QWjIT",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -1012,13 +1072,14 @@
       "latestStart": "1:35 PM",
       "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 48903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recrCvFD0xRMiFsFW",
+      "record_id": "rec8LEX1rtDJ6khBq",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -1031,15 +1092,16 @@
       "class_name": "Adult Amateur Equitation (3')",
       "class_type": "Equitation",
       "latestStart": "1:55 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50103,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recsvq6QLGszvipTg",
+      "record_id": "recH6xlZ46n3Dkqui",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -1052,15 +1114,16 @@
       "class_name": "Adult Amateur Equitation (3')",
       "class_type": "Equitation",
       "latestStart": "1:55 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50103,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec0CulV7eCdxeuRG",
+      "record_id": "recZMw0Z6pEZ3F61W",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -1073,8 +1136,11 @@
       "class_name": "12-14 Equitation (2'9\")",
       "class_type": "Equitation",
       "latestStart": "2:50 PM",
-      "latestStatus": "Underway",
+      "latestStatus": [
+        "Underway"
+      ],
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 53404,
       "rollup_entries": [
         "200204809"
@@ -1087,7 +1153,7 @@
       ]
     },
     {
-      "record_id": "rec2tSh7H8PfyOdGV",
+      "record_id": "recBscp3uE32QSliB",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -1100,8 +1166,11 @@
       "class_name": "12-14 Equitation (2'9\")",
       "class_type": "Equitation",
       "latestStart": "2:50 PM",
-      "latestStatus": "Underway",
+      "latestStatus": [
+        "Underway"
+      ],
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 53404,
       "rollup_entries": [
         "200204809"
@@ -1114,7 +1183,7 @@
       ]
     },
     {
-      "record_id": "recqTezLlDCEj871l",
+      "record_id": "recDLefDMW9B7ayca",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 6,
@@ -1128,9 +1197,10 @@
       "class_type": "Equitation",
       "latestStart": "4:00 PM",
       "latestStatus": [
-        "Not Started"
+        "Completed"
       ],
       "total_trips": 15,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 57600,
       "rollup_entries": [
         "200204809"
@@ -1143,7 +1213,7 @@
       ]
     },
     {
-      "record_id": "recwlEbSKfukk4eWL",
+      "record_id": "rec7DACveTaA8KRTt",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1158,13 +1228,14 @@
       "latestStart": "7:45 AM",
       "latestStatus": null,
       "total_trips": 23,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 27900,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recLwLEbhjbrJpfbN",
+      "record_id": "recxIf7vPqDNrifkH",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1177,15 +1248,16 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 26,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recOi2SeqfJ5gge17",
+      "record_id": "rec3qygufrdLMHswY",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1198,15 +1270,16 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 25,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recC1yzX5KuaR5XCb",
+      "record_id": "rec7gEMsil5OuJ8Ib",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1221,13 +1294,14 @@
       "latestStart": "11:06 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 39979,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recd8eMtRHAuWE5tG",
+      "record_id": "recywTR6UJlWnCx7d",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1240,15 +1314,16 @@
       "class_name": "Children's Hunter 15-17",
       "class_type": "Hunters",
       "latestStart": "11:25 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 41104,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recHmlD0bCZO4w4KX",
+      "record_id": "recdAllW8bZ1StqV7",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1261,15 +1336,16 @@
       "class_name": "Children's Hunter 15-17",
       "class_type": "Hunters",
       "latestStart": "11:25 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 41104,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recLjzyGeuHOOa7v9",
+      "record_id": "recTrGgLlerSuQDgX",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1284,13 +1360,14 @@
       "latestStart": "12:30 PM",
       "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 45000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec46qtxXxbi7gm0j",
+      "record_id": "recw3asuYLSuIfCEO",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1303,15 +1380,16 @@
       "class_name": "Children's Hunter 14 & Under",
       "class_type": "Hunters",
       "latestStart": "12:50 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 46200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec8XkskPng7B4wyq",
+      "record_id": "recNWdASeaIEUBIh8",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1324,15 +1402,16 @@
       "class_name": "Children's Hunter 14 & Under",
       "class_type": "Hunters",
       "latestStart": "12:50 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 14,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 46200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec1w3SUlrpKFSsut",
+      "record_id": "rec6KTWPmn1YQxwsW",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1345,15 +1424,16 @@
       "class_name": "$500 Large Pony  Conformation Hunter",
       "class_type": "Hunters",
       "latestStart": "2:25 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recNNTrgNEW5O9U6G",
+      "record_id": "recOIQbGAWYHpMbRy",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1366,15 +1446,16 @@
       "class_name": "$500 Large Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "2:25 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec2N3L94q1MrlttU",
+      "record_id": "reczmzLKiJtyzqTyL",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1387,15 +1468,16 @@
       "class_name": "$630 Large Pony Hunter Handy",
       "class_type": "Hunters",
       "latestStart": "2:25 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rechOiOjsT5rLXMBz",
+      "record_id": "recwGU2R1PmQoy1tI",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1408,15 +1490,16 @@
       "class_name": "$500 Large Pony Hunter Classic",
       "class_type": "Hunters",
       "latestStart": "2:25 PM",
-      "latestStatus": "Underway",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 51903,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "reciiUd18wbuUhJ14",
+      "record_id": "recM4bELNht0sLC0K",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 7,
@@ -1431,13 +1514,14 @@
       "latestStart": "4:00 PM",
       "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 57600,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recUQ8UcTCSYjn48f",
+      "record_id": "recfPpnSuHYKMKuAu",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 9,
@@ -1450,8 +1534,11 @@
       "class_name": "ASPCA Maclay (Section A)",
       "class_type": "Equitation",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28805,
       "rollup_entries": [
         "200150715"
@@ -1464,7 +1551,7 @@
       ]
     },
     {
-      "record_id": "recN4T23EH5H9ysVh",
+      "record_id": "recuQaY1BuZwmY8m7",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 9,
@@ -1477,15 +1564,16 @@
       "class_name": "ASPCA Maclay (Section B)",
       "class_type": "Equitation",
       "latestStart": "9:45 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 35104,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recX22rdcRQOPSaI2",
+      "record_id": "rec9f6bJIKG1kPHM7",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 9,
@@ -1498,15 +1586,16 @@
       "class_name": "Dover Saddlery USEF Hunter Seat Medal (Section A)",
       "class_type": "Equitation",
       "latestStart": "11:35 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 41704,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rece1rrNDX7uYUayg",
+      "record_id": "rec0nOD33TvXkA2fT",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 9,
@@ -1519,8 +1608,11 @@
       "class_name": "Dover Saddlery USEF Hunter Seat Medal (Section B)",
       "class_type": "Equitation",
       "latestStart": "1:20 PM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 23,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 48003,
       "rollup_entries": [
         "200150715"
@@ -1533,7 +1625,7 @@
       ]
     },
     {
-      "record_id": "recB64yqaH7Zh5r7L",
+      "record_id": "recz76bVWfWjEIk5R",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 10,
@@ -1546,8 +1638,11 @@
       "class_name": "$1,595 1.05m Junior Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 44,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28800,
       "rollup_entries": [
         "200150916",
@@ -1563,7 +1658,7 @@
       ]
     },
     {
-      "record_id": "recr8fbKMY9HbT3xz",
+      "record_id": "recWAujlhLBMNZmOU",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 10,
@@ -1576,8 +1671,11 @@
       "class_name": "$1,595 1.05m Amateur Jumper Classic 36 & Over II2b",
       "class_type": "Jumpers",
       "latestStart": "10:40 AM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 17,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 38404,
       "rollup_entries": [
         "200141522"
@@ -1590,7 +1688,7 @@
       ]
     },
     {
-      "record_id": "recYuwMOvzlStoCQ1",
+      "record_id": "rec8ZCjtzsV0RWXHc",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 10,
@@ -1603,8 +1701,11 @@
       "class_name": "$1,595 1.05m Amateur Jumper Classic 18-35 II2b",
       "class_type": "Jumpers",
       "latestStart": "12:05 PM",
-      "latestStatus": "Completed",
+      "latestStatus": [
+        "Completed"
+      ],
       "total_trips": 19,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 43503,
       "rollup_entries": [
         "200209673",
@@ -1620,7 +1721,7 @@
       ]
     },
     {
-      "record_id": "recGOjhaSb5tC8gCj",
+      "record_id": "rec6nJhmZFXOUxgCk",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 10,
@@ -1633,15 +1734,16 @@
       "class_name": "$2,500 NAL/WIHS 1.15m Junior Jumper Classic 15-17 II2b",
       "class_type": "Jumpers",
       "latestStart": "1:30 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 48600,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recoagAd49cfLddwf",
+      "record_id": "reckqpOOyxuSCSKoF",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1654,15 +1756,16 @@
       "class_name": "$400 Small Green Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28805,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recgfBeaV0pLG7roc",
+      "record_id": "recYV28LVVntUzrS8",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1675,15 +1778,16 @@
       "class_name": "$400 Small Green Pony Conformation Hunter",
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 28805,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recc9jyyhThJyTJ8g",
+      "record_id": "rec713aHGBtWOa4yh",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1698,13 +1802,14 @@
       "latestStart": "9:20 AM",
       "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 33604,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rectZeCqAp0ttShwE",
+      "record_id": "recDiwPhln2WAmI9v",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1717,15 +1822,16 @@
       "class_name": "$400 Medium Green Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "9:41 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 34919,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recRfYZNofJB2IFji",
+      "record_id": "rec7GExdaGNE9Is6E",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1738,15 +1844,16 @@
       "class_name": "$400 Medium Green Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "9:41 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 7,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 34919,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec3R86EWrrCTMKqH",
+      "record_id": "recRgJpnbtCQV2LiP",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1759,15 +1866,16 @@
       "class_name": "$400 Large Green Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "10:25 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 37504,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recSfFvA8BRTeGkhl",
+      "record_id": "recI6bBZ2FbE2VcxH",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1780,15 +1888,16 @@
       "class_name": "$400 Large Green Pony Conformation Hunter",
       "class_type": "Hunters",
       "latestStart": "10:25 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 37504,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec4kOQOyVeRo05jv",
+      "record_id": "recrqIOVMaDbdR1x1",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1803,13 +1912,14 @@
       "latestStart": "11:30 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 41405,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec6r8HPD3h2OVcnq",
+      "record_id": "recKO1fxlRuil3Vbf",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1824,13 +1934,14 @@
       "latestStart": "11:55 AM",
       "latestStatus": null,
       "total_trips": 18,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 42904,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recsTqcxCAeVkF0hv",
+      "record_id": "recxetgN4mOlsqR9B",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1843,15 +1954,16 @@
       "class_name": "Small/Medium Children's Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "11:57 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 18,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 43030,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recCI6YXh2FcqfcQR",
+      "record_id": "rec0ewbGuRqhMNj0C",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1864,15 +1976,16 @@
       "class_name": "Large Children's Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "12:40 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 45604,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rect4CMTabI9L940d",
+      "record_id": "recVEKJQwDscH5sd7",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1885,15 +1998,16 @@
       "class_name": "Large Children's Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "12:40 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 45604,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec70lePm42FtZJDM",
+      "record_id": "rec2PoO6S4dO2hVpX",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1908,13 +2022,14 @@
       "latestStart": "1:50 PM",
       "latestStatus": null,
       "total_trips": 33,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 49804,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recJomNpLP4HmIfQJ",
+      "record_id": "rec7v701YgbrvxeKq",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1927,8 +2042,11 @@
       "class_name": "Low Children's Hunter CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "2:05 PM",
-      "latestStatus": "Underway",
-      "total_trips": 37,
+      "latestStatus": [
+        "Underway"
+      ],
+      "total_trips": 36,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50704,
       "rollup_entries": [
         "200149192"
@@ -1941,7 +2059,7 @@
       ]
     },
     {
-      "record_id": "recw5BeRAdxXR6yvy",
+      "record_id": "recJ89Nl7HPVdbfwG",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 11,
@@ -1954,8 +2072,11 @@
       "class_name": "Low Children's Hunter CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "2:05 PM",
-      "latestStatus": "Underway",
-      "total_trips": 37,
+      "latestStatus": [
+        "Underway"
+      ],
+      "total_trips": 35,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 50704,
       "rollup_entries": [
         "200149192"
@@ -1968,7 +2089,7 @@
       ]
     },
     {
-      "record_id": "recn4VldBV8ThugT5",
+      "record_id": "recfSLaDZcZiorJRm",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -1981,15 +2102,16 @@
       "class_name": "$500 Small Pony Conformation  Hunter CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 32,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec2eCu4WwclPiwn0",
+      "record_id": "receNVdqGDSM4fOjb",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2002,15 +2124,16 @@
       "class_name": "$630 Small Pony Hunter Handy CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 31,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec9m7V2y6XAMrLs8",
+      "record_id": "recDdOQLUh32toOA5",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2023,15 +2146,16 @@
       "class_name": "$500 Small Pony Hunter Classic",
       "class_type": "Hunters",
       "latestStart": "8:10 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 27,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recW7Qnm6qACtSSWa",
+      "record_id": "recUOkqhrbMni49Bg",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2046,13 +2170,14 @@
       "latestStart": "1:10 PM",
       "latestStatus": null,
       "total_trips": 33,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 47404,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recP4qygFGCbp7Yz0",
+      "record_id": "rec3SAYqNApqPu5mY",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2065,15 +2190,16 @@
       "class_name": "$500 Medium Pony Handy Conformation Hunter  Sec. A",
       "class_type": "Hunters",
       "latestStart": "1:30 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 16,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 48605,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec2QFMiyG2H1Ghpq",
+      "record_id": "recwB8V9gctKRTg3t",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2086,15 +2212,16 @@
       "class_name": "$500 Medium Pony Hunter Classic Sec A",
       "class_type": "Hunters",
       "latestStart": "1:30 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 15,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 48605,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recKb6R7QjQ71yKeD",
+      "record_id": "recXlhSPZ60r1d4OK",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2109,13 +2236,14 @@
       "latestStart": "3:05 PM",
       "latestStatus": null,
       "total_trips": 18,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 54304,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recwtROZhtNgze9nA",
+      "record_id": "rect5JPCeQx6Ddkwi",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2128,15 +2256,16 @@
       "class_name": "$500 Medium Pony Conformation Hunter Sec. B",
       "class_type": "Hunters",
       "latestStart": "3:20 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rectqvKJL64GVjLud",
+      "record_id": "recwrYEOyU8h418aK",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2149,15 +2278,16 @@
       "class_name": "$630 Medium Pony Hunter Sec. B (1st Rd Classic)",
       "class_type": "Hunters",
       "latestStart": "3:20 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec4jntpPGMh4Ws3H",
+      "record_id": "recUbRu4Xgt2AHfYH",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2170,15 +2300,16 @@
       "class_name": "$630 Medium Pony Hunter Handy Sec. B",
       "class_type": "Hunters",
       "latestStart": "3:20 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec03EF7XJLz8zd17",
+      "record_id": "rec9AlCnLp3zQCCqE",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2191,15 +2322,16 @@
       "class_name": "$500 Medium Pony Hunter Classic Sec. B",
       "class_type": "Hunters",
       "latestStart": "3:20 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": null,
       "total_trips": 10,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 55204,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recsR1JyiqOkbryBi",
+      "record_id": "recgiOlmiXx6Dc2M3",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 12,
@@ -2214,13 +2346,14 @@
       "latestStart": "5:15 PM",
       "latestStatus": null,
       "total_trips": 11,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 62100,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "receLQQfsy8Qj74wO",
+      "record_id": "recqGdzVQ4kqt6w9W",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2235,13 +2368,14 @@
       "latestStart": "8:00 AM",
       "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 28800,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec7Iz7aiRzKal9h0",
+      "record_id": "recyLy0ibKL3kZ7n8",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2256,13 +2390,14 @@
       "latestStart": "8:10 AM",
       "latestStatus": null,
       "total_trips": 5,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29405,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recP8IEuAdbOmJwhF",
+      "record_id": "recvBsk5e3cNIPaem",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2277,13 +2412,14 @@
       "latestStart": "8:16 AM",
       "latestStatus": null,
       "total_trips": 5,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 29809,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec3CxqUNTjt5eVI3",
+      "record_id": "recxByF9BXPKnJcxJ",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2298,13 +2434,14 @@
       "latestStart": "8:20 AM",
       "latestStatus": null,
       "total_trips": 4,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 30004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec61MqwKweuHa1Ys",
+      "record_id": "recmR0DCEU9WaS3Yu",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2319,13 +2456,14 @@
       "latestStart": "8:31 AM",
       "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 30683,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recwr5awcblTwUtFi",
+      "record_id": "receWT8C9kY58zTUJ",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2340,13 +2478,14 @@
       "latestStart": "8:58 AM",
       "latestStatus": null,
       "total_trips": 5,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 32301,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recSjcsETctKhJpP3",
+      "record_id": "recUFj8jSH3hHTtpL",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2359,15 +2498,16 @@
       "class_name": "Younger Cross Rail Hunter CALI",
       "class_type": "Hunters",
       "latestStart": "9:03 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec2T8tar7CiMhRrc",
+      "record_id": "recQoYNp7r1nllFre",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2380,15 +2520,16 @@
       "class_name": "Younger Cross Rail Hunter CALI",
       "class_type": "Hunters",
       "latestStart": "9:03 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 24,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recihlle8RiAPZTSJ",
+      "record_id": "rec3AQL0dhy7dNoh6",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2401,15 +2542,16 @@
       "class_name": "Older Cross Rail Hunter",
       "class_type": "Hunters",
       "latestStart": "9:03 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recTJQMCyRDXUALOG",
+      "record_id": "recfErtK12eEmIlnw",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2422,15 +2564,16 @@
       "class_name": "Older Cross Rail Hunter",
       "class_type": "Hunters",
       "latestStart": "9:03 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 6,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 32596,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rectQFtNMjGWVn0DI",
+      "record_id": "recgDQqfcmVX1KduX",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2445,13 +2588,14 @@
       "latestStart": "11:15 AM",
       "latestStatus": null,
       "total_trips": 8,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 40505,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recy8XXhxOMKA4mlB",
+      "record_id": "rec8LR7KBaI0PdJOT",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2466,13 +2610,14 @@
       "latestStart": "11:25 AM",
       "latestStatus": null,
       "total_trips": 10,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 41100,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recHx8RhsfqvXELRV",
+      "record_id": "recdzILuGBNmNlWk9",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2485,15 +2630,16 @@
       "class_name": "Short Stirrup Hunter",
       "class_type": "Hunters",
       "latestStart": "11:40 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 42004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec3jySYdK3OZSFPf",
+      "record_id": "rec19tRHkNeRaml5v",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2506,15 +2652,16 @@
       "class_name": "Short Stirrup Hunter",
       "class_type": "Hunters",
       "latestStart": "11:40 AM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 9,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 42004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recS29quadNxi7WYW",
+      "record_id": "recidvY2Tc3vcS7LC",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2529,13 +2676,14 @@
       "latestStart": "12:45 PM",
       "latestStatus": null,
       "total_trips": 3,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 45905,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recStdNNAWkI7UO0f",
+      "record_id": "recAo5IoG52uFcb7H",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2550,13 +2698,14 @@
       "latestStart": "12:56 PM",
       "latestStatus": null,
       "total_trips": 5,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 46617,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recVWRYiYw3uihmQz",
+      "record_id": "recYfA99N0ZwzhoEh",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2569,15 +2718,16 @@
       "class_name": "Rusty Stirrup Hunter",
       "class_type": "Hunters",
       "latestStart": "1:05 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 4,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 47105,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "recQNpF51JjOv1FOm",
+      "record_id": "recQvi1kkwSdm3Hxu",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2590,15 +2740,16 @@
       "class_name": "Rusty Stirrup Hunter",
       "class_type": "Hunters",
       "latestStart": "1:05 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 4,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 47105,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "reclKBjZwOtuMVyFT",
+      "record_id": "reca9MbxNq8aAObXH",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2611,15 +2762,16 @@
       "class_name": "11 & Under Equitation (2'6\")",
       "class_type": "Equitation",
       "latestStart": "1:35 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 3,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 48904,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "receIlEcK6RUfOMlC",
+      "record_id": "rec74QVqIVIxo3095",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2632,15 +2784,16 @@
       "class_name": "11 & Under Equitation (2'6\")",
       "class_type": "Equitation",
       "latestStart": "1:35 PM",
-      "latestStatus": "Completed",
+      "latestStatus": null,
       "total_trips": 3,
+      "schedule_sequencetype": "Over Fences",
       "time_sort": 48904,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
     },
     {
-      "record_id": "rec7CWhTeNOV8hWEu",
+      "record_id": "recTj9rzroaYEZ77P",
       "sid": "200000052",
       "dt": "2026-03-01",
       "ring_number": 13,
@@ -2655,6 +2808,7 @@
       "latestStart": "2:10 PM",
       "latestStatus": null,
       "total_trips": 3,
+      "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 51004,
       "rollup_entries": [],
       "rollup_trips": [],
