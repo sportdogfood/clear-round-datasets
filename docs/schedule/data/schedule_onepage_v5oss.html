@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRT Schedule (One Page PDF)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+    --groupTeam:#d9d9d9;
+    --scale: 1;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:#fff;
+  }
+
+  /* Screen preview as a single Letter page */
+  .page{
+    width: 8.5in;
+    height: 11in;
+    padding: 0.15in;
+    margin: 12px auto;
+    background:#fff;
+    overflow:hidden;
+  }
+
+  /* Header aligned to columns */
+  .hdr{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.12in;
+    align-items:end;
+    padding:0 0 4px 0;
+  }
+  .hdrL{min-width:0;}
+  .hdrR{min-width:0;}
+
+  .titleRow{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .title{font-weight:900; font-size:13px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .subtitle{color:var(--muted); font-size:9px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .controls{display:flex; align-items:center; gap:6px; flex-wrap:nowrap;}
+  .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    padding:3px 8px;
+    font-size:12px;
+    border-radius:6px;
+    cursor:pointer;
+    text-decoration:none;
+    color:inherit;
+    line-height:1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* scaled content wrapper (screen preview only) */
+  .wrap{
+    transform: scale(var(--scale));
+    transform-origin: top left;
+    width: calc(100% / var(--scale));
+  }
+
+  /* two explicit columns (no CSS multicol) */
+  .cols{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.12in;
+    align-items:start;
+  }
+  .col{display:flex; flex-direction:column; gap:2px; min-width:0;}
+
+  /* Ring wrapper (for outside X control) */
+  .ringWrap{
+    position:relative;
+    min-width:0;
+  }
+  .ringClose{
+    position:absolute;
+    top:-10px;
+    right:-10px;
+    width:22px;
+    height:22px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    font-weight:900;
+    font-size:14px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ringClose:active{
+    transform: translateY(1px) scale(0.99);
+  }
+
+  .ring{
+    border:1px solid #000;
+    background:#fff;
+  }
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:4px 6px;
+    font-weight:900;
+    font-size:10px;
+    letter-spacing:.02em;
+  }
+
+  /* -------- Carry over from legacy (v4) -------- */
+
+  /* highlight groups that have a team (gdisplay present) */
+  .group.has-team{ background: rgba(255, 255, 255, 0.43); }
+
+  .group-head{
+    padding:0px 10px 0px 6px;
+  }
+
+  /* group_display above group_name */
+  .gdisplay{
+    font-size:11px;
+    font-weight:800;
+    text-transform: uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    margin-bottom:-1px;
+    text-overflow:ellipsis;
+    text-align:right;
+    padding-right: 4px;
+    padding-top: 4px;
+    position: relative; z-index: 10;
+  }
+  .gname{
+    font-weight:900;
+    font-size:10px;
+    line-height:1.1;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:none;
+  }
+
+  .solid{border-top:0px solid var(--line); margin:0;}
+  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
+
+  .c{
+    display:grid;
+    grid-template-columns:46px 1fr;
+    column-gap:6px;
+    line-height:1.05;
+    padding:2px 0;
+  }
+
+  /* darker zebra striping for legibility */
+  .class-list .c:nth-child(even){
+    background: rgba(0,0,0,0.12);
+  }
+
+  .t{font-weight:600; font-size:9px; white-space:nowrap;}
+  .n{
+    font-size:9px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .muted{color:var(--muted);}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
+
+  /* Print rules (only for screen print fallback) */
+  @media print{
+    @page{ size: Letter; margin: 0.15in; }
+    body{background:#fff; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    .controls{display:none !important;}
+    .ringClose{display:none !important;}
+    .page{width:auto; height:auto; padding:0; margin:0; overflow:visible;}
+    .ring-head{background:#000;}
+    .group.has-team{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* ultra-tight fallback when scale is low */
+  body.tight .ring-head{padding:3px 5px; font-size:9px;}
+  body.tight .gdisplay{font-size:9px; margin-bottom:-1px;}
+  body.tight .class-list{padding:2px 5px 3px 5px;}
+  body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
+  body.tight .t{font-size:8px;}
+  body.tight .n{font-size:8px;}
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="hdr">
+      <div class="hdrL">
+        <div class="titleRow">
+          <div class="title" id="title">Schedule</div>
+          <div class="controls">
+            <button class="btn" id="btnPdf" type="button">PDF</button>
+            <a class="btn" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
+          </div>
+        </div>
+      </div>
+      <div class="hdrR">
+        <div class="subtitle" id="subtitle"></div>
+      </div>
+    </div>
+
+    <div class="wrap" id="wrap">
+      <div class="cols" id="cols">
+        <div class="col" id="colL"></div>
+        <div class="col" id="colR"></div>
+      </div>
+    </div>
+  </div>
+
+<!-- jsPDF (UMD) for iOS-safe one-page Letter PDF generation -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+  // Data URL resolution:
+  // - ?data=print/schedule.json
+  // - #200000044-20251231  => 200000044-20251231.json
+  const qs = new URLSearchParams(location.search);
+  const hashKey = (location.hash || "").replace(/^#/, "").trim();
+
+  function resolveDataUrl(){
+    const q = qs.get("data");
+    if(q) return q;
+    if(/^\d+\-\d{8}$/.test(hashKey)) return `${hashKey}.json`;
+    return "docs/schedule/data/print/schedule.json";
+  }
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function makeRingKey(ringNum, idx){
+    const n = toInt(ringNum);
+    if(Number.isFinite(n) && n !== 9999) return String(n);
+    return `x${idx+1}`;
+  }
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function placeRings(ringWrapEls){
+    const L = document.getElementById("colL");
+    const R = document.getElementById("colR");
+    L.innerHTML = "";
+    R.innerHTML = "";
+
+    if(!ringWrapEls || ringWrapEls.length === 0) return;
+
+    // Append all rings to LEFT to measure heights, then split (keeps order; never splits a ring).
+    for(const el of ringWrapEls) L.appendChild(el);
+
+    const heights = ringWrapEls.map(el=> Math.ceil(el.getBoundingClientRect().height || 0));
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
+
+    let bestSplit = ringWrapEls.length; // number of rings in LEFT
+    let bestDiff = Infinity;
+    let cum = 0;
+    for(let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
+    }
+
+    for(let i=bestSplit;i<ringWrapEls.length;i++){
+      R.appendChild(ringWrapEls[i]);
+    }
+  }
+
+  function fitToOnePage(){
+    const page = document.querySelector('.page');
+    const wrap = document.getElementById("wrap");
+    const hdr = document.querySelector('.hdr');
+    const cols = document.getElementById('cols');
+    const colL = document.getElementById("colL");
+    const colR = document.getElementById("colR");
+    if(!page || !wrap || !hdr || !cols || !colL || !colR) return;
+
+    // reset scale
+    wrap.style.setProperty("--scale", "1");
+    document.body.classList.remove("tight");
+
+    // Force reflow so measurements are unscaled
+    void wrap.getBoundingClientRect();
+
+    const innerW = page.clientWidth;
+    const innerH = page.clientHeight;
+    const availH = innerH - hdr.offsetHeight - 2;
+    const availW = innerW;
+
+    const needH = Math.max(colL.scrollHeight, colR.scrollHeight);
+    const needW = cols.scrollWidth || cols.getBoundingClientRect().width;
+
+    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+
+    // Safety factor avoids bottom clipping by a row on some browsers
+    let scale = Math.min(1, scaleH, scaleW) * 0.975;
+    scale = Math.max(0.35, Math.min(1, scale));
+
+    if(scale < 0.62) document.body.classList.add("tight");
+
+    wrap.style.setProperty("--scale", String(scale));
+  }
+
+  // In-memory hide state (resets on refresh)
+  const HIDDEN_RING_KEYS = new Set();
+  let RING_WRAPS = [];
+
+  function relayoutVisibleRings(){
+    const visible = RING_WRAPS.filter(el => !HIDDEN_RING_KEYS.has(String(el.dataset.ringKey || "")));
+    placeRings(visible);
+
+    // Re-fit after reflow
+    fitToOnePage();
+    setTimeout(fitToOnePage, 60);
+  }
+
+  function buildRingElements(rows){
+    const first = rows[0] || {};
+    const showId = first.show_id ?? first.showId ?? "";
+
+    // Header must come from show_days_* fields when present
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+
+    document.getElementById("title").textContent = String(reportTitle || "Schedule");
+
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+    if(showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
+    if(showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringWraps = [];
+
+    for(let ringIdx=0; ringIdx<rings.length; ringIdx++){
+      const ring = rings[ringIdx];
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_nickname ?? items0.ring_name ?? items0.ringName ?? items0.ringNickname ?? "Ring";
+      const ringKey = makeRingKey(ring.ring_number, ringIdx);
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          return { gid, seq, gname, gdisplay: gd, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
+
+      for(const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTime = null;
+        for(const c of classes){
+          const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          if(time) lastTime = time;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+            ? `${num} - ${name}`.trim()
+            : String(name).trim();
+
+          cl += `<div class="c"><div class="t">${esc(showTime ? time : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        const gDiv = document.createElement("div");
+        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="solid"></div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+        sec.appendChild(gDiv);
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "ringWrap";
+      wrap.dataset.ringKey = ringKey;
+
+      const xBtn = document.createElement("button");
+      xBtn.type = "button";
+      xBtn.className = "ringClose";
+      xBtn.textContent = "×";
+      xBtn.setAttribute("aria-label", `Hide ${String(ringTitle)}`);
+      xBtn.addEventListener("click", ()=>{
+        HIDDEN_RING_KEYS.add(ringKey);
+        relayoutVisibleRings();
+      });
+
+      wrap.appendChild(xBtn);
+      wrap.appendChild(sec);
+
+      ringWraps.push(wrap);
+    }
+
+    return ringWraps;
+  }
+
+  // ----------------------------
+  // One-page Letter PDF generator
+  // - 2 columns
+  // - rings are atomic (never split)
+  // - maximum font within 1 page
+  // ----------------------------
+
+  function printPdfOnePage(rows, hiddenRingKeys){
+    const jspdfNS = window.jspdf;
+    if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
+    const { jsPDF } = jspdfNS;
+
+    if(!Array.isArray(rows) || rows.length === 0) throw new Error("No data");
+    const hidden = hiddenRingKeys instanceof Set ? hiddenRingKeys : new Set();
+
+    const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+    const norm = (v) => (v == null ? "" : String(v));
+
+    function ellipsize(doc, text, maxW){
+      text = norm(text);
+      if (maxW <= 0) return "";
+      if (doc.getTextWidth(text) <= maxW) return text;
+      const ell = "…";
+      let lo = 0, hi = text.length;
+      while (lo < hi){
+        const mid = Math.floor((lo + hi) / 2);
+        const t = text.slice(0, mid) + ell;
+        if (doc.getTextWidth(t) <= maxW) lo = mid + 1;
+        else hi = mid;
+      }
+      const cut = Math.max(0, lo - 1);
+      return text.slice(0, cut) + ell;
+    }
+
+    // Build model (matches screen logic)
+    const ringsAll = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number)
+      .map((ring, idx) => {
+        const items0 = ring.items[0] || {};
+        const ringTitle = norm(items0.ring_nickname ?? items0.ring_name ?? items0.ringName ?? items0.ringNickname ?? "Ring");
+        const ringKey = makeRingKey(ring.ring_number, idx);
+
+        const groups = Array.from(groupBy(ring.items, it => String(it.class_group_id ?? it.classGroupId ?? "")).entries())
+          .map(([gid, items]) => {
+            const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+            const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+            const classes = items.slice().sort((a,b)=>{
+              const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+              const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+              return an - bn;
+            }).map(c => {
+              const num = c.class_number ?? c.classNumber;
+              const name = c.class_name ?? c.className ?? c.name ?? "";
+              const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+                ? `${num} - ${name}`.trim()
+                : String(name).trim();
+              const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+              return { time, label };
+            });
+
+            return { seq, gdisplay: gd, hasTeam: !!gd, classes };
+          })
+          .sort((a,b)=>a.seq - b.seq);
+
+        return { ring_number: ring.ring_number, ringKey, ringTitle, groups };
+      });
+
+    const rings = ringsAll.filter(r => !hidden.has(String(r.ringKey || "")));
+    if(rings.length === 0) throw new Error("All rings hidden");
+
+    const first = rows[0] || {};
+    const reportTitle = norm(first.show_days_report_title ?? first.show_report_title ?? "Schedule");
+    const displayDate = norm(first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "");
+    const showId = norm(first.show_id ?? first.showId ?? "");
+    const showDayKey = norm(first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "");
+
+    const subtitleParts = [];
+    if(displayDate) subtitleParts.push(displayDate);
+    if(showId) subtitleParts.push(`show_id ${showId}`);
+    if(showDayKey) subtitleParts.push(showDayKey);
+    const subtitle = subtitleParts.join("   •   ");
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter", compress: true });
+    const W = doc.internal.pageSize.getWidth();   // 612
+    const H = doc.internal.pageSize.getHeight();  // 792
+
+    // Tight margins (maximize coverage)
+    const margin = 14;          // ~0.19"
+    const gutterX = 10;
+    const gutterY = 6;
+
+    const usableW = W - margin * 2;
+    const colW = (usableW - gutterX) / 2;
+
+    const headerTop = margin;
+    const headerH = 22;         // compact header area
+    const bodyTop = headerTop + headerH;
+    const bodyH = H - margin - bodyTop;
+
+    // Choose largest readable font that fits without splitting rings
+    function measureAndSplit(rowFont){
+      const ringHeadFont = rowFont + 1.5;
+      const groupFont = rowFont + 0.5;
+
+      const ringHeadH = ringHeadFont + 6;
+      const groupHeadH = groupFont + 4;
+      const rowH = rowFont + 2.6;
+
+      const ringHeights = rings.map(r => {
+        let h = 0;
+        h += ringHeadH;
+        for(const g of r.groups){
+          if(g.hasTeam) h += groupHeadH;
+          let lastT = null;
+          for(const c of g.classes){
+            if(c.time) lastT = c.time;
+            h += rowH;
+          }
+          h += 3; // group separator
+        }
+        h += 4; // bottom padding
+        return h;
+      });
+
+      const total = ringHeights.reduce((a,b)=>a+b,0) + gutterY * Math.max(0, ringHeights.length - 1);
+      const target = total / 2;
+
+      let bestSplit = ringHeights.length;
+      let bestDiff = Infinity;
+      let cum = 0;
+      for(let i=0;i<ringHeights.length;i++){
+        cum += ringHeights[i] + (i ? gutterY : 0);
+        const diff = Math.abs(target - cum);
+        if(diff < bestDiff){ bestDiff = diff; bestSplit = i+1; }
+      }
+
+      const leftH = ringHeights.slice(0, bestSplit).reduce((a,b)=>a+b,0) + gutterY * Math.max(0, bestSplit - 1);
+      const rightCount = ringHeights.length - bestSplit;
+      const rightH = ringHeights.slice(bestSplit).reduce((a,b)=>a+b,0) + gutterY * Math.max(0, rightCount - 1);
+      const need = Math.max(leftH, rightH);
+
+      return { rowFont, ringHeadFont, groupFont, rowH, ringHeadH, groupHeadH, split: bestSplit, needH: need };
+    }
+
+    let plan = null;
+    for(let f=9.0; f>=5.75; f-=0.25){
+      const m = measureAndSplit(f);
+      if(m.needH <= bodyH){ plan = { ...m, scale: 1 }; break; }
+      const scale = bodyH / m.needH;
+      if(scale >= 0.92){ plan = { ...m, scale }; break; }
+    }
+    if(!plan){
+      const m = measureAndSplit(5.5);
+      plan = { ...m, scale: Math.min(1, bodyH / m.needH) };
+    }
+
+    const s = plan.scale;
+
+    // Header: title over left column, subtitle over right column
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(ellipsize(doc, reportTitle || "Schedule", colW - 2), margin, headerTop + 14);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    if(subtitle) doc.text(ellipsize(doc, subtitle, colW - 2), margin + colW + gutterX, headerTop + 14);
+
+    // Body drawing helpers (scaled)
+    const timeW = 48 * s;
+    const padX = 6 * s;
+
+    function drawRing(x, y, ring){
+      const ringW = colW;
+
+      // Ring head
+      const headH = plan.ringHeadH * s;
+      doc.setDrawColor(0);
+      doc.setLineWidth(1);
+      doc.setFillColor(0, 0, 0);
+      doc.rect(x, y, ringW, headH, "F");
+      doc.setTextColor(255,255,255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(plan.ringHeadFont * s);
+      doc.text(ellipsize(doc, ring.ringTitle, ringW - padX*2), x + padX, y + headH - (3*s));
+      doc.setTextColor(17,17,17);
+
+      let cy = y + headH;
+      let ringRowIndex = 0;
+
+      // Groups + classes
+      for(const g of ring.groups){
+        if(g.hasTeam){
+          const gh = plan.groupHeadH * s;
+          doc.setFillColor(220,220,220);
+          doc.rect(x, cy, ringW, gh, "F");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(plan.groupFont * s);
+          doc.setTextColor(17,17,17);
+          doc.text(
+            ellipsize(doc, String(g.gdisplay).toUpperCase(), ringW - padX*2),
+            x + ringW - padX,
+            cy + gh - (3*s),
+            { align: "right" }
+          );
+          cy += gh;
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(plan.rowFont * s);
+
+        let lastTime = null;
+        for(const c of g.classes){
+          const t = String(c.time || "").trim();
+          const showTime = (t && t !== lastTime);
+          if(t) lastTime = t;
+
+          const rowH = plan.rowH * s;
+
+          ringRowIndex++;
+          if(ringRowIndex % 2 === 0){
+            // darker zebra (was 245,245,245)
+            doc.setFillColor(235,235,235);
+            doc.rect(x, cy, ringW, rowH, "F");
+          }
+
+          const ty = cy + rowH - (2*s);
+
+          const left = showTime ? t : "";
+          const right = c.label || "";
+
+          const rightW = ringW - padX*2 - timeW - (4*s);
+          doc.text(ellipsize(doc, left, timeW), x + padX, ty);
+          doc.text(ellipsize(doc, right, rightW), x + padX + timeW + (4*s), ty);
+
+          cy += rowH;
+        }
+
+        cy += 3*s;
+      }
+
+      // Ring border
+      const totalH = cy - y + (1*s);
+      doc.setDrawColor(0);
+      doc.setLineWidth(1);
+      doc.rect(x, y, ringW, totalH);
+
+      return totalH;
+    }
+
+    const split = plan.split;
+    const leftRings = rings.slice(0, split);
+    const rightRings = rings.slice(split);
+
+    let yL = bodyTop;
+    for(const r of leftRings){
+      const h = drawRing(margin, yL, r);
+      yL += h + gutterY;
+    }
+
+    let yR = bodyTop;
+    for(const r of rightRings){
+      const h = drawRing(margin + colW + gutterX, yR, r);
+      yR += h + gutterY;
+    }
+
+    // Open PDF
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    if(!w){
+      window.location.href = url;
+    }
+  }
+
+  let SCHEDULE_ROWS = [];
+
+  (async function main(){
+    const url = resolveDataUrl();
+    const rows = await fetchJson(url);
+    SCHEDULE_ROWS = rows;
+
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("colL").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      return;
+    }
+
+    RING_WRAPS = buildRingElements(rows);
+    relayoutVisibleRings();
+
+    // initial fit (extra pass helps after fonts/layout settle)
+    fitToOnePage();
+    setTimeout(fitToOnePage, 60);
+
+    window.addEventListener("resize", ()=>{ fitToOnePage(); });
+  })().catch(err=>{
+    document.getElementById("colL").innerHTML = `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+
+  document.getElementById('btnPdf').addEventListener('click', ()=>{
+    try{
+      printPdfOnePage(SCHEDULE_ROWS, HIDDEN_RING_KEYS);
+    }catch(e){
+      alert(String(e && e.message ? e.message : e));
+    }
+  });
+</script>
+</body>
+</html>
