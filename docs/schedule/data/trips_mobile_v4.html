@@ -3,16 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>CRT Trips (Mobile v3)</title>
+<title>CRT Trips (Mobile)</title>
 
 <style>
-/* Tap-Active Locked UI Kit — v1.2 (patched + Boards)
-   NOTE: kit unchanged; schedule/trips view styles added at bottom.
+/* Tap-Active Locked UI Kit — v1.2 (minimal shell + nav + chips)
+   (kept consistent with prior kit-style renders)
 */
-
-/* =========================
-   TOKENS
-========================= */
 :root{
   --bg:#020617;
   --bg-grad-1:#111827;
@@ -39,7 +35,6 @@
   --fs-btn:14px;
   --fs-row:14px;
   --fs-tag:11px;
-  --fs-label:12px;
   --fs-title:16px;
 
   --shadow-app:0 24px 70px rgba(0,0,0,0.95);
@@ -74,9 +69,6 @@
   }
 }
 
-/* =========================
-   RESET
-========================= */
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 [hidden]{ display:none !important; }
 
@@ -91,7 +83,7 @@ html,body{
   text-size-adjust:100%;
 }
 
-button,input,a{ font:inherit; }
+button,a{ font:inherit; }
 button{ max-height: var(--h-btn); }
 
 :focus{ outline:none; }
@@ -100,9 +92,7 @@ button{ max-height: var(--h-btn); }
   outline-offset:2px;
 }
 
-/* =========================
-   SHELL (LOCKED CANVAS)
-========================= */
+/* Shell */
 .page{
   min-height:100vh;
   min-height:100dvh;
@@ -111,7 +101,6 @@ button{ max-height: var(--h-btn); }
   justify-content:center;
   align-items:stretch;
 }
-
 .app{
   width:100%;
   max-width: var(--app-maxw);
@@ -149,7 +138,7 @@ button{ max-height: var(--h-btn); }
   flex:1;
   text-align:center;
   font-size:var(--fs-title);
-  font-weight:600;
+  font-weight:650;
   margin:0;
   padding:0;
   white-space:nowrap;
@@ -157,10 +146,7 @@ button{ max-height: var(--h-btn); }
   text-overflow:ellipsis;
 }
 
-.is-invisible{ visibility:hidden; pointer-events:none; }
-
-.header-back,
-.header-action{
+.header-back{
   min-width:60px;
   height:34px;
   padding:0 16px;
@@ -172,7 +158,7 @@ button{ max-height: var(--h-btn); }
   align-items:center;
   justify-content:center;
   font-size:13px;
-  font-weight:500;
+  font-weight:650;
   cursor:pointer;
   user-select:none;
   white-space:nowrap;
@@ -180,20 +166,11 @@ button{ max-height: var(--h-btn); }
     0 0 0 1px rgba(15,23,42,1),
     0 3px 10px rgba(0,0,0,.8);
   transition:
-    background var(--t-med) ease-out,
-    border-color var(--t-med) ease-out,
     transform var(--t-fast) ease-out,
-    box-shadow var(--t-med) ease-out,
-    color var(--t-med) ease-out;
+    box-shadow var(--t-med) ease-out;
   text-decoration:none;
 }
-.header-action{
-  border-color: rgba(59,130,246,1);
-  background: radial-gradient(circle at top, var(--accent-2), var(--accent-3) 75%);
-  color:var(--fg);
-}
-.header-back:active,
-.header-action:active{
+.header-back:active{
   transform: translateY(1px) scale(.97);
   box-shadow:
     0 0 0 1px rgba(15,23,42,1),
@@ -219,43 +196,7 @@ button{ max-height: var(--h-btn); }
   padding-bottom: calc(12px + var(--h-btn) + var(--nav-pad-bottom) + env(safe-area-inset-bottom));
 }
 
-.row{
-  width:100%;
-  max-width:474px;
-  margin:0 auto;
-  min-height: var(--h-row);
-  padding: var(--pad-row-y) var(--pad-row-x);
-  border-radius:var(--pill-radius);
-  border:1px solid var(--border-soft);
-  background:var(--surface-1);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  font-size:var(--fs-row);
-  color:var(--fg-soft);
-  box-shadow:0 1px 0 var(--bg);
-  text-decoration:none;
-}
-.row-title{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  padding-right:8px;
-}
-.row-tag{
-  min-width:28px;
-  padding:3px 10px;
-  border-radius:var(--pill-radius);
-  border:1px solid var(--border-soft);
-  background:var(--surface-2);
-  color:var(--fg-soft);
-  font-size:var(--fs-tag);
-  text-align:center;
-  font-variant-numeric: tabular-nums;
-  box-shadow:0 0 0 1px var(--bg);
-  white-space:nowrap;
-}
-
+/* Chips */
 .chip-strip{
   display:flex;
   gap:8px;
@@ -274,7 +215,7 @@ button{ max-height: var(--h-btn); }
   background:var(--surface-2);
   color:var(--fg-soft);
   font-size:var(--fs-tag);
-  font-weight:600;
+  font-weight:800;
   box-shadow:0 0 0 1px var(--bg);
   white-space:nowrap;
   cursor:pointer;
@@ -300,6 +241,7 @@ button{ max-height: var(--h-btn); }
     0 4px 10px rgba(15,23,42,.75);
 }
 
+/* Bottom nav */
 .app-nav{
   flex:0 0 auto;
   border-top:1px solid rgba(31,41,55,.95);
@@ -321,7 +263,7 @@ button{ max-height: var(--h-btn); }
   background:var(--surface-1);
   color:var(--fg-soft);
   font-size:var(--fs-btn);
-  font-weight:600;
+  font-weight:800;
   cursor:pointer;
   user-select:none;
   display:flex;
@@ -334,7 +276,6 @@ button{ max-height: var(--h-btn); }
     background var(--t-med) ease-out;
   box-shadow:0 1px 0 var(--bg);
   white-space:nowrap;
-  text-decoration:none;
 }
 .nav-btn:active{
   transform: translateY(1px) scale(.995);
@@ -351,27 +292,7 @@ button{ max-height: var(--h-btn); }
   color:var(--fg);
 }
 
-@media (max-width: 520px){
-  .page{ padding:0; }
-  .app{
-    max-width:100%;
-    height:100vh;
-    height:100dvh;
-    max-height:none;
-    border-radius:0;
-  }
-}
-@media (min-width: 521px){
-  .page{ align-items:center; }
-}
-@media (prefers-reduced-motion: reduce){
-  *{ transition:none !important; }
-}
-
-/* =========================
-   VIEW (shared for schedule + trips)
-========================= */
-
+/* Trips view */
 .boardMeta{
   margin: -2px 2px 0;
   padding: 0 2px 2px;
@@ -379,7 +300,6 @@ button{ max-height: var(--h-btn); }
   color: rgba(229,231,235,.78);
   line-height:1.2;
 }
-
 .filtersSticky{
   position: sticky;
   top: 0;
@@ -394,7 +314,6 @@ button{ max-height: var(--h-btn); }
   flex-direction:column;
   gap: var(--gap);
 }
-
 .ringCard{
   border: 1px solid rgba(75,85,99,.85);
   border-radius: 18px;
@@ -405,7 +324,6 @@ button{ max-height: var(--h-btn); }
     0 10px 28px rgba(0,0,0,.45);
   scroll-margin-top: 96px;
 }
-
 .ringHead{
   padding: 10px 12px;
   font-weight: 900;
@@ -442,11 +360,10 @@ button{ max-height: var(--h-btn); }
   text-align: right;
   margin-bottom: -1px;
 }
-.gname{ display:none; }
 
 .class-list{ padding: 6px 10px 10px; }
 
-.classRow{
+.tripRow{
   display:grid;
   grid-template-columns: 78px 1fr auto;
   gap: 10px;
@@ -458,22 +375,22 @@ button{ max-height: var(--h-btn); }
   background: rgba(2,6,23,.18);
   margin-top: 6px;
 }
-.classRow:first-child{ margin-top: 0; }
+.tripRow:first-child{ margin-top: 0; }
 
-.classRow .t{
+.tripRow .t{
   font-weight: 900;
   font-size: 12px;
   color: rgba(229,231,235,.92);
   white-space: nowrap;
 }
-.classRow .n{
+.tripRow .n{
   font-size: 13px;
   color: rgba(229,231,235,.92);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.classRow .s{
+.tripRow .s{
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .08em;
@@ -482,15 +399,7 @@ button{ max-height: var(--h-btn); }
   white-space: nowrap;
   padding-left: 4px;
 }
-
-.classRow.time2 .t{
-  background: rgba(34,197,94,.22);
-  padding: 2px 6px;
-  border-radius: 8px;
-  width: max-content;
-}
-
-.group .class-list > .classRow:nth-child(even){
+.group .class-list > .tripRow:nth-child(even){
   background: rgba(255,255,255,0.04);
 }
 
@@ -503,11 +412,27 @@ button{ max-height: var(--h-btn); }
   padding: 12px;
   font-size: 12px;
 }
-
 .smallNote{
   font-size: 12px;
   color: rgba(229,231,235,.80);
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+@media (max-width: 520px){
+  .page{ padding:0; }
+  .app{
+    max-width:100%;
+    height:100vh;
+    height:100dvh;
+    max-height:none;
+    border-radius:0;
+  }
+}
+@media (min-width: 521px){
+  .page{ align-items:center; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; }
 }
 </style>
 </head>
@@ -519,7 +444,6 @@ button{ max-height: var(--h-btn); }
       <header class="app-header">
         <a class="header-back" href="https://ringstatus.com">Home</a>
         <h1 class="header-title" id="title">Trips</h1>
-        <button class="header-action is-invisible" type="button" aria-hidden="true">.</button>
       </header>
 
       <main class="app-main" id="appMain">
@@ -527,7 +451,7 @@ button{ max-height: var(--h-btn); }
 
           <div class="boardMeta" id="subtitle"></div>
 
-          <div class="filtersSticky" id="filterBar" aria-label="Filters">
+          <div class="filtersSticky" id="filterBar" aria-label="Trips Filters">
             <div class="chip-strip" id="horseFilters"></div>
             <div class="chip-strip" id="statusFilters"></div>
           </div>
@@ -546,229 +470,31 @@ button{ max-height: var(--h-btn); }
 
 <script>
   const POLL_MS = 6 * 60 * 1000;
-  const PUBLISH_INTERVAL_MS = 8 * 60 * 1000;
   const TIMEZONE = "America/New_York";
+
+  // ONE FILE. FIXED PATH. NO FALLBACKS. NO GUESSING.
+  const DATA_URL = "/docs/schedule/data/latest/watch_trips.json";
 
   let activeHorse = "__all__";
   let activeStatus = "__all__";
 
-  const qs = new URLSearchParams(location.search);
-  const rawHash = (location.hash || "").replace(/^#/, "").trim();
-
   let activeIO = null;
   let lastRaw = null;
   let lastLastMod = null;
-  let currentDataUrl = null;
   let isRefreshing = false;
 
   let publishedAtMs = null;
   let dataMeta = null;
-  let dataMode = "trips"; // "trips" | "schedule"
 
   const scroller = ()=>document.getElementById("appMain");
 
   const fmtTimeET = (ms)=>{
-    return new Intl.DateTimeFormat("en-US", { timeZone: TIMEZONE, hour: "numeric", minute: "2-digit" })
+    return new Intl.DateTimeFormat("en-US", { timeZone: TIMEZONE, hour:"numeric", minute:"2-digit" })
       .format(new Date(ms));
   };
 
   const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
-
-  function normalizeShowDay(v){
-    const s = String(v ?? "").trim();
-    if(!s) return "";
-    if(/^\d{8}$/.test(s)) return s;
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(m) return `${m[1]}${m[2]}${m[3]}`;
-    return "";
-  }
-
-  function uniq(list){
-    const out = [];
-    const seen = new Set();
-    for(const x of list){
-      const k = String(x);
-      if(!k || seen.has(k)) continue;
-      seen.add(k);
-      out.push(k);
-    }
-    return out;
-  }
-
-    function candidateDataUrls(){
-    const c = [];
-
-    // Heuristic alternate origin: if host starts with "blog.", also try non-blog origin.
-    const host = String(location.hostname || "");
-    const altOrigin = host.startsWith("blog.") ? (location.protocol + "//" + host.replace(/^blog\./, "")) : null;
-
-    // If user passes ?data=, respect it first, but also try common rewrites:
-    // - if it is root-relative (/data/..), try it on altOrigin too
-    // - if it is relative, try ../ and ../../
-    const dataParamRaw = (qs.get("data") || "").trim();
-    if(dataParamRaw){
-      c.push(dataParamRaw);
-
-      // If it's a root-relative path, also try on altOrigin (cross-origin) if available.
-      if(altOrigin && dataParamRaw.startsWith("/")){
-        c.push(altOrigin + dataParamRaw);
-      }
-
-      // If it's a relative path, try a few parent levels.
-      if(!/^https?:\/\//i.test(dataParamRaw) && !dataParamRaw.startsWith("/")){
-        const clean = dataParamRaw.replace(/^\.\//, "");
-        c.push(clean);
-        c.push("../" + clean);
-        c.push("../../" + clean);
-        // also try under /data/latest (common deploy)
-        c.push("/data/latest/" + clean);
-        if(altOrigin) c.push(altOrigin + "/data/latest/" + clean);
-      }
-
-      return uniq(c);
-    }
-
-    // show_id + dt: try T then M, and try current folder + parent folders + /data/latest
-    const showId = (qs.get("show_id") || qs.get("showId") || "").trim();
-    const dtRaw = (qs.get("dt") || qs.get("date") || qs.get("show_day") || qs.get("showDay") || "").trim();
-    const ymd = normalizeShowDay(dtRaw || "");
-    if(showId && ymd){
-      const fileT = `${showId}-${ymd}T.json`;
-      const fileM = `${showId}-${ymd}M.json`;
-
-      const add = (p)=>{
-        c.push(p);
-        if(altOrigin && p.startsWith("/")) c.push(altOrigin + p);
-      };
-
-      // local + parents
-      c.push(fileT, "../"+fileT, "../../"+fileT);
-      c.push(fileM, "../"+fileM, "../../"+fileM);
-
-      // /data/latest variants
-      add("/data/latest/" + fileT);
-      add("/data/latest/" + fileM);
-
-      // common names
-      add("/data/latest/watch_trips.json");
-      add("/data/latest/trips.json");
-      add("/data/latest/watch_schedule.json");
-      add("/data/latest/schedule.json");
-
-      c.push("watch_trips.json","trips.json","watch_schedule.json","schedule.json");
-      c.push("../watch_trips.json","../trips.json","../watch_schedule.json","../schedule.json");
-      c.push("../../watch_trips.json","../../trips.json","../../watch_schedule.json","../../schedule.json");
-
-      return uniq(c);
-    }
-
-    // hash back-compat (like v4 schedule): "200000046-20260118" or "200000046-20260118M"
-    if(/^\d+\-\d{8}[MT]?(\.json)?$/i.test(rawHash)){
-      let base = rawHash.replace(/\.json$/i, "");
-      if(!/[MT]$/i.test(base)) base = base + "M";
-      const file = base + ".json";
-
-      const next = new URL(location.href);
-      next.searchParams.set("data", file);
-      next.hash = "";
-      history.replaceState(null, "", next.toString());
-
-      c.push(file, "../"+file, "../../"+file);
-      c.push("/data/latest/" + file);
-      if(altOrigin) c.push(altOrigin + "/data/latest/" + file);
-
-      return uniq(c);
-    }
-
-    // DEFAULTS (deterministic):
-    // 1) Your stated path first
-    c.push("/data/latest/watch_trips.json");
-    c.push("/data/latest/trips.json");
-    c.push("/data/latest/watch_schedule.json");
-    c.push("/data/latest/schedule.json");
-
-    // 2) same folder + parents
-    c.push(
-      "watch_trips.json",
-      "trips.json",
-      "watch_schedule.json",
-      "schedule.json",
-      "../watch_trips.json",
-      "../trips.json",
-      "../watch_schedule.json",
-      "../schedule.json",
-      "../../watch_trips.json",
-      "../../trips.json",
-      "../../watch_schedule.json",
-      "../../schedule.json"
-    );
-
-    // 3) alt origin absolute (if blog vs non-blog mismatch)
-    if(altOrigin){
-      c.push(altOrigin + "/data/latest/watch_trips.json");
-      c.push(altOrigin + "/data/latest/trips.json");
-      c.push(altOrigin + "/data/latest/watch_schedule.json");
-      c.push(altOrigin + "/data/latest/schedule.json");
-    }
-
-    return uniq(c);
-  }
-
-  async function fetchTextMeta(url){
-    const res = await fetch(url, {cache:"no-store"});
-    const txt = await res.text();
-    const lastMod = res.headers.get("last-modified");
-    return { ok: res.ok, status: res.status, txt, lastMod, url };
-  }
-
-  async function fetchFirstAvailable(urls){
-    const attempts = [];
-    for(const u of urls){
-      try{
-        const r = await fetchTextMeta(u);
-        attempts.push({ url: r.url, status: r.status, ok: r.ok });
-        if(r.ok) return { ...r, attempts };
-      }catch(e){
-        attempts.push({ url: u, status: 0, ok: false });
-      }
-    }
-    const msgLines = attempts.slice(0, 12).map(a=>`- ${a.status || "ERR"}  ${a.url}`).join("\n");
-    const err = new Error("No data file found.\nTried:\n" + msgLines);
-    err.attempts = attempts;
-    throw err;
-  }
-
-  function updatePublishedFromHeader(lastMod){
-    if(!lastMod) return;
-    const ms = Date.parse(lastMod);
-    if(Number.isFinite(ms)) publishedAtMs = ms;
-  }
-
-  function parsePayload(txt, urlLabel){
-    const obj = JSON.parse(txt);
-
-    if(obj && !Array.isArray(obj) && Array.isArray(obj.records)){
-      dataMode = "trips";
-      return { rows: obj.records, meta: obj.meta || null, mode: "trips", label: urlLabel };
-    }
-
-    if(Array.isArray(obj)){
-      const first = obj[0] || {};
-      const hasTripsField = ("horseName" in first) || ("lastOOG" in first) || ("entry_id" in first) || ("latestStart" in first);
-      const hasScheduleField = ("start_display" in first) || ("class_number" in first) || ("group_display" in first);
-
-      if(hasTripsField && !hasScheduleField){
-        dataMode = "trips";
-        return { rows: obj, meta: null, mode: "trips", label: urlLabel };
-      }
-
-      dataMode = "schedule";
-      return { rows: obj, meta: null, mode: "schedule", label: urlLabel };
-    }
-
-    throw new Error(`Unexpected JSON shape in ${urlLabel} (expected array or {records:[]}).`);
-  }
 
   function groupBy(arr, keyFn){
     const m = new Map();
@@ -780,7 +506,21 @@ button{ max-height: var(--h-btn); }
     return m;
   }
 
-  function normalizeStatusToken(s){
+  function uniqLower(arr){
+    const out = [];
+    const seen = new Set();
+    for(const s of arr){
+      const v = String(s||"").trim();
+      if(!v) continue;
+      const k = v.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
+    }
+    return out;
+  }
+
+  function statusTokenFromTripStatus(s){
     const v = String(s ?? "").trim().toLowerCase();
     if(v === "upcoming") return "upcoming";
     if(v === "underway") return "underway";
@@ -788,36 +528,8 @@ button{ max-height: var(--h-btn); }
     return "";
   }
 
-  function computeGroupStatusSchedule(items){
-    let hasUnderway = false;
-    let hasUpcoming = false;
-    let hasCompleted = false;
-    let sawAnyStatus = false;
-    let sawNonCompleted = false;
-
-    for(const c of items){
-      const s = String(c.status2 ?? "").trim();
-      if(!s) continue;
-      sawAnyStatus = true;
-      if(s === "Underway") hasUnderway = true;
-      else if(s === "Upcoming") hasUpcoming = true;
-      else if(s === "Completed") hasCompleted = true;
-      else sawNonCompleted = true;
-      if(s !== "Completed") sawNonCompleted = true;
-    }
-
-    if(hasUnderway) return "Underway";
-    if(hasUpcoming) return "Upcoming";
-    if(sawAnyStatus && hasCompleted && !sawNonCompleted) return "Completed";
-    return "";
-  }
-
-  function computeGroupStatusTrips(items){
-    let hasUnderway = false;
-    let hasUpcoming = false;
-    let hasCompleted = false;
-    let sawAny = false;
-    let sawNonCompleted = false;
+  function computeGroupStatus(items){
+    let hasUnderway=false, hasUpcoming=false, hasCompleted=false, sawAny=false, sawNonCompleted=false;
 
     for(const r of items){
       const s = String(r.latestStatus ?? r.status2 ?? r.status ?? "").trim();
@@ -836,29 +548,11 @@ button{ max-height: var(--h-btn); }
     return "";
   }
 
-  function normRollup(s){
-    const raw = String(s ?? "").trim();
-    if(!raw) return "";
-    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
-    const out = [];
-    const seen = new Set();
-    for(const p of parts){
-      const k = p.toLowerCase();
-      if(seen.has(k)) continue;
-      seen.add(k);
-      out.push(p);
-    }
-    return out.join(", ");
+  function groupStatusToken(groupStatus){
+    return statusTokenFromTripStatus(groupStatus);
   }
 
-  function extractHorseName(groupDisplayPart){
-    const s = String(groupDisplayPart ?? "").trim();
-    if(!s) return "";
-    const idx = s.indexOf(" (");
-    return (idx > 0 ? s.slice(0, idx) : s).trim();
-  }
-
-  function computeGroupDisplayTrips(items){
+  function computeGroupDisplay(items){
     const tmp = [];
     const seen = new Set();
 
@@ -869,9 +563,9 @@ button{ max-height: var(--h-btn); }
       if(seen.has(key)) continue;
       seen.add(key);
 
-      const oog = String(r.lastOOG ?? "").trim();
-      const oogNum = toInt(oog);
-      tmp.push({ horse, oog: oogNum });
+      const oogRaw = String(r.lastOOG ?? "").trim();
+      const oog = toInt(oogRaw);
+      tmp.push({ horse, oog });
     }
 
     tmp.sort((a,b)=>{
@@ -884,152 +578,54 @@ button{ max-height: var(--h-btn); }
     return tmp.map(x => x.oog !== null ? `${x.horse} (${x.oog})` : x.horse).join(", ");
   }
 
+  async function fetchTextMeta(url){
+    const res = await fetch(url, { cache:"no-store" });
+    const txt = await res.text();
+    const lastMod = res.headers.get("last-modified");
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}`);
+    return { txt, lastMod };
+  }
+
+  function parseTripsPayload(txt){
+    const obj = JSON.parse(txt);
+    if(obj && !Array.isArray(obj) && Array.isArray(obj.records)){
+      return { rows: obj.records, meta: obj.meta || null };
+    }
+    if(Array.isArray(obj)){
+      return { rows: obj, meta: null };
+    }
+    throw new Error("Unexpected JSON shape (expected array or {records:[]}).");
+  }
+
+  function updatePublishedFromHeader(lastMod){
+    if(!lastMod) return;
+    const ms = Date.parse(lastMod);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
   function setHeader(rows){
     const first = rows[0] || {};
+    const sid = first.sid ?? "";
+    const dt  = first.dt  ?? "";
+
+    document.getElementById("title").textContent = sid ? `Show ${sid} Trips` : "Trips";
+
     const subParts = [];
-
-    if(currentDataUrl) subParts.push(`data: ${currentDataUrl}`);
-
-    if(dataMode === "schedule"){
-      const reportTitle =
-        first.show_days_report_title ??
-        first.show_report_title ??
-        (first.show_id ? `Show ${first.show_id}` : "Schedule");
-      document.getElementById("title").textContent = reportTitle;
-
-      const displayDate =
-        first.show_days_display_date ??
-        first.show_display_date ??
-        first.show_date ??
-        first.showDate ??
-        "";
-      if(displayDate) subParts.push(String(displayDate));
-    }else{
-      const sid = first.sid ?? "";
-      const dt  = first.dt  ?? "";
-      document.getElementById("title").textContent = sid ? `Show ${sid} Trips` : "Trips";
-      if(dt) subParts.push(String(dt));
-      if(dataMeta && dataMeta.table) subParts.push(String(dataMeta.table));
-      if(dataMeta && Number.isFinite(Number(dataMeta.record_count))) subParts.push(`rows: ${dataMeta.record_count}`);
-    }
+    if(dt) subParts.push(String(dt));
+    subParts.push(`data: ${DATA_URL}`);
+    if(dataMeta && dataMeta.table) subParts.push(String(dataMeta.table));
+    if(dataMeta && Number.isFinite(Number(dataMeta.record_count))) subParts.push(`rows: ${dataMeta.record_count}`);
 
     if(dataMeta && dataMeta.generated_at){
-      subParts.push(`gen: ${String(dataMeta.generated_at).replace("T", " ").replace(/-05:00$/," ET")}`);
+      subParts.push(`gen: ${String(dataMeta.generated_at).replace("T"," ").replace(/-05:00$/," ET")}`);
     }else if(publishedAtMs){
       subParts.push(`published: ${fmtTimeET(publishedAtMs)}`);
-      subParts.push(`next: ${fmtTimeET(publishedAtMs + PUBLISH_INTERVAL_MS)}`);
     }
 
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
-  function buildRingsSchedule(rows){
-    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
-      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
-      .sort((a,b)=>a.ring_number - b.ring_number);
-
-    const ringEls = [];
-
-    for(let i=0;i<rings.length;i++){
-      const ring = rings[i];
-      const items0 = ring.items[0] || {};
-      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
-
-      const ringId = (Number.isFinite(ring.ring_number) && ring.ring_number !== 9999)
-        ? `ring-${ring.ring_number}`
-        : `ring-x${i+1}`;
-
-      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
-        .map(([gid, items]) => {
-          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
-          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
-          const gstatus = computeGroupStatusSchedule(items);
-          return { gid, seq, gdisplay: gd, gstatus, items };
-        })
-        .sort((a,b)=>a.seq - b.seq);
-
-      const sec = document.createElement("section");
-      sec.className = "ringCard ring";
-      sec.id = ringId;
-      sec.dataset.ringTitle = String(ringTitle);
-      sec.innerHTML = `<div class="ringHead">${esc(ringTitle)}</div>`;
-
-      for(const g of groups){
-        const classes = g.items.slice().sort((a,b)=>{
-          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
-          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
-          return an - bn;
-        });
-
-        let cl = "";
-        let lastTime = null;
-
-        for(const c of classes){
-          const sd1 = String(c.start_display ?? c.startDisplay ?? "").trim();
-          const sd2 = String(c.start_display2 ?? c.startDisplay2 ?? "").trim();
-
-          const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
-          const displayTime = usingTime2 ? sd2 : (sd1 || sd2);
-
-          const showTime = (displayTime && displayTime !== lastTime);
-          if(showTime) lastTime = displayTime;
-
-          const num = c.class_number ?? c.classNumber;
-          const name = c.class_name ?? c.className ?? c.name ?? "";
-          const label = (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
-            ? `${num} - ${name}`.trim()
-            : String(name).trim();
-
-          const status2 = String(c.status2 ?? "").trim();
-          const statusHtml = status2 ? `<div class="s">${esc(status2)}</div>` : `<div class="s"></div>`;
-
-          cl += `
-            <div class="classRow${usingTime2 ? " time2" : ""}">
-              <div class="t">${esc(showTime ? displayTime : "")}</div>
-              <div class="n">${esc(label)}</div>
-              ${statusHtml}
-            </div>
-          `;
-        }
-
-        const horses = [];
-        if(g.gdisplay){
-          const parts = String(g.gdisplay).split(",").map(x=>x.trim()).filter(Boolean);
-          for(const p of parts){
-            const hn = extractHorseName(p);
-            if(hn) horses.push(hn);
-          }
-        }
-        const horsesNorm = Array.from(new Set(horses.map(h=>h.toLowerCase()))).join("|");
-        const statusNorm = normalizeStatusToken(g.gstatus);
-
-        const gDiv = document.createElement("div");
-        const hasTeam = !!g.gdisplay;
-
-        gDiv.className = `group${hasTeam ? " has-team" : ""}`;
-        if(hasTeam){
-          if(horsesNorm) gDiv.dataset.horses = horsesNorm;
-          if(statusNorm) gDiv.dataset.status = statusNorm;
-        }
-
-        gDiv.innerHTML = `
-          <div class="group-head">
-            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
-            <div class="gname"></div>
-          </div>
-          <div class="class-list">${cl || `<div class="row"><div class="row-title">No classes.</div></div>`}</div>
-        `;
-
-        sec.appendChild(gDiv);
-      }
-
-      ringEls.push(sec);
-    }
-
-    return ringEls;
-  }
-
-  function buildRingsTrips(rows){
+  function buildRings(rows){
     const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
       .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
       .sort((a,b)=>a.ring_number - b.ring_number);
@@ -1048,8 +644,8 @@ button{ max-height: var(--h-btn); }
       const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
         .map(([gid, items]) => {
           const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
-          const gdisplay = computeGroupDisplayTrips(items);
-          const gstatus = computeGroupStatusTrips(items);
+          const gdisplay = computeGroupDisplay(items);
+          const gstatus = computeGroupStatus(items);
           return { gid, seq, gdisplay, gstatus, items };
         })
         .sort((a,b)=>a.seq - b.seq);
@@ -1061,54 +657,49 @@ button{ max-height: var(--h-btn); }
       sec.innerHTML = `<div class="ringHead">${esc(ringTitle)}</div>`;
 
       for(const g of groups){
-        const classMap = groupBy(g.items, x => String(x.class_id ?? x.classId ?? ""));
-        const classes = Array.from(classMap.entries())
-          .map(([cid, items]) => {
-            const row0 = items[0] || {};
-            const classNum = row0.class_number ?? row0.classNumber ?? "";
-            const className = row0.class_name ?? row0.className ?? "";
-            const latestStart = String(row0.latestStart ?? "").trim();
-            const estStart = String(row0.estimated_start_time ?? row0.estimatedStart ?? "").trim();
-            const displayTime = latestStart || estStart || "";
-            const status2 = String(row0.latestStatus ?? "").trim();
-            const tSort = toInt(row0.time_sort ?? "") ?? 999999;
-            return { cid, tSort, classNum, className, displayTime, status2 };
-          })
-          .sort((a,b)=>{
-            if(a.tSort !== b.tSort) return a.tSort - b.tSort;
-            const an = toInt(a.classNum) ?? 999999;
-            const bn = toInt(b.classNum) ?? 999999;
-            if(an !== bn) return an - bn;
-            return String(a.className).localeCompare(String(b.className));
-          });
+        const trips = g.items.slice().sort((a,b)=>{
+          const ao = toInt(a.lastOOG ?? "") ?? 999999;
+          const bo = toInt(b.lastOOG ?? "") ?? 999999;
+          if(ao !== bo) return ao - bo;
+          const ah = String(a.horseName ?? "").localeCompare(String(b.horseName ?? ""));
+          if(ah !== 0) return ah;
+          const at = toInt(a.time_sort ?? "") ?? 999999;
+          const bt = toInt(b.time_sort ?? "") ?? 999999;
+          return at - bt;
+        });
 
-        let cl = "";
+        let listHtml = "";
         let lastTime = null;
 
-        for(const c of classes){
-          const showTime = (c.displayTime && c.displayTime !== lastTime);
-          if(showTime) lastTime = c.displayTime;
+        for(const r of trips){
+          const time = String(r.latestGO ?? r.latestStart ?? r.estimated_start_time ?? r.estimatedStart ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          if(showTime) lastTime = time;
 
-          const label = (String(c.classNum).trim() && String(c.classNum) !== "0")
-            ? `${c.classNum} - ${c.className}`.trim()
-            : String(c.className).trim();
+          const horse = String(r.horseName ?? "").trim();
+          const oog = String(r.lastOOG ?? "").trim();
+          const rider = String(r.riderName ?? "").trim();
+          const status = String(r.latestStatus ?? "").trim();
 
-          const statusHtml = c.status2 ? `<div class="s">${esc(c.status2)}</div>` : `<div class="s"></div>`;
+          let label = horse || "";
+          if(oog) label = `${label} (${oog})`;
+          if(rider) label = `${label} • ${rider}`;
 
-          cl += `
-            <div class="classRow">
-              <div class="t">${esc(showTime ? c.displayTime : "")}</div>
+          const rowHorse = String(horse || "").toLowerCase();
+          const rowStatus = statusTokenFromTripStatus(status);
+
+          listHtml += `
+            <div class="tripRow" data-horse="${esc(rowHorse)}" data-status="${esc(rowStatus)}">
+              <div class="t">${esc(showTime ? time : "")}</div>
               <div class="n">${esc(label)}</div>
-              ${statusHtml}
+              <div class="s">${esc(status)}</div>
             </div>
           `;
         }
 
-        const horses = Array.from(new Set(
-          g.items.map(x=>String(x.horseName ?? "").trim()).filter(Boolean).map(h=>h.toLowerCase())
-        ));
-        const horsesNorm = horses.join("|");
-        const statusNorm = normalizeStatusToken(g.gstatus);
+        const horsesNormList = uniqLower(g.items.map(x=>x.horseName));
+        const horsesNorm = horsesNormList.join("|");
+        const statusNorm = groupStatusToken(g.gstatus);
 
         const gDiv = document.createElement("div");
         const hasTeam = !!g.gdisplay;
@@ -1122,9 +713,8 @@ button{ max-height: var(--h-btn); }
         gDiv.innerHTML = `
           <div class="group-head">
             ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
-            <div class="gname"></div>
           </div>
-          <div class="class-list">${cl || `<div class="row"><div class="row-title">No classes.</div></div>`}</div>
+          <div class="class-list">${listHtml || `<div class="err">No trips.</div>`}</div>
         `;
 
         sec.appendChild(gDiv);
@@ -1149,7 +739,6 @@ button{ max-height: var(--h-btn); }
       b.addEventListener("click", ()=>{
         const el = document.getElementById(sec.id);
         if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
-        try{ history.replaceState(null, "", `${location.pathname}${location.search}#${sec.id}`); }catch(e){}
       });
       nav.appendChild(b);
     }
@@ -1196,11 +785,10 @@ button{ max-height: var(--h-btn); }
 
   function collectHorseCandidatesFromDOM(){
     const horseSet = new Set();
-    const groups = Array.from(document.querySelectorAll(".group.has-team"));
-    for(const g of groups){
-      const horses = String(g.dataset.horses ?? "").trim();
-      if(!horses) continue;
-      horses.split("|").map(x=>x.trim()).filter(Boolean).forEach(h=>horseSet.add(h));
+    const rows = Array.from(document.querySelectorAll(".tripRow[data-horse]"));
+    for(const r of rows){
+      const h = String(r.dataset.horse || "").trim();
+      if(h) horseSet.add(h);
     }
     return Array.from(horseSet).map(h=>({ key: h, label: h })).sort((a,b)=>a.label.localeCompare(b.label));
   }
@@ -1239,33 +827,27 @@ button{ max-height: var(--h-btn); }
   }
 
   function applyFilters(){
-    const groups = Array.from(document.querySelectorAll(".group.has-team"));
-
     const needHorse = activeHorse !== "__all__";
     const needStatus = activeStatus !== "__all__";
-
     const horseKey = String(activeHorse).toLowerCase();
     const statusKey = String(activeStatus).toLowerCase();
 
-    for(const g of groups){
+    const rows = Array.from(document.querySelectorAll(".tripRow"));
+    for(const r of rows){
       let ok = true;
+      if(needHorse) ok = ok && (String(r.dataset.horse || "") === horseKey);
+      if(needStatus) ok = ok && (String(r.dataset.status || "") === statusKey);
+      r.style.display = ok ? "" : "none";
+    }
 
-      if(needHorse){
-        const horses = String(g.dataset.horses ?? "");
-        ok = ok && horses.split("|").map(x=>x.trim()).includes(horseKey);
-      }
-
-      if(needStatus){
-        const st = String(g.dataset.status ?? "").trim().toLowerCase();
-        ok = ok && (st === statusKey);
-      }
-
-      g.style.display = ok ? "" : "none";
+    const groups = Array.from(document.querySelectorAll(".group.has-team"));
+    for(const g of groups){
+      const anyVisible = Array.from(g.querySelectorAll(".tripRow")).some(x=>x.style.display !== "none");
+      g.style.display = anyVisible ? "" : "none";
     }
 
     const ringSections = Array.from(document.querySelectorAll("section.ring"));
     const ringNavBtns = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
-
     const navById = new Map();
     for(const b of ringNavBtns){
       const id = b.dataset.target;
@@ -1273,8 +855,7 @@ button{ max-height: var(--h-btn); }
     }
 
     for(const sec of ringSections){
-      const teamGroups = Array.from(sec.querySelectorAll(".group.has-team"));
-      const anyVisible = teamGroups.some(g => g.style.display !== "none");
+      const anyVisible = Array.from(sec.querySelectorAll(".group.has-team")).some(g => g.style.display !== "none");
       sec.style.display = anyVisible ? "" : "none";
       const btn = navById.get(sec.id);
       if(btn) btn.style.display = anyVisible ? "" : "none";
@@ -1329,7 +910,7 @@ button{ max-height: var(--h-btn); }
     const ringsEl = document.getElementById("rings");
 
     if(!Array.isArray(rows) || rows.length === 0){
-      ringsEl.innerHTML = `<div class="row"><div class="row-title">No rows.</div></div>`;
+      ringsEl.innerHTML = `<div class="err">No trips.</div>`;
       destroyActiveRingObserver();
       document.getElementById("horseFilters").innerHTML = "";
       document.getElementById("statusFilters").innerHTML = "";
@@ -1339,7 +920,7 @@ button{ max-height: var(--h-btn); }
 
     setHeader(rows);
 
-    const ringEls = (dataMode === "schedule") ? buildRingsSchedule(rows) : buildRingsTrips(rows);
+    const ringEls = buildRings(rows);
 
     ringsEl.innerHTML = "";
     for(const el of ringEls) ringsEl.appendChild(el);
@@ -1347,55 +928,40 @@ button{ max-height: var(--h-btn); }
     buildBottomNav(ringEls);
     renderFilters();
     setupActiveRingObserver();
-
-    const h = (location.hash || "").replace(/^#/, "");
-    if(/^ring\-/i.test(h)){
-      const target = document.getElementById(h);
-      if(target) setTimeout(()=>target.scrollIntoView({behavior:"smooth", block:"start"}), 50);
-    }
   }
 
   async function initialLoad(){
-    const urls = candidateDataUrls();
-    const r = await fetchFirstAvailable(urls);
+    const { txt, lastMod } = await fetchTextMeta(DATA_URL);
+    lastRaw = txt;
+    lastLastMod = lastMod || null;
+    updatePublishedFromHeader(lastMod);
 
-    currentDataUrl = r.url;
-    lastRaw = r.txt;
-    lastLastMod = r.lastMod || null;
-    updatePublishedFromHeader(r.lastMod);
-
-    const parsed = parsePayload(r.txt, currentDataUrl);
+    const parsed = parseTripsPayload(txt);
     dataMeta = parsed.meta;
-    dataMode = parsed.mode;
-
     renderRows(parsed.rows);
   }
 
   async function pollForUpdates(){
     if(isRefreshing) return;
-    if(!currentDataUrl) return;
-
     isRefreshing = true;
     try{
-      const r = await fetchTextMeta(currentDataUrl);
+      const { txt, lastMod } = await fetchTextMeta(DATA_URL);
 
-      const lmChanged = !!(r.lastMod && lastLastMod && r.lastMod !== lastLastMod);
-      const bodyChanged = (lastRaw !== null && r.txt !== lastRaw);
+      const lmChanged = !!(lastMod && lastLastMod && lastMod !== lastLastMod);
+      const bodyChanged = (lastRaw !== null && txt !== lastRaw);
 
       if(!lmChanged && !bodyChanged) return;
 
-      lastLastMod = r.lastMod || lastLastMod;
-      updatePublishedFromHeader(r.lastMod);
+      lastLastMod = lastMod || lastLastMod;
+      updatePublishedFromHeader(lastMod);
 
-      const parsed = parsePayload(r.txt, currentDataUrl);
+      const parsed = parseTripsPayload(txt);
 
       const rootEl = scroller();
       const keepTop = rootEl ? rootEl.scrollTop : 0;
 
-      lastRaw = r.txt;
+      lastRaw = txt;
       dataMeta = parsed.meta;
-      dataMode = parsed.mode;
-
       renderRows(parsed.rows);
 
       if(rootEl) rootEl.scrollTop = keepTop;
@@ -1414,7 +980,7 @@ button{ max-height: var(--h-btn); }
   })().catch(err=>{
     const msg = String(err && err.message ? err.message : err);
     document.getElementById("rings").innerHTML =
-      `<div class="err">${esc(msg)}<div class="smallNote">Tip: force a filename with <b>?data=FILENAME.json</b> (or a full URL). Also tries parent folders automatically.</div></div>`;
+      `<div class="err">${esc(msg)}<div class="smallNote">Expected JSON: <b>${esc(DATA_URL)}</b></div></div>`;
   });
 </script>
 
