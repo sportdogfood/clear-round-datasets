@@ -1,63 +1,27 @@
-/* tapactive-rings-v2.3 — app.v2_78.js
-   - Data paths: RELATIVE (./data/latest/*) to avoid deployment-base issues
-   - Views: Start | Summary | Lite | Full | Threads | Horses
-   - Lite: interactive (class + entry flyups)
-   - Full: read-only (no class/entry interactions), but SAME ring peaks + status + horse filters
+/* CONTRACT (LOCKED)
+   - Bottom nav label: Pro (view key remains "lite"; label changes only)
+   - Horses screen active/inactive selection is source of truth for:
+       • which horses render in Pro schedule
+       • which horses appear in horsebar
+   - Only show actionable anchors
+       • peakbar rings are derived from "Visible Pro body"
+       • horsebar horses are derived from "Visible Pro body"
+   - "Visible Pro body" = watch_trips after applying:
+       • inactive horses (Horses screen)
+       • current global status filter (if any)
+     excluding any single-horse focus (activeHorse)
 */
 (function(){
   'use strict';
 
-  // ------------------------------------------------
-  // Data paths (relative to THIS page)
-  //   If this page is /schedule/, these resolve to /schedule/data/latest/...
-  //   Matches the prior working app.js behavior.
-  // ------------------------------------------------
-
-  // Data endpoints (try multiple bases so the app works from /schedule and /docs/schedule)
-  function computeSiteBasePrefix(){
-  // Works for GH project pages (/REPO/...) and root sites (/...)
-  const parts = (window.location.pathname || '/').split('/').filter(Boolean);
-  const first = parts[0] || '';
-  // If first segment is a known app folder, assume root deployment.
-  const rootFolders = { docs: true, schedule: true };
-  if (!first || rootFolders[first]) return '/';
-  // Otherwise treat first segment as repo name.
-  return '/' + first + '/';
-}
-
-const BASE_PREFIX = computeSiteBasePrefix();
-
-const DATA_BASE_CANDIDATES = [
-  // Preferred when index is in /docs/schedule/
-  './data/latest/',
-  // GH project pages (repo-aware absolute)
-  BASE_PREFIX + 'docs/schedule/data/latest/',
-  BASE_PREFIX + 'schedule/data/latest/',
-  // Root absolute fallbacks (custom domain)
-  '/docs/schedule/data/latest/',
-  '/schedule/data/latest/',
-  '/data/latest/',
-];
-
-function urlCandidates(fileName){
-  return DATA_BASE_CANDIDATES.map(base => new URL(base + fileName, window.location.href).toString());
-}
-const URL_TRIPS    = urlCandidates('watch_trips.json');
-  const URL_SCHEDULE = urlCandidates('watch_schedule.json');
-  const URL_THREADS  = urlCandidates('threads.json');
-
-
-  // Refresh cadence (6 minutes)
-  const REFRESH_MS = 6 * 60 * 1000;
-
-  // ------------------------------------------------
+  // -------------------------------------------
   // DOM
-  // ------------------------------------------------
+  // -------------------------------------------
   const app = document.getElementById('app');
   const main = document.getElementById('main');
 
   const statusWrap = document.getElementById('statusWrap');
-  const peaksWrap = document.getElementById('peaksWrap');
+  const peaksWrap  = document.getElementById('peaksWrap');
   const horsesWrap = document.getElementById('horsesWrap');
   const peakbar = document.getElementById('peakbar');
   const horsebar = document.getElementById('horsebar');
@@ -170,34 +134,20 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   function epillInner(horseName, lastOOG, totalTrips, latestGO){
     const hn = trunc6(horseName || "");
     const oog = fmtOog3(lastOOG);
-    const tot = fmtTrips2(totalTrips);
-    const go = fmtGoShort(latestGO || "");
-    const oogTot = `${oog}/${tot}`;
-    return "<span class=\"epill__name\">" + esc(hn) + "</span>"
-         + "<span class=\"epill__sep\">•</span>"
-         + "<span class=\"epill__oog\">" + esc(oogTot) + "</span>"
-         + "<span class=\"epill__sep\">•</span>"
-         + "<span class=\"epill__time\">" + esc(go) + "</span>";
+    const trp = fmtTrips2(totalTrips);
+    const go  = fmtGoShort(latestGO);
+    return `
+      <div class="epill_top">
+        <span class="epill_h">${esc(hn)}</span>
+        <span class="epill_val">${esc(go)}</span>
+      </div>
+      <div class="epill_bot">
+        <span class="epill_k">OOG ${esc(oog)}</span>
+        <span class="epill_k">${esc(trp)} Trips</span>
+      </div>
+    `;
   }
 
-
-  
-  function classTypeTag(classType){
-    const s = String(classType || '').trim().toLowerCase();
-    if (!s) return '';
-    if (s.startsWith('hunter')) return 'HUN';
-    if (s.startsWith('jumper')) return 'JMP';
-    if (s.startsWith('equit')) return 'EQ';
-    return String(classType).trim().slice(0,3).toUpperCase();
-  }
-
-  function badgeInner(statusCode){
-    return statusIco(statusCode);
-  }
-
-// ------------------------------------------------
-  // Icons (inline SVG, currentColor)
-  // ------------------------------------------------
   function icoClock(){
     return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>`;
   }
@@ -206,15 +156,6 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   }
   function icoCheckCircle(){
     return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2 2 6-6"/></svg></span>`;
-  }
-  function icoId(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="2"/><path d="M8 11h4M8 15h8"/></svg></span>`;
-  }
-  function icoFence(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7v13M19 7v13"/><path d="M5 10h14M5 14h14M5 18h14"/></svg></span>`;
-  }
-  function icoHorse(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20v-5l3-3 4 1 3-3 2 2-4 4-3-1-2 2v3"/><path d="M10 7c1.2-2.2 3.2-3.5 6-3 0 2-1 4-3 5"/></svg></span>`;
   }
   function statusIco(code){
     return code === 'U' ? icoClock() : code === 'L' ? icoBolt() : code === 'C' ? icoCheckCircle() : '';
@@ -228,40 +169,25 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   function toStatusCode(latestStatus){
     const s = String(latestStatus || '').toLowerCase();
     if (s.includes('underway') || s.includes('live')) return 'L';
-    if (s.includes('complete')) return 'C';
-    return 'U';
+    if (s.includes('upcoming') || s.includes('soon')) return 'U';
+    if (s.includes('complete') || s.includes('done')) return 'C';
+    return ''; // unknown
   }
 
-  function statusLabel(code){
-    if (code === 'L') return 'Now';
-    if (code === 'C') return 'Done';
-    return 'Soon';
-  }
-
-  function badgeClass(code){
-    if (code === 'L') return 'badge--underway';
-    if (code === 'C') return 'badge--completed';
-    return 'badge--upcoming';
-  }
-
-  function fmtWhen(d){
-    try{
-      const dt = new Date(d);
-      if (Number.isNaN(dt.getTime())) return '—';
-      return dt.toLocaleString([], { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
-    }catch(_){ return '—'; }
-  }
-
-  function getActiveRingsContainer(){
-    return state.activeView === 'full' ? ringsFullEl : ringsLiteEl;
+  function scrollToRing(sel){
+    if (!sel) return;
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const top = el.getBoundingClientRect().top;
+    const wrapTop = main.getBoundingClientRect().top;
+    const y = main.scrollTop + (top - wrapTop) - 10;
+    main.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   }
 
   // ------------------------------------------------
-  // Chrome hide/show on scroll
+  // Sticky chrome hide on scroll
   // ------------------------------------------------
-  let lastY = 0;
-  let ticking = false;
-
+  let lastY = 0, ticking = false;
   function onScroll(){
     if (ticking) return;
     ticking = true;
@@ -296,7 +222,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     horsesWrap.hidden = !showFilters;
     app.classList.toggle('filters--on', showFilters);
 
-    topTitle.textContent = viewKey === 'lite' ? 'Lite Schedule'
+    topTitle.textContent = viewKey === 'lite' ? 'Pro Schedule'
                        : viewKey === 'full' ? 'Full Schedule'
                        : viewKey === 'threads' ? 'Threads'
                        : viewKey === 'horses' ? 'Horses'
@@ -344,21 +270,31 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     });
   });
 
-  function buildHorseChips(){
-    const horses = uniq(state.trips.map(r => (r.horseName || '').trim()).filter(Boolean))
+  function proVisibleTripsForAnchors(){
+    // Visible Pro body (for anchors): trips after inactive + global status; ignores activeHorse focus
+    return state.trips
+      .filter(e => !isHorseInactive(e.horseName))
+      .filter(e => !state.globalStatus || toStatusCode(e.latestStatus) === state.globalStatus);
+  }
+
+
+function buildHorseChips(){
+    const base = proVisibleTripsForAnchors();
+    const horses = uniq(base.map(r => (r.horseName || '').trim()).filter(Boolean))
       .sort((a,b) => a.localeCompare(b));
+
+    // If focus horse is no longer available under Pro-visible rules, clear it
+    if (state.activeHorse && !horses.includes(state.activeHorse)) state.activeHorse = '';
+
     horsebar.innerHTML = '';
     horses.forEach(name => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'hchip';
+      b.className = 'hchip' + ((state.activeHorse === name) ? ' is-on' : '');
       b.textContent = name;
       b.setAttribute('data-horse-chip', name);
       b.addEventListener('click', () => {
         state.activeHorse = (state.activeHorse === name) ? '' : name;
-        Array.from(horsebar.querySelectorAll('.hchip')).forEach(x => {
-          x.classList.toggle('is-on', x.getAttribute('data-horse-chip') === state.activeHorse && !!state.activeHorse);
-        });
         renderLiteAndFull();
       });
       horsebar.appendChild(b);
@@ -370,71 +306,21 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-ring-action]');
     if (!btn) return;
-    // only meaningful in Lite/Full
+
+    // Only active within Lite/Full
     if (!(state.activeView === 'lite' || state.activeView === 'full')) return;
-    const act = btn.getAttribute('data-ring-action') || '';
-    const code = act === 'soon' ? 'U' : act === 'now' ? 'L' : act === 'done' ? 'C' : '';
-    if (!code) return;
-    state.globalStatus = (state.globalStatus === code) ? '' : code;
+
+    const act = btn.getAttribute('data-ring-action');
+    const v = act === 'soon' ? 'U' : act === 'now' ? 'L' : act === 'done' ? 'C' : '';
+    state.globalStatus = (state.globalStatus === v) ? '' : v;
+
     syncGlobalStatusButtons();
     renderLiteAndFull();
   });
 
-// ------------------------------------------------
-  // Peaks (rings)
   // ------------------------------------------------
-  function renderPeaks(){
-    peakbar.innerHTML = '';
-
-    const rings = state.ringsIndex.slice().sort((a,b) => (a.ring_number||0) - (b.ring_number||0));
-    rings.forEach((r, idx) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'peakbtn' + (idx===0 ? ' is-active' : '');
-      const label = (r.ringName || r.ring_name || (r.ring_number ? `Ring ${r.ring_number}` : 'Ring')).trim();
-      btn.textContent = label;
-      btn.setAttribute('data-peak-target', `#ring-${state.activeView}-${r.ring_number}`);
-      btn.addEventListener('click', () => {
-        Array.from(peakbar.querySelectorAll('.peakbtn')).forEach(x => x.classList.remove('is-active'));
-        btn.classList.add('is-active');
-        scrollToRing(btn.getAttribute('data-peak-target'));
-      });
-      peakbar.appendChild(btn);
-    });
-  }
-
-  function scrollToRing(sel){
-    const container = getActiveRingsContainer();
-    const scope = container.closest('.view');
-    const el = scope ? scope.querySelector(sel) : null;
-    if (!el) return;
-
-    const overlay = 48 + 74 + 28; // rough topbar+peaks+gap
-    const mainRect = main.getBoundingClientRect();
-    const elTopInMain = el.getBoundingClientRect().top - mainRect.top + main.scrollTop;
-    main.scrollTo({ top: Math.max(0, elTopInMain - overlay), behavior: 'smooth' });
-  }
-
-  // ------------------------------------------------
-  // Load + index data
-  // ------------------------------------------------
-  async function fetchJson(url){
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return res.json();
-  }
-
-  function normalizeRecords(json){
-    if (Array.isArray(json?.records)) return json.records;
-    if (Array.isArray(json)) return json;
-    if (Array.isArray(json?.data)) return json.data;
-    return [];
-  }
-
-  // ------------------------------------------------
-  // Pro horse ignores (derived from watch_trips)
-  //   - Horses list = unique trips.horseName values (this schedule only)
-  //   - Default: all ACTIVE
+  // Horse ignore (Horses view toggles)
+  // Default: all ACTIVE
   //   - User toggles to INACTIVE; Pro (Lite) + Threads hide inactive horses
   // ------------------------------------------------
   const HORSE_IGNORE_LS_KEY = 'ta_horse_ignore_v1';
@@ -446,9 +332,10 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   function readInactiveHorses(){
     try{
       const txt = localStorage.getItem(HORSE_IGNORE_LS_KEY);
-      const obj = txt ? JSON.parse(txt) : {};
-      const arr = Array.isArray(obj.inactive) ? obj.inactive : [];
-      return new Set(arr.map(horseKey).filter(Boolean));
+      const obj = txt ? JSON.parse(txt) : null;
+      const arr = Array.isArray(obj?.inactive) ? obj.inactive : [];
+      const set = new Set(arr.map(horseKey).filter(Boolean));
+      return set;
     }catch(_){
       return new Set();
     }
@@ -480,99 +367,18 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   }
 
   function toggleHorseInactive(name){
-    const k = horseKey(name);
-    if (!k) return;
-    setHorseInactive(name, !state.inactiveHorses.has(k));
+    const inactive = isHorseInactive(name);
+    setHorseInactive(name, !inactive);
   }
 
-  function deriveHorseNames(){
-    return uniq(state.trips.map(t => String(t.horseName || '').trim()).filter(Boolean))
-      .sort((a,b) => a.localeCompare(b));
-  }
-
-  function icoCircle(){
-    return `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg></span>`;
-  }
-
-  function renderHorses(){
-    if (!horsesEl) return;
-    syncInactiveFromStorage();
-
-    const q = String(state.horseSearch || '').trim().toLowerCase();
-    let names = deriveHorseNames();
-    if (q){
-      names = names.filter(n => n.toLowerCase().includes(q));
-    }
-
-    const active = [];
-    const inactive = [];
-    names.forEach(n => (isHorseInactive(n) ? inactive : active).push(n));
-
-    horsesEl.innerHTML = '';
-
-    const sw = document.createElement('div');
-    sw.className = 'horse_search';
-    const inp = document.createElement('input');
-    inp.className = 'horse_input';
-    inp.type = 'search';
-    inp.placeholder = 'Search horses…';
-    inp.value = state.horseSearch || '';
-    inp.addEventListener('input', () => {
-      state.horseSearch = inp.value;
-      renderHorses();
-    });
-    sw.appendChild(inp);
-    horsesEl.appendChild(sw);
-
-    if (!names.length){
-      const empty = document.createElement('div');
-      empty.className = 'panel__line';
-      empty.textContent = 'No horses in this schedule.';
-      horsesEl.appendChild(empty);
-      return;
-    }
-
-    const makeGroup = (label, list, isOff) => {
-      const h = document.createElement('div');
-      h.className = 'horse_group_title';
-      h.textContent = label;
-      horsesEl.appendChild(h);
-
-      const box = document.createElement('div');
-      box.className = 'horse_list';
-
-      list.forEach(name => {
-        const row = document.createElement('div');
-        row.className = 'horse_row';
-
-        const nm = document.createElement('div');
-        nm.className = 'horse_name';
-        nm.textContent = name;
-        const tg = document.createElement('div');
-        tg.className = 'horse_toggle' + (isOff ? ' is-off' : ' is-on');
-        const dot = document.createElement('div');
-        dot.className = 'horse_dot';
-        tg.appendChild(dot);
-
-        row.appendChild(nm);
-        row.appendChild(tg);
-
-        row.addEventListener('click', () => {
-          toggleHorseInactive(name);
-          renderHorses();
-          renderLite();
-          renderThreads();
-          renderPeaks();
-        });
-
-        box.appendChild(row);
-      });
-
-      horsesEl.appendChild(box);
-    };
-
-    makeGroup('Active', active, false);
-    makeGroup('Inactive', inactive, true);
+  // ------------------------------------------------
+  // Data loading
+  // ------------------------------------------------
+  async function fetchJson(url){
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const data = await res.json();
+    return data;
   }
 
   async function fetchJsonAny(urls){
@@ -615,114 +421,112 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
     // prefer schedule (full)
     if (state.schedule.length){
-      state.schedule.forEach(r => add(r.ring_number, r.ringName));
-    } else {
-      state.trips.forEach(r => add(r.ring_number, r.ringName));
+      state.schedule.forEach(r => add(r.ring_number, r.ringName || r.ring_name));
     }
+    // fall back to trips
+    state.trips.forEach(r => add(r.ring_number, r.ringName || r.ring_name));
 
-    state.ringsIndex = Array.from(rings.values()).filter(r => r.ring_number > 0);
+    state.ringsIndex = Array.from(rings.values()).filter(r => Number(r.ring_number||0) > 0);
   }
 
-  function updateStartSummary(){
-    const tripsN = state.trips.length;
-    const classesN = state.schedule.length;
-    const threadsN = state.threads.length;
-
-    start_status.textContent = state.errors.length ? 'Loaded (with errors)' : 'Loaded';
-    start_refresh.textContent = state.lastLoadedAt ? fmtWhen(state.lastLoadedAt) : '—';
-    start_trips.textContent = String(tripsN);
-    start_classes.textContent = String(classesN || '—');
-    start_threads.textContent = String(threadsN || '—');
-
-    // summary counts from schedule if available else trips grouped
-    const statusCounts = { U:0, L:0, C:0 };
-    const source = state.schedule.length ? state.schedule : state.trips;
-    const seen = new Set();
-    source.forEach(r => {
-      const cid = r.class_id || (r.class_number + '|' + r.ring_number + '|' + r.class_name);
-      if (seen.has(cid)) return;
-      seen.add(cid);
-      const code = toStatusCode(r.latestStatus);
-      statusCounts[code] = (statusCounts[code] || 0) + 1;
-    });
-    sum_underway.textContent = String(statusCounts.L || 0);
-    sum_upcoming.textContent = String(statusCounts.U || 0);
-    sum_completed.textContent = String(statusCounts.C || 0);
-
-    // Top movers (reference)
-    if (moversBody){
-      const byEntry = new Map();
-      state.trips.forEach(t => {
-        const id = String(t.entry_id || '');
-        if (!id) return;
-        if (!byEntry.has(id)) byEntry.set(id, t);
-      });
-
-      const rows = Array.from(byEntry.values());
-      rows.sort((a,b) => {
-        const ra = Number(a.ring_number || 0), rb = Number(b.ring_number || 0);
-        if (ra !== rb) return ra - rb;
-        const oa = Number(a.runningOOG || a.lastOOG || 0), ob = Number(b.runningOOG || b.lastOOG || 0);
-        if (!Number.isNaN(oa) && !Number.isNaN(ob) && oa !== ob) return oa - ob;
-        return String(a.horseName||'').localeCompare(String(b.horseName||''));
-      });
-
-      moversBody.innerHTML = '';
-      rows.slice(0, 12).forEach(t => {
-        const horse = String(t.horseName || '—');
-        const ring = String(t.ring_number ?? '—');
-        const oog = (t.runningOOG != null && String(t.runningOOG) !== '') ? String(t.runningOOG)
-                 : (t.lastOOG != null && String(t.lastOOG) !== '') ? String(t.lastOOG)
-                 : '—';
-        const go  = (t.latestGO != null && String(t.latestGO) !== '') ? String(t.latestGO) : '—';
-
-        const line = document.createElement('div');
-        line.className = 'panel__line';
-        line.style.display = 'grid';
-        line.style.gridTemplateColumns = 'minmax(0,1fr) 44px 52px 80px';
-        line.style.gap = '10px';
-        line.innerHTML = `<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(horse)}</div><div>${esc(ring)}</div><div>${esc(oog)}</div><div><span class="t-go">${esc(go)}</span></div>`;
-        moversBody.appendChild(line);
-      });
-    }
+  function normalizeTripRow(r){
+    // Defensive normalization so rendering doesn't blow up.
+    // Expect fields like:
+    //  horseName, ring_number, ringName, class_id, class_name, class_number, latestStart, latestGO, lastOOG, total_trips, latestStatus
+    const o = Object.assign({}, r || {});
+    o.horseName = (o.horse || o.horseName || o.horse_name || '').toString().trim();
+    o.ring_number = Number(o.ring_number || o.ring || o.ringNo || 0);
+    o.ringName = (o.ringName || o.ring_name || o.ring_title || '').toString().trim();
+    o.class_id = o.class_id ?? o.classId ?? o.class ?? '';
+    o.class_number = o.class_number ?? o.classNo ?? '';
+    o.class_name = o.class_name ?? o.classTitle ?? '';
+    o.class_type = o.class_type ?? o.type ?? '';
+    o.schedule_sequencetype = o.schedule_sequencetype ?? o.sequence_type ?? o.sequence ?? '';
+    o.latestStart = (o.latestStart || o.estimated_start_time || o.latest_estimated_start_time || o.start_time || '').toString().trim();
+    o.latestGO = (o.latestGO || o.calculated_go_time || o.latest_estimated_go_time || o.go_time || '').toString().trim();
+    o.lastOOG = (o.lastOOG || o.last_order_of_go || o.oog || '').toString().trim();
+    o.total_trips = o.total_trips ?? o.trips ?? '';
+    o.latestStatus = (o.latestStatus || o.class_status || o.status || '').toString().trim();
+    o.time_sort = o.time_sort ?? o.sort ?? 0;
+    o.group_name = (o.group_name || o.group || '').toString().trim();
+    o.class_group_id = o.class_group_id ?? o.group_id ?? '';
+    o.entry_id = o.entry_id ?? o.entryId ?? '';
+    o.entryxclasses_uuid = o.entryxclasses_uuid ?? o.entry_uuid ?? '';
+    o.observed_at = o.observed_at ?? o.observedAt ?? '';
+    o.message = (o.message || '').toString();
+    return o;
   }
 
-  async function loadAll(force=false){
-    state.errors = [];
-    start_status.textContent = 'Loading…';
+  function normalizeScheduleRow(r){
+    const o = Object.assign({}, r || {});
+    o.ring_number = Number(o.ring_number || o.ring || 0);
+    o.ringName = (o.ringName || o.ring_name || '').toString().trim();
+    o.class_id = o.class_id ?? o.classId ?? '';
+    o.class_number = o.class_number ?? '';
+    o.class_name = o.class_name ?? '';
+    o.class_type = o.class_type ?? '';
+    o.schedule_sequencetype = o.schedule_sequencetype ?? '';
+    o.latestStart = (o.latestStart || o.estimated_start_time || o.latest_estimated_start_time || '').toString().trim();
+    o.latestStatus = (o.latestStatus || o.class_status || o.status || '').toString().trim();
+    o.time_sort = o.time_sort ?? o.sort ?? 0;
+    // overlay list of entry_ids for this class (if provided)
+    o.rollup_entries = Array.isArray(o.rollup_entries) ? o.rollup_entries : (Array.isArray(o.entries) ? o.entries : []);
+    return o;
+  }
 
+  function normalizeThreadRow(r){
+    const o = Object.assign({}, r || {});
+    o.horseName = (o.horse || o.horseName || '').toString().trim();
+    o.observed_at = (o.observed_at || o.time || o.ts || '').toString().trim();
+    o.message = (o.message || o.text || '').toString();
+    o.ringName = (o.ringName || o.ring_name || '').toString().trim();
+    o.ring_number = Number(o.ring_number || o.ring || 0);
+    return o;
+  }
+
+  async function loadData(force){
+    start_status.textContent = 'Loading...';
     try{
-      const [tr, sc, th] = await Promise.allSettled([
-        fetchJsonAny(URL_TRIPS),
-        fetchJsonAny(URL_SCHEDULE),
-        fetchJsonAny(URL_THREADS),
-      ]);
+      const base = './data/latest/';
 
-      if (tr.status === 'fulfilled'){
-        state.trips = normalizeRecords(tr.value.json);
-      } else {
-        state.trips = [];
-        state.errors.push(`trips: ${tr.reason?.message || tr.reason}`);
-      }
+      const tripsUrlCandidates = [
+        base + 'watch_trips.json',
+        base + 'watch_trips.latest.json',
+      ];
+      const scheduleUrlCandidates = [
+        base + 'watch_schedule.json',
+        base + 'watch_schedule.latest.json',
+      ];
+      const threadsUrlCandidates = [
+        base + 'watch_threads.json',
+        base + 'watch_threads.latest.json',
+      ];
 
-      if (sc.status === 'fulfilled'){
-        state.schedule = normalizeRecords(sc.value.json);
-      } else {
-        state.schedule = [];
-        state.errors.push(`schedule: ${sc.reason?.message || sc.reason}`);
-      }
+      const tripsRes = await fetchJsonAny(tripsUrlCandidates);
+      const schedRes = await fetchJsonAny(scheduleUrlCandidates);
+      const thrRes   = await fetchJsonAny(threadsUrlCandidates);
 
-      if (th.status === 'fulfilled'){
-        state.threads = normalizeRecords(th.value.json);
-      } else {
-        state.threads = [];
-        state.errors.push(`threads: ${th.reason?.message || th.reason}`);
-      }
+      const tripsJson = tripsRes.json;
+      const scheduleJson = schedRes.json;
+      const threadsJson = thrRes.json;
 
-      state.lastLoadedAt = new Date().toISOString();
+      state.trips = Array.isArray(tripsJson) ? tripsJson.map(normalizeTripRow)
+                  : Array.isArray(tripsJson?.records) ? tripsJson.records.map(normalizeTripRow)
+                  : [];
+      state.schedule = Array.isArray(scheduleJson) ? scheduleJson.map(normalizeScheduleRow)
+                    : Array.isArray(scheduleJson?.records) ? scheduleJson.records.map(normalizeScheduleRow)
+                    : [];
+      state.threads = Array.isArray(threadsJson) ? threadsJson.map(normalizeThreadRow)
+                   : Array.isArray(threadsJson?.records) ? threadsJson.records.map(normalizeThreadRow)
+                   : [];
 
+      state.lastLoadedAt = new Date();
+
+      // index overlays
       indexEntriesById();
       indexRings();
+
+      // restore ignores
       syncInactiveFromStorage();
       buildHorseChips();
       renderPeaks();
@@ -737,6 +541,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         // remain on Start
       }
 
+      start_status.textContent = 'Loaded';
     }catch(err){
       state.errors.push(String(err?.message || err));
       start_status.textContent = 'Failed';
@@ -802,8 +607,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       const ringSec = document.createElement('section');
       ringSec.className = 'ring_card';
       ringSec.id = `ring-lite-${rn}`;
-      ringSec.setAttribute('data-ring-number', String(rn));
-
+      ringSec.setAttribute('data-ring', String(rn));
       ringSec.innerHTML = `
         <div class="ring_line">
           <div class="ring_title">${esc(ringName)}</div>
@@ -825,8 +629,11 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         if (state.globalStatus && statusCode !== state.globalStatus) return;
 
         // entry filter (Pro ignores + optional single-horse focus)
-        const entries = c.entries
-          .filter(e => !isHorseInactive(e.horseName))
+        const baseEntries = c.entries
+          .filter(e => !isHorseInactive(e.horseName));
+        if (!baseEntries.length) return;
+
+        const entries = baseEntries
           .filter(e => !state.activeHorse || String(e.horseName||'').trim() === state.activeHorse);
         if (state.activeHorse && entries.length === 0) return;
 
@@ -845,23 +652,22 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
             <div class="c_num">${esc(numTxt)}</div>
             <div class="c_name">
               <div class="c_name_main">${esc(nameTxt)}</div>
+              <div class="c_name_sub">${esc(subTxt || '')}</div>
             </div>
-            <div class="c_tag">${esc(classTypeTag(c.class_type))}</div>
-            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${badgeInner(statusCode)}</div></div>
           </div>
-          ${entries.length ? `<div class="rollup_line"><div class="rollup_scroller"></div></div>` : ``}
+          <div class="epills"></div>
+          <div class="rollup_line">
+            <span class="pill">${statusIco(statusCode)} <span style="opacity:.85">${esc(statusCode||'—')}</span></span>
+            <span class="pill">${esc(entries.length)} Horses</span>
+          </div>
         `;
 
-        const sc = classCard.querySelector('.rollup_scroller');
-        if (!sc) return classCard;
-
+        const sc = classCard.querySelector('.epills');
         entries.forEach(e => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
+          const btn = document.createElement('div');
           btn.className = 'epill';
-          btn.setAttribute('data-status', statusCode);
           btn.setAttribute('data-open-entry', String(e.entry_id || ''));
-          btn.setAttribute('data-horse', String(e.horseName || '').trim());
+          btn.setAttribute('data-horse', String(e.horseName||'').trim());
           btn.innerHTML = epillInner(e.horseName, e.lastOOG, (e.total_trips ?? c.total_trips), e.latestGO);
           sc.appendChild(btn);
         });
@@ -900,15 +706,18 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       byRing.get(rn).push(r);
     });
 
-    Array.from(byRing.keys()).sort((a,b)=>a-b).forEach(rn => {
+    const rings = Array.from(byRing.keys()).sort((a,b)=>a-b);
+
+    rings.forEach(rn => {
       const ringRows = byRing.get(rn) || [];
+      if (!ringRows.length) return;
+
       const ringName = ringRows[0]?.ringName || `Ring ${rn}`;
 
       const ringSec = document.createElement('section');
       ringSec.className = 'ring_card';
       ringSec.id = `ring-full-${rn}`;
-      ringSec.setAttribute('data-ring-number', String(rn));
-
+      ringSec.setAttribute('data-ring', String(rn));
       ringSec.innerHTML = `
         <div class="ring_line">
           <div class="ring_title">${esc(ringName)}</div>
@@ -953,29 +762,25 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
             <div class="c_num">${esc(numTxt)}</div>
             <div class="c_name">
               <div class="c_name_main">${esc(nameTxt)}</div>
+              <div class="c_name_sub">${esc(subTxt || '')}</div>
             </div>
-            <div class="c_tag">${esc(classTypeTag(r.class_type))}</div>
-            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${badgeInner(statusCode)}</div></div>
           </div>
-          <div class="rollup_line"><div class="rollup_scroller"></div></div>
+          <div class="epills"></div>
+          <div class="rollup_line">
+            <span class="pill">${statusIco(statusCode)} <span style="opacity:.85">${esc(statusCode||'—')}</span></span>
+            <span class="pill">${esc(filtered.length)} Horses</span>
+          </div>
         `;
 
-        const rollLine = classCard.querySelector('.rollup_line');
-        const scroller = classCard.querySelector('.rollup_scroller');
-
-        // Only show rollup line if there is anything to show
-        if (!filtered.length){
-          rollLine.classList.add('is-hidden');
-        } else {
-          filtered.forEach(e => {
-            const pill = document.createElement('div');
-            pill.className = 'epill epill--disabled';
-            pill.setAttribute('data-status', statusCode);
-            pill.setAttribute('data-horse', String(e.horseName||'').trim());
-            pill.innerHTML = epillInner(e.horseName, e.lastOOG, (e.total_trips ?? r.total_trips), e.latestGO);
-            scroller.appendChild(pill);
-          });
-        }
+        const scroller = classCard.querySelector('.epills');
+        filtered.slice(0, 18).forEach(e => {
+          const pill = document.createElement('div');
+          pill.className = 'epill';
+          pill.setAttribute('data-open-entry', String(e.entry_id || ''));
+          pill.setAttribute('data-horse', String(e.horseName||'').trim());
+          pill.innerHTML = epillInner(e.horseName, e.lastOOG, (e.total_trips ?? r.total_trips), e.latestGO);
+          scroller.appendChild(pill);
+        });
 
         gw.appendChild(classCard);
       });
@@ -985,6 +790,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   }
 
   function renderLiteAndFull(){
+    buildHorseChips();
     renderLite();
     renderFull();
     renderPeaks();
@@ -999,198 +805,296 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       .slice()
       .filter(t => !t.horseName || !isHorseInactive(t.horseName))
       .sort((a,b) => String(b.observed_at||'').localeCompare(String(a.observed_at||'')));
-    threadsEl.innerHTML = '';
-    if (!items.length){
-      threadsEl.innerHTML = '<div class="panel__line"><div>No threads</div><div>—</div></div>';
-      return;
-    }
 
+    threadsEl.innerHTML = '';
     items.forEach(t => {
       const row = document.createElement('div');
-      row.className = 'panel__line';
-      const when = t.observed_at ? fmtWhen(t.observed_at) : '—';
-      const title = t.title || t.thread_type || 'Thread';
-      row.innerHTML = `<div>${esc(when)} • ${esc(title)}${t.level ? ' • ' + esc(t.level) : ''}</div>`;
-      const rhs = document.createElement('div');
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sbtn';
-      b.textContent = 'SMS';
-      b.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        const lines = [];
-        lines.push(`*** THREAD ${when} ***`);
-        lines.push(title);
-        if (t.body) lines.push(String(t.body));
-        openSms(lines.join('\n'));
-      });
-      rhs.appendChild(b);
-      row.appendChild(rhs);
-      threadsEl.appendChild(row);
+      row.className = 'thread_row';
 
-      if (t.body){
-        const body = document.createElement('div');
-        body.className = 'panel__line';
-        body.innerHTML = `<div style="opacity:.8">${esc(t.body)}</div><div></div>`;
-        threadsEl.appendChild(body);
-      }
+      const timeTxt = (t.observed_at || '').toString().replace('T',' ').slice(0,16) || '—';
+      const meta = [t.ringName || (t.ring_number ? `Ring ${t.ring_number}` : ''), t.horseName].filter(Boolean).join(' • ');
+
+      row.innerHTML = `
+        <div class="thread_top">
+          <div class="thread_time">${esc(timeTxt)}</div>
+          <div class="thread_meta">${esc(meta)}</div>
+        </div>
+        <div class="thread_txt">${esc(t.message || '')}</div>
+      `;
+      threadsEl.appendChild(row);
     });
   }
 
   // ------------------------------------------------
-  // Flyups (Lite only)
-  // -----------------------------
-  function openSms(body){
-    if (!body) return;
-    const url = 'sms:?&body=' + encodeURIComponent(String(body));
-    window.location.href = url;
-  }
-  function openFly5(title, lines, smsBody){
-    flyTitle.textContent = title || 'Details';
-    flyBody.innerHTML = '';
-    state.flySmsBody = smsBody || '';
+  // Horses view (Active/Inactive list)
+  // ------------------------------------------------
+  function renderHorses(){
+    const horses = uniq(state.trips.map(r => (r.horseName || '').trim()).filter(Boolean))
+      .sort((a,b) => a.localeCompare(b));
 
-    const box = document.createElement('div');
-    box.className = 'fly_lines';
+    const active = horses.filter(h => !isHorseInactive(h));
+    const inactive = horses.filter(h => isHorseInactive(h));
 
-    (lines || []).forEach((ln) => {
-      const row = document.createElement('div');
-      row.className = 'fly_line';
+    horsesEl.innerHTML = '';
 
-      const specs = [
-        ['c1','fly_cell fly_cell--c1'],
-        ['c2','fly_cell fly_cell--c2'],
-        ['c3','fly_cell fly_cell--c3'],
-        ['c4','fly_cell fly_cell--c4'],
-        ['c5','fly_cell fly_cell--c5'],
-      ];
+    const makeGroup = (title, list, isInactiveGroup) => {
+      if (!list.length) return;
+      const box = document.createElement('div');
+      box.className = 'horse_group';
 
-      specs.forEach(([k, cls]) => {
-        const d = document.createElement('div');
-        d.className = cls;
-        const html = ln && ln[k + 'Html'];
-        const val = ln && ln[k];
-        if (html != null) d.innerHTML = html;
-        else d.textContent = (val == null ? '' : String(val));
-        row.appendChild(d);
+      const h = document.createElement('div');
+      h.className = 'horse_group_title';
+      h.textContent = title;
+      box.appendChild(h);
+
+      list.forEach(name => {
+        const row = document.createElement('div');
+        row.className = 'horse_row ' + (isInactiveGroup ? 'is-inactive' : 'is-active');
+        row.setAttribute('data-horse-row', name);
+
+        const nm = document.createElement('div');
+        nm.className = 'horse_name';
+        nm.textContent = name;
+
+        const tg = document.createElement('div');
+        tg.className = 'horse_tag';
+        const dot = document.createElement('div');
+        dot.className = 'horse_dot';
+        tg.appendChild(dot);
+
+        row.appendChild(nm);
+        row.appendChild(tg);
+
+        row.addEventListener('click', () => {
+          toggleHorseInactive(name);
+          renderHorses();
+          buildHorseChips();
+          renderLite();
+          renderThreads();
+          renderPeaks();
+        });
+
+        box.appendChild(row);
       });
 
-      box.appendChild(row);
-    });
+      horsesEl.appendChild(box);
+    };
 
-    flyBody.appendChild(box);
-    fly.classList.add('is-open');
+    makeGroup('Active', active, false);
+    makeGroup('Inactive', inactive, true);
   }
 
+  // ------------------------------------------------
+  // Peaks (rings)
+  // ------------------------------------------------
+  function renderPeaks(){
+    peakbar.innerHTML = '';
 
+    const base = proVisibleTripsForAnchors();
+
+    // Build rings from Visible Pro body (after Pro filters/ignores)
+    const ringsMap = new Map();
+    base.forEach(r => {
+      const rn = Number(r.ring_number || 0);
+      if (!rn) return;
+      const key = String(rn);
+      const name = String(r.ringName || r.ring_name || '').trim();
+      if (!ringsMap.has(key)) {
+        ringsMap.set(key, { ring_number: rn, ringName: name || `Ring ${rn}` });
+        return;
+      }
+      const cur = ringsMap.get(key);
+      const curName = String(cur?.ringName || '').trim();
+      if (name && (!curName || name.length > curName.length)) cur.ringName = name;
+    });
+
+    const rings = Array.from(ringsMap.values()).sort((a,b) => (a.ring_number||0) - (b.ring_number||0));
+    rings.forEach((r, idx) => {
+      const target = `#ring-${state.activeView}-${r.ring_number}`;
+
+      // Only show actionable anchors (must exist in the current visible view)
+      if (!document.querySelector(target)) return;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'peakbtn' + (idx===0 ? ' is-active' : '');
+      const label = (r.ringName || (r.ring_number ? `Ring ${r.ring_number}` : 'Ring')).trim();
+      btn.textContent = label;
+      btn.setAttribute('data-peak-target', target);
+      btn.addEventListener('click', () => {
+        Array.from(peakbar.querySelectorAll('.peakbtn')).forEach(x => x.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        scrollToRing(btn.getAttribute('data-peak-target'));
+      });
+      peakbar.appendChild(btn);
+    });
+  }
+
+  // ------------------------------------------------
+  // Start + Summary
+  // ------------------------------------------------
+  function updateStartSummary(){
+    const tripsCount = state.trips.filter(r => !isHorseInactive(r.horseName)).length;
+    const classCount = uniq(state.trips.filter(r => !isHorseInactive(r.horseName)).map(r => String(r.class_id||'')).filter(Boolean)).length;
+    const threadsCount = state.threads.filter(t => !t.horseName || !isHorseInactive(t.horseName)).length;
+
+    start_trips.textContent = `Trips: ${tripsCount}`;
+    start_classes.textContent = `Classes: ${classCount}`;
+    start_threads.textContent = `Threads: ${threadsCount}`;
+
+    // Summary counts by status (from trips)
+    const norm = state.trips.filter(r => !isHorseInactive(r.horseName));
+    const under = norm.filter(r => toStatusCode(r.latestStatus) === 'L').length;
+    const up = norm.filter(r => toStatusCode(r.latestStatus) === 'U').length;
+    const done = norm.filter(r => toStatusCode(r.latestStatus) === 'C').length;
+
+    sum_underway.textContent = `Underway: ${under}`;
+    sum_upcoming.textContent = `Upcoming: ${up}`;
+    sum_completed.textContent = `Completed: ${done}`;
+
+    // Movers (recent threads)
+    moversBody.innerHTML = '';
+    state.threads
+      .slice()
+      .filter(t => !t.horseName || !isHorseInactive(t.horseName))
+      .sort((a,b) => String(b.observed_at||'').localeCompare(String(a.observed_at||'')))
+      .slice(0, 8)
+      .forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'thread_row';
+        const timeTxt = (t.observed_at || '').toString().replace('T',' ').slice(0,16) || '—';
+        const meta = [t.ringName || (t.ring_number ? `Ring ${t.ring_number}` : ''), t.horseName].filter(Boolean).join(' • ');
+        row.innerHTML = `
+          <div class="thread_top">
+            <div class="thread_time">${esc(timeTxt)}</div>
+            <div class="thread_meta">${esc(meta)}</div>
+          </div>
+          <div class="thread_txt">${esc(t.message || '')}</div>
+        `;
+        moversBody.appendChild(row);
+      });
+  }
+
+  // ------------------------------------------------
+  // Flyup (Lite clicks)
+  // ------------------------------------------------
+  function openFly(title, rows, smsBody){
+    flyTitle.textContent = title || 'Detail';
+    flyBody.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'fly_grid';
+    (rows || []).forEach(({ k, v }) => {
+      const kv = document.createElement('div');
+      kv.className = 'kv';
+      kv.innerHTML = `<div class="kv_k">${esc(k)}</div><div class="kv_v">${esc(v)}</div>`;
+      grid.appendChild(kv);
+    });
+    flyBody.appendChild(grid);
+
+    state.flySmsBody = smsBody || '';
+    fly.classList.add('is-open');
+  }
   function closeFly(){
     fly.classList.remove('is-open');
+    state.flySmsBody = '';
   }
 
   flyClose.addEventListener('click', closeFly);
-  if (flySMS) flySMS.addEventListener('click', () => openSms(state.flySmsBody));
   flyBackdrop.addEventListener('click', closeFly);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFly();
+  });
 
-  // Event delegation for Lite clicks
+  // SMS (Lite only)
+  // -----------------------------
+  function openSms(body){
+    if (!body) return;
+    const url = `sms:?&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+  }
+  flySMS.addEventListener('click', () => openSms(state.flySmsBody));
+
+  // Open class or entry from Lite view
   document.addEventListener('click', (e) => {
+    // Only allow open fly from Lite view interactions
     if (state.activeView !== 'lite') return;
 
-    const cls = e.target.closest('[data-open-class]');
-    if (cls){
-      const classId = cls.getAttribute('data-open-class');
-      const one = state.trips.find(r => String(r.class_id) === String(classId));
-      if (!one) return;
+    const classLine = e.target.closest('[data-open-class]');
+    const entryPill = e.target.closest('[data-open-entry]');
 
-      const code = toStatusCode(one.latestStatus);
-      const statusTxt = statusLabel(code);
+    if (classLine){
+      const classId = classLine.getAttribute('data-open-class');
+      const status = classLine.getAttribute('data-status') || '';
+      const classes = groupTripsToClasses();
+      const c = classes.find(x => String(x.class_id) === String(classId));
+      if (!c) return;
 
-      // Non-blocking derives (hide if missing/invalid)
-      let minsTill = '';
-      if (one.minsTill != null && String(one.minsTill) !== ''){
-        const n = Number(one.minsTill);
-        if (Number.isFinite(n) && n >= 0) minsTill = String(Math.round(n));
-      } else if (one.secondsTill != null && String(one.secondsTill) !== ''){
-        const n = Number(one.secondsTill);
-        if (Number.isFinite(n) && n >= 0) minsTill = String(Math.max(0, Math.ceil(n/60)));
-      }
-      const nowHtml = (code === 'L') ? icoBolt() : '';
+      // Build SMS body (compact)
+      const ringTxt = c.ringName || (c.ring_number ? `Ring ${c.ring_number}` : 'Ring');
+      const line1 = `*** ${status==='L'?'Underway':status==='U'?'Upcoming':status==='C'?'Completed':'Class'} ***`;
+      const line2 = `${fmtStartShort(c.latestStart)} | ${ringTxt} | ${c.class_number || ''} ${c.class_name || ''}`.trim();
+      const horses = c.entries.map(r => r.horseName).filter(Boolean).join(', ');
+      const sms = [line1, line2, horses].filter(Boolean).join('\n');
 
-      let lines = [
-        { c1:'RING', c2:(one.ring_number ?? '—'), c3:(one.ringName || '—'), c4:statusTxt, c5:(one.total_trips ?? '—') },
-        { c1:'START', c2:(fmtStartShort(one.latestStart || '')), c3:(one.group_name || '—'), c4:minsTill, c5Html: nowHtml },
-        { c1:'CLASS', c2:(one.class_number ?? '—'), c3:(one.class_name || '—'), c4:(one.class_type || '—'), c5:(one.schedule_sequencetype || '—') },
-        { c1:'TRIPS', c2:(one.completed_trips ?? '—'), c3:(one.remaining_trips ?? '—'), c4:(one.estimated_end_time || '—'), c5:'' },
-      ];
-
-      const smsBody = [
-        `*** ${statusTxt.toUpperCase()} ***`,
-        `Start ${fmtStartShort(one.latestStart || '') || '—'} | ${String(one.ringName || ('Ring ' + (one.ring_number ?? '—')))} | #${String(one.class_number ?? '—')}`
-      ].join('\n');
-
-      openFly5(one.class_name || 'Class', lines, smsBody);
+      openFly(
+        `Class ${c.class_number || ''}`.trim(),
+        [
+          { k:'Ring', v: ringTxt },
+          { k:'Status', v: status || '—' },
+          { k:'Start', v: c.latestStart || '—' },
+          { k:'Name', v: c.class_name || '—' },
+          { k:'Type', v: [c.class_type, c.schedule_sequencetype].filter(Boolean).join(' • ') || '—' },
+        ],
+        sms
+      );
       return;
     }
 
-    const pill = e.target.closest('[data-open-entry]');
-    if (pill){
-      e.stopPropagation();
-      const entryId = pill.getAttribute('data-open-entry');
+    if (entryPill){
+      const entryId = entryPill.getAttribute('data-open-entry') || '';
+      if (!entryId) return;
+
+      // Find the entry row (from trips)
       const r = state.entriesById.get(String(entryId));
       if (!r) return;
 
-      const code = toStatusCode(r.latestStatus);
-      const statusTxt = statusLabel(code);
+      const ringTxt = r.ringName || (r.ring_number ? `Ring ${r.ring_number}` : 'Ring');
+      const status = toStatusCode(r.latestStatus);
+      const line1 = `*** ${status==='L'?'Underway':status==='U'?'Upcoming':status==='C'?'Completed':'Entry'} ***`;
+      const line2 = `${fmtStartShort(r.latestStart)} | ${ringTxt} | ${r.class_number || ''} ${r.class_name || ''}`.trim();
+      const line3 = `${r.horseName || ''} (${r.lastOOG || '—'})`.trim();
+      const sms = [line1, line2, line3].filter(Boolean).join('\n');
 
-      const djGo = (r.dj_go_dt5 != null && String(r.dj_go_dt5) !== '') ? String(r.dj_go_dt5) : '';
-
-      const entryNumber = (r.entryNumber != null && String(r.entryNumber) !== '') ? r.entryNumber : (r.entry_id ?? '—');
-      const riderNumber = (r.backNumber != null && String(r.backNumber) !== '') ? r.backNumber : '—';
-
-      const lastGoneInVal = (r.lastGoneIn != null && String(r.lastGoneIn) !== '') ? Number(r.lastGoneIn) : null;
-      const stopDerives = (code === 'C') || (code === 'L' && lastGoneInVal === 1);
-
-      let secondsTillTxt = '';
-      if (!stopDerives && r.secondsTill != null && String(r.secondsTill) !== ''){
-        const n = Number(r.secondsTill);
-        if (Number.isFinite(n)) secondsTillTxt = String(Math.round(n));
-      }
-
-      // If derives are missing/invalid, leave blank (fail-soft)
-      const nowHtml = (!stopDerives && code === 'L') ? icoBolt() : '';
-
-      const metric = (r.lastTime != null && String(r.lastTime) !== '') ? r.lastTime
-                   : (r.lastScore != null && String(r.lastScore) !== '') ? r.lastScore
-                   : '—';
-
-      const lines = [
-        { c1:'RING', c2:(r.ring_number ?? '—'), c3:(r.ringName || '—'), c4:statusTxt, c5:(r.total_trips ?? '—') },
-        { c1:'ENTRY', c2:entryNumber, c3:(r.horseName || '—'), c4:(r.class_type || '—'), c5:(r.schedule_sequencetype || '—') },
-        { c1:'RIDER', c2:riderNumber, c3:(r.riderName || '—'), c4:(r.lastOOG ?? '—'), c5:(fmtGoShort(r.latestGO || '')) },
-        { c1:'TRIPS', c2:(r.completed_trips ?? '—'), c3:(r.remaining_trips ?? '—'), c4:secondsTillTxt, c5Html: nowHtml },
-        { c1:'RESULT', c2:(r.lastPosition ?? '—'), c3:(r.lastPlace ?? '—'), c4:metric, c5:(r.latestPlacing ?? '—') },
-      ];
-      if (djGo){
-        // Insert DJ go diagnostic row above RESULT (fail-soft)
-        lines = lines.slice(0,4).concat([{ c1:'DJGO', c2:'', c3:'', c4:djGo, c5:'' }], lines.slice(4));
-      }
-
-      const smsBody2 = [
-        `*** ${statusTxt.toUpperCase()} ***`,
-        `GO ${fmtGoShort(r.latestGO || '') || '—'} | ${String(r.ringName || ('Ring ' + (r.ring_number ?? '—')))} | ${String(r.horseName || '—')}`
-      ].join('\n');
-
-      openFly5(r.horseName || 'Entry', lines, smsBody2);
+      openFly(
+        r.horseName || 'Entry',
+        [
+          { k:'Horse', v: r.horseName || '—' },
+          { k:'Ring', v: ringTxt },
+          { k:'Status', v: status || '—' },
+          { k:'Start', v: r.latestStart || '—' },
+          { k:'GO', v: r.latestGO || '—' },
+          { k:'OOG', v: r.lastOOG || '—' },
+          { k:'Trips', v: String(r.total_trips ?? '—') },
+          { k:'Class', v: `${r.class_number || ''} ${r.class_name || ''}`.trim() || '—' },
+          { k:'Entry ID', v: String(r.entry_id || '—') },
+        ],
+        sms
+      );
       return;
     }
   });
 
   // ------------------------------------------------
-  // Boot
+  // Init
   // ------------------------------------------------
-  setView('start');
-  loadAll();
+  start_refresh.addEventListener('click', () => loadData(true));
 
-  // refresh loop
-  setInterval(() => loadAll(true), REFRESH_MS);
+  // Restore ignores and load data
+  syncInactiveFromStorage();
+  buildHorseChips();
+  renderPeaks();
+  syncGlobalStatusButtons();
+
+  loadData(false);
 
 })();
