@@ -138,6 +138,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 <<<<<<< ours
 <<<<<<< ours
 <<<<<<< ours
+<<<<<<< ours
+=======
+>>>>>>> theirs
   const NAV_CONFIG = {
     default: {
       fallback: 'start',
@@ -190,6 +193,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       return { available, count };
     },
   };
+<<<<<<< ours
 =======
   const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
 >>>>>>> theirs
@@ -201,6 +205,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 >>>>>>> theirs
 =======
   const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 
   // ------------------------------------------------
@@ -651,6 +657,15 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 <<<<<<< ours
 <<<<<<< ours
 <<<<<<< ours
+<<<<<<< ours
+=======
+  if (startRowSummary){
+    startRowSummary.addEventListener('click', () => {
+      setView('summary');
+      main.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+>>>>>>> theirs
   if (startRowRestart){
     startRowRestart.addEventListener('click', () => {
       state.globalStatus = '';
@@ -663,6 +678,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       buildHorseChips();
       renderLiteAndFull();
       renderPeaks();
+<<<<<<< ours
 =======
 =======
 >>>>>>> theirs
@@ -684,6 +700,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       const willShow = startPanelData.hidden;
       startPanelData.hidden = !willShow;
       startDetailsLink.textContent = willShow ? 'Hide session details' : 'Session details';
+>>>>>>> theirs
+=======
 >>>>>>> theirs
     });
   }
