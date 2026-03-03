@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CRT Trips (Mobile)</title>
+
+<style>
+/* Tap-Active Locked UI Kit — v1.2 (patched + Boards)
+   NOTE: kit preserved. Trips view styles appended at bottom.
+*/
+
+/* =========================
+   TOKENS
+========================= */
+:root{
+  --bg:#020617;
+  --bg-grad-1:#111827;
+  --bg-grad-2:#020617;
+  --fg:#f9fafb;
+  --fg-soft:#e5e7eb;
+  --muted:rgba(209,213,219,.85);
+
+  --surface-1:#111827;
+  --surface-2:#18181b;
+  --header-surface:#020617;
+
+  --border:#374151;
+  --border-soft:#4b5563;
+
+  --accent:#2563eb;
+  --accent-2:#1d4ed8;
+  --accent-3:#1e3a8a;
+
+  --pill-radius:999px;
+  --card-radius:24px;
+  --header-h:52px;
+
+  --fs-btn:14px;
+  --fs-row:14px;
+  --fs-tag:11px;
+  --fs-label:12px;
+  --fs-title:16px;
+
+  --shadow-app:0 24px 70px rgba(0,0,0,0.95);
+  --shadow-press:0 2px 8px rgba(15,23,42,.95);
+
+  --t-fast:.08s;
+  --t-med:.12s;
+
+  --h-row:46px;
+  --h-btn:40px;
+  --pad-row-y:10px;
+  --pad-row-x:16px;
+
+  --gap:10px;
+  --nav-pad-top:10px;
+  --nav-pad-bottom:12px;
+
+  --app-maxw:480px;
+  --app-maxh:920px;
+}
+
+@media (max-width: 390px){
+  :root{
+    --h-row:44px;
+    --h-btn:40px;
+    --pad-row-y:9px;
+    --pad-row-x:14px;
+    --fs-btn:13px;
+    --fs-row:13px;
+    --fs-title:15px;
+    --gap:8px;
+  }
+}
+
+/* =========================
+   RESET
+========================= */
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+[hidden]{ display:none !important; }
+
+html,body{
+  margin:0;
+  padding:0;
+  min-height:100%;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background: radial-gradient(circle at top, var(--bg) 0, var(--bg) 40%, #000 90%);
+  color:var(--fg);
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+
+button,input,a{ font:inherit; }
+button{ max-height: var(--h-btn); }
+
+:focus{ outline:none; }
+:focus-visible{
+  outline:2px solid rgba(37,99,235,.55);
+  outline-offset:2px;
+}
+
+/* =========================
+   SHELL (LOCKED CANVAS)
+========================= */
+.page{
+  min-height:100vh;
+  min-height:100dvh;
+  padding:12px;
+  display:flex;
+  justify-content:center;
+  align-items:stretch;
+}
+
+.app{
+  width:100%;
+  max-width: var(--app-maxw);
+  height: calc(100vh - 24px);
+  height: calc(100dvh - 24px);
+  max-height: var(--app-maxh);
+  margin:0 auto;
+
+  display:flex;
+  flex-direction:column;
+
+  background:var(--bg);
+  border-radius:var(--card-radius);
+  border:1px solid rgba(15, 23, 42, 0.95);
+  box-shadow:var(--shadow-app);
+  overflow:hidden;
+
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-header{
+  height:var(--header-h);
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  border-bottom:1px solid rgba(31,41,55,.95);
+  background:var(--header-surface);
+  backdrop-filter: blur(10px);
+  gap:10px;
+}
+
+.header-title{
+  flex:1;
+  text-align:center;
+  font-size:var(--fs-title);
+  font-weight:600;
+  margin:0;
+  padding:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.is-invisible{ visibility:hidden; pointer-events:none; }
+
+.header-back,
+.header-action{
+  min-width:60px;
+  height:34px;
+  padding:0 16px;
+  border-radius:var(--pill-radius);
+  border:1px solid var(--border-soft);
+  background:var(--header-surface);
+  color:var(--fg-soft);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,1),
+    0 3px 10px rgba(0,0,0,.8);
+  transition:
+    transform var(--t-fast) ease-out,
+    box-shadow var(--t-med) ease-out,
+    border-color var(--t-med) ease-out,
+    background var(--t-med) ease-out;
+  text-decoration:none;
+}
+.header-action{
+  border-color: rgba(59,130,246,1);
+  background: radial-gradient(circle at top, var(--accent-2), var(--accent-3) 75%);
+  color:var(--fg);
+}
+.header-back:active,
+.header-action:active{
+  transform: translateY(1px) scale(.97);
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,1),
+    0 2px 6px rgba(0,0,0,.9);
+}
+
+.app-main{
+  flex:1 1 auto;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:10px 12px 14px;
+  background: radial-gradient(circle at top, var(--bg-grad-1) 0, var(--bg-grad-2) 52%);
+}
+
+.list-column{
+  width:100%;
+  max-width:474px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap: var(--gap);
+  min-height:100%;
+  padding-bottom: calc(12px + var(--h-btn) + var(--nav-pad-bottom) + env(safe-area-inset-bottom));
+}
+
+.chip-strip{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  padding: 2px 2px 4px;
+  margin: 0;
+  scrollbar-width:none;
+}
+.chip-strip::-webkit-scrollbar{ display:none; }
+
+.chip{
+  padding:3px 10px;
+  border-radius:var(--pill-radius);
+  border:1px solid var(--border-soft);
+  background:var(--surface-2);
+  color:var(--fg-soft);
+  font-size:var(--fs-tag);
+  font-weight:700;
+  box-shadow:0 0 0 1px var(--bg);
+  white-space:nowrap;
+  cursor:pointer;
+  user-select:none;
+  transition:
+    transform var(--t-fast) ease-out,
+    box-shadow var(--t-med) ease-out,
+    border-color var(--t-med) ease-out,
+    background var(--t-med) ease-out;
+}
+.chip:active{
+  transform: translateY(1px) scale(.995);
+  box-shadow:
+    0 0 0 1px var(--bg),
+    var(--shadow-press);
+}
+.chip.is-active{
+  border-color: var(--accent);
+  background: radial-gradient(circle at top, #1f2937, var(--bg) 75%);
+  color:var(--fg);
+  box-shadow:
+    0 0 0 1px var(--bg),
+    0 4px 10px rgba(15,23,42,.75);
+}
+
+/* Bottom nav */
+.app-nav{
+  flex:0 0 auto;
+  border-top:1px solid rgba(31,41,55,.95);
+  background:var(--header-surface);
+  padding: var(--nav-pad-top) 12px var(--nav-pad-bottom);
+}
+.nav-strip{
+  width:100%;
+  max-width:474px;
+  margin:0 auto;
+  display:flex;
+  gap:var(--gap);
+}
+.nav-btn{
+  flex:1 1 0;
+  height: var(--h-btn);
+  border-radius:var(--pill-radius);
+  border:1px solid var(--border-soft);
+  background:var(--surface-1);
+  color:var(--fg-soft);
+  font-size:var(--fs-btn);
+  font-weight:700;
+  cursor:pointer;
+  user-select:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:
+    transform var(--t-fast) ease-out,
+    box-shadow var(--t-med) ease-out,
+    border-color var(--t-med) ease-out,
+    background var(--t-med) ease-out;
+  box-shadow:0 1px 0 var(--bg);
+  white-space:nowrap;
+}
+.nav-btn:active{
+  transform: translateY(1px) scale(.995);
+  box-shadow:
+    0 0 0 1px var(--bg),
+    var(--shadow-press);
+}
+.nav-btn.is-active{
+  border-color: var(--accent);
+  background: radial-gradient(circle at top, #1f2937, var(--bg) 75%);
+  box-shadow:
+    0 0 0 1px var(--bg),
+    0 4px 10px rgba(15,23,42,.75);
+  color:var(--fg);
+}
+
+/* =========================
+   TRIPS VIEW
+========================= */
+.boardMeta{
+  margin: -2px 2px 0;
+  padding: 0 2px 2px;
+  font-size:12px;
+  color: rgba(229,231,235,.78);
+  line-height:1.2;
+}
+.filtersSticky{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 10px 0 8px;
+  background: radial-gradient(circle at top, var(--bg-grad-1) 0, var(--bg-grad-2) 52%);
+  border-bottom: 1px solid rgba(31,41,55,.55);
+}
+
+.rings{
+  display:flex;
+  flex-direction:column;
+  gap: var(--gap);
+}
+.ringCard{
+  border: 1px solid rgba(75,85,99,.85);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(17,24,39,.55);
+  box-shadow:
+    0 0 0 1px rgba(2,6,23,.65),
+    0 10px 28px rgba(0,0,0,.45);
+  scroll-margin-top: 96px;
+}
+.ringHead{
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(229,231,235,.92);
+  background: linear-gradient(180deg, rgba(37,99,235,.22), rgba(37,99,235,.06));
+  border-bottom: 1px solid rgba(31,41,55,.85);
+}
+
+.group{
+  border-top: 1px solid rgba(31,41,55,.55);
+  padding: 0;
+}
+.group:first-of-type{ border-top: 0; }
+
+.group.has-team{ background: rgba(255,255,255,0.03); }
+.group.has-team[data-status="upcoming"]{ background: rgba(37,99,235,.10); }
+.group.has-team[data-status="underway"]{ background: rgba(34,197,94,.10); }
+.group.has-team[data-status="completed"]{ background: rgba(209,213,219,.06); }
+
+.group-head{ padding: 8px 12px 0; }
+
+.gdisplay{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: rgba(229,231,235,.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  margin-bottom: -1px;
+}
+
+.class-list{ padding: 6px 10px 10px; }
+
+.tripRow{
+  display:grid;
+  grid-template-columns: 78px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  line-height: 1.1;
+  padding: 8px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(75,85,99,.25);
+  background: rgba(2,6,23,.18);
+  margin-top: 6px;
+}
+.tripRow:first-child{ margin-top: 0; }
+
+.tripRow .t{
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(229,231,235,.92);
+  white-space: nowrap;
+}
+.tripRow .n{
+  font-size: 13px;
+  color: rgba(229,231,235,.92);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tripRow .s{
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(229,231,235,.70);
+  white-space: nowrap;
+  padding-left: 4px;
+}
+.group .class-list > .tripRow:nth-child(even){
+  background: rgba(255,255,255,0.04);
+}
+
+.err{
+  white-space:pre-wrap;
+  color: rgba(255,255,255,.92);
+  background: rgba(244,63,94,.10);
+  border: 1px solid rgba(244,63,94,.35);
+  border-radius: 18px;
+  padding: 12px;
+  font-size: 12px;
+}
+.smallNote{
+  font-size: 12px;
+  color: rgba(229,231,235,.80);
+  margin-top: 6px;
+}
+
+@media (max-width: 520px){
+  .page{ padding:0; }
+  .app{
+    max-width:100%;
+    height:100vh;
+    height:100dvh;
+    max-height:none;
+    border-radius:0;
+  }
+}
+@media (min-width: 521px){
+  .page{ align-items:center; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; }
+}
+</style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="app">
+
+      <header class="app-header">
+        <a class="header-back" href="https://ringstatus.com">Home</a>
+        <h1 class="header-title" id="title">Trips</h1>
+        <button class="header-action is-invisible" type="button" aria-hidden="true">.</button>
+      </header>
+
+      <main class="app-main" id="appMain">
+        <div class="list-column">
+
+          <div class="boardMeta" id="subtitle"></div>
+
+          <div class="filtersSticky" id="filterBar" aria-label="Trips Filters">
+            <div class="chip-strip" id="horseFilters"></div>
+            <div class="chip-strip" id="statusFilters"></div>
+          </div>
+
+          <div id="rings" class="rings"></div>
+
+        </div>
+      </main>
+
+      <nav class="app-nav" id="bottomNav" aria-label="Ring Navigation">
+        <div class="nav-strip" id="ringNav"></div>
+      </nav>
+
+    </div>
+  </div>
+
+<script>
+  const POLL_MS = 6 * 60 * 1000;
+  const TIMEZONE = "America/New_York";
+
+  // FIXED DEFAULT (matches your stated stable location relative to this HTML file):
+  // HTML:  docs/schedule/data/trips_mobile_v4.html
+  // DATA:  docs/schedule/data/latest/watch_trips.json
+  const DEFAULT_DATA_URL = "latest/watch_trips.json";
+
+  let activeHorse = "__all__";
+  let activeStatus = "__all__";
+
+  const qs = new URLSearchParams(location.search);
+
+  let activeIO = null;
+  let lastRaw = null;
+  let lastLastMod = null;
+  let currentDataUrl = null;
+  let isRefreshing = false;
+
+  let publishedAtMs = null;
+  let dataMeta = null;
+
+  const scroller = ()=>document.getElementById("appMain");
+
+  const fmtTimeET = (ms)=>{
+    return new Intl.DateTimeFormat("en-US", { timeZone: TIMEZONE, hour: "numeric", minute: "2-digit" })
+      .format(new Date(ms));
+  };
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function resolveDataUrl(){
+    // Optional override, but default is locked to DEFAULT_DATA_URL.
+    const q = (qs.get("data") || "").trim();
+    return q || DEFAULT_DATA_URL;
+  }
+
+  function normalizeStatusTokenFromValue(s){
+    const v = String(s ?? "").trim().toLowerCase();
+    if(v === "upcoming") return "upcoming";
+    if(v === "underway") return "underway";
+    if(v === "completed") return "completed";
+    return "";
+  }
+
+  function normalizeStatusTokenFromTripStatus(s){
+    // Handles "Upcoming"/"Underway"/"Completed" (capitalized).
+    const v = String(s ?? "").trim().toLowerCase();
+    if(v === "upcoming") return "upcoming";
+    if(v === "underway") return "underway";
+    if(v === "completed") return "completed";
+    return "";
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function uniqLower(arr){
+    const out = [];
+    const seen = new Set();
+    for(const s of arr){
+      const v = String(s||"").trim();
+      if(!v) continue;
+      const k = v.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
+    }
+    return out;
+  }
+
+  function computeGroupStatus(items){
+    // Underway > Upcoming > Completed(all)
+    let hasUnderway = false;
+    let hasUpcoming = false;
+    let hasCompleted = false;
+    let sawAny = false;
+    let sawNonCompleted = false;
+
+    for(const r of items){
+      const s = String(r.latestStatus ?? r.status2 ?? r.status ?? "").trim();
+      if(!s) continue;
+      sawAny = true;
+      if(s === "Underway") hasUnderway = true;
+      else if(s === "Upcoming") hasUpcoming = true;
+      else if(s === "Completed") hasCompleted = true;
+      else sawNonCompleted = true;
+      if(s !== "Completed") sawNonCompleted = true;
+    }
+
+    if(hasUnderway) return "Underway";
+    if(hasUpcoming) return "Upcoming";
+    if(sawAny && hasCompleted && !sawNonCompleted) return "Completed";
+    return "";
+  }
+
+  function computeGroupDisplay(items){
+    // "Horse (OOG)" list; dedupe by horse; sort by OOG then name
+    const tmp = [];
+    const seen = new Set();
+
+    for(const r of items){
+      const horse = String(r.horseName ?? "").trim();
+      if(!horse) continue;
+      const key = horse.toLowerCase();
+      if(seen.has(key)) continue;
+      seen.add(key);
+
+      const oogRaw = String(r.lastOOG ?? "").trim();
+      const oog = toInt(oogRaw);
+      tmp.push({ horse, oog });
+    }
+
+    tmp.sort((a,b)=>{
+      const ao = (a.oog === null ? 999999 : a.oog);
+      const bo = (b.oog === null ? 999999 : b.oog);
+      if(ao !== bo) return ao - bo;
+      return a.horse.localeCompare(b.horse);
+    });
+
+    return tmp.map(x => x.oog !== null ? `${x.horse} (${x.oog})` : x.horse).join(", ");
+  }
+
+  async function fetchTextMeta(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    const lastMod = res.headers.get("last-modified");
+    if(!res.ok){
+      throw new Error(`Fetch failed ${res.status} for ${url}`);
+    }
+    return { txt, lastMod };
+  }
+
+  function parseTripsPayload(txt, urlLabel){
+    const obj = JSON.parse(txt);
+    if(obj && !Array.isArray(obj) && Array.isArray(obj.records)){
+      return { rows: obj.records, meta: obj.meta || null };
+    }
+    if(Array.isArray(obj)){
+      return { rows: obj, meta: null };
+    }
+    throw new Error(`Unexpected JSON shape in ${urlLabel} (expected array or {records:[]}).`);
+  }
+
+  function updatePublishedFromHeader(lastMod){
+    if(!lastMod) return;
+    const ms = Date.parse(lastMod);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
+  function setHeader(rows){
+    const first = rows[0] || {};
+    const sid = first.sid ?? "";
+    const dt  = first.dt  ?? "";
+
+    document.getElementById("title").textContent = sid ? `Show ${sid} Trips` : "Trips";
+
+    const subParts = [];
+    if(dt) subParts.push(String(dt));
+    subParts.push(`data: ${currentDataUrl}`);
+
+    if(dataMeta && dataMeta.table) subParts.push(String(dataMeta.table));
+    if(dataMeta && Number.isFinite(Number(dataMeta.record_count))) subParts.push(`rows: ${dataMeta.record_count}`);
+
+    if(dataMeta && dataMeta.generated_at){
+      subParts.push(`gen: ${String(dataMeta.generated_at).replace("T", " ").replace(/-05:00$/," ET")}`);
+    }else if(publishedAtMs){
+      subParts.push(`published: ${fmtTimeET(publishedAtMs)}`);
+    }
+
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function buildRings(rows){
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringEls = [];
+
+    for(let i=0;i<rings.length;i++){
+      const ring = rings[i];
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ringName ?? items0.ring_name ?? items0.ringNickname ?? items0.ring_nickname ?? "Ring";
+
+      const ringId = (Number.isFinite(ring.ring_number) && ring.ring_number !== 9999)
+        ? `ring-${ring.ring_number}`
+        : `ring-x${i+1}`;
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gdisplay = computeGroupDisplay(items);
+          const gstatus = computeGroupStatus(items);
+          return { gid, seq, gdisplay, gstatus, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ringCard ring";
+      sec.id = ringId;
+      sec.dataset.ringTitle = String(ringTitle);
+      sec.innerHTML = `<div class="ringHead">${esc(ringTitle)}</div>`;
+
+      for(const g of groups){
+        // Trip rows (NOT collapsed to classes). Sorted by OOG then horse name.
+        const trips = g.items.slice().sort((a,b)=>{
+          const ao = toInt(a.lastOOG ?? "") ?? 999999;
+          const bo = toInt(b.lastOOG ?? "") ?? 999999;
+          if(ao !== bo) return ao - bo;
+          const ah = String(a.horseName ?? "").localeCompare(String(b.horseName ?? ""));
+          if(ah !== 0) return ah;
+          const at = toInt(a.time_sort ?? "") ?? 999999;
+          const bt = toInt(b.time_sort ?? "") ?? 999999;
+          return at - bt;
+        });
+
+        let cl = "";
+        let lastTime = null;
+
+        for(const r of trips){
+          const time = String(r.latestGO ?? r.latestStart ?? r.estimated_start_time ?? r.estimatedStart ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          if(showTime) lastTime = time;
+
+          const horse = String(r.horseName ?? "").trim();
+          const oog = String(r.lastOOG ?? "").trim();
+          const rider = String(r.riderName ?? "").trim();
+          const status = String(r.latestStatus ?? "").trim();
+
+          let label = horse || "";
+          if(oog) label = `${label} (${oog})`;
+          if(rider && rider.toLowerCase() !== (horse||"").toLowerCase()) label = `${label} • ${rider}`;
+
+          const statusHtml = status ? `<div class="s">${esc(status)}</div>` : `<div class="s"></div>`;
+
+          const rowHorse = String(horse || "").toLowerCase();
+          const rowStatus = normalizeStatusTokenFromTripStatus(status);
+
+          cl += `
+            <div class="tripRow" data-horse="${esc(rowHorse)}" data-status="${esc(rowStatus)}">
+              <div class="t">${esc(showTime ? time : "")}</div>
+              <div class="n">${esc(label)}</div>
+              ${statusHtml}
+            </div>
+          `;
+        }
+
+        const horsesNormList = uniqLower(g.items.map(x=>x.horseName));
+        const horsesNorm = horsesNormList.join("|");
+        const statusNorm = normalizeStatusTokenFromValue(g.gstatus);
+
+        const gDiv = document.createElement("div");
+        const hasTeam = !!g.gdisplay;
+
+        gDiv.className = `group${hasTeam ? " has-team" : ""}`;
+        if(hasTeam){
+          if(horsesNorm) gDiv.dataset.horses = horsesNorm;
+          if(statusNorm) gDiv.dataset.status = statusNorm;
+        }
+
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+          </div>
+          <div class="class-list">${cl || `<div class="err">No trips.</div>`}</div>
+        `;
+
+        sec.appendChild(gDiv);
+      }
+
+      ringEls.push(sec);
+    }
+
+    return ringEls;
+  }
+
+  function buildBottomNav(ringEls){
+    const nav = document.getElementById("ringNav");
+    nav.innerHTML = "";
+
+    for(const sec of ringEls){
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "nav-btn";
+      b.dataset.target = sec.id;
+      b.textContent = sec.dataset.ringTitle || "Ring";
+      b.addEventListener("click", ()=>{
+        const el = document.getElementById(sec.id);
+        if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+        try{ history.replaceState(null, "", `${location.pathname}${location.search}#${sec.id}`); }catch(e){}
+      });
+      nav.appendChild(b);
+    }
+  }
+
+  function destroyActiveRingObserver(){
+    if(activeIO){
+      try { activeIO.disconnect(); } catch(e){}
+      activeIO = null;
+    }
+  }
+
+  function setupActiveRingObserver(){
+    destroyActiveRingObserver();
+
+    const rootEl = scroller();
+    if(!rootEl) return;
+
+    const buttons = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
+    const sections = Array.from(document.querySelectorAll("section.ring"))
+      .filter(sec => sec.style.display !== "none");
+
+    const btnById = new Map();
+    for(const b of buttons) btnById.set(b.dataset.target, b);
+
+    const clearActive = ()=>buttons.forEach(b=>b.classList.remove("is-active"));
+    const filtersH = (document.getElementById("filterBar")?.getBoundingClientRect().height || 0);
+
+    activeIO = new IntersectionObserver((entries)=>{
+      const vis = entries.filter(e=>e.isIntersecting).sort((a,b)=> (b.intersectionRatio - a.intersectionRatio));
+      if(!vis.length) return;
+      const id = vis[0].target.id;
+      clearActive();
+      const btn = btnById.get(id);
+      if(btn) btn.classList.add("is-active");
+    }, {
+      root: rootEl,
+      rootMargin: `-${filtersH + 10}px 0px -40% 0px`,
+      threshold: [0.2, 0.35, 0.5, 0.65]
+    });
+
+    sections.forEach(sec=>activeIO.observe(sec));
+  }
+
+  function collectHorseCandidatesFromDOM(){
+    const horseSet = new Set();
+    const rows = Array.from(document.querySelectorAll(".tripRow[data-horse]"));
+    for(const r of rows){
+      const h = String(r.dataset.horse || "").trim();
+      if(h) horseSet.add(h);
+    }
+    return Array.from(horseSet).map(h=>({ key: h, label: h })).sort((a,b)=>a.label.localeCompare(b.label));
+  }
+
+  function prettyHorseLabel(h){
+    const s = String(h||"").trim();
+    if(!s) return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function prettyStatusLabel(k){
+    const t = String(k||"").toLowerCase();
+    if(t === "upcoming") return "Upcoming";
+    if(t === "underway") return "Underway";
+    if(t === "completed") return "Completed";
+    return k;
+  }
+
+  function makeChipButton({text, value, active, onClick}){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (active ? " is-active" : "");
+    b.textContent = text;
+    b.dataset.value = value;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function updateFilterUI(){
+    for(const b of Array.from(document.querySelectorAll("#horseFilters .chip"))){
+      b.classList.toggle("is-active", b.dataset.value === activeHorse);
+    }
+    for(const b of Array.from(document.querySelectorAll("#statusFilters .chip"))){
+      b.classList.toggle("is-active", b.dataset.value === activeStatus);
+    }
+  }
+
+  function applyFilters(){
+    const needHorse = activeHorse !== "__all__";
+    const needStatus = activeStatus !== "__all__";
+    const horseKey = String(activeHorse).toLowerCase();
+    const statusKey = String(activeStatus).toLowerCase();
+
+    // 1) Row-level filter (trips)
+    const rows = Array.from(document.querySelectorAll(".tripRow"));
+    for(const r of rows){
+      let ok = true;
+      if(needHorse) ok = ok && (String(r.dataset.horse || "") === horseKey);
+      if(needStatus) ok = ok && (String(r.dataset.status || "") === statusKey);
+      r.style.display = ok ? "" : "none";
+    }
+
+    // 2) Hide/show groups if they have any visible rows
+    const groups = Array.from(document.querySelectorAll(".group.has-team"));
+    for(const g of groups){
+      const anyVisible = Array.from(g.querySelectorAll(".tripRow")).some(x=>x.style.display !== "none");
+      g.style.display = anyVisible ? "" : "none";
+    }
+
+    // 3) Hide/show rings + bottom-nav buttons
+    const ringSections = Array.from(document.querySelectorAll("section.ring"));
+    const ringNavBtns = Array.from(document.querySelectorAll("#ringNav .nav-btn"));
+
+    const navById = new Map();
+    for(const b of ringNavBtns){
+      const id = b.dataset.target;
+      if(id) navById.set(id, b);
+    }
+
+    for(const sec of ringSections){
+      const anyVisible = Array.from(sec.querySelectorAll(".group.has-team")).some(g => g.style.display !== "none");
+      sec.style.display = anyVisible ? "" : "none";
+      const btn = navById.get(sec.id);
+      if(btn) btn.style.display = anyVisible ? "" : "none";
+    }
+
+    setupActiveRingObserver();
+  }
+
+  function renderFilters(){
+    const horsesList = collectHorseCandidatesFromDOM();
+
+    const horseWrap = document.getElementById("horseFilters");
+    const statusWrap = document.getElementById("statusFilters");
+
+    horseWrap.innerHTML = "";
+    statusWrap.innerHTML = "";
+
+    for(const h of horsesList){
+      horseWrap.appendChild(makeChipButton({
+        text: prettyHorseLabel(h.label),
+        value: h.key,
+        active: activeHorse === h.key,
+        onClick: ()=>{
+          activeHorse = (activeHorse === h.key) ? "__all__" : h.key;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    for(const k of ["upcoming","underway","completed"]){
+      statusWrap.appendChild(makeChipButton({
+        text: prettyStatusLabel(k),
+        value: k,
+        active: activeStatus === k,
+        onClick: ()=>{
+          activeStatus = (activeStatus === k) ? "__all__" : k;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    const horseExists = activeHorse === "__all__" || horsesList.some(x=>x.key === activeHorse);
+    if(!horseExists) activeHorse = "__all__";
+
+    updateFilterUI();
+    applyFilters();
+  }
+
+  function renderRows(rows){
+    const ringsEl = document.getElementById("rings");
+
+    if(!Array.isArray(rows) || rows.length === 0){
+      ringsEl.innerHTML = `<div class="err">No trips.</div>`;
+      destroyActiveRingObserver();
+      document.getElementById("horseFilters").innerHTML = "";
+      document.getElementById("statusFilters").innerHTML = "";
+      document.getElementById("ringNav").innerHTML = "";
+      return;
+    }
+
+    setHeader(rows);
+
+    const ringEls = buildRings(rows);
+
+    ringsEl.innerHTML = "";
+    for(const el of ringEls) ringsEl.appendChild(el);
+
+    buildBottomNav(ringEls);
+
+    // filters depend on DOM rows
+    renderFilters();
+    setupActiveRingObserver();
+  }
+
+  async function initialLoad(){
+    currentDataUrl = resolveDataUrl();
+
+    const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+    lastRaw = txt;
+    lastLastMod = lastMod || null;
+    updatePublishedFromHeader(lastMod);
+
+    const parsed = parseTripsPayload(txt, currentDataUrl);
+    dataMeta = parsed.meta;
+    renderRows(parsed.rows);
+  }
+
+  async function pollForUpdates(){
+    if(isRefreshing) return;
+    if(!currentDataUrl) return;
+
+    isRefreshing = true;
+    try{
+      const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+
+      const lmChanged = !!(lastMod && lastLastMod && lastMod !== lastLastMod);
+      const bodyChanged = (lastRaw !== null && txt !== lastRaw);
+
+      if(!lmChanged && !bodyChanged) return;
+
+      lastLastMod = lastMod || lastLastMod;
+      updatePublishedFromHeader(lastMod);
+
+      const parsed = parseTripsPayload(txt, currentDataUrl);
+
+      const rootEl = scroller();
+      const keepTop = rootEl ? rootEl.scrollTop : 0;
+
+      lastRaw = txt;
+      dataMeta = parsed.meta;
+      renderRows(parsed.rows);
+
+      if(rootEl) rootEl.scrollTop = keepTop;
+
+    }catch(e){
+      // keep existing UI
+    }finally{
+      isRefreshing = false;
+    }
+  }
+
+  (async function main(){
+    await initialLoad();
+    setInterval(pollForUpdates, POLL_MS);
+    window.addEventListener("resize", ()=>{ setupActiveRingObserver(); });
+  })().catch(err=>{
+    const msg = String(err && err.message ? err.message : err);
+    document.getElementById("rings").innerHTML =
+      `<div class="err">${esc(msg)}<div class="smallNote">Expected JSON: <b>${esc(DEFAULT_DATA_URL)}</b> (relative to this HTML file).</div></div>`;
+  });
+</script>
+
+</body>
+</html>
