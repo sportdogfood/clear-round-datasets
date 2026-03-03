@@ -90,7 +90,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const start_threads = document.getElementById('start_threads');
   const startRowPro = document.getElementById('startRowPro');
   const startRowHorses = document.getElementById('startRowHorses');
-  const startDetailsLink = document.getElementById('startDetailsLink');
+  const startRowSummary = document.getElementById('startRowSummary');
+  const startRowRestart = document.getElementById('startRowRestart');
   const startPanelData = document.getElementById('startPanelData');
 
   const time_container = document.getElementById('time_container');
@@ -136,31 +137,25 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     default: {
       fallback: 'start',
       tabsByView: {
-        '*': ['start','summary','lite','full','threads','horses'],
-        horses: ['start','summary','lite','horses'],
-        threads: ['start','summary','lite','threads','horses'],
+        '*': ['start','horses','threads'],
+        horses: ['start','horses','threads'],
+        threads: ['start','horses','threads'],
       },
       tabs: {
         start:   { label: 'Start', view: 'start' },
-        summary: { label: 'Time', view: 'summary' },
-        lite:    { label: 'Pro', view: 'lite' },
-        full:    { label: 'Full', view: 'full' },
-        threads: { label: 'Schooling Bridles', view: 'threads', countSource: 'schoolingBridles' },
         horses:  { label: 'Active Horses', view: 'horses', countSource: 'activeHorses' },
+        threads: { label: 'Schooling Bridles', view: 'threads', countSource: 'schoolingBridles' },
       },
     },
     legacy: {
       fallback: 'start',
       tabsByView: {
-        '*': ['start','summary','lite','full','threads','horses'],
+        '*': ['start','horses','threads'],
       },
       tabs: {
         start:   { label: 'Start', view: 'start' },
-        summary: { label: 'Time', view: 'summary' },
-        lite:    { label: 'Pro', view: 'lite' },
-        full:    { label: 'Full', view: 'full' },
-        threads: { label: 'Threads', view: 'threads' },
-        horses:  { label: 'Horses', view: 'horses' },
+        horses:  { label: 'Active Horses', view: 'horses' },
+        threads: { label: 'Schooling Bridles', view: 'threads' },
       },
     },
   };
@@ -484,17 +479,27 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       main.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
-  if (startDetailsLink && startPanelData){
-    // default hidden
-    startPanelData.hidden = true;
-    startDetailsLink.textContent = 'Session details';
-    startDetailsLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      const willShow = startPanelData.hidden;
-      startPanelData.hidden = !willShow;
-      startDetailsLink.textContent = willShow ? 'Hide session details' : 'Session details';
+  if (startRowSummary){
+    startRowSummary.addEventListener('click', () => {
+      setView('summary');
+      main.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
+  if (startRowRestart){
+    startRowRestart.addEventListener('click', () => {
+      state.globalStatus = '';
+      state.activeHorse = '';
+      state.activeGroom = '';
+      state.activeRing = '';
+      app.classList.remove('chrome--hidden');
+      setView('start');
+      main.scrollTo({ top: 0, behavior: 'smooth' });
+      buildHorseChips();
+      renderLiteAndFull();
+      renderPeaks();
+    });
+  }
+  if (startPanelData){ startPanelData.hidden = true; }
 
   // ------------------------------------------------
   // Filters (global status + horse)

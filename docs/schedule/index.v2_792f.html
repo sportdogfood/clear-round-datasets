@@ -1137,6 +1137,11 @@
       background: rgba(0,0,0,.22);
       flex: 0 0 auto;
     }
+    .rowtap__dot.is-on{
+      border-color: rgba(48,199,89,.78);
+      background: rgba(48,199,89,.34);
+      box-shadow: 0 0 0 1px rgba(48,199,89,.26);
+    }
 
     .panel__link{
       display:inline-block;
@@ -1150,11 +1155,12 @@
     }
 
     .start-hero{
-      margin-top: 12px;
+      margin: 2px 0 8px;
       border-radius: var(--r-2);
-      border: 1px solid rgba(47,107,255,.28);
-      background: linear-gradient(135deg, rgba(47,107,255,.16), rgba(10,18,40,.10));
-      padding: 14px;
+      border: 0;
+      background: transparent;
+      padding: 6px 2px 12px;
+      text-align:center;
     }
     .start-hero__eyebrow{
       font-size: var(--fs-1);
@@ -1264,27 +1270,34 @@
       <div class="view is-active" id="view-start">
         <div class="panel">
           <div class="panel__title">Start</div>
-          <button class="rowtap" id="startRowPro" type="button">
-            <div class="rowtap__main">
-              <div class="rowtap__title">Start</div>
-              <div class="rowtap__sub">Open the live schedule view</div>
-            </div>
-            <div class="rowtap__dot" aria-hidden="true"></div>
-          </button>
-
-          <button class="rowtap" id="startRowHorses" type="button">
-            <div class="rowtap__main">
-              <div class="rowtap__title">Active Horses</div>
-              <div class="rowtap__sub">Jump to current horse list</div>
-            </div>
-            <div class="rowtap__dot" aria-hidden="true"></div>
-          </button>
 
           <div class="start-hero" aria-label="Company hero">
-            <div class="start-hero__eyebrow">RingStatus</div>
-            <div class="start-hero__title">Your Show Day Schedule</div>
-            <div class="start-hero__sub">Fast, branded, and focused for your team.</div>
+            <div class="start-hero__title">TackLists.com</div>
+            <div class="start-hero__sub">Quick horse tack lists, on the fly.</div>
           </div>
+
+          <button class="rowtap" id="startRowPro" type="button">
+            <div class="rowtap__main">
+              <div class="rowtap__sub" style="margin-top:0; color:rgba(255,255,255,.94); font-weight:700;">In-session</div>
+            </div>
+            <div class="rowtap__dot is-on" aria-hidden="true"></div>
+          </button>
+
+          <button class="rowtap" id="startRowSummary" type="button">
+            <div class="rowtap__main">
+              <div class="rowtap__sub" style="margin-top:0; color:rgba(255,255,255,.92);">Summary</div>
+            </div>
+            <div class="rowtap__dot" aria-hidden="true"></div>
+          </button>
+
+          <button class="rowtap" id="startRowRestart" type="button">
+            <div class="rowtap__main">
+              <div class="rowtap__sub" style="margin-top:0; color:rgba(255,255,255,.92);">Restart session</div>
+            </div>
+            <div class="rowtap__dot" aria-hidden="true"></div>
+          </button>
+
+          <div class="start-hero__sub" style="font-size:11px; margin:8px 2px 0; color:rgba(255,255,255,.72); text-align:left;">Autosave: ON (device).</div>
 
           <div id="startPanelData" hidden>
 
