@@ -135,6 +135,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   };
 
 <<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   const NAV_CONFIG = {
     default: {
       fallback: 'start',
@@ -187,6 +190,15 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       return { available, count };
     },
   };
+=======
+  const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
+>>>>>>> theirs
+=======
+  const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
+>>>>>>> theirs
+=======
+  const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
+>>>>>>> theirs
 =======
   const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
 >>>>>>> theirs
@@ -542,6 +554,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       setView(action.route);
     }
     main.scrollTo({ top: 0, behavior: 'smooth' });
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   }
 
   function renderStartActions(){
@@ -583,8 +598,59 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     startRowSummary.addEventListener('click', () => {
       setView('summary');
       main.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+=======
   }
+=======
+  }
+>>>>>>> theirs
+=======
+  }
+>>>>>>> theirs
+
+  function renderStartActions(){
+    if (!startPanel) return;
+
+    const existing = startPanel.querySelector('#startActions');
+    const wrap = existing || document.createElement('div');
+    wrap.id = 'startActions';
+    wrap.innerHTML = '';
+
+    getStartActions().forEach(action => {
+      const btn = document.createElement('button');
+      btn.className = 'rowtap';
+      btn.type = 'button';
+      btn.dataset.startAction = action.id;
+
+      const stateText = typeof action.resolveState === 'function' ? action.resolveState() : null;
+      const subtitleBits = [];
+      if (action.subtitle) subtitleBits.push(esc(action.subtitle));
+      if (stateText) subtitleBits.push(esc(stateText));
+
+      btn.innerHTML = '<div class="rowtap__main">'
+        + '<div class="rowtap__title">' + esc(action.label) + '</div>'
+        + (subtitleBits.length ? '<div class="rowtap__sub">' + subtitleBits.join(' • ') + '</div>' : '')
+        + '</div>'
+        + '<div class="rowtap__dot" aria-hidden="true"></div>';
+
+      btn.addEventListener('click', () => runStartAction(action));
+      wrap.appendChild(btn);
+<<<<<<< ours
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+    });
+
+    if (!existing){
+      const anchor = startDetailsLink || startPanel.firstChild;
+      startPanel.insertBefore(wrap, anchor);
+    }
+  }
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   if (startRowRestart){
     startRowRestart.addEventListener('click', () => {
       state.globalStatus = '';
@@ -598,6 +664,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       renderLiteAndFull();
       renderPeaks();
 =======
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
   if (startRowPro) startRowPro.remove();
   if (startRowHorses) startRowHorses.remove();
