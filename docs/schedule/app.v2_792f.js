@@ -67,6 +67,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const topTitle = document.getElementById('topTitle');
   const btnBack = document.getElementById('btnBack');
   const btnRefresh = document.getElementById('btnRefresh');
+  const navList = document.getElementById('navList');
 
   const views = {
     start: document.getElementById('view-start'),
@@ -114,6 +115,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const state = {
     
     flySmsBody: '',activeView: 'start',
+    activeTabId: 'start',
+    navProfile: 'legacy',
     globalStatus: '',   // '', 'U','L','C'
     activeHorse: '',    //
     activeGroom: '',
@@ -127,6 +130,65 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     ringsIndex: [], // {ring_number, ringName}
     lastLoadedAt: null,
     errors: []
+  };
+
+  const NAV_CONFIG = {
+    default: {
+      fallback: 'start',
+      tabsByView: {
+        '*': ['start','summary','lite','full','threads','horses'],
+        horses: ['start','summary','lite','horses'],
+        threads: ['start','summary','lite','threads','horses'],
+      },
+      tabs: {
+        start:   { label: 'Start', view: 'start' },
+        summary: { label: 'Time', view: 'summary' },
+        lite:    { label: 'Pro', view: 'lite' },
+        full:    { label: 'Full', view: 'full' },
+        threads: { label: 'Schooling Bridles', view: 'threads', countSource: 'schoolingBridles' },
+        horses:  { label: 'Active Horses', view: 'horses', countSource: 'activeHorses' },
+      },
+    },
+    legacy: {
+      fallback: 'start',
+      tabsByView: {
+        '*': ['start','summary','lite','full','threads','horses'],
+      },
+      tabs: {
+        start:   { label: 'Start', view: 'start' },
+        summary: { label: 'Time', view: 'summary' },
+        lite:    { label: 'Pro', view: 'lite' },
+        full:    { label: 'Full', view: 'full' },
+        threads: { label: 'Threads', view: 'threads' },
+        horses:  { label: 'Horses', view: 'horses' },
+      },
+    },
+  };
+
+  const NAV_COUNT_SOURCES = {
+    activeHorses: () => {
+      const set = new Set();
+      state.trips.forEach(r => {
+        const horse = String(r.horseName || '').trim();
+        if (!horse || isHorseInactive(horse)) return;
+        set.add(horse.toLowerCase());
+      });
+      return { available: true, count: set.size };
+    },
+    schoolingBridles: () => {
+      let available = false;
+      let count = 0;
+      state.trips.forEach(r => {
+        const rawValue = r.schoolingBridles ?? r.schooling_bridles ?? r.bridles;
+        if (rawValue == null || String(rawValue).trim() === '') return;
+        available = true;
+
+        const raw = String(rawValue).trim().toLowerCase();
+        if (raw === '0' || raw === 'false' || raw === 'no' || raw === 'none') return;
+        count += 1;
+      });
+      return { available, count };
+    },
   };
 
   // ------------------------------------------------
@@ -266,6 +328,66 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     return state.activeView === 'full' ? ringsFullEl : ringsLiteEl;
   }
 
+  function getNavProfile(){
+    const qp = new URLSearchParams(window.location.search || '');
+    if (qp.get('nav') === 'legacy' || qp.get('profile') === 'legacy') return 'legacy';
+    return state.trips.length ? 'default' : 'legacy';
+  }
+
+  function getNavConfig(){
+    return NAV_CONFIG[state.navProfile] || NAV_CONFIG.legacy;
+  }
+
+  function getTabsForView(viewKey){
+    const cfg = getNavConfig();
+    const tabsByView = cfg.tabsByView || {};
+    const ids = tabsByView[viewKey] || tabsByView['*'] || [];
+    return ids.map(id => ({ id, ...(cfg.tabs[id] || {}) })).filter(t => t.view);
+  }
+
+  function getBadgeCount(countSource){
+    const fn = NAV_COUNT_SOURCES[countSource];
+    if (!fn) return null;
+    const meta = fn();
+    if (!meta || !meta.available) return null;
+    const n = Number(meta.count);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+
+  function renderNav(currentView){
+    if (!navList) return;
+    const tabs = getTabsForView(currentView);
+    navList.innerHTML = '';
+    tabs.forEach(tab => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'nav-tab';
+      b.setAttribute('data-nav-id', tab.id);
+      b.setAttribute('data-nav-view', tab.view);
+
+      const isActive = (tab.view === currentView) || (tab.id === state.activeTabId && !tabs.some(t => t.view === currentView));
+      b.classList.toggle('is-active', isActive);
+
+      const label = document.createElement('span');
+      label.textContent = tab.label || tab.id;
+      b.appendChild(label);
+
+      const badge = getBadgeCount(tab.countSource);
+      if (badge != null){
+        const pill = document.createElement('span');
+        pill.className = 'nav-tab__badge';
+        pill.textContent = String(badge);
+        b.appendChild(pill);
+      }
+
+      b.addEventListener('click', () => {
+        state.activeTabId = tab.id;
+        setView(tab.view, { tabId: tab.id });
+      });
+      navList.appendChild(b);
+    });
+  }
+
   // ------------------------------------------------
   // Chrome hide/show on scroll
   // ------------------------------------------------
@@ -291,32 +413,35 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   // ------------------------------------------------
   // Views / nav
   // ------------------------------------------------
-  function setView(viewKey){
+  function setView(viewKey, options={}){
+    const cfg = getNavConfig();
+    const targetView = views[viewKey] ? viewKey : (cfg.fallback || 'start');
+    const activeTabId = options.tabId || state.activeTabId || targetView;
+
     const prevView = state.activeView;
-    state.activeView = viewKey;
+    state.activeView = targetView;
+    state.activeTabId = activeTabId;
 
-    if (prevView !== viewKey) closeFly();
+    if (prevView !== targetView) closeFly();
 
-    Object.keys(views).forEach(k => views[k].classList.toggle('is-active', k === viewKey));
-    document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
-      b.classList.toggle('is-active', b.getAttribute('data-view') === viewKey);
-    });
+    Object.keys(views).forEach(k => views[k].classList.toggle('is-active', k === targetView));
+    renderNav(targetView);
 
     // Filters: Pro + Full + Time use horse/groom filters; Pro only uses status; Pro/Full only use peaks
-    const showBottomFilters = (viewKey === 'lite' || viewKey === 'full' || viewKey === 'summary');
-    statusWrap.hidden = !(viewKey === 'lite' || viewKey === 'summary');
-    peaksWrap.hidden  = !(viewKey === 'lite' || viewKey === 'full' || viewKey === 'summary');
+    const showBottomFilters = (targetView === 'lite' || targetView === 'full' || targetView === 'summary');
+    statusWrap.hidden = !(targetView === 'lite' || targetView === 'summary');
+    peaksWrap.hidden  = !(targetView === 'lite' || targetView === 'full' || targetView === 'summary');
     horsesWrap.hidden = !showBottomFilters;
-    if (groomsWrap) groomsWrap.hidden = !(viewKey === 'lite' || viewKey === 'summary');
-    app.classList.toggle('filters--on', (viewKey === 'lite' || viewKey === 'summary'));
-    app.classList.toggle('filters--peaks', (viewKey === 'full'));
+    if (groomsWrap) groomsWrap.hidden = !(targetView === 'lite' || targetView === 'summary');
+    app.classList.toggle('filters--on', (targetView === 'lite' || targetView === 'summary'));
+    app.classList.toggle('filters--peaks', (targetView === 'full'));
     app.classList.toggle('filters--bottom', false);
 
-    topTitle.textContent = viewKey === 'lite' ? 'Pro'
-                       : viewKey === 'full' ? 'Full Schedule'
-                       : viewKey === 'threads' ? 'Threads'
-                       : viewKey === 'horses' ? 'Horses'
-                       : viewKey === 'summary' ? 'Time'
+    topTitle.textContent = targetView === 'lite' ? 'Pro'
+                       : targetView === 'full' ? 'Full Schedule'
+                       : targetView === 'threads' ? 'Threads'
+                       : targetView === 'horses' ? 'Horses'
+                       : targetView === 'summary' ? 'Time'
                        : 'Start';
 
     // Collapse sticky gaps based on which filter rows are visible
@@ -337,10 +462,6 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     // re-render peaks active state, because scroll targets differ by view
     renderPeaks();
   }
-
-  document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
-    b.addEventListener('click', () => setView(b.getAttribute('data-view')));
-  });
 
   btnRefresh.addEventListener('click', () => {
     app.classList.remove('chrome--hidden');
@@ -874,6 +995,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       }
 
       state.lastLoadedAt = new Date().toISOString();
+      state.navProfile = getNavProfile();
 
       indexEntriesById();
       indexRings();
@@ -885,6 +1007,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       renderLiteAndFull();
       renderThreads();
       renderHorses();
+      renderNav(state.activeView);
 
       // auto switch to Lite once loaded (only if user hasn't navigated)
       if (!force && state.activeView === 'start') {
