@@ -221,38 +221,63 @@
     .app.chrome--hidden .bottomnav{
       transform: translateX(-50%) translateY(calc(var(--nav-h) + env(safe-area-inset-bottom) + 6px));
     }
-    .nav-grid{
+    .nav-list{
       height: var(--nav-h);
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      justify-items: center;
-      gap: 8px;
-      padding: 10px var(--pad);
-    }
-    .nav-btn{
-      height: 42px;
-      min-width: 62px;
-      max-width: 86px;
-      width: auto;
-      padding: 0 10px;
-      border-radius: var(--r-pill);
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      color: rgba(255,255,255,.88);
       display:flex;
       align-items:center;
+      gap: 8px;
+      padding: 9px var(--pad);
+      overflow-x:auto;
+      scrollbar-width:none;
+    }
+    .nav-list::-webkit-scrollbar{ display:none; }
+    .nav-tab{
+      height: 44px;
+      min-width: 64px;
+      max-width: 124px;
+      width: auto;
+      padding: 0 11px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.88);
+      display:inline-flex;
+      align-items:center;
       justify-content:center;
+      gap: 6px;
       font-size: var(--fs-2);
       font-weight: 600;
       user-select:none;
       white-space:nowrap;
       cursor:pointer;
+      flex: 0 0 auto;
+      transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, color .16s ease;
     }
-    .nav-btn:active{ transform: translateY(1px) scale(.995); }
-    .nav-btn.is-active{
-      border-color: rgba(47,107,255,.55);
-      background: rgba(47,107,255,.16);
+    .nav-tab:active{ transform: translateY(1px) scale(.995); }
+    .nav-tab.is-active{
+      border-color: rgba(47,107,255,.80);
+      background: rgba(47,107,255,.22);
       color:#fff;
+      box-shadow: 0 0 0 1px rgba(47,107,255,.25), 0 8px 24px rgba(47,107,255,.22);
+    }
+    .nav-tab__badge{
+      min-width: 16px;
+      height: 16px;
+      padding: 0 5px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.20);
+      background: rgba(255,255,255,.14);
+      color: rgba(255,255,255,.95);
+      font-size: var(--fs-0);
+      font-weight: 700;
+      line-height: 1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .nav-tab.is-active .nav-tab__badge{
+      border-color: rgba(47,107,255,.72);
+      background: rgba(15,42,120,.62);
     }
 
     /* ---------------------------------------------------------
@@ -1064,7 +1089,7 @@
     .t-go{ color: rgba(47,107,255,.95); }
 
 /* Focus */
-    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.epill,.fly_btn,.tb-btn,.ring_btn):focus-visible{
+    :is(.sbtn,.peakbtn,.hchip,.nav-btn,.nav-tab,.epill,.fly_btn,.tb-btn,.ring_btn):focus-visible{
       outline: 2px solid rgba(47,107,255,.95);
       outline-offset: 2px;
     }
@@ -1317,14 +1342,7 @@
     </div>
 
     <div class="bottomnav" id="bottomnav">
-      <div class="nav-grid" aria-label="Bottom navigation">
-        <div class="nav-btn is-active" data-view="start">Start</div>
-        <div class="nav-btn" data-view="summary">Time</div>
-        <div class="nav-btn" data-view="lite">Pro</div>
-        <div class="nav-btn" data-view="full">Full</div>
-        <div class="nav-btn" data-view="threads">Threads</div>
-        <div class="nav-btn" data-view="horses">Horses</div>
-      </div>
+      <div class="nav-list" id="navList" aria-label="Bottom navigation"></div>
     </div>
 
     <div class="fly" id="fly">
