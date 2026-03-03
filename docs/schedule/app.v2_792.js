@@ -61,6 +61,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const horsesWrap = document.getElementById('horsesWrap');
   const peakbar = document.getElementById('peakbar');
   const horsebar = document.getElementById('horsebar');
+  const groombar = document.getElementById('groombar');
 
   const topTitle = document.getElementById('topTitle');
   const btnBack = document.getElementById('btnBack');
@@ -85,6 +86,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const start_trips = document.getElementById('start_trips');
   const start_classes = document.getElementById('start_classes');
   const start_threads = document.getElementById('start_threads');
+  const startRowPro = document.getElementById('startRowPro');
+  const startRowHorses = document.getElementById('startRowHorses');
+  const startDetailsLink = document.getElementById('startDetailsLink');
+  const startPanelData = document.getElementById('startPanelData');
+
+  const time_container = document.getElementById('time_container');
 
   const sum_underway = document.getElementById('sum_underway');
   const sum_upcoming = document.getElementById('sum_upcoming');
@@ -107,7 +114,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     
     flySmsBody: '',activeView: 'start',
     globalStatus: '',   // '', 'U','L','C'
-    activeHorse: '',    // '' or horseName
+    activeHorse: '',    //
+    activeGroom: '',   // '' or horseName
     horseSearch: '',    // horses view search
     trips: [],
     schedule: [],
@@ -282,29 +290,31 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   // Views / nav
   // ------------------------------------------------
   function setView(viewKey){
+    const prevView = state.activeView;
     state.activeView = viewKey;
+
+    if (prevView !== viewKey) closeFly();
 
     Object.keys(views).forEach(k => views[k].classList.toggle('is-active', k === viewKey));
     document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
       b.classList.toggle('is-active', b.getAttribute('data-view') === viewKey);
     });
 
-    // Peaks + horses only for Lite/Full
-    const showFilters = (viewKey === 'lite' || viewKey === 'full');
-    statusWrap.hidden = !showFilters;
-    peaksWrap.hidden = !showFilters;
-    horsesWrap.hidden = !showFilters;
-    app.classList.toggle('filters--on', showFilters);
+    // Filters: Pro + Full + Time use horse/groom filters; Pro only uses status; Pro/Full only use peaks
+    const showBottomFilters = (viewKey === 'lite' || viewKey === 'full' || viewKey === 'summary');
+    statusWrap.hidden = (viewKey !== 'lite');
+    peaksWrap.hidden  = !(viewKey === 'lite' || viewKey === 'full');
+    horsesWrap.hidden = !showBottomFilters;
+    app.classList.toggle('filters--on', (viewKey === 'lite'));
+    app.classList.toggle('filters--peaks', (viewKey === 'full'));
+    app.classList.toggle('filters--bottom', (viewKey === 'summary'));
 
-    topTitle.textContent = viewKey === 'lite' ? 'Lite Schedule'
+    topTitle.textContent = viewKey === 'lite' ? 'Pro Schedule'
                        : viewKey === 'full' ? 'Full Schedule'
                        : viewKey === 'threads' ? 'Threads'
                        : viewKey === 'horses' ? 'Horses'
-                       : viewKey === 'summary' ? 'Summary'
+                       : viewKey === 'summary' ? 'Time'
                        : 'Start';
-
-    // close flyup when leaving Lite
-    if (viewKey !== 'lite') closeFly();
 
     // re-render peaks active state, because scroll targets differ by view
     renderPeaks();
@@ -320,6 +330,38 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     main.scrollTo({ top: 0, behavior: 'smooth' });
   });
   btnBack.addEventListener('click', () => { /* reserved */ });
+
+
+  // Start quick actions
+  if (startRowPro){
+    startRowPro.addEventListener('click', () => {
+      setView('lite');
+      main.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  if (startRowHorses){
+    startRowHorses.addEventListener('click', () => {
+      setView('horses');
+      main.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  if (startDetailsLink){
+    startDetailsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (fly.classList.contains('is-open')){
+        closeFly();
+        return;
+      }
+      const rows = [
+        { k:'Status', v: start_status?.textContent || '—' },
+        { k:'Last refresh', v: start_refresh?.textContent || '—' },
+        { k:'Trips', v: start_trips?.textContent || '—' },
+        { k:'Full classes', v: start_classes?.textContent || '—' },
+        { k:'Threads', v: start_threads?.textContent || '—' },
+      ];
+      openFly('Session', rows, '');
+    });
+  }
 
   // ------------------------------------------------
   // Filters (global status + horse)
@@ -345,28 +387,74 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   });
 
   function buildHorseChips(){
-    const base = state.trips
-      .filter(r => !isHorseInactive(r.horseName))
-      .filter(r => !state.globalStatus || toStatusCode(r.latestStatus) === state.globalStatus);
+    const applyStatus = (state.activeView === 'lite');
 
-    const horses = uniq(base.map(r => (r.horseName || '').trim()).filter(Boolean))
+    // Horse chips: apply inactive + (Pro status) + groom focus; exclude horse focus
+    const baseForHorses = state.trips
+      .filter(r => !isHorseInactive(r.horseName))
+      .filter(r => {
+        if (!applyStatus || !state.globalStatus) return true;
+        return toStatusCode(r.latestStatus) === state.globalStatus;
+      })
+      .filter(r => {
+        if (!state.activeGroom) return true;
+        const g = String(r.groomName || r.groom_name || r.groom || '').trim();
+        return g && g === state.activeGroom;
+      });
+
+    const horses = uniq(baseForHorses.map(r => (r.horseName || '').trim()).filter(Boolean))
       .sort((a,b) => a.localeCompare(b));
+
+    if (state.activeHorse && !horses.includes(state.activeHorse)) state.activeHorse = '';
+
     horsebar.innerHTML = '';
     horses.forEach(name => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'hchip' + ((state.activeHorse === name && !!state.activeHorse) ? ' is-on' : '');
+      b.className = 'hchip' + ((state.activeHorse === name) ? ' is-on' : '');
       b.textContent = name;
       b.setAttribute('data-horse-chip', name);
       b.addEventListener('click', () => {
         state.activeHorse = (state.activeHorse === name) ? '' : name;
-        Array.from(horsebar.querySelectorAll('.hchip')).forEach(x => {
-          x.classList.toggle('is-on', x.getAttribute('data-horse-chip') === state.activeHorse && !!state.activeHorse);
-        });
         renderLiteAndFull();
       });
       horsebar.appendChild(b);
     });
+
+    // Groom chips: apply inactive + (Pro status) + horse focus; exclude groom focus
+    const baseForGrooms = state.trips
+      .filter(r => !isHorseInactive(r.horseName))
+      .filter(r => {
+        if (!applyStatus || !state.globalStatus) return true;
+        return toStatusCode(r.latestStatus) === state.globalStatus;
+      })
+      .filter(r => !state.activeHorse || String(r.horseName||'').trim() === state.activeHorse);
+
+    const grooms = uniq(baseForGrooms.map(r => String(r.groomName || r.groom_name || r.groom || '').trim()).filter(Boolean))
+      .sort((a,b) => a.localeCompare(b));
+
+    if (state.activeGroom && !grooms.includes(state.activeGroom)) state.activeGroom = '';
+
+    if (groombar){
+      groombar.innerHTML = '';
+      if (grooms.length){
+        groombar.style.display = '';
+        grooms.forEach(name => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'gchip' + ((state.activeGroom === name) ? ' is-on' : '');
+          b.textContent = name;
+          b.setAttribute('data-groom-chip', name);
+          b.addEventListener('click', () => {
+            state.activeGroom = (state.activeGroom === name) ? '' : name;
+            renderLiteAndFull();
+          });
+          groombar.appendChild(b);
+        });
+      } else {
+        groombar.style.display = 'none';
+      }
+    }
   }
 
   
@@ -375,7 +463,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     const btn = e.target.closest('[data-ring-action]');
     if (!btn) return;
     // only meaningful in Lite/Full
-    if (!(state.activeView === 'lite' || state.activeView === 'full')) return;
+    if (state.activeView !== 'lite') return;
     const act = btn.getAttribute('data-ring-action') || '';
     const code = act === 'soon' ? 'U' : act === 'now' ? 'L' : act === 'done' ? 'C' : '';
     if (!code) return;
@@ -390,45 +478,44 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   function renderPeaks(){
     peakbar.innerHTML = '';
 
+    const applyStatus = (state.activeView === 'lite');
     const base = state.trips
-      .filter(t => !isHorseInactive(t.horseName))
-      .filter(t => !state.globalStatus || toStatusCode(t.latestStatus) === state.globalStatus);
+      .filter(r => !isHorseInactive(r.horseName))
+      .filter(r => {
+        if (!applyStatus || !state.globalStatus) return true;
+        return toStatusCode(r.latestStatus) === state.globalStatus;
+      })
+      .filter(r => {
+        if (!state.activeGroom) return true;
+        const g = String(r.groomName || r.groom_name || r.groom || '').trim();
+        return g && g === state.activeGroom;
+      });
 
     const ringsMap = new Map();
-    base.forEach(t => {
-      const rn = Number(t.ring_number || 0);
+    base.forEach(r => {
+      const rn = Number(r.ring_number || 0);
       if (!rn) return;
       const key = String(rn);
-      const name = String(t.ringName || t.ring_name || '').trim();
-
+      const name = String(r.ringName || r.ring_name || '').trim();
       if (!ringsMap.has(key)){
         ringsMap.set(key, { ring_number: rn, ringName: name || `Ring ${rn}` });
         return;
       }
       const cur = ringsMap.get(key);
       const curName = String(cur?.ringName || '').trim();
-      if (name && (!curName || name.length > curName.length)){
-        cur.ringName = name;
-      }
+      if (name && (!curName || name.length > curName.length)) cur.ringName = name;
     });
 
-    const container = getActiveRingsContainer();
-    const scope = container ? container.closest('.view') : null;
-
     const rings = Array.from(ringsMap.values()).sort((a,b) => (a.ring_number||0) - (b.ring_number||0));
-    let first = true;
-
-    rings.forEach((r) => {
+    rings.forEach((r, idx) => {
       const target = `#ring-${state.activeView}-${r.ring_number}`;
-      const el = scope ? scope.querySelector(target) : null;
+      const el = document.querySelector(target);
       if (!el) return;
 
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'peakbtn' + (first ? ' is-active' : '');
-      first = false;
-
-      const label = (r.ringName || r.ring_name || (r.ring_number ? `Ring ${r.ring_number}` : 'Ring')).trim();
+      btn.className = 'peakbtn' + (idx===0 ? ' is-active' : '');
+      const label = (r.ringName || (r.ring_number ? `Ring ${r.ring_number}` : 'Ring')).trim();
       btn.textContent = label;
       btn.setAttribute('data-peak-target', target);
       btn.addEventListener('click', () => {
@@ -599,6 +686,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
           renderHorses();
           renderLiteAndFull();
           renderThreads();
+          updateStartSummary();
         });
 
         box.appendChild(row);
@@ -857,12 +945,10 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       ringClasses.forEach(c => {
         const statusCode = toStatusCode(c.latestStatus);
 
-        // global status filter
-        if (state.globalStatus && statusCode !== state.globalStatus) return;
-
         // entry filter (Pro ignores + optional single-horse focus)
         const entries = c.entries
           .filter(e => !isHorseInactive(e.horseName))
+          .filter(e => !state.activeGroom || (String(e.groomName || e.groom_name || e.groom || '').trim() === state.activeGroom))
           .filter(e => !state.activeHorse || String(e.horseName||'').trim() === state.activeHorse);
         if (state.activeHorse && entries.length === 0) return;
 
@@ -975,10 +1061,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         const rollEntries = rollIds.map(id => state.entriesById.get(String(id))).filter(Boolean);
 
         // horse filter applies to rollups
-        const filtered = rollEntries.filter(e => !state.activeHorse || String(e.horseName||'').trim() === state.activeHorse);
+        const filtered = rollEntries
+          .filter(e => !state.activeGroom || (String(e.groomName || e.groom_name || e.groom || '').trim() === state.activeGroom))
+          .filter(e => !state.activeHorse || String(e.horseName||'').trim() === state.activeHorse);
 
         // If horse filter is ON and no matching, hide whole class (matches Lite behavior)
-        if (state.activeHorse && filtered.length === 0) return;
+        if ((state.activeHorse || state.activeGroom) && filtered.length === 0) return;
 
         const classCard = document.createElement('div');
         classCard.className = 'class_card';
@@ -1026,6 +1114,71 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     renderFull();
     renderPeaks();
     syncGlobalStatusButtons();
+
+    // Time (Summary) — Pro-style list, no ring grouping
+    if (time_container){
+      const classes = groupTripsToClasses();
+
+      classes.sort((a,b) => {
+        const ta = Number(a.time_sort || 0), tb = Number(b.time_sort || 0);
+        if (ta !== tb) return ta - tb;
+        const ra = Number(a.ring_number || 0), rb = Number(b.ring_number || 0);
+        if (ra !== rb) return ra - rb;
+        const na = String(a.class_number||'');
+        const nb = String(b.class_number||'');
+        const nra = Number(na), nrb = Number(nb);
+        if (!Number.isNaN(nra) && !Number.isNaN(nrb) && nra !== nrb) return nra - nrb;
+        return na.localeCompare(nb);
+      });
+
+      time_container.innerHTML = '';
+      classes.forEach(c => {
+        // entry filter: inactive + groom/horse focus (no status filter here)
+        const entries = c.entries
+          .filter(e => !isHorseInactive(e.horseName))
+          .filter(e => !state.activeGroom || (String(e.groomName || e.groom_name || e.groom || '').trim() === state.activeGroom))
+          .filter(e => !state.activeHorse || String(e.horseName||'').trim() === state.activeHorse);
+
+        if ((state.activeHorse || state.activeGroom) && entries.length === 0) return;
+
+        const baseEntries = c.entries.filter(e => !isHorseInactive(e.horseName));
+        if (!baseEntries.length) return;
+
+        const classCard = document.createElement('div');
+        classCard.className = 'class_card';
+        classCard.setAttribute('data-class-id', String(c.class_id || ''));
+
+        const statusCode = toStatusCode(c.latestStatus);
+        const timeTxt = fmtStartShort(c.latestStart || '');
+        const numTxt = c.class_number || '—';
+        const nameTxt = c.class_name || '—';
+        const tagTxt = String(c.ring_number || '—');
+
+        classCard.innerHTML = `
+          <div class="class_line" data-open-class="${esc(c.class_id)}" data-status="${statusCode}">
+            <div class="c_time">${esc(timeTxt)}</div>
+            <div class="c_num">${esc(numTxt)}</div>
+            <div class="c_name">
+              <div class="c_name_main">${esc(nameTxt)}</div>
+            </div>
+            <div class="c_tag">${esc(tagTxt)}</div>
+            <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${badgeInner(statusCode)}</div></div>
+          </div>
+          ${entries.length ? `<div class="epills">${entries.map(e => `
+            <div class="epill" data-open-entry="${esc(String(e.entry_id||''))}">
+              <div class="epill_top">
+                <span class="epill_h">${esc(trunc6(e.horseName))}</span>
+                <span class="epill_val">${esc(fmtGoShort(e.latestGO || e.latest_estimated_go_time || e.go_time || '—'))}</span>
+              </div>
+              <div class="epill_bot">
+                <span class="epill_k">OOG ${esc(fmtOog3(e.runningOOG || e.lastOOG || e.last_order_of_go || '—'))}</span>
+                <span class="epill_k">${esc(fmtTrips2(e.total_trips || e.trips || c.total_trips || '—'))} Trips</span>
+              </div>
+            </div>`).join('')}</div>` : ``}
+        `;
+        time_container.appendChild(classCard);
+      });
+    }
   }
 
   // ------------------------------------------------

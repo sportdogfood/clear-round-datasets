@@ -11,7 +11,7 @@
 
   <style>
     :root{
-      --bg:#0d1526;
+      --bg:#020617;
       --surface: rgba(255,255,255,.05);
       --surface2: rgba(255,255,255,.08);
       --line: rgba(255,255,255,.14);
@@ -36,7 +36,7 @@
       --nav-h: 62px;
       --peaks-h: 44px;
       --status-h: 44px;
-      --horses-h: 54px;
+      --horses-h: 104px;
 
       /* row grammar */
       --pad: 10px;
@@ -110,6 +110,20 @@
       --main-top-pad: calc(env(safe-area-inset-top) + var(--topbar-h) + var(--status-h) + var(--peaks-h) + 22px);
       --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--horses-h) + 18px);
     }
+
+    .app.filters--bottom{
+      /* MAIN padding (bottom filters only: groom + horses visible) */
+      --main-top-pad: calc(env(safe-area-inset-top) + var(--topbar-h) + 14px);
+      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--horses-h) + 18px);
+    }
+
+    .app.filters--peaks{
+      /* MAIN padding (peaks + bottom filters visible; status hidden) */
+      --main-top-pad: calc(env(safe-area-inset-top) + var(--topbar-h) + var(--peaks-h) + 18px);
+      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--horses-h) + 18px);
+    }
+
+
 
     .app.chrome--hidden{
       --peaks-top: 20px;
@@ -1054,6 +1068,104 @@
       outline: 2px solid rgba(47,107,255,.95);
       outline-offset: 2px;
     }
+  
+    /* row-tap (Start) */
+    .rowtap{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: var(--r-2);
+      padding: 12px 14px;
+      margin-top: 10px;
+      color: var(--text);
+      cursor:pointer;
+      user-select:none;
+    }
+    .rowtap:active{ transform: translateY(1px); }
+    .rowtap__main{ min-width:0; }
+    .rowtap__title{
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: .01em;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rowtap__sub{
+      margin-top: 4px;
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rowtap__dot{
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.22);
+      flex: 0 0 auto;
+    }
+
+    .panel__link{
+      display:inline-block;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    /* Groom chips (above horse chips) */
+    .groombar{
+      display:flex;
+      gap: 8px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:none;
+      margin-bottom: 8px;
+    }
+    .groombar::-webkit-scrollbar{ display:none; }
+    .gchip{
+      flex: 0 0 auto;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.86);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .01em;
+      cursor:pointer;
+      user-select:none;
+      line-height: 1;
+    }
+    .gchip.is-on{
+      border-color: rgba(47,107,255,.55);
+      background: rgba(47,107,255,.18);
+      color:#fff;
+    }
+
+    /* Time view list spacing */
+    #time_card{ margin-top: 10px; }
+
+    /* Full view: hide status controls/badge, expand name */
+    #view-full .c_badge{ display:none; }
+    #view-full .class_line{
+      grid-template-columns: var(--col-time) var(--col-num) minmax(0,1fr) var(--col-tag);
+    }
+    #view-full .ring_actions{ display:none; }
+
   </style>
 </head>
 
@@ -1086,6 +1198,7 @@
 
     <div class="horsesWrap" id="horsesWrap">
       <div class="horses">
+        <div class="groombar" id="groombar" aria-label="Groom filter chips"></div>
         <div class="horsebar" id="horsebar" aria-label="Horse filter chips"></div>
       </div>
     </div>
@@ -1094,17 +1207,46 @@
       <div class="view is-active" id="view-start">
         <div class="panel">
           <div class="panel__title">Start</div>
+          <button class="rowtap" id="startRowPro" type="button">
+            <div class="rowtap__main">
+              <div class="rowtap__title">RingStatus.com</div>
+              <div class="rowtap__sub">Your Show Day Schedule - Fast!</div>
+            </div>
+            <div class="rowtap__dot" aria-hidden="true"></div>
+          </button>
+
+          <button class="rowtap" id="startRowHorses" type="button">
+            <div class="rowtap__main">
+              <div class="rowtap__title">Active Horses</div>
+            </div>
+            <div class="rowtap__dot" aria-hidden="true"></div>
+          </button>
+
+          <a class="panel__link" href="#" id="startDetailsLink">Session details</a>
+
+          <div id="startPanelData" hidden>
+
           <div class="panel__line"><div>Status</div><div id="start_status">Loading…</div></div>
           <div class="panel__line"><div>Last refresh</div><div id="start_refresh">—</div></div>
           <div class="panel__line"><div>Trips</div><div id="start_trips">—</div></div>
           <div class="panel__line"><div>Full classes</div><div id="start_classes">—</div></div>
           <div class="panel__line"><div>Threads</div><div id="start_threads">—</div></div>
-        </div>
+        
+          </div>
+</div>
       </div>
 
       <div class="view" id="view-summary">
+
+        <div class="ring_card" id="time_card">
+          <div class="ring_line">
+            <div class="ring_title">Time</div>
+          </div>
+          <div class="group_wrap" id="time_container"></div>
+        </div>
+
         <div class="panel">
-          <div class="panel__title">Summary</div>
+          <div class="panel__title">Time</div>
           <div class="panel__line"><div>Underway</div><div id="sum_underway">—</div></div>
           <div class="panel__line"><div>Upcoming</div><div id="sum_upcoming">—</div></div>
           <div class="panel__line"><div>Completed</div><div id="sum_completed">—</div></div>
@@ -1172,7 +1314,7 @@
     <div class="bottomnav" id="bottomnav">
       <div class="nav-grid" aria-label="Bottom navigation">
         <div class="nav-btn is-active" data-view="start">Start</div>
-        <div class="nav-btn" data-view="summary">Summary</div>
+        <div class="nav-btn" data-view="summary">Time</div>
         <div class="nav-btn" data-view="lite">Pro</div>
         <div class="nav-btn" data-view="full">Full</div>
         <div class="nav-btn" data-view="threads">Threads</div>
