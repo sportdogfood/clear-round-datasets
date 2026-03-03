@@ -173,17 +173,21 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         if (!horse || isHorseInactive(horse)) return;
         set.add(horse.toLowerCase());
       });
-      return set.size;
+      return { available: true, count: set.size };
     },
     schoolingBridles: () => {
+      let available = false;
       let count = 0;
       state.trips.forEach(r => {
-        const raw = String(r.schoolingBridles ?? r.schooling_bridles ?? r.bridles ?? '').trim().toLowerCase();
-        if (!raw) return;
+        const rawValue = r.schoolingBridles ?? r.schooling_bridles ?? r.bridles;
+        if (rawValue == null || String(rawValue).trim() === '') return;
+        available = true;
+
+        const raw = String(rawValue).trim().toLowerCase();
         if (raw === '0' || raw === 'false' || raw === 'no' || raw === 'none') return;
         count += 1;
       });
-      return count;
+      return { available, count };
     },
   };
 
@@ -325,10 +329,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   }
 
   function getNavProfile(){
-    const hasBadgeData = state.trips.some(r =>
-      r.schoolingBridles != null || r.schooling_bridles != null || r.bridles != null
-    );
-    return hasBadgeData ? 'default' : 'legacy';
+    const qp = new URLSearchParams(window.location.search || '');
+    if (qp.get('nav') === 'legacy' || qp.get('profile') === 'legacy') return 'legacy';
+    return state.trips.length ? 'default' : 'legacy';
   }
 
   function getNavConfig(){
@@ -345,8 +348,10 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   function getBadgeCount(countSource){
     const fn = NAV_COUNT_SOURCES[countSource];
     if (!fn) return null;
-    const n = Number(fn());
-    return Number.isFinite(n) && n > 0 ? n : null;
+    const meta = fn();
+    if (!meta || !meta.available) return null;
+    const n = Number(meta.count);
+    return Number.isFinite(n) && n >= 0 ? n : null;
   }
 
   function renderNav(currentView){

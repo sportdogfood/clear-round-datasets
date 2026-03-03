@@ -234,7 +234,6 @@
     .nav-tab{
       height: 44px;
       min-width: 64px;
-      max-width: 124px;
       width: auto;
       padding: 0 11px;
       border-radius: var(--r-pill);
@@ -1150,6 +1149,34 @@
       user-select:none;
     }
 
+    .start-hero{
+      margin-top: 12px;
+      border-radius: var(--r-2);
+      border: 1px solid rgba(47,107,255,.28);
+      background: linear-gradient(135deg, rgba(47,107,255,.16), rgba(10,18,40,.10));
+      padding: 14px;
+    }
+    .start-hero__eyebrow{
+      font-size: var(--fs-1);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.66);
+      font-weight: 700;
+    }
+    .start-hero__title{
+      margin-top: 6px;
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: rgba(255,255,255,.98);
+    }
+    .start-hero__sub{
+      margin-top: 6px;
+      font-size: var(--fs-3);
+      font-weight: 500;
+      color: rgba(255,255,255,.82);
+    }
+
     /* Groom chips (above horse chips) */
     .groombar{
       display:flex;
@@ -1239,8 +1266,8 @@
           <div class="panel__title">Start</div>
           <button class="rowtap" id="startRowPro" type="button">
             <div class="rowtap__main">
-              <div class="rowtap__title">RingStatus.com</div>
-              <div class="rowtap__sub">Your Show Day Schedule - Fast!</div>
+              <div class="rowtap__title">Start</div>
+              <div class="rowtap__sub">Open the live schedule view</div>
             </div>
             <div class="rowtap__dot" aria-hidden="true"></div>
           </button>
@@ -1248,11 +1275,16 @@
           <button class="rowtap" id="startRowHorses" type="button">
             <div class="rowtap__main">
               <div class="rowtap__title">Active Horses</div>
+              <div class="rowtap__sub">Jump to current horse list</div>
             </div>
             <div class="rowtap__dot" aria-hidden="true"></div>
           </button>
 
-          <a class="panel__link" href="#" id="startDetailsLink">Session details</a>
+          <div class="start-hero" aria-label="Company hero">
+            <div class="start-hero__eyebrow">RingStatus</div>
+            <div class="start-hero__title">Your Show Day Schedule</div>
+            <div class="start-hero__sub">Fast, branded, and focused for your team.</div>
+          </div>
 
           <div id="startPanelData" hidden>
 
