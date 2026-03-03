@@ -93,6 +93,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   const startRowSummary = document.getElementById('startRowSummary');
   const startRowRestart = document.getElementById('startRowRestart');
   const startPanelData = document.getElementById('startPanelData');
+  const startPanel = views.start ? views.start.querySelector('.panel') : null;
 
   const time_container = document.getElementById('time_container');
 
@@ -133,6 +134,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     errors: []
   };
 
+<<<<<<< ours
   const NAV_CONFIG = {
     default: {
       fallback: 'start',
@@ -185,6 +187,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       return { available, count };
     },
   };
+=======
+  const ENABLE_BRANDED_START_FLOW = !!(window.__ENABLE_BRANDED_START_FLOW__ || /[?&]brandedStart=1\b/.test(window.location.search || ''));
+>>>>>>> theirs
 
   // ------------------------------------------------
   // Utilities
@@ -465,20 +470,115 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   });
   btnBack.addEventListener('click', () => { /* reserved */ });
 
+  function resetSessionState(){
+    state.globalStatus = '';
+    state.activeHorse = '';
+    state.activeGroom = '';
+    state.activeRing = '';
+    state.horseSearch = '';
+    state.inactiveHorses = new Set();
+    writeInactiveHorses(state.inactiveHorses);
+    syncGlobalStatusButtons();
+    buildHorseChips();
+    renderLiteAndFull();
+  }
 
-  // Start quick actions
-  if (startRowPro){
-    startRowPro.addEventListener('click', () => {
-      setView('lite');
-      main.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+  const START_ACTIONS_BASE = [
+    {
+      id: 'pro',
+      label: 'RingStatus.com',
+      subtitle: 'Your Show Day Schedule - Fast!',
+      route: 'lite',
+      resolveState: () => null
+    },
+    {
+      id: 'horses',
+      label: 'Active Horses',
+      subtitle: '',
+      route: 'horses',
+      resolveState: () => null
+    }
+  ];
+
+  const START_ACTIONS_BRANDED = [
+    {
+      id: 'in-session',
+      label: 'In-session',
+      subtitle: 'Continue where you left off',
+      route: 'lite',
+      resolveState: () => (state.lastLoadedAt ? 'Ready' : 'Loading…')
+    },
+    {
+      id: 'summary',
+      label: 'Summary',
+      subtitle: 'Open the Time summary dashboard',
+      route: 'summary',
+      resolveState: () => {
+        const total = Number(sum_underway.textContent || 0) + Number(sum_upcoming.textContent || 0) + Number(sum_completed.textContent || 0);
+        return Number.isFinite(total) && total > 0 ? (String(total) + ' classes') : null;
+      }
+    },
+    {
+      id: 'restart-session',
+      label: 'Restart session',
+      subtitle: 'Clear local filters and hidden horses',
+      action: resetSessionState,
+      confirm: 'Restart session and clear local filters?',
+      resolveState: () => (state.globalStatus || state.activeHorse || state.activeGroom || state.inactiveHorses.size ? 'Modified' : 'Clean')
+    }
+  ];
+
+  function getStartActions(){
+    return ENABLE_BRANDED_START_FLOW ? START_ACTIONS_BRANDED.concat(START_ACTIONS_BASE) : START_ACTIONS_BASE;
   }
-  if (startRowHorses){
-    startRowHorses.addEventListener('click', () => {
-      setView('horses');
-      main.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+
+  function runStartAction(action){
+    if (!action) return;
+    if (action.confirm && !window.confirm(action.confirm)) return;
+    if (typeof action.action === 'function') {
+      action.action();
+      setView('start');
+    } else if (action.route) {
+      setView(action.route);
+    }
+    main.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  function renderStartActions(){
+    if (!startPanel) return;
+
+    const existing = startPanel.querySelector('#startActions');
+    const wrap = existing || document.createElement('div');
+    wrap.id = 'startActions';
+    wrap.innerHTML = '';
+
+    getStartActions().forEach(action => {
+      const btn = document.createElement('button');
+      btn.className = 'rowtap';
+      btn.type = 'button';
+      btn.dataset.startAction = action.id;
+
+      const stateText = typeof action.resolveState === 'function' ? action.resolveState() : null;
+      const subtitleBits = [];
+      if (action.subtitle) subtitleBits.push(esc(action.subtitle));
+      if (stateText) subtitleBits.push(esc(stateText));
+
+      btn.innerHTML = '<div class="rowtap__main">'
+        + '<div class="rowtap__title">' + esc(action.label) + '</div>'
+        + (subtitleBits.length ? '<div class="rowtap__sub">' + subtitleBits.join(' • ') + '</div>' : '')
+        + '</div>'
+        + '<div class="rowtap__dot" aria-hidden="true"></div>';
+
+      btn.addEventListener('click', () => runStartAction(action));
+      wrap.appendChild(btn);
+    });
+
+    if (!existing){
+      const anchor = startDetailsLink || startPanel.firstChild;
+      startPanel.insertBefore(wrap, anchor);
+    }
+  }
+<<<<<<< ours
   if (startRowSummary){
     startRowSummary.addEventListener('click', () => {
       setView('summary');
@@ -497,6 +597,22 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
       buildHorseChips();
       renderLiteAndFull();
       renderPeaks();
+=======
+
+  if (startRowPro) startRowPro.remove();
+  if (startRowHorses) startRowHorses.remove();
+  renderStartActions();
+
+  if (startDetailsLink && startPanelData){
+    // default hidden
+    startPanelData.hidden = true;
+    startDetailsLink.textContent = 'Session details';
+    startDetailsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const willShow = startPanelData.hidden;
+      startPanelData.hidden = !willShow;
+      startDetailsLink.textContent = willShow ? 'Hide session details' : 'Session details';
+>>>>>>> theirs
     });
   }
   if (startPanelData){ startPanelData.hidden = true; }
@@ -928,6 +1044,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     sum_underway.textContent = String(statusCounts.L || 0);
     sum_upcoming.textContent = String(statusCounts.U || 0);
     sum_completed.textContent = String(statusCounts.C || 0);
+
+    renderStartActions();
 
     // Top movers (reference)
     if (moversBody){
