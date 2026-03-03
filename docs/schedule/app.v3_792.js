@@ -573,8 +573,10 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     const rings = Array.from(ringsMap.values()).sort((a,b) => (a.ring_number||0) - (b.ring_number||0));
     rings.forEach((r, idx) => {
       const target = `#ring-${state.activeView}-${r.ring_number}`;
-      const el = document.querySelector(target);
-      if (!el) return;
+      if (state.activeView !== 'summary'){
+        const el = document.querySelector(target);
+        if (!el) return;
+      }
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -835,20 +837,22 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     start_classes.textContent = String(classesN || '—');
     start_threads.textContent = String(threadsN || '—');
 
-    // summary counts from schedule if available else trips grouped
-    const statusCounts = { U:0, L:0, C:0 };
-    const source = state.schedule.length ? state.schedule : state.trips;
-    const seen = new Set();
-    source.forEach(r => {
-      const cid = r.class_id || (r.class_number + '|' + r.ring_number + '|' + r.class_name);
-      if (seen.has(cid)) return;
-      seen.add(cid);
-      const code = toStatusCode(r.latestStatus);
-      statusCounts[code] = (statusCounts[code] || 0) + 1;
-    });
-    sum_underway.textContent = String(statusCounts.L || 0);
-    sum_upcoming.textContent = String(statusCounts.U || 0);
-    sum_completed.textContent = String(statusCounts.C || 0);
+    if (sum_underway || sum_upcoming || sum_completed){
+      // summary counts from schedule if available else trips grouped
+      const statusCounts = { U:0, L:0, C:0 };
+      const source = state.schedule.length ? state.schedule : state.trips;
+      const seen = new Set();
+      source.forEach(r => {
+        const cid = r.class_id || (r.class_number + '|' + r.ring_number + '|' + r.class_name);
+        if (seen.has(cid)) return;
+        seen.add(cid);
+        const code = toStatusCode(r.latestStatus);
+        statusCounts[code] = (statusCounts[code] || 0) + 1;
+      });
+      if (sum_underway) sum_underway.textContent = String(statusCounts.L || 0);
+      if (sum_upcoming) sum_upcoming.textContent = String(statusCounts.U || 0);
+      if (sum_completed) sum_completed.textContent = String(statusCounts.C || 0);
+    }
 
     // Top movers (reference)
     if (moversBody){
@@ -1194,12 +1198,6 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
     // Time (Summary) — Pro-style list, no ring grouping
     if (time_container){
-      const timeTitle = document.getElementById('timeTitle');
-      if (timeTitle){
-        const dt = state.lastLoadedAt ? state.lastLoadedAt.toLocaleString() : '—';
-        timeTitle.textContent = `Published ${dt}`;
-      }
-
       const classes = groupTripsToClasses();
 
       classes.sort((a,b) => {
@@ -1251,18 +1249,23 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
             <div class="c_tag">${esc(tagTxt)}</div>
             <div class="c_badge"><div class="badge ${badgeClass(statusCode)}">${badgeInner(statusCode)}</div></div>
           </div>
-          ${entries.length ? `<div class="epills">${entries.map(e => `
-            <div class="epill" data-open-entry="${esc(String(e.entry_id||''))}">
-              <div class="epill_top">
-                <span class="epill_h">${esc(trunc6(e.horseName))}</span>
-                <span class="epill_val">${esc(fmtGoShort(e.latestGO || e.latest_estimated_go_time || e.go_time || '—'))}</span>
-              </div>
-              <div class="epill_bot">
-                <span class="epill_k">OOG ${esc(fmtOog3(e.runningOOG || e.lastOOG || e.last_order_of_go || '—'))}</span>
-                <span class="epill_k">${esc(fmtTrips2(e.total_trips || e.trips || c.total_trips || '—'))} Trips</span>
-              </div>
-            </div>`).join('')}</div>` : ``}
+          ${entries.length ? `<div class="rollup_line"><div class="rollup_scroller"></div></div>` : ``}
         `;
+
+        const sc = classCard.querySelector('.rollup_scroller');
+        if (sc){
+          entries.forEach(e => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'epill';
+            btn.setAttribute('data-status', statusCode);
+            btn.setAttribute('data-open-entry', String(e.entry_id || ''));
+            btn.setAttribute('data-horse', String(e.horseName || '').trim());
+            btn.innerHTML = epillInner(e.horseName, e.lastOOG, (e.total_trips ?? c.total_trips), e.latestGO);
+            sc.appendChild(btn);
+          });
+        }
+
         time_container.appendChild(classCard);
       });
     }
@@ -1317,7 +1320,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   }
 
   // ------------------------------------------------
-  // Flyups (Lite only)
+  // Flyups (Lite + Summary)
   // -----------------------------
   function openSms(body){
     if (!body) return;
@@ -1370,9 +1373,9 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   if (flySMS) flySMS.addEventListener('click', () => openSms(state.flySmsBody));
   flyBackdrop.addEventListener('click', closeFly);
 
-  // Event delegation for Lite clicks
+  // Event delegation for Lite + Summary clicks
   document.addEventListener('click', (e) => {
-    if (state.activeView !== 'lite') return;
+    if (state.activeView !== 'lite' && state.activeView !== 'summary') return;
 
     const cls = e.target.closest('[data-open-class]');
     if (cls){

@@ -72,6 +72,16 @@
       --col-tag: 38px;
         --col-badge: 48px;
       }
+      .nav-grid{
+        gap: 4px;
+        padding: 10px 6px;
+      }
+      .nav-btn{
+        height: 40px;
+        padding: 0 4px;
+        font-size: 10px;
+        letter-spacing: 0;
+      }
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -235,17 +245,16 @@
     .nav-grid{
       height: var(--nav-h);
       display:grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       justify-items: center;
-      gap: 8px;
-      padding: 10px var(--pad);
+      gap: 6px;
+      padding: 10px 8px;
     }
     .nav-btn{
       height: 42px;
-      min-width: 62px;
-      max-width: 86px;
-      width: auto;
-      padding: 0 10px;
+      width: 100%;
+      min-width: 0;
+      padding: 0 6px;
       border-radius: var(--r-pill);
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.04);
@@ -257,6 +266,9 @@
       font-weight: 600;
       user-select:none;
       white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      box-sizing:border-box;
       cursor:pointer;
     }
     .nav-btn:active{ transform: translateY(1px) scale(.995); }
@@ -1178,9 +1190,6 @@
       color:#fff;
     }
 
-    /* Time view list spacing */
-    #time_card{ margin-top: 10px; }
-
     /* Full view: hide status controls/badge, expand name */
     #view-full .c_badge{ display:none; }
     #view-full .class_line{
@@ -1252,55 +1261,8 @@
       </div>
 
       <div class="view" id="view-summary">
-
-        <div class="ring_card" id="time_card">
-          <div class="ring_line">
-            <div class="ring_title" id="timeTitle">Published —</div>
-          </div>
-          <div class="group_wrap" id="time_container"></div>
-        </div>
-
-        <div class="panel" hidden>
-          <div class="panel__title">Time</div>
-          <div class="panel__line"><div>Underway</div><div id="sum_underway">—</div></div>
-          <div class="panel__line"><div>Upcoming</div><div id="sum_upcoming">—</div></div>
-          <div class="panel__line"><div>Completed</div><div id="sum_completed">—</div></div>
-        
-          <div class="panel__spacer"></div>
-
-          <div class="panel__title" style="margin-top:10px;">Time Range</div>
-          <div class="panel__line" style="gap:8px;">
-            <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
-              <button class="sbtn" type="button" id="range_1">1H</button>
-              <button class="sbtn is-on" type="button" id="range_3">3H</button>
-              <button class="sbtn" type="button" id="range_all">ALL</button>
-            </div>
-          </div>
-
-          <div class="panel__title" style="margin-top:10px;">Compare</div>
-          <div class="panel__line">
-            <div>Compare button</div>
-            <button class="sbtn" type="button" id="btnCompare">Compare</button>
-          </div>
-
-          <div class="panel__title" style="margin-top:10px;">Pills / Badges</div>
-          <div class="panel__line" style="gap:8px;">
-            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-              <div class="badge badge--upcoming"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Soon</span></div>
-              <div class="badge badge--underway"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 12-14h-7l1-6z"/></svg></span><span>Now</span></div>
-              <div class="badge badge--completed"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2 2 6-6"/></svg></span><span>Done</span></div>
-            </div>
-          </div>
-
-          <div class="panel__title" style="margin-top:10px;">Top Movers</div>
-          <div class="panel__table" id="moversTable" style="margin-top:6px;">
-            <div class="panel__line" style="opacity:.7; display:grid; grid-template-columns:minmax(0,1fr) 44px 52px 80px; gap:10px;">
-              <div>Horse</div><div>Ring</div><div>OOG</div><div>GO</div>
-            </div>
-            <div id="moversBody"></div>
-          </div>
-</div>
-        </div>
+        <div class="group_wrap" id="time_container"></div>
+      </div>
 
       <div class="view" id="view-lite">
         <div class="rings_container" id="rings_container_lite"></div>
