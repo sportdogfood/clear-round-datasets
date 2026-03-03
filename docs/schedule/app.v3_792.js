@@ -55,11 +55,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   // ------------------------------------------------
   const app = document.getElementById('app');
   const main = document.getElementById('main');
+  const topbar = document.getElementById('topbar');
 
   const statusWrap = document.getElementById('statusWrap');
   const peaksWrap = document.getElementById('peaksWrap');
   const horsesWrap = document.getElementById('horsesWrap');
-  const groomsWrap = document.getElementById('groomsWrap');
+  const groomWrap = document.getElementById('groomWrap') || document.getElementById('groomsWrap');
   const peakbar = document.getElementById('peakbar');
   const horsebar = document.getElementById('horsebar');
   const groombar = document.getElementById('groombar');
@@ -266,6 +267,55 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     return state.activeView === 'full' ? ringsFullEl : ringsLiteEl;
   }
 
+  function isGroomView(viewKey){
+    return viewKey === 'lite' || viewKey === 'summary';
+  }
+
+  function hasVisibleGroomChips(){
+    if (!groombar) return false;
+    return groombar.style.display !== 'none' && groombar.childElementCount > 0;
+  }
+
+  function visibleHeight(el){
+    if (!el || el.hidden) return 0;
+    return Math.ceil(el.getBoundingClientRect().height || el.offsetHeight || 0);
+  }
+
+  function syncOverlayLayout(){
+    const topbarH = topbar ? Math.ceil(topbar.offsetHeight || 0) : 0;
+    const statusH = visibleHeight(statusWrap);
+    const peaksH = visibleHeight(peaksWrap);
+    const groomH = (groomWrap && !groomWrap.hidden && hasVisibleGroomChips()) ? visibleHeight(groomWrap) : 0;
+    const horsesH = visibleHeight(horsesWrap);
+
+    app.style.setProperty('--status-h', `${statusH}px`);
+    app.style.setProperty('--peaks-h', `${peaksH}px`);
+    app.style.setProperty('--groom-h', `${groomH}px`);
+    app.style.setProperty('--horses-h', `${horsesH}px`);
+
+    statusWrap.style.top = topbarH + 'px';
+    peaksWrap.style.top  = (topbarH + statusH) + 'px';
+    if (groomWrap) groomWrap.style.top = '';
+    horsesWrap.style.top = '';
+  }
+
+  function currentTopOverlayOffset(){
+    const mainRect = main.getBoundingClientRect();
+    let overlayBottom = mainRect.top;
+
+    [topbar, statusWrap, peaksWrap].forEach(el => {
+      if (!el || el.hidden) return;
+      const rect = el.getBoundingClientRect();
+      const visibleTop = Math.max(rect.top, mainRect.top);
+      const visibleBottom = Math.min(rect.bottom, mainRect.bottom);
+      if (visibleBottom > visibleTop){
+        overlayBottom = Math.max(overlayBottom, visibleBottom);
+      }
+    });
+
+    return Math.max(0, Math.round(overlayBottom - mainRect.top + 8));
+  }
+
   // ------------------------------------------------
   // Chrome hide/show on scroll
   // ------------------------------------------------
@@ -306,23 +356,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     const showBottomFilters = (viewKey === 'lite' || viewKey === 'full' || viewKey === 'summary');
     statusWrap.hidden = !(viewKey === 'lite' || viewKey === 'summary');
     peaksWrap.hidden  = !(viewKey === 'lite' || viewKey === 'full' || viewKey === 'summary');
-    if (groomsWrap) groomsWrap.hidden = !(viewKey === 'lite' || viewKey === 'summary');
+    if (groomWrap) groomWrap.hidden = !isGroomView(viewKey);
     horsesWrap.hidden = !showBottomFilters;
 
     app.classList.toggle('filters--on', (viewKey === 'lite'));
     app.classList.toggle('filters--peaks', (viewKey === 'full'));
     app.classList.toggle('filters--bottom', (viewKey === 'summary'));
-
-    // tighten sticky stack (prevents gaps when some bars are hidden)
-    const topbarH = (document.getElementById('topbar')?.offsetHeight || 0);
-    const statusH = (!statusWrap.hidden ? statusWrap.offsetHeight : 0);
-    const peaksH  = (!peaksWrap.hidden ? peaksWrap.offsetHeight : 0);
-    const groomsH = (groomsWrap && !groomsWrap.hidden) ? groomsWrap.offsetHeight : 0;
-
-    statusWrap.style.top = topbarH + 'px';
-    peaksWrap.style.top  = (topbarH + statusH) + 'px';
-    if (groomsWrap) groomsWrap.style.top = (topbarH + statusH + peaksH) + 'px';
-    horsesWrap.style.top = (topbarH + statusH + peaksH + groomsH) + 'px';
 
     topTitle.textContent = viewKey === 'lite' ? 'Pro'
                        : viewKey === 'full' ? 'Full Schedule'
@@ -335,6 +374,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
     buildHorseChips();
     syncGlobalStatusButtons();
     renderPeaks();
+    syncOverlayLayout();
   }
 
   document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
@@ -396,6 +436,7 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   });
 
   function buildHorseChips(){
+    const allowGroomWrap = isGroomView(state.activeView);
     const applyStatus = (state.activeView === 'lite' || state.activeView === 'summary');
 
     // Horse chips: apply inactive + (Pro status) + groom focus; exclude horse focus
@@ -472,6 +513,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         groombar.style.display = 'none';
       }
     }
+
+    if (groomWrap){
+      groomWrap.hidden = !(allowGroomWrap && grooms.length > 0);
+    }
+
+    syncOverlayLayout();
   }
 
   
@@ -558,11 +605,12 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
 
   function scrollToRing(sel){
     const container = getActiveRingsContainer();
+    if (!container) return;
     const scope = container.closest('.view');
     const el = scope ? scope.querySelector(sel) : null;
     if (!el) return;
 
-    const overlay = 48 + 74 + 28; // rough topbar+peaks+gap
+    const overlay = currentTopOverlayOffset();
     const mainRect = main.getBoundingClientRect();
     const elTopInMain = el.getBoundingClientRect().top - mainRect.top + main.scrollTop;
     main.scrollTo({ top: Math.max(0, elTopInMain - overlay), behavior: 'smooth' });
@@ -1218,6 +1266,8 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
         time_container.appendChild(classCard);
       });
     }
+
+    syncOverlayLayout();
   }
 
   // ------------------------------------------------
@@ -1416,7 +1466,10 @@ const URL_TRIPS    = urlCandidates('watch_trips.json');
   // ------------------------------------------------
   // Boot
   // ------------------------------------------------
+  window.addEventListener('resize', syncOverlayLayout, { passive: true });
+
   setView('start');
+  syncOverlayLayout();
   loadAll();
 
   // refresh loop

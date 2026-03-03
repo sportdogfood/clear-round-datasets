@@ -36,7 +36,8 @@
       --nav-h: 62px;
       --peaks-h: 44px;
       --status-h: 44px;
-      --horses-h: 104px;
+      --groom-h: 52px;
+      --horses-h: 44px;
 
       /* row grammar */
       --pad: 10px;
@@ -108,13 +109,13 @@
     .app.filters--on{
       /* MAIN padding (filters ON: peaks + horses are visible) */
       --main-top-pad: calc(env(safe-area-inset-top) + var(--topbar-h) + var(--status-h) + var(--peaks-h) + 22px);
-      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--horses-h) + 18px);
+      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--groom-h) + var(--horses-h) + 18px);
     }
 
     .app.filters--bottom{
       /* MAIN padding (bottom filters only: groom + horses visible) */
       --main-top-pad: calc(env(safe-area-inset-top) + var(--topbar-h) + 14px);
-      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--horses-h) + 18px);
+      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--nav-h) + var(--groom-h) + var(--horses-h) + 18px);
     }
 
     .app.filters--peaks{
@@ -136,6 +137,16 @@
 
     .app.filters--on.chrome--hidden{
       /* MAIN padding (filters ON: reclaim topbar/nav only) */
+      --main-top-pad: calc(env(safe-area-inset-top) + var(--peaks-h) + 18px);
+      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--groom-h) + var(--horses-h) + 14px);
+    }
+
+    .app.filters--bottom.chrome--hidden{
+      --main-top-pad: calc(env(safe-area-inset-top) + var(--peaks-h) + 18px);
+      --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--groom-h) + var(--horses-h) + 14px);
+    }
+
+    .app.filters--peaks.chrome--hidden{
       --main-top-pad: calc(env(safe-area-inset-top) + var(--peaks-h) + 18px);
       --main-bot-pad: calc(env(safe-area-inset-bottom) + var(--horses-h) + 14px);
     }
@@ -504,6 +515,18 @@
     /* ---------------------------------------------------------
        HORSES (filter chips)
     --------------------------------------------------------- */
+    .groomWrap{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--horses-bottom) + var(--horses-h) + 8px);
+      width: 100%;
+      max-width: 480px;
+      z-index: 45;
+      padding: 0 var(--pad);
+      transition: bottom .18s ease;
+      pointer-events: none;
+    }
     .horsesWrap{
       position: fixed;
       left: 50%;
@@ -1132,7 +1155,6 @@
       overflow-x:auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width:none;
-      margin-bottom: 8px;
     }
     .groombar::-webkit-scrollbar{ display:none; }
     .gchip{
@@ -1193,18 +1215,6 @@
 <div class="peaksWrap" id="peaksWrap">
       <div class="peaks">
         <div class="peakbar" id="peakbar" aria-label="Ring peaks"></div>
-      </div>
-    </div>
-
-    <div class="horsesWrap" id="groomsWrap">
-      <div class="horses">
-        <div class="groombar" id="groombar" aria-label="Groom filter chips"></div>
-      </div>
-    </div>
-
-    <div class="horsesWrap" id="horsesWrap">
-      <div class="horses">
-        <div class="horsebar" id="horsebar" aria-label="Horse filter chips"></div>
       </div>
     </div>
 
@@ -1314,6 +1324,18 @@
         </div>
       </div>
 
+    </div>
+
+    <div class="groomWrap" id="groomWrap">
+      <div class="horses">
+        <div class="groombar" id="groombar" aria-label="Groom filter chips"></div>
+      </div>
+    </div>
+
+    <div class="horsesWrap" id="horsesWrap">
+      <div class="horses">
+        <div class="horsebar" id="horsebar" aria-label="Horse filter chips"></div>
+      </div>
     </div>
 
     <div class="bottomnav" id="bottomnav">
