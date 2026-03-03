@@ -1171,3 +1171,77 @@
 
         </div>
       </div
+      
+      <div class="view" id="view-summary">
+        <section class="ring_card" id="time_card">
+          <div class="ring_line">
+            <div class="ring_title">Time</div>
+          </div>
+          <div class="group_wrap" id="time_container"></div>
+        </section>
+      </div>
+
+      <div class="view" id="view-lite">
+
+        <div class="rings_container" id="rings_container_lite"></div>
+      </div>
+
+      <div class="view" id="view-full">
+        <div class="rings_container" id="rings_container_full"></div>
+      </div>
+
+      <div class="view" id="view-threads">
+        <div class="panel">
+          <div class="panel__title">Threads</div>
+          <div id="threads_container"></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-horses">
+        <div class="panel">
+          <div class="panel__title">Horses</div>
+          <div id="horses_container"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bottomnav" id="bottomnav">
+      <div class="nav-grid" aria-label="Bottom navigation">
+        <div class="nav-btn is-active" data-view="start">Start</div>
+        <div class="nav-btn" data-view="summary">Summary</div>
+        <div class="nav-btn" data-view="lite">Pro</div>
+        <div class="nav-btn" data-view="full">Full</div>
+        <div class="nav-btn" data-view="threads">Threads</div>
+        <div class="nav-btn" data-view="horses">Horses</div>
+      </div>
+    </div>
+
+    <div class="fly" id="fly">
+      <div class="fly_backdrop" id="flyBackdrop"></div>
+      <div class="fly_sheet" role="dialog" aria-modal="true" aria-label="Details">
+        <div class="fly_bar" aria-label="Flyup header">
+          <button class="ring_btn ring_btn--icon" type="button" id="flySMS" aria-label="SMS" title="SMS">
+            <span class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+              </svg>
+            </span>
+          </button>
+          <div class="fly_title" id="flyTitle">Details</div>
+          <button class="ring_btn ring_btn--icon" type="button" id="flyClose" aria-label="Close" title="Close">
+            <span class="ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+        <div class="fly_body" id="flyBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.v2_90.js"></script>
+</body>
+</html>
