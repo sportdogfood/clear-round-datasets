@@ -179,7 +179,7 @@
     /* anchor offset for sticky topbar + filterbar */
     scroll-margin-top: calc(var(--topbar-h) + var(--filterbar-h) + 10px);
   }
-  
+
  .ring-head{
     background:var(--ring);
     color: #000000;
@@ -752,7 +752,8 @@
   }
 
   function applyFilters(){
-    const groups = Array.from(document.querySelectorAll(".group.has-team"));
+    // CHANGED: apply to ALL groups (full schedule), not just has-team groups
+    const groups = Array.from(document.querySelectorAll(".group"));
 
     const needHorse = activeHorse !== "__all__";
     const needStatus = activeStatus !== "__all__";
@@ -788,8 +789,9 @@
     }
 
     for(const sec of ringSections){
-      const teamGroups = Array.from(sec.querySelectorAll(".group.has-team"));
-      const anyVisible = teamGroups.some(g => g.style.display !== "none");
+      // CHANGED: ring visibility based on ANY visible group (full schedule)
+      const groupsInRing = Array.from(sec.querySelectorAll(".group"));
+      const anyVisible = groupsInRing.some(g => g.style.display !== "none");
 
       sec.style.display = anyVisible ? "" : "none";
 
