@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CRT Trips (Mobile)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --border:#d0d0d0;
+    --ring:#a6d0fc;
+
+    --topbar-h: 56px;
+    --filterbar-h: 92px;     /* will be synced */
+    --bottombar-h: 64px;     /* will be synced */
+
+    --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  html{
+    scroll-behavior:smooth;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:var(--bg);
+    font-size:16px;
+    min-height:100dvh;
+    padding-bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom, 0px));
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+
+  /* Sticky top header */
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(255,255,255,.96);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:10px 12px;
+    min-height:var(--topbar-h);
+    height:var(--topbar-h);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+  }
+  .topbar-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .topbar-text{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .title{font-weight:900; font-size:16px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .home-pill{
+    flex:0 0 auto;
+    height:36px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    font-size:13px;
+    font-weight:900;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .home-pill:active{ transform: translateY(1px) scale(0.99); }
+
+  /* Sticky top filters (2 rows) */
+  .filterbar{
+    position:sticky;
+    top: var(--topbar-h);
+    z-index:25;
+    background:rgba(255, 255, 255, 0);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:6px 10px 6px 10px;
+  }
+  .filter-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:4px 0;
+    overflow:hidden;
+  }
+
+  .nav-scroller{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width:none;
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .nav-scroller::-webkit-scrollbar{display:none;}
+
+  .nav-btn{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    padding:8px 12px;
+    font-size:13px;
+    font-weight:700;
+    border-radius:999px;
+    text-decoration:none;
+    white-space:nowrap;
+    user-select:none;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-btn.active{ border-color:#000; }
+
+  /* Main list */
+  main{
+    padding:6px 6px 6px 6px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .list{
+    border:1px solid #000;
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .list-head{
+    background:var(--ring);
+    color:#000;
+    padding:10px 10px;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:.02em;
+  }
+
+  /* Trip rows */
+  .trip{
+    display:grid;
+    grid-template-columns:72px 1fr auto; /* time | label | meta */
+    column-gap:10px;
+    align-items:center;
+    line-height:1.15;
+    padding:10px 10px;
+    border-bottom:1px solid #eee;
+  }
+  .trip:last-child{border-bottom:none;}
+
+  .t{
+    font-weight:900;
+    font-size:13px;
+    white-space:nowrap;
+    justify-self:start;
+  }
+
+  .trip.time2 .t{
+    background: rgb(11 93 71 / 18%);
+    padding:2px 6px;
+    border-radius:6px;
+    width:max-content;
+  }
+
+  .mid{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .line1{
+    font-size:13px;
+    font-weight:800;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .line2{
+    font-size:12px;
+    color:var(--muted);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .meta{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:4px;
+    min-width:0;
+  }
+  .ringpill{
+    font-size:10px;
+    font-weight:800;
+    text-transform: uppercase;
+    white-space:nowrap;
+    opacity:.9;
+  }
+  .s{
+    font-size:10px;
+    font-weight:900;
+    text-transform: uppercase;
+    white-space:nowrap;
+  }
+
+  /* zebra */
+  .list .trip:nth-child(even){
+    background: rgba(255,255,255,0.28);
+  }
+
+  .muted{color:var(--muted); font-size:13px; padding:10px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:13px; border:1px solid #b00020; border-radius:10px;}
+
+  /* Bottom ring filter bar (1 row) */
+  .bottom-bar{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:30;
+    background:rgba(255, 255, 255, 0.0);
+    backdrop-filter: blur(6px);
+    border-top:1px solid var(--border);
+    padding:4px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="topbar-text">
+      <div class="title" id="title">Watch Trips</div>
+      <div class="subtitle" id="subtitle"></div>
+    </div>
+    <a class="home-pill" href="https://ringstatus.com">Home</a>
+  </div>
+</header>
+
+<!-- Top filters: Groom + Status -->
+<nav class="filterbar" id="topFilterBar" aria-label="Trip Filters">
+  <div class="filter-row">
+    <div class="nav-scroller" id="groomFilters"></div>
+  </div>
+  <div class="filter-row">
+    <div class="nav-scroller" id="statusFilters"></div>
+  </div>
+</nav>
+
+<main>
+  <section class="list">
+    <div class="list-head" id="listHead">Latest</div>
+    <div id="tripList"></div>
+  </section>
+</main>
+
+<!-- Bottom filters: Ring -->
+<nav class="bottom-bar" id="bottomBar" aria-label="Ring Filters">
+  <div class="nav-scroller" id="ringFilters"></div>
+</nav>
+
+<script>
+  const TIMEZONE = "America/New_York";
+
+  // Default dataset
+  const DEFAULT_DATA_URL = "/latest/watch_trips";
+
+  // Poll interval
+  const POLL_MS = 60 * 1000;
+
+  // Used only for "next:"
+  const PUBLISH_INTERVAL_MS = 5 * 60 * 1000;
+
+  let activeGroom = "__all__";
+  let activeStatus = "__all__";
+  let activeRing = "__all__";
+
+  const qs = new URLSearchParams(location.search);
+  let currentDataUrl = null;
+
+  let lastRaw = null;
+  let lastLastMod = null;
+  let isRefreshing = false;
+  let publishedAtMs = null;
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toNum = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  const fmtTimeET = (ms)=>{
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE,
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(new Date(ms));
+  };
+
+  function resolveDataUrl(){
+    const q = (qs.get("data") || "").trim();
+    return q || DEFAULT_DATA_URL;
+  }
+
+  async function fetchTextMeta(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    const lastMod = res.headers.get("last-modified");
+    return { txt, lastMod };
+  }
+
+  function parseJsonText(txt, urlLabel){
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${urlLabel}: ${String(txt).slice(0,200)}`); }
+  }
+
+  function normKey(s){
+    return String(s ?? "").trim().toLowerCase();
+  }
+
+  function pickDisplayTime(r){
+    const t1 = String(r.time_one ?? "").trim();
+    const t2 = String(r.time_two ?? "").trim();
+    const lt = String(r.latestStart ?? "").trim();
+    const est = String(r.estimated_start_time ?? "").trim();
+    return { t1, t2, lt, est };
+  }
+
+  function ringLabel(r){
+    const rn = String(r.ringName ?? r.ring_name ?? "").trim();
+    const n = r.ring_number ?? r.ringNumber;
+    if(rn) return rn;
+    if(n !== undefined && n !== null && String(n).trim() !== "") return `Ring ${String(n).trim()}`;
+    return "Ring";
+  }
+
+  function statusValue(r){
+    const s = String(r.latestStatus ?? r.status2 ?? r.status ?? "").trim();
+    return s;
+  }
+
+  function groomValue(r){
+    const g = String(r.groomName ?? r.groom_name ?? "").trim();
+    return g;
+  }
+
+  function buildLabelLines(r){
+    const horse = String(r.horseName ?? "").trim();
+    const rider = String(r.riderName ?? "").trim();
+    const barn = String(r.barnName ?? "").trim();
+    const team = String(r.teamName ?? "").trim();
+
+    const cn = (r.class_number ?? r.classNumber);
+    const cName = String(r.class_name ?? r.className ?? "").trim();
+    const gName = String(r.group_name ?? "").trim();
+
+    const l1Parts = [];
+    if(horse) l1Parts.push(horse);
+    if(rider) l1Parts.push(rider);
+    let line1 = l1Parts.join(" — ");
+
+    if(!line1){
+      const back = String(r.backNumber ?? "").trim();
+      const entry = String(r.entryNumber ?? "").trim();
+      line1 = [back, entry].filter(Boolean).join(" • ");
+    }
+    if(!line1) line1 = "Trip";
+
+    const l2Parts = [];
+    const cnTxt = (cn !== undefined && cn !== null && String(cn).trim() !== "" && String(cn) !== "0") ? String(cn).trim() : "";
+    const classTxt = [cnTxt, cName].filter(Boolean).join(" - ");
+    if(classTxt) l2Parts.push(classTxt);
+    else if(gName) l2Parts.push(gName);
+
+    const orgTxt = [team, barn].filter(Boolean).join(" • ");
+    if(orgTxt) l2Parts.push(orgTxt);
+
+    const line2 = l2Parts.join("   •   ");
+    return { line1, line2 };
+  }
+
+  function updatePublishedFromHeader(lastMod){
+    if(!lastMod) return;
+    const ms = Date.parse(lastMod);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
+  function setHeader(rows){
+    const first = rows[0] || {};
+    const dt = String(first.dt ?? first.show_date ?? "").trim();
+
+    document.getElementById("title").textContent = "Watch Trips";
+
+    const subParts = [];
+    if(dt) subParts.push(dt);
+
+    if(publishedAtMs){
+      subParts.push(`published: ${fmtTimeET(publishedAtMs)}`);
+      subParts.push(`next: ${fmtTimeET(publishedAtMs + PUBLISH_INTERVAL_MS)}`);
+    }
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function syncBarsHeight(){
+    const top = document.getElementById("topFilterBar");
+    const bottom = document.getElementById("bottomBar");
+    const hTop = top ? top.getBoundingClientRect().height : 92;
+    const hBot = bottom ? bottom.getBoundingClientRect().height : 64;
+    document.documentElement.style.setProperty("--filterbar-h", Math.ceil(hTop) + "px");
+    document.documentElement.style.setProperty("--bottombar-h", Math.ceil(hBot) + "px");
+  }
+
+  function makeFilterButton({text, value, active, onClick}){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "nav-btn" + (active ? " active" : "");
+    b.textContent = text;
+    b.dataset.value = value;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function updateFilterUI(){
+    for(const b of Array.from(document.querySelectorAll("#groomFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeGroom);
+    }
+    for(const b of Array.from(document.querySelectorAll("#statusFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeStatus);
+    }
+    for(const b of Array.from(document.querySelectorAll("#ringFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeRing);
+    }
+  }
+
+  function applyFilters(){
+    const items = Array.from(document.querySelectorAll(".trip"));
+
+    const needGroom = activeGroom !== "__all__";
+    const needStatus = activeStatus !== "__all__";
+    const needRing = activeRing !== "__all__";
+
+    const groomKey = normKey(activeGroom);
+    const statusKey = normKey(activeStatus);
+    const ringKey = normKey(activeRing);
+
+    let anyVisible = false;
+
+    for(const el of items){
+      let ok = true;
+
+      if(needGroom){
+        ok = ok && (normKey(el.dataset.groom || "") === groomKey);
+      }
+      if(needStatus){
+        ok = ok && (normKey(el.dataset.status || "") === statusKey);
+      }
+      if(needRing){
+        ok = ok && (normKey(el.dataset.ring || "") === ringKey);
+      }
+
+      el.style.display = ok ? "" : "none";
+      if(ok) anyVisible = true;
+    }
+
+    const empty = document.getElementById("emptyState");
+    if(empty) empty.style.display = anyVisible ? "none" : "";
+  }
+
+  function renderFiltersFromRows(rows){
+    const groomSet = new Map();  // key -> label
+    const statusSet = new Map();
+    const ringSet = new Map();
+
+    for(const r of rows){
+      const g = groomValue(r);
+      if(g){
+        const k = normKey(g);
+        if(!groomSet.has(k)) groomSet.set(k, g);
+      }
+
+      const s = statusValue(r);
+      if(s){
+        const k = normKey(s);
+        if(!statusSet.has(k)) statusSet.set(k, s);
+      }
+
+      const rl = ringLabel(r);
+      if(rl){
+        const k = normKey(rl);
+        if(!ringSet.has(k)) ringSet.set(k, rl);
+      }
+    }
+
+    const grooms = Array.from(groomSet.entries()).map(([k,label])=>({k,label})).sort((a,b)=>a.label.localeCompare(b.label));
+    const statuses = Array.from(statusSet.entries()).map(([k,label])=>({k,label})).sort((a,b)=>a.label.localeCompare(b.label));
+    const rings = Array.from(ringSet.entries()).map(([k,label])=>({k,label})).sort((a,b)=>a.label.localeCompare(b.label));
+
+    const groomWrap = document.getElementById("groomFilters");
+    const statusWrap = document.getElementById("statusFilters");
+    const ringWrap = document.getElementById("ringFilters");
+
+    groomWrap.innerHTML = "";
+    statusWrap.innerHTML = "";
+    ringWrap.innerHTML = "";
+
+    for(const g of grooms){
+      groomWrap.appendChild(makeFilterButton({
+        text: g.label,
+        value: g.k,
+        active: activeGroom === g.k,
+        onClick: ()=>{
+          activeGroom = (activeGroom === g.k) ? "__all__" : g.k;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    for(const s of statuses){
+      statusWrap.appendChild(makeFilterButton({
+        text: s.label,
+        value: s.k,
+        active: activeStatus === s.k,
+        onClick: ()=>{
+          activeStatus = (activeStatus === s.k) ? "__all__" : s.k;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    for(const r of rings){
+      ringWrap.appendChild(makeFilterButton({
+        text: r.label,
+        value: r.k,
+        active: activeRing === r.k,
+        onClick: ()=>{
+          activeRing = (activeRing === r.k) ? "__all__" : r.k;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    // If active values no longer exist, reset
+    if(activeGroom !== "__all__" && !groomSet.has(normKey(activeGroom))) activeGroom = "__all__";
+    if(activeStatus !== "__all__" && !statusSet.has(normKey(activeStatus))) activeStatus = "__all__";
+    if(activeRing !== "__all__" && !ringSet.has(normKey(activeRing))) activeRing = "__all__";
+
+    updateFilterUI();
+    applyFilters();
+    syncBarsHeight();
+  }
+
+  function renderRows(rows){
+    const list = document.getElementById("tripList");
+    list.innerHTML = "";
+
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("listHead").textContent = "Latest";
+      list.innerHTML = `<div class="muted">No trip rows.</div>`;
+      document.getElementById("groomFilters").innerHTML = "";
+      document.getElementById("statusFilters").innerHTML = "";
+      document.getElementById("ringFilters").innerHTML = "";
+      syncBarsHeight();
+      return;
+    }
+
+    setHeader(rows);
+
+    // Sort by time_sort
+    const sorted = rows.slice().sort((a,b)=>{
+      const an = toNum(a.time_sort ?? a.timeSort ?? null);
+      const bn = toNum(b.time_sort ?? b.timeSort ?? null);
+      if(an !== null && bn !== null) return an - bn;
+      if(an !== null) return -1;
+      if(bn !== null) return 1;
+      return String(a.time_sort ?? "").localeCompare(String(b.time_sort ?? ""));
+    });
+
+    document.getElementById("listHead").textContent = "Latest";
+
+    for(const r of sorted){
+      const { t1, t2, lt, est } = pickDisplayTime(r);
+
+      const usingTime2 = !!(t2 && (!t1 || t2 !== t1));
+      const displayTime = usingTime2 ? t2 : (t1 || t2 || lt || est || "");
+
+      const ring = ringLabel(r);
+      const status = statusValue(r);
+      const groom = groomValue(r); // NOT displayed; used for filtering only
+
+      const { line1, line2 } = buildLabelLines(r);
+
+      const el = document.createElement("div");
+      el.className = "trip" + (usingTime2 ? " time2" : "");
+
+      // data attributes for filters
+      el.dataset.groom = normKey(groom);
+      el.dataset.status = normKey(status);
+      el.dataset.ring = normKey(ring);
+
+      el.innerHTML = `
+        <div class="t">${esc(displayTime)}</div>
+        <div class="mid">
+          <div class="line1">${esc(line1)}</div>
+          ${line2 ? `<div class="line2">${esc(line2)}</div>` : ``}
+        </div>
+        <div class="meta">
+          <div class="ringpill">${esc(ring)}</div>
+          ${status ? `<div class="s">${esc(status)}</div>` : `<div></div>`}
+        </div>
+      `;
+
+      list.appendChild(el);
+    }
+
+    // empty state node for filter results
+    const empty = document.createElement("div");
+    empty.id = "emptyState";
+    empty.className = "muted";
+    empty.textContent = "No matches for the selected filters.";
+    empty.style.display = "none";
+    list.appendChild(empty);
+
+    renderFiltersFromRows(sorted);
+  }
+
+  async function initialLoad(){
+    currentDataUrl = resolveDataUrl();
+    const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+    lastRaw = txt;
+    lastLastMod = lastMod || null;
+    updatePublishedFromHeader(lastMod);
+
+    const rows = parseJsonText(txt, currentDataUrl);
+    renderRows(rows);
+  }
+
+  async function pollForUpdates(){
+    if(isRefreshing) return;
+    if(!currentDataUrl) return;
+
+    isRefreshing = true;
+    try{
+      const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+
+      const lmChanged = !!(lastMod && lastLastMod && lastMod !== lastLastMod);
+      const bodyChanged = (lastRaw !== null && txt !== lastRaw);
+
+      if(!lmChanged && !bodyChanged){
+        return;
+      }
+
+      lastLastMod = lastMod || lastLastMod;
+      updatePublishedFromHeader(lastMod);
+
+      const rows = parseJsonText(txt, currentDataUrl);
+
+      const scrollY = window.scrollY;
+      lastRaw = txt;
+      renderRows(rows);
+      window.scrollTo(0, scrollY);
+
+    }catch(e){
+      // keep existing UI
+    }finally{
+      isRefreshing = false;
+    }
+  }
+
+  (async function main(){
+    await initialLoad();
+    setInterval(pollForUpdates, POLL_MS);
+
+    window.addEventListener("resize", ()=>{
+      syncBarsHeight();
+    });
+  })().catch(err=>{
+    document.getElementById("tripList").innerHTML =
+      `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+    syncBarsHeight();
+  });
+</script>
+
+</body>
+</html>
