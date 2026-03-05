@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>CRT Trips (Mobile)</title>
+<title>CRT Trips (Mobile v4a)</title>
 <style>
   :root{
     --fg:#111;
@@ -12,8 +12,8 @@
     --ring:#a6d0fc;
 
     --topbar-h: 56px;
-    --filterbar-h: 92px;     /* will be synced */
-    --bottombar-h: 64px;     /* will be synced */
+    --filterbar-h: 92px;     /* synced */
+    --bottombar-h: 64px;     /* synced */
 
     --bg:#fff;
   }
@@ -281,14 +281,14 @@
 <script>
   const TIMEZONE = "America/New_York";
 
-  // Default dataset
-  const DEFAULT_DATA_URL = "/latest/watch_trips";
+  // Default dataset (matches your existing relative pattern)
+  const DEFAULT_DATA_URL = "latest/watch_trips.json";
 
   // Poll interval
   const POLL_MS = 60 * 1000;
 
   // Used only for "next:"
-  const PUBLISH_INTERVAL_MS = 5 * 60 * 1000;
+  const PUBLISH_INTERVAL_MS = 6 * 60 * 1000;
 
   let activeGroom = "__all__";
   let activeStatus = "__all__";
@@ -331,6 +331,33 @@
     catch(e){ throw new Error(`Bad JSON in ${urlLabel}: ${String(txt).slice(0,200)}`); }
   }
 
+  // KEY FIX: accept either [ ... ] OR { meta, records:[ ... ] }
+  function extractRows(payload){
+    if(Array.isArray(payload)) return payload;
+    if(payload && Array.isArray(payload.records)) return payload.records;
+    return [];
+  }
+
+  function extractMeta(payload){
+    if(payload && payload.meta && typeof payload.meta === "object") return payload.meta;
+    return null;
+  }
+
+  function updatePublishedFromHeader(lastMod){
+    if(!lastMod) return;
+    const ms = Date.parse(lastMod);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
+  // fallback when Last-Modified is missing
+  function updatePublishedFromMeta(meta){
+    if(publishedAtMs) return;
+    const ga = meta && meta.generated_at ? String(meta.generated_at).trim() : "";
+    if(!ga) return;
+    const ms = Date.parse(ga);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
   function normKey(s){
     return String(s ?? "").trim().toLowerCase();
   }
@@ -352,13 +379,11 @@
   }
 
   function statusValue(r){
-    const s = String(r.latestStatus ?? r.status2 ?? r.status ?? "").trim();
-    return s;
+    return String(r.latestStatus ?? r.status2 ?? r.status ?? "").trim();
   }
 
   function groomValue(r){
-    const g = String(r.groomName ?? r.groom_name ?? "").trim();
-    return g;
+    return String(r.groomName ?? r.groom_name ?? "").trim();
   }
 
   function buildLabelLines(r){
@@ -396,13 +421,7 @@
     return { line1, line2 };
   }
 
-  function updatePublishedFromHeader(lastMod){
-    if(!lastMod) return;
-    const ms = Date.parse(lastMod);
-    if(Number.isFinite(ms)) publishedAtMs = ms;
-  }
-
-  function setHeader(rows){
+  function setHeader(rows, meta){
     const first = rows[0] || {};
     const dt = String(first.dt ?? first.show_date ?? "").trim();
 
@@ -410,11 +429,13 @@
 
     const subParts = [];
     if(dt) subParts.push(dt);
+    else if(meta && meta.generated_at) subParts.push(String(meta.generated_at));
 
     if(publishedAtMs){
       subParts.push(`published: ${fmtTimeET(publishedAtMs)}`);
       subParts.push(`next: ${fmtTimeET(publishedAtMs + PUBLISH_INTERVAL_MS)}`);
     }
+
     document.getElementById("subtitle").textContent = subParts.join("   •   ");
   }
 
@@ -569,12 +590,13 @@
     syncBarsHeight();
   }
 
-  function renderRows(rows){
+  function renderRows(rows, meta){
     const list = document.getElementById("tripList");
     list.innerHTML = "";
 
     if(!Array.isArray(rows) || rows.length === 0){
       document.getElementById("listHead").textContent = "Latest";
+      setHeader([], meta);
       list.innerHTML = `<div class="muted">No trip rows.</div>`;
       document.getElementById("groomFilters").innerHTML = "";
       document.getElementById("statusFilters").innerHTML = "";
@@ -583,7 +605,7 @@
       return;
     }
 
-    setHeader(rows);
+    setHeader(rows, meta);
 
     // Sort by time_sort
     const sorted = rows.slice().sort((a,b)=>{
@@ -605,7 +627,7 @@
 
       const ring = ringLabel(r);
       const status = statusValue(r);
-      const groom = groomValue(r); // NOT displayed; used for filtering only
+      const groom = groomValue(r); // NOT displayed; filter only
 
       const { line1, line2 } = buildLabelLines(r);
 
@@ -632,7 +654,7 @@
       list.appendChild(el);
     }
 
-    // empty state node for filter results
+    // empty state for filter results
     const empty = document.createElement("div");
     empty.id = "emptyState";
     empty.className = "muted";
@@ -645,13 +667,19 @@
 
   async function initialLoad(){
     currentDataUrl = resolveDataUrl();
+
     const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
     lastRaw = txt;
     lastLastMod = lastMod || null;
+
     updatePublishedFromHeader(lastMod);
 
-    const rows = parseJsonText(txt, currentDataUrl);
-    renderRows(rows);
+    const payload = parseJsonText(txt, currentDataUrl);
+    const meta = extractMeta(payload);
+    updatePublishedFromMeta(meta);
+
+    const rows = extractRows(payload);
+    renderRows(rows, meta);
   }
 
   async function pollForUpdates(){
@@ -672,11 +700,15 @@
       lastLastMod = lastMod || lastLastMod;
       updatePublishedFromHeader(lastMod);
 
-      const rows = parseJsonText(txt, currentDataUrl);
+      const payload = parseJsonText(txt, currentDataUrl);
+      const meta = extractMeta(payload);
+      updatePublishedFromMeta(meta);
+
+      const rows = extractRows(payload);
 
       const scrollY = window.scrollY;
       lastRaw = txt;
-      renderRows(rows);
+      renderRows(rows, meta);
       window.scrollTo(0, scrollY);
 
     }catch(e){
