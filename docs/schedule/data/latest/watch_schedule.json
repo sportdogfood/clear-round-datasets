@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-06T09:06:48-05:00",
+    "generated_at": "2026-03-06T09:12:48-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 82,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 23,
-      "trips_linked_unique": 23
+      "trips_total": 22,
+      "trips_linked_unique": 22
     }
   },
   "records": [
@@ -47,7 +47,7 @@
       "class_type": "Jumpers",
       "latestStart": "8:00 AM",
       "latestStatus": "Underway",
-      "total_trips": 54,
+      "total_trips": 53,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 28800,
       "rollup_entries": [],
@@ -155,11 +155,11 @@
       "class_number": 2625,
       "class_name": "$100 Amateur Owner Hunter 3'3\" 18-35 U/S",
       "class_type": "Hunters",
-      "latestStart": "9:30 AM",
+      "latestStart": "9:20 AM",
       "latestStatus": null,
       "total_trips": 15,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 34200,
+      "time_sort": 33600,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -177,11 +177,11 @@
       "class_number": 2602,
       "class_name": "$500 Amateur Owner Hunter 3'6\" 18-35",
       "class_type": "Hunters",
-      "latestStart": "9:45 AM",
+      "latestStart": "9:35 AM",
       "latestStatus": "Upcoming",
       "total_trips": 15,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 35100,
+      "time_sort": 34500,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -199,11 +199,11 @@
       "class_number": 2603,
       "class_name": "$735 Amateur Owner Hunter 3'6\" 18-35 Handy",
       "class_type": "Hunters",
-      "latestStart": "9:45 AM",
+      "latestStart": "9:35 AM",
       "latestStatus": "Upcoming",
       "total_trips": 15,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 35100,
+      "time_sort": 34500,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -409,11 +409,11 @@
       "class_number": 3070,
       "class_name": "Ariat National Adult Medal",
       "class_type": "Equitation",
-      "latestStart": "9:25 AM",
+      "latestStart": "9:30 AM",
       "latestStatus": "Upcoming",
       "total_trips": 20,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 33902,
+      "time_sort": 34202,
       "rollup_entries": [
         "200151061"
       ],
@@ -1051,15 +1051,12 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 42300,
       "rollup_entries": [
-        "200149949",
-        "200214036"
+        "200149949"
       ],
       "rollup_trips": [
-        "E7905656D2084522A745C989B5D134DC",
-        "23AC580D75D14B40A54C8E229584BB08"
+        "E7905656D2084522A745C989B5D134DC"
       ],
       "rollup_horses": [
-        "Bee",
         "Dottie"
       ]
     },
@@ -1144,7 +1141,7 @@
       "class_type": "Jumpers",
       "latestStart": "11:00 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 38,
+      "total_trips": 37,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 39600,
       "rollup_entries": [
@@ -1267,11 +1264,11 @@
       "class_number": 1217,
       "class_name": "1.0m Young Jumper (Table II)",
       "class_type": "Jumpers",
-      "latestStart": "9:47 AM",
+      "latestStart": "9:50 AM",
       "latestStatus": "Upcoming",
       "total_trips": 3,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 35223,
+      "time_sort": 35410,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1795,7 +1792,7 @@
       "latestStatus": "Upcoming",
       "total_trips": 10,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 33000,
+      "time_sort": 33004,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
