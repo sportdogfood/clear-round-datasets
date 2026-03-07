@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-07T10:34:32-05:00",
+    "generated_at": "2026-03-07T10:42:52-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 100,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 43,
-      "trips_linked_unique": 43
+      "trips_total": 40,
+      "trips_linked_unique": 40
     }
   },
   "records": [
@@ -249,11 +249,11 @@
       "class_number": 2630,
       "class_name": "$100 Amateur Owner Hunter 3'3\" 36 & Over U/S",
       "class_type": "Hunters",
-      "latestStart": "10:48 AM",
+      "latestStart": "10:51 AM",
       "latestStatus": null,
       "total_trips": 12,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 38933,
+      "time_sort": 39082,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -317,18 +317,12 @@
       "class_type": "Hunters",
       "latestStart": "12:15 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 9,
+      "total_trips": 8,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 44100,
-      "rollup_entries": [
-        "200142365"
-      ],
-      "rollup_trips": [
-        "4AFB08D14D0041318053179B23FF3FB1"
-      ],
-      "rollup_horses": [
-        "Dorian"
-      ]
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recsmr1nEt7zEDAZn",
@@ -345,18 +339,12 @@
       "class_type": "Hunters",
       "latestStart": "12:15 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 9,
+      "total_trips": 8,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 44100,
-      "rollup_entries": [
-        "200142365"
-      ],
-      "rollup_trips": [
-        "600A654EE00C4B218C34C41F6A759843"
-      ],
-      "rollup_horses": [
-        "Dorian"
-      ]
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec0xPNO3ubNGhA6E",
@@ -372,21 +360,13 @@
       "class_name": "$100 Large Junior Hunter 3'6\" 15 & Under U/S",
       "class_type": "Hunters",
       "latestStart": "1:15 PM",
-      "latestStatus": [
-        "Not Started"
-      ],
-      "total_trips": 9,
+      "latestStatus": null,
+      "total_trips": 8,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 47700,
-      "rollup_entries": [
-        "200142365"
-      ],
-      "rollup_trips": [
-        "1762D392A3124C56A51EC2ACBC371493"
-      ],
-      "rollup_horses": [
-        "Dorian"
-      ]
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recbhmz6dYEpf5MQ5",
@@ -1409,7 +1389,7 @@
       "class_type": "Jumpers",
       "latestStart": "11:10 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 38,
+      "total_trips": 36,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 40200,
       "rollup_entries": [],
@@ -1642,11 +1622,11 @@
       "class_number": 1765,
       "class_name": "1.0m Amateur Jumper 18-35 II2b",
       "class_type": "Jumpers",
-      "latestStart": "11:45 AM",
+      "latestStart": "11:30 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 24,
+      "total_trips": 20,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 42300,
+      "time_sort": 41400,
       "rollup_entries": [
         "200149416",
         "200150563",
@@ -1679,11 +1659,11 @@
       "class_number": 1076,
       "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2d",
       "class_type": "Jumpers",
-      "latestStart": "1:15 PM",
+      "latestStart": "1:00 PM",
       "latestStatus": "Upcoming",
       "total_trips": 16,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 47700,
+      "time_sort": 46800,
       "rollup_entries": [
         "200150419"
       ],
@@ -1707,11 +1687,11 @@
       "class_number": 1075,
       "class_name": "$1,500 1.10m Junior Jumper 14 & Under II2b",
       "class_type": "Jumpers",
-      "latestStart": "2:15 PM",
+      "latestStart": "2:00 PM",
       "latestStatus": "Upcoming",
       "total_trips": 16,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 51300,
+      "time_sort": 50400,
       "rollup_entries": [
         "200150419"
       ],
@@ -1735,11 +1715,11 @@
       "class_number": 1056,
       "class_name": "$1,500 Modified Adult Amateur Jumper II2d",
       "class_type": "Jumpers",
-      "latestStart": "3:15 PM",
+      "latestStart": "3:00 PM",
       "latestStatus": "Upcoming",
       "total_trips": 20,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 54900,
+      "time_sort": 54000,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
