@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-07T17:29:53-05:00",
+    "generated_at": "2026-03-07T17:38:14-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 107,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 38,
-      "trips_linked_unique": 38
+      "trips_total": 36,
+      "trips_linked_unique": 36
     }
   },
   "records": [
@@ -221,11 +221,11 @@
       "class_number": 2633,
       "class_name": "$630 Amateur Owner Hunter 3'3\" 36 & Over",
       "class_type": "Hunters",
-      "latestStart": "9:18 AM",
+      "latestStart": "9:15 AM",
       "latestStatus": null,
       "total_trips": 12,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 33480,
+      "time_sort": 33300,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -243,11 +243,11 @@
       "class_number": 2634,
       "class_name": "$630 Amateur Owner Hunter 3'3\" 36 & Over",
       "class_type": "Hunters",
-      "latestStart": "9:18 AM",
+      "latestStart": "9:15 AM",
       "latestStatus": null,
       "total_trips": 12,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 33480,
+      "time_sort": 33300,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -331,11 +331,11 @@
       "class_number": 2804,
       "class_name": "$500 Small Junior Hunter 3'6\" 15 & Under",
       "class_type": "Hunters",
-      "latestStart": "12:03 PM",
+      "latestStart": "12:00 PM",
       "latestStatus": null,
       "total_trips": 7,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 43380,
+      "time_sort": 43200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -353,11 +353,11 @@
       "class_number": 2805,
       "class_name": "$800 Small Junior Hunter 3'6\" 15 & Under Stake",
       "class_type": "Hunters",
-      "latestStart": "12:03 PM",
+      "latestStart": "12:00 PM",
       "latestStatus": null,
       "total_trips": 7,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 43380,
+      "time_sort": 43200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -441,11 +441,11 @@
       "class_number": 2834,
       "class_name": "$500 Large Junior Hunter 3'6\" 15 & Under",
       "class_type": "Hunters",
-      "latestStart": "3:00 PM",
+      "latestStart": "3:15 PM",
       "latestStatus": null,
       "total_trips": 8,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 54000,
+      "time_sort": 54900,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -463,11 +463,11 @@
       "class_number": 2835,
       "class_name": "$800 Large Junior Hunter 3'6\" 15 & Under Stake",
       "class_type": "Hunters",
-      "latestStart": "3:00 PM",
+      "latestStart": "3:15 PM",
       "latestStatus": null,
       "total_trips": 8,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 54000,
+      "time_sort": 54900,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -911,8 +911,8 @@
         "200154175"
       ],
       "rollup_trips": [
-        "0E3DB646C6E248AA829752A127F53D6B",
-        "D6410A4C0B06415DA4B915C72FE0035A"
+        "D6410A4C0B06415DA4B915C72FE0035A",
+        "0E3DB646C6E248AA829752A127F53D6B"
       ],
       "rollup_horses": [
         "Insider",
@@ -1329,21 +1329,13 @@
       "class_name": "ASPCA Maclay (Section A)",
       "class_type": "Equitation",
       "latestStart": "8:15 AM",
-      "latestStatus": [
-        "Not Started"
-      ],
+      "latestStatus": null,
       "total_trips": 26,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 29700,
-      "rollup_entries": [
-        "200151061"
-      ],
-      "rollup_trips": [
-        "64917C50651B4DE38160F13AB85DBBA2"
-      ],
-      "rollup_horses": [
-        "Hurricane"
-      ]
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recyplfo7tGnlCDjU",
@@ -1418,15 +1410,12 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 46800,
       "rollup_entries": [
-        "200149871",
-        "200151061"
+        "200149871"
       ],
       "rollup_trips": [
-        "AED22F850E714C18B29C02180ED3AD60",
-        "EFB41371C6F344928DC0BC5378FB5E15"
+        "AED22F850E714C18B29C02180ED3AD60"
       ],
       "rollup_horses": [
-        "Hurricane",
         "Lenny"
       ]
     },
@@ -1511,7 +1500,7 @@
       "class_type": "Equitation",
       "latestStart": "5:00 PM",
       "latestStatus": null,
-      "total_trips": 14,
+      "total_trips": 13,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 61200,
       "rollup_entries": [],
@@ -1566,8 +1555,8 @@
         "200217087"
       ],
       "rollup_trips": [
-        "137D7227DF954C1580CD4DBEF406F01B",
         "251D75AB557F497E9E1A6C168FF9E4BC",
+        "137D7227DF954C1580CD4DBEF406F01B",
         "19DD33CE19444D25B50E3D68D56E5A5E"
       ],
       "rollup_horses": [
@@ -1715,11 +1704,11 @@
       "class_number": 2881,
       "class_name": "Small/Medium Children's Pony Hunter U/S",
       "class_type": "Hunters",
-      "latestStart": "9:00 AM",
+      "latestStart": "8:55 AM",
       "latestStatus": null,
       "total_trips": 21,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 32400,
+      "time_sort": 32100,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1815,8 +1804,8 @@
         "200180807"
       ],
       "rollup_trips": [
-        "B662E236711B48C5B5A7F7713878D6CF",
-        "A3CBE6FE81B8409EA756E3C92B0DF90B"
+        "A3CBE6FE81B8409EA756E3C92B0DF90B",
+        "B662E236711B48C5B5A7F7713878D6CF"
       ],
       "rollup_horses": [
         "Bernie",
@@ -1848,8 +1837,8 @@
         "200180807"
       ],
       "rollup_trips": [
-        "56EDAB387CA74CF9B456C78E887015D7",
-        "26CB3F3B82E649C88831B53606F954C6"
+        "26CB3F3B82E649C88831B53606F954C6",
+        "56EDAB387CA74CF9B456C78E887015D7"
       ],
       "rollup_horses": [
         "Bernie",
@@ -1881,8 +1870,8 @@
         "200180807"
       ],
       "rollup_trips": [
-        "D302997FDDEC4F1D96F1F7DE023DDE9C",
-        "1A5255EE10FF41DCB79F1F9FD4E8B246"
+        "1A5255EE10FF41DCB79F1F9FD4E8B246",
+        "D302997FDDEC4F1D96F1F7DE023DDE9C"
       ],
       "rollup_horses": [
         "Bernie",
@@ -2002,8 +1991,8 @@
         "200149643"
       ],
       "rollup_trips": [
-        "DC83E879E8124F67821C5177C68626F7",
-        "4F2AEC66B1BB453493A6B8862133AD21"
+        "4F2AEC66B1BB453493A6B8862133AD21",
+        "DC83E879E8124F67821C5177C68626F7"
       ],
       "rollup_horses": [
         "Paisley",
