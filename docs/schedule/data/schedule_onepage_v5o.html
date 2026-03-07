@@ -225,16 +225,6 @@
     font-size:12px;
   }
 
-  #pdfStage{
-    position:fixed;
-    left:-200vw;
-    top:0;
-    background:#fff;
-    overflow:hidden;
-    pointer-events:none;
-    z-index:-1;
-  }
-
   @media print{
     @page{ size:Letter; margin:0.25in; }
 
@@ -294,7 +284,8 @@
         <div class="subtitle" id="subtitle"></div>
       </div>
       <div class="controls">
-        <button class="btn" id="btnPdf" type="button">PDF</button>
+        <a class="btn" id="btnPdf" href="#" target="_blank" rel="noopener">PDF</a>
+        <button class="btn" id="btnLink" type="button">Link</button>
         <a class="btn" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
       </div>
     </div>
@@ -307,12 +298,11 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
 <script>
   const qs = new URLSearchParams(location.search);
   const hashKey = (location.hash || "").replace(/^#/, "").trim();
+  const PDF_WORKER_BASE = "https://ringstatus-pdf.gombcg.workers.dev/";
+  const SCALE_FUDGE = 0.97;
 
   function resolveDataUrl(){
     const q = qs.get("data");
@@ -438,7 +428,7 @@
     let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
     let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
 
-    let scale = Math.min(1, scaleH, scaleW);
+    let scale = Math.min(1, scaleH, scaleW) * SCALE_FUDGE;
     scale = Math.max(0.35, Math.min(1, scale));
 
     if (scale < 0.60) document.body.classList.add("tight");
@@ -452,7 +442,7 @@
 
     if (document.body.classList.contains("tight")){
       const needH2 = Math.max(colL.scrollHeight, colR.scrollHeight);
-      let scale2 = Math.min(1, (availH / (needH2 || 1)));
+      let scale2 = Math.min(1, (availH / (needH2 || 1))) * SCALE_FUDGE;
       scale2 = Math.max(0.35, Math.min(1, scale2));
       if (canZoom) wrap.style.zoom = String(scale2);
       wrap.style.setProperty("--scale", String(scale2));
@@ -462,6 +452,33 @@
   const HIDDEN_RING_KEYS = new Set();
   let RING_WRAPS = [];
   let SCHEDULE_ROWS = [];
+  let PDF_LINK_URL = "";
+
+  function buildPdfFilename(){
+    const title = (document.getElementById("title")?.textContent || "schedule").trim();
+    const subtitle = (document.getElementById("subtitle")?.textContent || "").trim();
+    const base = `${title}${subtitle ? " " + subtitle : ""}`
+      .replace(/\s+/g, " ")
+      .replace(/[^\w.\- ]+/g, "")
+      .trim()
+      .replace(/ +/g, "-")
+      .toLowerCase();
+    return `${base || "schedule"}-onepage.pdf`;
+  }
+
+  function buildPdfLink(){
+    const pageUrl = location.href;
+    const filename = buildPdfFilename();
+    return `${PDF_WORKER_BASE}?url=${encodeURIComponent(pageUrl)}&filename=${encodeURIComponent(filename)}`;
+  }
+
+  function syncPdfControls(){
+    PDF_LINK_URL = buildPdfLink();
+    const btnPdf = document.getElementById("btnPdf");
+    if (btnPdf){
+      btnPdf.href = PDF_LINK_URL;
+    }
+  }
 
   function relayoutVisibleRings(){
     const visible = RING_WRAPS.filter(el => !HIDDEN_RING_KEYS.has(String(el.dataset.ringKey || "")));
@@ -570,100 +587,6 @@
     return ringWraps;
   }
 
-  async function exportPdfFromPage(){
-    const pageEl = document.getElementById("page");
-    const wrapEl = document.getElementById("wrap");
-    const jspdfNS = window.jspdf;
-
-    if (!pageEl) throw new Error("Missing page element");
-    if (!wrapEl) throw new Error("Missing wrap element");
-    if (!window.html2canvas) throw new Error("html2canvas not loaded");
-    if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
-
-    const { jsPDF } = jspdfNS;
-
-    const liveScale =
-      parseFloat(getComputedStyle(wrapEl).getPropertyValue("--scale")) || 1;
-
-    const pageRect = pageEl.getBoundingClientRect();
-    const stageW = Math.ceil(pageRect.width);
-    const stageH = Math.ceil(pageRect.height);
-
-    const stage = document.createElement("div");
-    stage.id = "pdfStage";
-    stage.style.width = `${stageW}px`;
-    stage.style.height = `${stageH}px`;
-
-    const clone = pageEl.cloneNode(true);
-    clone.removeAttribute("id");
-    clone.style.margin = "0";
-    clone.style.width = `${stageW}px`;
-    clone.style.height = `${stageH}px`;
-    clone.style.overflow = "hidden";
-    clone.style.boxShadow = "none";
-
-    clone.querySelectorAll(".controls, .ringClose").forEach(el => {
-      el.style.display = "none";
-    });
-
-    const cloneWrap = clone.querySelector(".wrap");
-    if (cloneWrap){
-      cloneWrap.classList.add("use-zoom");
-      cloneWrap.style.setProperty("--scale", String(liveScale));
-      cloneWrap.style.transform = "none";
-      cloneWrap.style.transformOrigin = "top left";
-      cloneWrap.style.width = `${100 / liveScale}%`;
-      cloneWrap.style.zoom = String(liveScale);
-    }
-
-    stage.appendChild(clone);
-    document.body.appendChild(stage);
-
-    try{
-      await new Promise(resolve =>
-        requestAnimationFrame(() =>
-          requestAnimationFrame(resolve)
-        )
-      );
-
-      const canvas = await window.html2canvas(clone, {
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        logging: false,
-        scale: 2,
-        width: stageW,
-        height: stageH,
-        windowWidth: stageW,
-        windowHeight: stageH,
-        x: 0,
-        y: 0,
-        scrollX: 0,
-        scrollY: 0
-      });
-
-      const imgData = canvas.toDataURL("image/png", 1.0);
-
-      const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "letter",
-        compress: true
-      });
-
-      const pdfW = doc.internal.pageSize.getWidth();
-      const pdfH = doc.internal.pageSize.getHeight();
-
-      doc.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, undefined, "FAST");
-
-      const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
-      const w = window.open(url, "_blank");
-      if (!w) window.location.href = url;
-    } finally {
-      stage.remove();
-    }
-  }
-
   (async function main(){
     const url = resolveDataUrl();
     const rows = await fetchJson(url);
@@ -671,27 +594,35 @@
 
     if (!Array.isArray(rows) || rows.length === 0){
       document.getElementById("colL").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      syncPdfControls();
       return;
     }
 
     RING_WRAPS = buildRingElements(rows);
     relayoutVisibleRings();
+    syncPdfControls();
 
     fitToOnePage();
     setTimeout(fitToOnePage, 50);
 
     window.addEventListener("beforeprint", fitToOnePage);
-    window.addEventListener("resize", ()=>{ fitToOnePage(); });
+    window.addEventListener("resize", ()=>{ fitToOnePage(); syncPdfControls(); });
   })().catch(err=>{
     document.getElementById("colL").innerHTML =
       `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+    syncPdfControls();
   });
 
-  document.getElementById("btnPdf").addEventListener("click", async ()=>{
+  document.getElementById("btnLink").addEventListener("click", async ()=>{
+    syncPdfControls();
     try{
-      await exportPdfFromPage();
+      await navigator.clipboard.writeText(PDF_LINK_URL);
+      const btn = document.getElementById("btnLink");
+      const old = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(()=>{ btn.textContent = old; }, 1200);
     }catch(e){
-      alert(String(e && e.message ? e.message : e));
+      window.prompt("Copy PDF link:", PDF_LINK_URL);
     }
   });
 </script>
