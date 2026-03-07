@@ -148,7 +148,6 @@
     letter-spacing:.02em;
   }
 
-  /* legacy look: tint the whole team group, not zebra rows */
   .group.has-team{
     background:var(--team-tint);
   }
@@ -226,12 +225,14 @@
     font-size:12px;
   }
 
-  /* clone-only capture rules for PDF */
-  .pdf-capture .controls{
-    visibility:hidden !important;
-  }
-  .pdf-capture .ringClose{
-    visibility:hidden !important;
+  #pdfStage{
+    position:fixed;
+    left:-200vw;
+    top:0;
+    background:#fff;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:-1;
   }
 
   @media print{
@@ -316,7 +317,7 @@
   function resolveDataUrl(){
     const q = qs.get("data");
     if (q) return q;
-    if (/^\\d+\\-\\d{8}$/.test(hashKey)) return `${hashKey}.json`;
+    if (/^\d+\-\d{8}$/.test(hashKey)) return `${hashKey}.json`;
     return "docs/schedule/data/print/schedule.json";
   }
 
@@ -571,42 +572,96 @@
 
   async function exportPdfFromPage(){
     const pageEl = document.getElementById("page");
-    if (!pageEl) throw new Error("Missing page element");
-
+    const wrapEl = document.getElementById("wrap");
     const jspdfNS = window.jspdf;
-    if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
+
+    if (!pageEl) throw new Error("Missing page element");
+    if (!wrapEl) throw new Error("Missing wrap element");
     if (!window.html2canvas) throw new Error("html2canvas not loaded");
+    if (!jspdfNS || !jspdfNS.jsPDF) throw new Error("jsPDF not loaded");
 
     const { jsPDF } = jspdfNS;
 
-    const canvas = await window.html2canvas(pageEl, {
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      logging: false,
-      scale: Math.max(2, Math.min(3, window.devicePixelRatio || 2)),
-      onclone: (doc)=>{
-        doc.body.classList.add("pdf-capture");
-      }
+    const liveScale =
+      parseFloat(getComputedStyle(wrapEl).getPropertyValue("--scale")) || 1;
+
+    const pageRect = pageEl.getBoundingClientRect();
+    const stageW = Math.ceil(pageRect.width);
+    const stageH = Math.ceil(pageRect.height);
+
+    const stage = document.createElement("div");
+    stage.id = "pdfStage";
+    stage.style.width = `${stageW}px`;
+    stage.style.height = `${stageH}px`;
+
+    const clone = pageEl.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.style.margin = "0";
+    clone.style.width = `${stageW}px`;
+    clone.style.height = `${stageH}px`;
+    clone.style.overflow = "hidden";
+    clone.style.boxShadow = "none";
+
+    clone.querySelectorAll(".controls, .ringClose").forEach(el => {
+      el.style.display = "none";
     });
 
-    const imgData = canvas.toDataURL("image/png", 1.0);
+    const cloneWrap = clone.querySelector(".wrap");
+    if (cloneWrap){
+      cloneWrap.classList.add("use-zoom");
+      cloneWrap.style.setProperty("--scale", String(liveScale));
+      cloneWrap.style.transform = "none";
+      cloneWrap.style.transformOrigin = "top left";
+      cloneWrap.style.width = `${100 / liveScale}%`;
+      cloneWrap.style.zoom = String(liveScale);
+    }
 
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "pt",
-      format: "letter",
-      compress: true
-    });
+    stage.appendChild(clone);
+    document.body.appendChild(stage);
 
-    const pdfW = doc.internal.pageSize.getWidth();
-    const pdfH = doc.internal.pageSize.getHeight();
+    try{
+      await new Promise(resolve =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(resolve)
+        )
+      );
 
-    doc.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, undefined, "FAST");
+      const canvas = await window.html2canvas(clone, {
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+        scale: 2,
+        width: stageW,
+        height: stageH,
+        windowWidth: stageW,
+        windowHeight: stageH,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0
+      });
 
-    const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
-    const w = window.open(url, "_blank");
-    if (!w) window.location.href = url;
+      const imgData = canvas.toDataURL("image/png", 1.0);
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "pt",
+        format: "letter",
+        compress: true
+      });
+
+      const pdfW = doc.internal.pageSize.getWidth();
+      const pdfH = doc.internal.pageSize.getHeight();
+
+      doc.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, undefined, "FAST");
+
+      const blob = doc.output("blob");
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank");
+      if (!w) window.location.href = url;
+    } finally {
+      stage.remove();
+    }
   }
 
   (async function main(){
