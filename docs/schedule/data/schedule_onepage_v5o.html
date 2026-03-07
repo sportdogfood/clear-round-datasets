@@ -13,11 +13,13 @@
     --ring:#0b5d47;
     --scale: 1;
 
-    /* shading tokens (keep consistent across head + zebra) */
-    --zebra: rgba(0,0,0,0.12);
-    --team-bg: rgba(255, 255, 255, 0.43); /* legacy */
+    /* lighter, older-style tint */
+    --zebra: rgba(0,0,0,0.08);
+    --team-bg: transparent;
   }
+
   *{box-sizing:border-box}
+
   body{
     margin:0;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -51,8 +53,22 @@
     justify-content:space-between;
     gap:10px;
   }
-  .title{font-weight:900; font-size:13px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .subtitle{color:var(--muted); font-size:9px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .title{
+    font-weight:900;
+    font-size:13px;
+    line-height:1.02;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:9px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 
   .controls{display:flex; align-items:center; gap:6px; flex-wrap:nowrap;}
   .btn{
@@ -85,7 +101,12 @@
     gap: 0.12in;
     align-items:start;
   }
-  .col{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .col{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
 
   /* Ring wrapper (for outside X control) */
   .ringWrap{
@@ -119,44 +140,57 @@
     border:1px solid #000;
     background:#fff;
   }
+
+  /* tighter / older feel */
   .ring-head{
     background:var(--ring);
     color:#fff;
-    padding:4px 6px;
+    padding:3px 6px 2px 6px;
     font-weight:900;
-    font-size:10px;
-    letter-spacing:.02em;
+    font-size:9px;
+    line-height:1.05;
+    letter-spacing:.01em;
   }
 
-  /* highlight groups that have a team (gdisplay present) */
-  .group.has-team{ background: var(--team-bg); }
+  .group{
+    background:#fff;
+  }
 
-  /* match the band behind gdisplay to the same tint used in rows
-     so there's no faint seam at the group boundary */
+  .group.has-team{
+    background: var(--team-bg);
+  }
+
+  /* only tint the team band itself */
   .group.has-team .group-head{
     background: var(--zebra);
-    padding-bottom:1px;
-    padding-top:4px;
+    padding:2px 0 0 0;
   }
 
-  /* group_display above group_name */
+  .group:not(.has-team) .group-head{
+    padding:0;
+    background:transparent;
+  }
+
+  /* team label sits more naturally in the band */
   .gdisplay{
-    font-size:11px;
-    font-weight:800;
+    font-size:10px;
+    font-weight:900;
+    line-height:1.0;
     text-transform: uppercase;
     white-space:nowrap;
     overflow:hidden;
-    margin-bottom:-6px; /* requested */
     text-overflow:ellipsis;
     text-align:right;
-    padding-right: 4px;
-    padding-top: 4px;
-    position: relative; z-index: 10;
+    padding:0 4px 0 4px;
+    margin:0;
+    position:relative;
+    top:1px;
   }
+
   .gname{
     font-weight:900;
     font-size:10px;
-    line-height:1.1;
+    line-height:1.0;
     text-align:left;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -164,52 +198,93 @@
     display:none;
   }
 
-  .solid{border-top:0px solid var(--line); margin:0;}
-  .class-list{padding:3px 6px 4px 6px; border-bottom: 1px solid #8e8c8c}
+  .solid{
+    border-top:0 solid var(--line);
+    margin:0;
+  }
+
+  .class-list{
+    padding:1px 6px 2px 6px;
+    border-bottom:1px solid #8e8c8c;
+  }
 
   .c{
     display:grid;
-    grid-template-columns:46px 1fr;
-    column-gap:6px;
-    line-height:1.05;
-    padding:2px 0;
+    grid-template-columns:44px 1fr;
+    column-gap:5px;
+    align-items:baseline;
+    line-height:1.0;
+    padding:1px 0;
+    min-height:18px;
   }
 
-  /* darker zebra striping for legibility */
   .class-list .c:nth-child(even){
     background: var(--zebra);
   }
 
-  .t{font-weight:600; font-size:9px; white-space:nowrap;}
+  .t{
+    font-weight:600;
+    font-size:8px;
+    white-space:nowrap;
+  }
+
   .n{
-    font-size:9px;
+    font-size:8px;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
+
   .muted{color:var(--muted);}
   .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:12px;}
 
-  /* Print rules (only for screen print fallback) */
   @media print{
     @page{ size: Letter; margin: 0.15in; }
-    body{background:#fff; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    body{
+      background:#fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
     .controls{display:none !important;}
     .ringClose{display:none !important;}
-    .page{width:auto; height:auto; padding:0; margin:0; overflow:visible;}
+    .page{
+      width:auto;
+      height:auto;
+      padding:0;
+      margin:0;
+      overflow:visible;
+    }
     .ring-head{background:#000;}
-    .group.has-team{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .group.has-team .group-head{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .class-list .c:nth-child(even){ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .group.has-team .group-head{
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .class-list .c:nth-child(even){
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 
-  /* ultra-tight fallback when scale is low */
-  body.tight .ring-head{padding:3px 5px; font-size:9px;}
-  body.tight .gdisplay{font-size:9px; margin-bottom:-6px;}
-  body.tight .class-list{padding:2px 5px 3px 5px;}
-  body.tight .c{grid-template-columns:42px 1fr; column-gap:5px; padding:1px 0;}
-  body.tight .t{font-size:8px;}
-  body.tight .n{font-size:8px;}
+  /* ultra-tight fallback */
+  body.tight .ring-head{
+    padding:2px 5px 2px 5px;
+    font-size:8px;
+  }
+  body.tight .gdisplay{
+    font-size:9px;
+    top:0;
+  }
+  body.tight .class-list{
+    padding:1px 5px 2px 5px;
+  }
+  body.tight .c{
+    grid-template-columns:40px 1fr;
+    column-gap:4px;
+    padding:0;
+    min-height:16px;
+  }
+  body.tight .t{font-size:7px;}
+  body.tight .n{font-size:7px;}
 </style>
 </head>
 <body>
@@ -237,7 +312,6 @@
     </div>
   </div>
 
-<!-- jsPDF (UMD) for iOS-safe one-page Letter PDF generation -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
@@ -345,10 +419,10 @@
     let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
     let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
 
-    let scale = Math.min(1, scaleH, scaleW) * 0.975;
-    scale = Math.max(0.35, Math.min(1, scale));
+    let scale = Math.min(1, scaleH, scaleW) * 0.982;
+    scale = Math.max(0.40, Math.min(1, scale));
 
-    if(scale < 0.62) document.body.classList.add("tight");
+    if(scale < 0.68) document.body.classList.add("tight");
     wrap.style.setProperty("--scale", String(scale));
   }
 
@@ -487,7 +561,6 @@
       return text.slice(0, cut) + ell;
     }
 
-    // Build model (matches screen logic) + filter hidden
     const ringsAll = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
       .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
       .sort((a,b)=>a.ring_number - b.ring_number)
@@ -542,7 +615,7 @@
 
     const margin = 14;
     const gutterX = 10;
-    const gutterY = 6;
+    const gutterY = 4;
 
     const usableW = W - margin * 2;
     const colW = (usableW - gutterX) / 2;
@@ -553,12 +626,13 @@
     const bodyH = H - margin - bodyTop;
 
     function measureAndSplit(rowFont){
-      const ringHeadFont = rowFont + 1.5;
-      const groupFont = rowFont + 0.5;
+      const ringHeadFont = rowFont + 1.0;
+      const groupFont = rowFont + 0.8;
 
-      const ringHeadH = ringHeadFont + 6;
-      const groupHeadH = groupFont + 4;
-      const rowH = rowFont + 2.6;
+      const ringHeadH = ringHeadFont + 4.2;
+      const groupHeadH = groupFont + 2.6;
+      const rowH = rowFont + 1.7;
+      const groupGap = 2.2;
 
       const ringHeights = rings.map(r => {
         let h = 0;
@@ -566,9 +640,9 @@
         for(const g of r.groups){
           if(g.hasTeam) h += groupHeadH;
           for(const c of g.classes) h += rowH;
-          h += 3;
+          h += groupGap;
         }
-        h += 4;
+        h += 2;
         return h;
       });
 
@@ -589,18 +663,18 @@
       const rightH = ringHeights.slice(bestSplit).reduce((a,b)=>a+b,0) + gutterY * Math.max(0, rightCount - 1);
       const need = Math.max(leftH, rightH);
 
-      return { rowFont, ringHeadFont, groupFont, rowH, ringHeadH, groupHeadH, split: bestSplit, needH: need };
+      return { rowFont, ringHeadFont, groupFont, rowH, ringHeadH, groupHeadH, groupGap, split: bestSplit, needH: need };
     }
 
     let plan = null;
-    for(let f=9.0; f>=5.75; f-=0.25){
+    for(let f=8.2; f>=5.5; f-=0.25){
       const m = measureAndSplit(f);
       if(m.needH <= bodyH){ plan = { ...m, scale: 1 }; break; }
       const scale = bodyH / m.needH;
-      if(scale >= 0.92){ plan = { ...m, scale }; break; }
+      if(scale >= 0.93){ plan = { ...m, scale }; break; }
     }
     if(!plan){
-      const m = measureAndSplit(5.5);
+      const m = measureAndSplit(5.25);
       plan = { ...m, scale: Math.min(1, bodyH / m.needH) };
     }
 
@@ -614,8 +688,8 @@
     doc.setFontSize(9);
     if(subtitle) doc.text(ellipsize(doc, subtitle, colW - 2), margin + colW + gutterX, headerTop + 14);
 
-    const timeW = 48 * s;
-    const padX = 6 * s;
+    const timeW = 44 * s;
+    const padX = 5 * s;
 
     function drawRing(x, y, ring){
       const ringW = colW;
@@ -625,10 +699,12 @@
       doc.setLineWidth(1);
       doc.setFillColor(0, 0, 0);
       doc.rect(x, y, ringW, headH, "F");
+
       doc.setTextColor(255,255,255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(plan.ringHeadFont * s);
-      doc.text(ellipsize(doc, ring.ringTitle, ringW - padX*2), x + padX, y + headH - (3*s));
+      doc.text(ellipsize(doc, ring.ringTitle, ringW - padX*2), x + padX, y + headH - (2.2*s));
+
       doc.setTextColor(17,17,17);
 
       let cy = y + headH;
@@ -638,16 +714,14 @@
         if(g.hasTeam){
           const gh = plan.groupHeadH * s;
 
-          // match the band behind gdisplay to zebra (avoid seam)
-          doc.setFillColor(235,235,235);
+          doc.setFillColor(242,242,242);
           doc.rect(x, cy, ringW, gh, "F");
 
           doc.setFont("helvetica", "bold");
           doc.setFontSize(plan.groupFont * s);
           doc.setTextColor(17,17,17);
 
-          // pull down effect: slight y offset (mirrors CSS negative margin)
-          const gy = cy + gh - (1*s);
+          const gy = cy + gh - (0.9*s);
           doc.text(
             ellipsize(doc, String(g.gdisplay).toUpperCase(), ringW - padX*2),
             x + ringW - padX,
@@ -671,24 +745,23 @@
 
           ringRowIndex++;
           if(ringRowIndex % 2 === 0){
-            // darker zebra
-            doc.setFillColor(235,235,235);
+            doc.setFillColor(242,242,242);
             doc.rect(x, cy, ringW, rowH, "F");
           }
 
-          const ty = cy + rowH - (2*s);
+          const ty = cy + rowH - (1.5*s);
 
           const left = showTime ? t : "";
           const right = c.label || "";
-
           const rightW = ringW - padX*2 - timeW - (4*s);
+
           doc.text(ellipsize(doc, left, timeW), x + padX, ty);
           doc.text(ellipsize(doc, right, rightW), x + padX + timeW + (4*s), ty);
 
           cy += rowH;
         }
 
-        cy += 3*s;
+        cy += plan.groupGap * s;
       }
 
       const totalH = cy - y + (1*s);
