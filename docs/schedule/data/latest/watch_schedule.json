@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-07T18:02:14-05:00",
+    "generated_at": "2026-03-07T18:06:33-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 107,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 36,
-      "trips_linked_unique": 36
+      "trips_total": 37,
+      "trips_linked_unique": 37
     }
   },
   "records": [
@@ -1329,13 +1329,21 @@
       "class_name": "ASPCA Maclay (Section A)",
       "class_type": "Equitation",
       "latestStart": "8:15 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 26,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 29700,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200151061"
+      ],
+      "rollup_trips": [
+        "64917C50651B4DE38160F13AB85DBBA2"
+      ],
+      "rollup_horses": [
+        "Hurricane"
+      ]
     },
     {
       "record_id": "recyplfo7tGnlCDjU",
@@ -1410,12 +1418,15 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 46800,
       "rollup_entries": [
-        "200149871"
+        "200149871",
+        "200151061"
       ],
       "rollup_trips": [
-        "AED22F850E714C18B29C02180ED3AD60"
+        "AED22F850E714C18B29C02180ED3AD60",
+        "EFB41371C6F344928DC0BC5378FB5E15"
       ],
       "rollup_horses": [
+        "Hurricane",
         "Lenny"
       ]
     },
@@ -1550,17 +1561,14 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 41400,
       "rollup_entries": [
-        "200150563",
         "200209674",
         "200217087"
       ],
       "rollup_trips": [
-        "251D75AB557F497E9E1A6C168FF9E4BC",
         "137D7227DF954C1580CD4DBEF406F01B",
         "19DD33CE19444D25B50E3D68D56E5A5E"
       ],
       "rollup_horses": [
-        "BB",
         "Calypso",
         "Krypton"
       ]
