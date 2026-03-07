@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-07T07:28:00-05:00",
+    "generated_at": "2026-03-07T07:35:16-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 100,
@@ -67,11 +67,11 @@
       "class_number": 1027,
       "class_name": "$2,500 1.40m Amateur Jumper II2.1",
       "class_type": "Jumpers",
-      "latestStart": "9:05 AM",
+      "latestStart": "9:00 AM",
       "latestStatus": "Upcoming",
       "total_trips": 33,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 32700,
+      "time_sort": 32400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -89,11 +89,11 @@
       "class_number": 1061,
       "class_name": "$1,500 1.40m Junior Jumper II2.1",
       "class_type": "Jumpers",
-      "latestStart": "10:45 AM",
+      "latestStart": "10:40 AM",
       "latestStatus": "Upcoming",
       "total_trips": 22,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 38700,
+      "time_sort": 38400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -1122,7 +1122,7 @@
       "class_type": "Equitation",
       "latestStart": "2:00 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 44,
+      "total_trips": 43,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
       "rollup_entries": [],
@@ -1144,7 +1144,7 @@
       "class_type": "Equitation",
       "latestStart": "2:00 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 42,
+      "total_trips": 41,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
       "rollup_entries": [],
@@ -1166,7 +1166,7 @@
       "class_type": "Equitation",
       "latestStart": "5:45 PM",
       "latestStatus": null,
-      "total_trips": 42,
+      "total_trips": 41,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 63900,
       "rollup_entries": [],
@@ -2330,15 +2330,17 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
-      "latestStatus": "Upcoming",
-      "total_trips": 31,
+      "latestStatus": [
+        "Not Started"
+      ],
+      "total_trips": 30,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 28800,
       "rollup_entries": [
         "200150563"
       ],
       "rollup_trips": [
-        "0D5BC21409104728A7373152E89F6EBA"
+        "02FB5E1A4BBB4B03991EBF61DE4978AA"
       ],
       "rollup_horses": [
         "BB"
@@ -2358,7 +2360,9 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 30,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 28800,
@@ -2366,7 +2370,7 @@
         "200150563"
       ],
       "rollup_trips": [
-        "E0F3589D68834B899C5E357BA6DB2271"
+        "102DBB1D26BC4FA298B2E99C4480D148"
       ],
       "rollup_horses": [
         "BB"
