@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-03-08T11:19:20-04:00",
+    "generated_at": "2026-03-08T11:26:47-04:00",
     "table": "watch_schedule",
     "view": "commit",
-    "record_count": 106,
+    "record_count": 107,
     "fields": [
       "sid",
       "dt",
@@ -805,7 +805,7 @@
       "class_type": "Jumpers",
       "latestStart": "8:33 AM",
       "latestStatus": [
-        "Underway"
+        "Completed"
       ],
       "total_trips": 57,
       "schedule_sequencetype": "Over Fences",
@@ -970,7 +970,7 @@
       "class_type": "Hunters",
       "latestStart": "11:35 AM",
       "latestStatus": null,
-      "total_trips": 40,
+      "total_trips": 39,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 41703,
       "rollup_entries": [],
@@ -992,7 +992,7 @@
       "class_type": "Hunters",
       "latestStart": "11:35 AM",
       "latestStatus": null,
-      "total_trips": 39,
+      "total_trips": 38,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 41703,
       "rollup_entries": [],
@@ -1709,7 +1709,7 @@
       "class_type": "Hunters",
       "latestStart": "11:30 AM",
       "latestStatus": [
-        "Not Started"
+        "Underway"
       ],
       "total_trips": 34,
       "schedule_sequencetype": "Over Fences",
@@ -1742,7 +1742,7 @@
       "class_type": "Hunters",
       "latestStart": "11:30 AM",
       "latestStatus": [
-        "Not Started"
+        "Underway"
       ],
       "total_trips": 34,
       "schedule_sequencetype": "Over Fences",
@@ -1775,7 +1775,7 @@
       "class_type": "Hunters",
       "latestStart": "11:30 AM",
       "latestStatus": [
-        "Not Started"
+        "Underway"
       ],
       "total_trips": 12,
       "schedule_sequencetype": "Over Fences",
@@ -2334,11 +2334,11 @@
       "class_number": 3000,
       "class_name": "Short Stirrup Equitation Flat CALI",
       "class_type": "Equitation",
-      "latestStart": "11:22 AM",
+      "latestStart": "11:26 AM",
       "latestStatus": null,
       "total_trips": 17,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 40978,
+      "time_sort": 41195,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2356,11 +2356,11 @@
       "class_number": 2986,
       "class_name": "Short Stirrup Hunter U/S CALI",
       "class_type": "Hunters",
-      "latestStart": "11:32 AM",
+      "latestStart": "11:36 AM",
       "latestStatus": null,
       "total_trips": 20,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 41578,
+      "time_sort": 41795,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2378,11 +2378,11 @@
       "class_number": 2987,
       "class_name": "Short Stirrup Hunter CALI",
       "class_type": "Hunters",
-      "latestStart": "11:47 AM",
+      "latestStart": "11:51 AM",
       "latestStatus": null,
       "total_trips": 21,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 42478,
+      "time_sort": 42695,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2400,11 +2400,11 @@
       "class_number": 2988,
       "class_name": "Short Stirrup Hunter CALI",
       "class_type": "Hunters",
-      "latestStart": "11:47 AM",
+      "latestStart": "11:51 AM",
       "latestStatus": null,
       "total_trips": 20,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 42478,
+      "time_sort": 42695,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2565,6 +2565,28 @@
       "latestStart": "2:00 PM",
       "latestStatus": null,
       "total_trips": 31,
+      "schedule_sequencetype": "Over Fences",
+      "time_sort": 50400,
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
+    },
+    {
+      "record_id": "rechF2h8lauTo5vA8",
+      "sid": "200000053",
+      "dt": "2026-03-08",
+      "ring_number": 4,
+      "ringName": null,
+      "class_groupxclasses_id": 200035907,
+      "class_group_id": 200024067,
+      "group_name": "$2,500 Modified Adult Amateur Jumper II2b",
+      "class_id": 200020951,
+      "class_number": 1057,
+      "class_name": "$2,500 Modified Adult Amateur Jumper II2b",
+      "class_type": "Jumpers",
+      "latestStart": "2:00 PM",
+      "latestStatus": null,
+      "total_trips": 19,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
       "rollup_entries": [],
