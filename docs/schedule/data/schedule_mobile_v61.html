@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CRT Schedule (Mobile v4 — Flat List)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --border:#d0d0d0;
+    --ring:#a6d0fc;
+
+    --topbar-h: 56px;
+    --filterbar-h: 74px;
+    --bottom-pad: 18px;
+
+    --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  html{
+    scroll-behavior:smooth;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:var(--bg);
+    font-size:16px;
+    min-height:100dvh;
+    padding-bottom: calc(var(--bottom-pad) + env(safe-area-inset-bottom, 0px));
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(255,255,255,.96);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:10px 12px;
+    min-height:var(--topbar-h);
+    height:var(--topbar-h);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+  }
+  .title{font-weight:900; font-size:16px; line-height:1.1;}
+  .subtitle{color:var(--muted); font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .topbar-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .topbar-text{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .home-pill{
+    flex:0 0 auto;
+    height:36px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    font-size:13px;
+    font-weight:900;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .home-pill:active{
+    transform: translateY(1px) scale(0.99);
+  }
+
+  .filter-row{ overflow:hidden; }
+
+  .filterbar .nav-scroller{
+    flex:1 1 auto;
+    min-width:0;
+  }
+
+  .filterbar{
+    position:sticky;
+    top: var(--topbar-h);
+    z-index:25;
+    background:rgba(255,255,255,.96);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:6px 10px 6px 10px;
+  }
+
+  .filterbar .nav-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+  }
+  .filterbar .nav-btn.active{
+    border-color:#000;
+  }
+
+  .filter-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:4px 0;
+  }
+
+  .nav-scroller{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width:none;
+  }
+  .nav-scroller::-webkit-scrollbar{display:none;}
+
+  .nav-btn{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    padding:8px 12px;
+    font-size:13px;
+    font-weight:700;
+    border-radius:999px;
+    text-decoration:none;
+    white-space:nowrap;
+    user-select:none;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-btn.active{
+    border-color:#000;
+  }
+
+  main{
+    padding:8px 6px 10px 6px;
+  }
+
+  .class-list{
+    border:1px solid #000;
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .class-row{
+    padding:8px 10px;
+    border-bottom:1px solid #eee;
+    background:#fff;
+  }
+  .class-row:last-child{ border-bottom:none; }
+  .class-row:nth-child(even){
+    background: rgba(255,255,255,0.28);
+  }
+
+  .class-row[data-status="upcoming"]{
+    background: rgba(144 151 205 / 10%);
+  }
+  .class-row[data-status="underway"]{
+    background: rgba(118, 219, 155, 0.10);
+  }
+  .class-row[data-status="completed"]{
+    background: rgba(228, 228, 228, 0.40);
+  }
+
+  .class-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+    margin-bottom:4px;
+  }
+
+  .ring-name{
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    background:var(--ring);
+    border-radius:999px;
+    padding:3px 8px;
+    line-height:1.1;
+    white-space:nowrap;
+  }
+
+  .team-line{
+    min-width:0;
+    text-align:right;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .class-main{
+    display:grid;
+    grid-template-columns:70px 1fr auto;
+    column-gap:10px;
+    align-items:center;
+    line-height:1.15;
+  }
+
+  .t{
+    font-weight:800;
+    font-size:13px;
+    white-space:nowrap;
+  }
+
+  .class-row.time2 .t{
+    background: rgb(11 93 71 / 18%);
+    padding:2px 6px;
+    border-radius:6px;
+    font-weight:900;
+    justify-self:start;
+    width:max-content;
+  }
+
+  .n{
+    font-size:13px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .s{
+    font-size:10px;
+    font-weight:800;
+    text-transform:uppercase;
+    white-space:nowrap;
+    padding-right:4px;
+  }
+
+  .muted{color:var(--muted); font-size:13px;}
+  .err{white-space:pre-wrap; color:#b00020; padding:12px; font-size:13px; border:1px solid #b00020; border-radius:10px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="topbar-text">
+      <div class="title" id="title">Schedule</div>
+      <div class="subtitle" id="subtitle"></div>
+    </div>
+    <a class="home-pill" href="https://ringstatus.com">Home</a>
+  </div>
+</header>
+
+<nav class="filterbar" id="filterBar" aria-label="Schedule Filters">
+  <div class="filter-row">
+    <div class="nav-scroller" id="horseFilters"></div>
+  </div>
+  <div class="filter-row">
+    <div class="nav-scroller" id="statusFilters"></div>
+  </div>
+</nav>
+
+<main id="classList"></main>
+
+<script>
+  const POLL_MS = 6 * 60 * 1000;
+  const PUBLISH_INTERVAL_MS = 8 * 60 * 1000;
+  const TIMEZONE = "America/New_York";
+
+  let activeHorse = "__all__";
+  let activeStatus = "__all__";
+
+  const qs = new URLSearchParams(location.search);
+  const rawHash = (location.hash || "").replace(/^#/, "").trim();
+
+  let lastRaw = null;
+  let lastLastMod = null;
+  let currentDataUrl = null;
+  let isRefreshing = false;
+  let publishedAtMs = null;
+
+  const fmtTimeET = (ms)=>{
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE,
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(new Date(ms));
+  };
+
+  const esc = (s)=>String(s??"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const toInt = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+  function normalizeShowDay(v){
+    const s = String(v ?? "").trim();
+    if(!s) return "";
+    if(/^\d{8}$/.test(s)) return s;
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m) return `${m[1]}${m[2]}${m[3]}`;
+    return "";
+  }
+
+  function resolveDataUrl(){
+    const q = qs.get("data");
+    if(q) return q;
+
+    const showId = (qs.get("show_id") || qs.get("showId") || "").trim();
+    const showDayRaw = (qs.get("show_day") || qs.get("showDay") || "").trim();
+    const showDay = normalizeShowDay(showDayRaw);
+    if(showId && showDay){
+      return `${showId}-${showDay}M.json`;
+    }
+
+    if(/^\d+\-\d{8}M?(\.json)?$/i.test(rawHash)){
+      let base = rawHash.replace(/\.json$/i, "");
+      if(!/M$/i.test(base)) base = base + "M";
+      const file = base + ".json";
+
+      const next = new URL(location.href);
+      next.searchParams.set("data", file);
+      next.hash = "";
+      history.replaceState(null, "", next.toString());
+      return file;
+    }
+
+    return "schedule.json";
+  }
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for(const p of parts){
+      const k = p.toLowerCase();
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  function extractHorseName(groupDisplayPart){
+    const s = String(groupDisplayPart ?? "").trim();
+    if(!s) return "";
+    const idx = s.indexOf(" (");
+    return (idx > 0 ? s.slice(0, idx) : s).trim();
+  }
+
+  function dedupeGroupDisplayByHorse(s){
+    const raw = String(s ?? "").trim();
+    if(!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+
+    for(const p of parts){
+      const horse = extractHorseName(p);
+      const key = (horse || p).trim().toLowerCase();
+      if(!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(p);
+    }
+
+    return out.join(", ");
+  }
+
+  function normalizeStatusToken(s){
+    const v = String(s ?? "").trim().toLowerCase();
+    if(v === "upcoming") return "upcoming";
+    if(v === "underway") return "underway";
+    if(v === "completed") return "completed";
+    return "";
+  }
+
+  async function fetchTextMeta(url){
+    const res = await fetch(url, {cache:"no-store"});
+    const txt = await res.text();
+    if(!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    const lastMod = res.headers.get("last-modified");
+    return { txt, lastMod };
+  }
+
+  function parseJsonText(txt, urlLabel){
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error(`Bad JSON in ${urlLabel}: ${String(txt).slice(0,200)}`); }
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for(const it of arr){
+      const k = keyFn(it);
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function setHeader(rows){
+    const first = rows[0] || {};
+
+    const reportTitle =
+      first.show_days_report_title ??
+      first.show_report_title ??
+      (first.show_id ? `Show ${first.show_id}` : "Schedule");
+
+    const displayDate =
+      first.show_days_display_date ??
+      first.show_display_date ??
+      first.show_date ??
+      first.showDate ??
+      "";
+
+    document.getElementById("title").textContent = reportTitle;
+
+    const subParts = [];
+    if(displayDate) subParts.push(String(displayDate));
+
+    if(publishedAtMs){
+      subParts.push(`published: ${fmtTimeET(publishedAtMs)}`);
+      subParts.push(`next: ${fmtTimeET(publishedAtMs + PUBLISH_INTERVAL_MS)}`);
+    }
+
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+  }
+
+  function getDisplayTimeParts(r){
+    const sd1 = String(r.start_display ?? r.startDisplay ?? "").trim();
+    const sd2 = String(r.start_display2 ?? r.startDisplay2 ?? "").trim();
+    const usingTime2 = !!(sd2 && (!sd1 || sd2 !== sd1));
+    const displayTime = usingTime2 ? sd2 : (sd1 || sd2 || "");
+    return { usingTime2, displayTime };
+  }
+
+  function parseTimeSortValue(v){
+    if(v == null || v === "") return Number.MAX_SAFE_INTEGER;
+
+    const n = Number(v);
+    if(Number.isFinite(n)) return n;
+
+    const ms = Date.parse(String(v));
+    if(Number.isFinite(ms)) return ms;
+
+    const s = String(v).trim();
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i);
+    if(m){
+      let hh = Number(m[1]);
+      const mm = Number(m[2]);
+      const ss = Number(m[3] || 0);
+      const ap = (m[4] || "").toUpperCase();
+      if(ap === "PM" && hh < 12) hh += 12;
+      if(ap === "AM" && hh === 12) hh = 0;
+      return (hh * 3600) + (mm * 60) + ss;
+    }
+
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  function buildFlatRows(rows){
+    const groupMeta = new Map();
+
+    for(const [gid, items] of groupBy(rows, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries()){
+      const gdRaw = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+      const gdisplay = dedupeGroupDisplayByHorse(gdRaw);
+      const horses = [];
+      if(gdisplay){
+        const parts = gdisplay.split(",").map(x=>x.trim()).filter(Boolean);
+        for(const p of parts){
+          const hn = extractHorseName(p);
+          if(hn) horses.push(hn.toLowerCase());
+        }
+      }
+      groupMeta.set(gid, {
+        gdisplay,
+        horsesNorm: Array.from(new Set(horses)).join("|")
+      });
+    }
+
+    return rows.map((r, idx) => {
+      const gid = String(r.class_group_id ?? r.classGroupId ?? "");
+      const meta = groupMeta.get(gid) || { gdisplay:"", horsesNorm:"" };
+      const { usingTime2, displayTime } = getDisplayTimeParts(r);
+
+      const classNum = r.class_number ?? r.classNumber;
+      const className = r.class_name ?? r.className ?? r.name ?? "";
+      const label = (classNum !== undefined && classNum !== null && String(classNum).trim() !== "" && String(classNum) !== "0")
+        ? `${classNum} - ${className}`.trim()
+        : String(className).trim();
+
+      const ringTitle =
+        r.ring_name ??
+        r.ringName ??
+        r.ring_nickname ??
+        r.ringNickname ??
+        `Ring ${r.ring_number ?? ""}`.trim();
+
+      const status2 = String(r.status2 ?? "").trim();
+
+      return {
+        idx,
+        usingTime2,
+        displayTime,
+        label,
+        ringTitle: String(ringTitle || "Ring").trim(),
+        gdisplay: meta.gdisplay,
+        horsesNorm: meta.horsesNorm,
+        status2,
+        statusNorm: normalizeStatusToken(status2),
+        timeSort: parseTimeSortValue(r.time_sort ?? r.timeSort),
+        ringNumber: toInt(r.ring_number ?? r.ringNumber ?? 9999) ?? 9999,
+        classNumber: toInt(classNum ?? 999999) ?? 999999
+      };
+    }).sort((a,b)=>{
+      if(a.timeSort !== b.timeSort) return a.timeSort - b.timeSort;
+      if(a.ringNumber !== b.ringNumber) return a.ringNumber - b.ringNumber;
+      if(a.classNumber !== b.classNumber) return a.classNumber - b.classNumber;
+      return a.idx - b.idx;
+    });
+  }
+
+  function renderList(rows){
+    if(!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("classList").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      document.getElementById("horseFilters").innerHTML = "";
+      document.getElementById("statusFilters").innerHTML = "";
+      syncFilterBarHeight();
+      return;
+    }
+
+    setHeader(rows);
+
+    const flatRows = buildFlatRows(rows);
+    const wrap = document.getElementById("classList");
+
+    let html = `<div class="class-list">`;
+
+    for(const r of flatRows){
+      html += `
+        <div class="class-row${r.usingTime2 ? " time2" : ""}"
+             data-horses="${esc(r.horsesNorm)}"
+             data-status="${esc(r.statusNorm)}">
+          <div class="class-meta">
+            <div class="ring-name">${esc(r.ringTitle)}</div>
+            <div class="team-line">${esc(r.gdisplay || "")}</div>
+          </div>
+          <div class="class-main">
+            <div class="t">${esc(r.displayTime)}</div>
+            <div class="n">${esc(r.label)}</div>
+            <div class="s">${esc(r.status2 || "")}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+    wrap.innerHTML = html;
+
+    renderFilters();
+  }
+
+  function syncFilterBarHeight(){
+    const fb = document.getElementById("filterBar");
+    const h = fb ? fb.getBoundingClientRect().height : 74;
+    document.documentElement.style.setProperty("--filterbar-h", Math.ceil(h) + "px");
+  }
+
+  function collectFilterCandidatesFromDOM(){
+    const horseSet = new Set();
+
+    const rows = Array.from(document.querySelectorAll(".class-row"));
+    for(const row of rows){
+      const horses = String(row.dataset.horses ?? "").trim();
+      if(horses){
+        horses.split("|").map(x=>x.trim()).filter(Boolean).forEach(h=>horseSet.add(h));
+      }
+    }
+
+    const horsesList = Array.from(horseSet)
+      .map(h=>({ key: h, label: h }))
+      .sort((a,b)=>a.label.localeCompare(b.label));
+
+    return { horsesList };
+  }
+
+  function prettyHorseLabel(h){
+    const s = String(h||"").trim();
+    if(!s) return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function prettyStatusLabel(k){
+    const t = String(k||"").toLowerCase();
+    if(t === "upcoming") return "Upcoming";
+    if(t === "underway") return "Underway";
+    if(t === "completed") return "Completed";
+    return k;
+  }
+
+  function makeFilterButton({text, value, active, onClick}){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "nav-btn" + (active ? " active" : "");
+    b.textContent = text;
+    b.dataset.value = value;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function updateFilterUI(){
+    for(const b of Array.from(document.querySelectorAll("#horseFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeHorse);
+    }
+    for(const b of Array.from(document.querySelectorAll("#statusFilters .nav-btn"))){
+      b.classList.toggle("active", b.dataset.value === activeStatus);
+    }
+  }
+
+  function applyFilters(){
+    const rows = Array.from(document.querySelectorAll(".class-row"));
+
+    const needHorse = activeHorse !== "__all__";
+    const needStatus = activeStatus !== "__all__";
+
+    const horseKey = String(activeHorse).toLowerCase();
+    const statusKey = String(activeStatus).toLowerCase();
+
+    let visibleCount = 0;
+
+    for(const row of rows){
+      let ok = true;
+
+      if(needHorse){
+        const horses = String(row.dataset.horses ?? "");
+        ok = ok && horses.split("|").map(x=>x.trim()).includes(horseKey);
+      }
+
+      if(needStatus){
+        const st = String(row.dataset.status ?? "").trim().toLowerCase();
+        ok = ok && (st === statusKey);
+      }
+
+      row.style.display = ok ? "" : "none";
+      if(ok) visibleCount++;
+    }
+
+    const wrap = document.querySelector(".class-list");
+    const emptyId = "flat-list-empty-state";
+    const existing = document.getElementById(emptyId);
+
+    if(visibleCount === 0){
+      if(!existing && wrap){
+        const div = document.createElement("div");
+        div.id = emptyId;
+        div.className = "class-row muted";
+        div.textContent = "No classes match the selected filters.";
+        wrap.appendChild(div);
+      }
+    } else if(existing){
+      existing.remove();
+    }
+  }
+
+  function renderFilters(){
+    const { horsesList } = collectFilterCandidatesFromDOM();
+
+    const horseWrap = document.getElementById("horseFilters");
+    const statusWrap = document.getElementById("statusFilters");
+
+    horseWrap.innerHTML = "";
+    statusWrap.innerHTML = "";
+
+    for(const h of horsesList){
+      horseWrap.appendChild(makeFilterButton({
+        text: prettyHorseLabel(h.label),
+        value: h.key,
+        active: activeHorse === h.key,
+        onClick: ()=>{
+          activeHorse = (activeHorse === h.key) ? "__all__" : h.key;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    for(const k of ["upcoming","underway","completed"]){
+      statusWrap.appendChild(makeFilterButton({
+        text: prettyStatusLabel(k),
+        value: k,
+        active: activeStatus === k,
+        onClick: ()=>{
+          activeStatus = (activeStatus === k) ? "__all__" : k;
+          updateFilterUI();
+          applyFilters();
+        }
+      }));
+    }
+
+    const horseExists = activeHorse === "__all__" || horsesList.some(x=>x.key === activeHorse);
+    if(!horseExists) activeHorse = "__all__";
+
+    updateFilterUI();
+    applyFilters();
+    syncFilterBarHeight();
+  }
+
+  function updatePublishedFromHeader(lastMod){
+    if(!lastMod) return;
+    const ms = Date.parse(lastMod);
+    if(Number.isFinite(ms)) publishedAtMs = ms;
+  }
+
+  async function initialLoad(){
+    currentDataUrl = resolveDataUrl();
+
+    const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+    lastRaw = txt;
+    lastLastMod = lastMod || null;
+    updatePublishedFromHeader(lastMod);
+
+    const rows = parseJsonText(txt, currentDataUrl);
+    renderList(rows);
+  }
+
+  async function pollForUpdates(){
+    if(isRefreshing) return;
+    if(!currentDataUrl) return;
+
+    isRefreshing = true;
+    try{
+      const { txt, lastMod } = await fetchTextMeta(currentDataUrl);
+
+      const lmChanged = !!(lastMod && lastLastMod && lastMod !== lastLastMod);
+      const bodyChanged = (lastRaw !== null && txt !== lastRaw);
+
+      if(!lmChanged && !bodyChanged){
+        return;
+      }
+
+      lastLastMod = lastMod || lastLastMod;
+      updatePublishedFromHeader(lastMod);
+
+      const rows = parseJsonText(txt, currentDataUrl);
+      const scrollY = window.scrollY;
+
+      lastRaw = txt;
+      renderList(rows);
+
+      window.scrollTo(0, scrollY);
+
+    }catch(e){
+      // keep existing UI
+    }finally{
+      isRefreshing = false;
+    }
+  }
+
+  (async function main(){
+    await initialLoad();
+
+    setInterval(pollForUpdates, POLL_MS);
+
+    window.addEventListener("resize", ()=>{
+      syncFilterBarHeight();
+    });
+  })().catch(err=>{
+    document.getElementById("classList").innerHTML =
+      `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+  });
+</script>
+</body>
+</html>
