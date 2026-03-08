@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRT Schedule (One Page PDF)</title>
+<style>
+  :root{
+    --fg:#111;
+    --muted:#666;
+    --line:#111;
+    --border:#d0d0d0;
+    --ring:#0b5d47;
+    --team-tint: rgba(204, 204, 204, 0.43);
+    --scale: 1;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--fg);
+    background:#fff;
+  }
+
+  .page{
+    width:8.5in;
+    height:11in;
+    padding:0.25in;
+    margin:12px auto;
+    background:#fff;
+    overflow:hidden;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+    padding:0 0 6px 0;
+  }
+
+  .title{
+    font-weight:900;
+    font-size:14px;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .subtitle{
+    color:var(--muted);
+    font-size:10px;
+    margin-top:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:nowrap;
+  }
+
+  .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    padding:3px 10px;
+    font-size:12px;
+    border-radius:6px;
+    cursor:pointer;
+    text-decoration:none;
+    color:inherit;
+    line-height:1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .wrap{
+    transform:scale(var(--scale));
+    transform-origin:top left;
+    width:calc(100% / var(--scale));
+  }
+
+  .wrap.use-zoom{
+    transform:none;
+    width:auto;
+  }
+
+  .cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0.12in;
+    align-items:start;
+  }
+
+  .col{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+
+  .ringWrap{
+    position:relative;
+    min-width:0;
+  }
+
+  .ringClose{
+    position:absolute;
+    top:-10px;
+    right:-10px;
+    width:22px;
+    height:22px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:#111;
+    font-weight:900;
+    font-size:14px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:20;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ring{
+    border:1px solid #000;
+    background:#fff;
+  }
+
+  .ring-head{
+    background:var(--ring);
+    color:#fff;
+    padding:4px 6px;
+    font-weight:900;
+    font-size:10px;
+    line-height:1.05;
+    letter-spacing:.02em;
+  }
+
+  .group.has-team{
+    background:var(--team-tint);
+  }
+
+  .group.has-team .group-head{
+    padding-bottom:1px;
+    padding-top:4px;
+  }
+
+  .group:not(.has-team) .group-head{
+    padding:0;
+  }
+
+  .gdisplay{
+    font-size:11px;
+    font-weight:600;
+    text-align:right;
+    text-transform:uppercase;
+    margin-bottom:-6px;
+    margin-right:20px;
+    margin-left:10px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .gname{
+    font-weight:900;
+    font-size:10px;
+    line-height:1.1;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:none;
+  }
+
+  .solid{
+    border-top:0 solid var(--line);
+    margin:0;
+  }
+
+  .class-list{
+    padding:3px 6px 4px 6px;
+    border-bottom:1px solid #8e8c8c;
+  }
+
+  .c{
+    display:grid;
+    grid-template-columns:46px 1fr;
+    column-gap:6px;
+    line-height:1.05;
+    padding:2px 0;
+    padding-right:100px;
+  }
+
+  .t{
+    font-weight:600;
+    font-size:9px;
+    white-space:nowrap;
+  }
+
+  .n{
+    font-size:9px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .muted{color:var(--muted)}
+  .err{
+    white-space:pre-wrap;
+    color:#b00020;
+    padding:12px;
+    font-size:12px;
+  }
+
+  @media print{
+    @page{ size:Letter; margin:0.25in; }
+
+    body{
+      background:#fff;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    .controls,
+    .ringClose{
+      display:none !important;
+    }
+
+    .page{
+      width:auto;
+      height:auto;
+      padding:0;
+      margin:0;
+      overflow:visible;
+    }
+
+    .wrap.use-zoom{
+      zoom:var(--scale);
+    }
+
+    .wrap:not(.use-zoom){
+      transform:scale(var(--scale));
+      transform-origin:top left;
+      width:calc(100% / var(--scale));
+    }
+
+    .group.has-team{
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    body.tight .ring-head{padding:3px 5px; font-size:9px;}
+    body.tight .gdisplay{font-size:9px; margin-bottom:1px;}
+    body.tight .class-list{padding:2px 5px 3px 5px;}
+    body.tight .c{
+      grid-template-columns:42px 1fr;
+      column-gap:5px;
+      padding:1px 0;
+      padding-right:80px;
+    }
+    body.tight .t{font-size:8px;}
+    body.tight .n{font-size:8px;}
+  }
+</style>
+</head>
+<body>
+  <div class="page" id="page">
+    <div class="topbar">
+      <div>
+        <div class="title" id="title">Schedule</div>
+        <div class="subtitle" id="subtitle"></div>
+      </div>
+      <div class="controls">
+        <a class="btn" id="btnPdf" href="#" target="_blank" rel="noopener">PDF</a>
+        <button class="btn" id="btnLink" type="button">Link</button>
+        <a class="btn" href="https://ringstatus.com" target="_blank" rel="noopener">Home</a>
+      </div>
+    </div>
+
+    <div class="wrap" id="wrap">
+      <div class="cols" id="cols">
+        <div class="col" id="colL"></div>
+        <div class="col" id="colR"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const qs = new URLSearchParams(location.search);
+  const hashKey = (location.hash || "").replace(/^#/, "").trim();
+  const PDF_WORKER_BASE = "https://ringstatus-pdf.gombcg.workers.dev/";
+  const SCALE_FUDGE = 0.975;
+
+  function resolveDataUrl(){
+    const q = qs.get("data");
+    if (q) return q;
+    if (/^\d+\-\d{8}$/.test(hashKey)) return `${hashKey}.json`;
+    return "docs/schedule/data/print/schedule.json";
+  }
+
+  const esc = (s)=>String(s ?? "").replace(/[&<>"']/g, c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+
+  const toInt = (v)=>{
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  function makeRingKey(ringNum, idx){
+    const n = toInt(ringNum);
+    if (Number.isFinite(n) && n !== 9999) return String(n);
+    return `x${idx+1}`;
+  }
+
+  function normRollup(s){
+    const raw = String(s ?? "").trim();
+    if (!raw) return "";
+    const parts = raw.split(",").map(x=>x.trim()).filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    for (const p of parts){
+      const k = p.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(p);
+    }
+    return out.join(", ");
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url, { cache:"no-store" });
+    const txt = await res.text();
+    if (!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}: ${txt.slice(0,200)}`);
+    try { return JSON.parse(txt); }
+    catch (e){ throw new Error(`Bad JSON in ${url}: ${txt.slice(0,200)}`); }
+  }
+
+  function extractRows(payload){
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.records)) return payload.records;
+    return [];
+  }
+
+  function groupBy(arr, keyFn){
+    const m = new Map();
+    for (const it of arr){
+      const k = keyFn(it);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(it);
+    }
+    return m;
+  }
+
+  function pxPerInch(){
+    const d = document.createElement("div");
+    d.style.width = "1in";
+    d.style.position = "absolute";
+    d.style.left = "-9999px";
+    d.style.top = "-9999px";
+    document.body.appendChild(d);
+    const ppi = d.offsetWidth || 96;
+    d.remove();
+    return ppi;
+  }
+
+  function placeRings(ringWrapEls){
+    const L = document.getElementById("colL");
+    const R = document.getElementById("colR");
+    L.innerHTML = "";
+    R.innerHTML = "";
+
+    if (!ringWrapEls || ringWrapEls.length === 0) return;
+
+    for (const el of ringWrapEls) L.appendChild(el);
+
+    const heights = ringWrapEls.map(el => Math.ceil(el.getBoundingClientRect().height || 0));
+    const total = heights.reduce((a,b)=>a+b,0);
+    const target = total / 2;
+
+    let bestSplit = ringWrapEls.length;
+    let bestDiff = Infinity;
+    let cum = 0;
+
+    for (let i=0;i<heights.length;i++){
+      cum += heights[i];
+      const diff = Math.abs(target - cum);
+      if (diff < bestDiff){
+        bestDiff = diff;
+        bestSplit = i + 1;
+      }
+    }
+
+    for (let i=bestSplit;i<ringWrapEls.length;i++){
+      R.appendChild(ringWrapEls[i]);
+    }
+  }
+
+  function isIOS(){
+    const ua = navigator.userAgent || "";
+    const iOSUA = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS13Plus = (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    return iOSUA || iPadOS13Plus;
+  }
+
+  function fitToOnePage(){
+    const wrap = document.getElementById("wrap");
+    const topbar = document.querySelector(".topbar");
+    const colL = document.getElementById("colL");
+    const colR = document.getElementById("colR");
+    if (!wrap || !topbar || !colL || !colR) return;
+
+    wrap.style.setProperty("--scale", "1");
+    wrap.classList.remove("use-zoom");
+    wrap.style.zoom = "";
+    document.body.classList.remove("tight");
+
+    const ppi = pxPerInch();
+    const pageH = (11 - 0.5) * ppi;
+    const pageW = (8.5 - 0.5) * ppi;
+
+    const availH = pageH - topbar.offsetHeight - 6;
+    const availW = pageW;
+
+    const needH = Math.max(colL.scrollHeight, colR.scrollHeight);
+    const needW = wrap.scrollWidth || wrap.getBoundingClientRect().width;
+
+    let scaleH = (needH > 0 && availH > 0) ? (availH / needH) : 1;
+    let scaleW = (needW > 0 && availW > 0) ? (availW / needW) : 1;
+
+    let scale = Math.min(1, scaleH, scaleW) * SCALE_FUDGE;
+    scale = Math.max(0.35, Math.min(1, scale));
+
+    if (scale < 0.60) document.body.classList.add("tight");
+
+    const canZoom = (!isIOS()) && ("zoom" in wrap.style);
+    if (canZoom){
+      wrap.classList.add("use-zoom");
+      wrap.style.zoom = String(scale);
+    }
+    wrap.style.setProperty("--scale", String(scale));
+
+    if (document.body.classList.contains("tight")){
+      const needH2 = Math.max(colL.scrollHeight, colR.scrollHeight);
+      let scale2 = Math.min(1, (availH / (needH2 || 1))) * SCALE_FUDGE;
+      scale2 = Math.max(0.35, Math.min(1, scale2));
+      if (canZoom) wrap.style.zoom = String(scale2);
+      wrap.style.setProperty("--scale", String(scale2));
+    }
+  }
+
+  const HIDDEN_RING_KEYS = new Set();
+  let RING_WRAPS = [];
+  let SCHEDULE_ROWS = [];
+  let PDF_LINK_URL = "";
+
+  function parseHiddenFromUrl(){
+    const raw = (qs.get("hide") || "").trim();
+    if (!raw) return;
+    raw.split(",").map(s=>s.trim()).filter(Boolean).forEach(k=>HIDDEN_RING_KEYS.add(k));
+  }
+
+  function syncHiddenToUrl(){
+    const u = new URL(location.href);
+    if (HIDDEN_RING_KEYS.size){
+      u.searchParams.set("hide", Array.from(HIDDEN_RING_KEYS).join(","));
+    }else{
+      u.searchParams.delete("hide");
+    }
+    history.replaceState(null, "", u.toString());
+  }
+
+  function buildPdfFilename(){
+    const title = (document.getElementById("title")?.textContent || "schedule").trim();
+    const subtitle = (document.getElementById("subtitle")?.textContent || "").trim();
+    const base = `${title}${subtitle ? " " + subtitle : ""}`
+      .replace(/\s+/g, " ")
+      .replace(/[^\w.\- ]+/g, "")
+      .trim()
+      .replace(/ +/g, "-")
+      .toLowerCase();
+    return `${base || "schedule"}-onepage.pdf`;
+  }
+
+  function buildPdfLink(){
+    const pageUrl = location.href;
+    const filename = buildPdfFilename();
+    return `${PDF_WORKER_BASE}?url=${encodeURIComponent(pageUrl)}&filename=${encodeURIComponent(filename)}`;
+  }
+
+  function syncPdfControls(){
+    PDF_LINK_URL = buildPdfLink();
+    const btnPdf = document.getElementById("btnPdf");
+    if (btnPdf){
+      btnPdf.href = PDF_LINK_URL;
+    }
+  }
+
+  function relayoutVisibleRings(){
+    const visible = RING_WRAPS.filter(el => !HIDDEN_RING_KEYS.has(String(el.dataset.ringKey || "")));
+    placeRings(visible);
+    fitToOnePage();
+    setTimeout(fitToOnePage, 50);
+    syncHiddenToUrl();
+    syncPdfControls();
+  }
+
+  function buildRingElements(rows){
+    const first = rows[0] || {};
+    const showId = first.show_id ?? first.showId ?? "";
+    const reportTitle = first.show_days_report_title ?? first.show_report_title ?? (showId ? `Show ${showId}` : "Schedule");
+    const displayDate = first.show_days_display_date ?? first.show_display_date ?? first.show_date ?? first.showDate ?? "";
+    const showDayKey = first.show_day_key ?? first.showDayKey ?? first.show_days ?? first.showDays ?? "";
+
+    document.getElementById("title").textContent = String(reportTitle || "Schedule");
+
+    const subParts = [];
+    if (displayDate) subParts.push(String(displayDate));
+    if (showId !== "" && showId !== null && showId !== undefined) subParts.push(`show_id ${showId}`);
+    if (showDayKey) subParts.push(String(showDayKey));
+    document.getElementById("subtitle").textContent = subParts.join("   •   ");
+
+    const rings = Array.from(groupBy(rows, r => String(r.ring_number ?? r.ringNumber ?? "9999")).entries())
+      .map(([k, items]) => ({ ring_number: toInt(k) ?? 9999, items }))
+      .sort((a,b)=>a.ring_number - b.ring_number);
+
+    const ringWraps = [];
+
+    for (let ringIdx=0; ringIdx<rings.length; ringIdx++){
+      const ring = rings[ringIdx];
+      const items0 = ring.items[0] || {};
+      const ringTitle = items0.ring_name ?? items0.ringName ?? items0.ring_nickname ?? items0.ringNickname ?? "Ring";
+      const ringKey = makeRingKey(ring.ring_number, ringIdx);
+
+      const groups = Array.from(groupBy(ring.items, r => String(r.class_group_id ?? r.classGroupId ?? "")).entries())
+        .map(([gid, items]) => {
+          const seq = toInt(items[0]?.class_group_sequence ?? items[0]?.classGroupSequence ?? 9999) ?? 9999;
+          const gname = items[0]?.group_group_name ?? items[0]?.group_name ?? items[0]?.groupName ?? "Group";
+          const gd = normRollup(items.map(x => x.group_display).filter(Boolean).join(", "));
+          return { gid, seq, gname, gdisplay: gd, items };
+        })
+        .sort((a,b)=>a.seq - b.seq);
+
+      const sec = document.createElement("section");
+      sec.className = "ring";
+      sec.innerHTML = `<div class="ring-head">${esc(ringTitle)}</div>`;
+
+      for (const g of groups){
+        const classes = g.items.slice().sort((a,b)=>{
+          const an = toInt(a.class_number ?? a.classNumber ?? 999999) ?? 999999;
+          const bn = toInt(b.class_number ?? b.classNumber ?? 999999) ?? 999999;
+          return an - bn;
+        });
+
+        let cl = "";
+        let lastTime = null;
+
+        for (const c of classes){
+          const time = String(c.start_display ?? c.startDisplay ?? "").trim();
+          const showTime = (time && time !== lastTime);
+          if (time) lastTime = time;
+
+          const num = c.class_number ?? c.classNumber;
+          const name = c.class_name ?? c.className ?? c.name ?? "";
+          const label =
+            (num !== undefined && num !== null && String(num).trim() !== "" && String(num) !== "0")
+              ? `${num} - ${name}`.trim()
+              : String(name).trim();
+
+          cl += `<div class="c"><div class="t">${esc(showTime ? time : "")}</div><div class="n">${esc(label)}</div></div>`;
+        }
+
+        const gDiv = document.createElement("div");
+        gDiv.className = `group${g.gdisplay ? " has-team" : ""}`;
+        gDiv.innerHTML = `
+          <div class="group-head">
+            ${g.gdisplay ? `<div class="gdisplay">${esc(g.gdisplay)}</div>` : ``}
+            <div class="gname">${esc(g.gname)}</div>
+          </div>
+          <div class="solid"></div>
+          <div class="class-list">${cl || `<div class="muted">No classes scheduled.</div>`}</div>
+        `;
+        sec.appendChild(gDiv);
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "ringWrap";
+      wrap.dataset.ringKey = ringKey;
+
+      const xBtn = document.createElement("button");
+      xBtn.type = "button";
+      xBtn.className = "ringClose";
+      xBtn.textContent = "×";
+      xBtn.setAttribute("aria-label", `Hide ${String(ringTitle)}`);
+      xBtn.addEventListener("click", ()=>{
+        HIDDEN_RING_KEYS.add(ringKey);
+        relayoutVisibleRings();
+      });
+
+      wrap.appendChild(xBtn);
+      wrap.appendChild(sec);
+      ringWraps.push(wrap);
+    }
+
+    return ringWraps;
+  }
+
+  (async function main(){
+    parseHiddenFromUrl();
+
+    const url = resolveDataUrl();
+    const payload = await fetchJson(url);
+    const rows = extractRows(payload);
+
+    SCHEDULE_ROWS = rows;
+
+    if (!Array.isArray(rows) || rows.length === 0){
+      document.getElementById("colL").innerHTML = `<div class="muted">No schedule rows.</div>`;
+      syncPdfControls();
+      return;
+    }
+
+    RING_WRAPS = buildRingElements(rows);
+    relayoutVisibleRings();
+
+    fitToOnePage();
+    setTimeout(fitToOnePage, 50);
+
+    window.addEventListener("beforeprint", fitToOnePage);
+    window.addEventListener("resize", ()=>{ fitToOnePage(); syncPdfControls(); });
+  })().catch(err=>{
+    document.getElementById("colL").innerHTML =
+      `<div class="err">${esc(String(err && err.stack ? err.stack : err))}</div>`;
+    syncPdfControls();
+  });
+
+  document.getElementById("btnLink").addEventListener("click", async ()=>{
+    syncPdfControls();
+    try{
+      await navigator.clipboard.writeText(PDF_LINK_URL);
+      const btn = document.getElementById("btnLink");
+      const old = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(()=>{ btn.textContent = old; }, 1200);
+    }catch(e){
+      window.prompt("Copy PDF link:", PDF_LINK_URL);
+    }
+  });
+</script>
+</body>
+</html>
