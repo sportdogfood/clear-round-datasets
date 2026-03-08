@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-07T18:45:40-05:00",
+    "generated_at": "2026-03-07T19:00:19-05:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 107,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 34,
-      "trips_linked_unique": 34
+      "trips_total": 61,
+      "trips_linked_unique": 61
     }
   },
   "records": [
@@ -266,13 +266,21 @@
       "class_name": "$100 Junior Hunter 3'3\" 16-17 U/S",
       "class_type": "Hunters",
       "latestStart": "10:30 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 13,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 37800,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167666"
+      ],
+      "rollup_trips": [
+        "39C46050313D478E989D53F49B69E9A0"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recvkWAsKCA3cUbx5",
@@ -288,13 +296,21 @@
       "class_name": "$500 Junior Hunter 3'3\" 16-17",
       "class_type": "Hunters",
       "latestStart": "10:45 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 13,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 38700,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167666"
+      ],
+      "rollup_trips": [
+        "78B0100BD592459D87FC0665FDA3A4D5"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "reclXcKlaN7HPM34i",
@@ -310,13 +326,21 @@
       "class_name": "$800 Junior Hunter 3'3\" 16-17 Stake",
       "class_type": "Hunters",
       "latestStart": "10:45 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 13,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 38700,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167666"
+      ],
+      "rollup_trips": [
+        "745CC0336A614D7E9517ED8CB4712E88"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recINWUMYDvoMw1wt",
@@ -486,13 +510,23 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B) U/S",
       "class_type": "Hunters",
       "latestStart": "8:15 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 15,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 29700,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167738",
+        "200167898"
+      ],
+      "rollup_trips": [
+        "BD8EE40BB4904F50A685C9F15D84233C",
+        "C83625EB91274B049421E77A9089C845"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recHP7sh3Gm1eV6Xi",
@@ -508,13 +542,23 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B)",
       "class_type": "Hunters",
       "latestStart": "8:30 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 15,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 30600,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167738",
+        "200167898"
+      ],
+      "rollup_trips": [
+        "4582CEDBAF374867897633E2B7BA8749",
+        "EEF797D3DC1D4DA08A41B30F812182EE"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recFwLS2ixH8uX4wt",
@@ -530,13 +574,23 @@
       "class_name": "$100 Adult Amateur Hunter 55 & Over (Sec B)",
       "class_type": "Hunters",
       "latestStart": "8:30 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 15,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 30600,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167738",
+        "200167898"
+      ],
+      "rollup_trips": [
+        "8760C430239F4CCEB0856093DED1B632",
+        "9193E060EBA24630A4AC2CE53757B453"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recGiPO19rPPWrgm2",
@@ -625,12 +679,15 @@
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 39000,
       "rollup_entries": [
-        "200149787"
+        "200149787",
+        "200167850"
       ],
       "rollup_trips": [
-        "6F15C033A16B4445BFD7A77313FE61F1"
+        "6F15C033A16B4445BFD7A77313FE61F1",
+        "5DC328A75E4C4EE19782160BC5107622"
       ],
       "rollup_horses": [
+        null,
         "Elliot"
       ]
     },
@@ -655,12 +712,15 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 40800,
       "rollup_entries": [
-        "200149787"
+        "200149787",
+        "200167850"
       ],
       "rollup_trips": [
-        "55DC060876184A4BB4B593B1449D92F1"
+        "55DC060876184A4BB4B593B1449D92F1",
+        "F6B2A5C1C1A949EAA19CF0BAEDD4FE25"
       ],
       "rollup_horses": [
+        null,
         "Elliot"
       ]
     },
@@ -685,12 +745,15 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 40800,
       "rollup_entries": [
-        "200149787"
+        "200149787",
+        "200167850"
       ],
       "rollup_trips": [
-        "62E3831E0A254E4090B6D9935AD452AD"
+        "62E3831E0A254E4090B6D9935AD452AD",
+        "22EA21FDF04E4AC395DF3A725A10062A"
       ],
       "rollup_horses": [
+        null,
         "Elliot"
       ]
     },
@@ -878,13 +941,21 @@
       "class_name": "$2,500 Modified Adult Amateur Jumper II2b",
       "class_type": "Jumpers",
       "latestStart": "2:33 PM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 21,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 52380,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200166062"
+      ],
+      "rollup_trips": [
+        "BFC0D3AFDEF24FD8BA2F1B612F5119EB"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "reczdgpUVXI17EfsQ",
@@ -933,13 +1004,25 @@
       "class_name": "$15,000 NAL 1.25m Amateur Jumper Classic II2b",
       "class_type": "Jumpers",
       "latestStart": "11:45 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 74,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 42300,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167998",
+        "200168022",
+        "200220069"
+      ],
+      "rollup_trips": [
+        "19E8D0B44FD944589ED212CCF3BFB8D5",
+        "DC16FE7675D94281B874AE215C20D8D2",
+        "9935664FB9F34D5D83C89C8822E169CD"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recJc2Td9M8NP1hhd",
@@ -1175,13 +1258,23 @@
       "class_name": "Low Adult Hunter (Sec. B) U/S CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:15 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 28,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 29700,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167701",
+        "200167970"
+      ],
+      "rollup_trips": [
+        "C923CCC0C4B649BFAB4AAC1E2F5E8CE3",
+        "519613FA0D2F4636BA2D3B4D4472EA08"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "rec4hcGdNM5VEip7n",
@@ -1197,13 +1290,23 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:50 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 32,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 31800,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167701",
+        "200167970"
+      ],
+      "rollup_trips": [
+        "6918F873FD0C42FCB046536B8904EC5F",
+        "3B238BA7946B41D8B8063938CF9FD1FB"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recyW6vKaiYw8NluF",
@@ -1219,13 +1322,23 @@
       "class_name": "Low Adult Hunter (Sec. B) CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "8:50 AM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 31,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 31800,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200167701",
+        "200167970"
+      ],
+      "rollup_trips": [
+        "B5E5D91DD3D748C8AA9E22C2C010424B",
+        "E973866F9EF944E79B7903E096276400"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "reccG1ckG7TLxfaFD",
@@ -1562,15 +1675,20 @@
       "time_sort": 41400,
       "rollup_entries": [
         "200150563",
+        "200168095",
+        "200168103",
         "200209674",
         "200217087"
       ],
       "rollup_trips": [
         "137D7227DF954C1580CD4DBEF406F01B",
         "19DD33CE19444D25B50E3D68D56E5A5E",
-        "251D75AB557F497E9E1A6C168FF9E4BC"
+        "251D75AB557F497E9E1A6C168FF9E4BC",
+        "78AE01128570479DAD94CA91A15E39CA",
+        "AD9C0E7B7E644993A82F2C0C1F930A64"
       ],
       "rollup_horses": [
+        null,
         "BB",
         "Calypso",
         "Krypton"
@@ -1619,12 +1737,15 @@
       "schedule_sequencetype": "Over Fences",
       "time_sort": 52200,
       "rollup_entries": [
+        "200168080",
         "200214663"
       ],
       "rollup_trips": [
-        "C88B66544A9544558EF77674205DB7B9"
+        "C88B66544A9544558EF77674205DB7B9",
+        "1657E7F38E784168B68A6ACBF459DE92"
       ],
       "rollup_horses": [
+        null,
         "Celly"
       ]
     },
@@ -2519,13 +2640,21 @@
       "class_name": "Rusty Stirrup Equitation Flat",
       "class_type": "Equitation",
       "latestStart": "1:50 PM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 6,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 49800,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200168057"
+      ],
+      "rollup_trips": [
+        "6F20C3F824154423955F58B34859828F"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recaHZcdcmd5jgdYT",
@@ -2541,13 +2670,21 @@
       "class_name": "Rusty Stirrup Hunter U/S",
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
-      "latestStatus": null,
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 6,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 50400,
-      "rollup_entries": [],
-      "rollup_trips": [],
-      "rollup_horses": []
+      "rollup_entries": [
+        "200168057"
+      ],
+      "rollup_trips": [
+        "8ECC74DCE6C249CBA0FFA4D6E1BC0ADC"
+      ],
+      "rollup_horses": [
+        null
+      ]
     },
     {
       "record_id": "recPYQpNAzuQa15Ym",
