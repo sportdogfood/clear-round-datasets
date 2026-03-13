@@ -4,9 +4,9 @@
 // Session expires 12 hours after last save (sliding TTL).
 // Only New session and Restart session force a fresh session.
 //
-// Lists are now data-driven via remote lists.json
+// Lists are now data-driven via: /data/lists.json
 //   - state list: { key:"state", type:"state" } maps to horse.state
-//   - list lists:  { key:"list1", type:"horse"|"barn" } maps to horse.lists[listKey]
+//   - list lists:  { key:"list1", type:"list" } maps to horse.lists[listKey]
 
 (function () {
   'use strict';
@@ -15,11 +15,11 @@
   // Paths / storage keys
   // ---------------------------------------------------------------------------
 
-  // horses source
-  const HORSES_DATA_URL = 'https://ringstatus-proxy.gombcg.workers.dev/docs/8778/tasks/tackready/horses.json';
+  // docs/lists/data/horses.json
+  const HORSES_DATA_URL = './data/horses.json';
 
-  // lists source
-  const LISTS_DATA_URL = 'https://ringstatus-proxy.gombcg.workers.dev/docs/8778/tasks/tackready/lists.json';
+  // docs/lists/data/lists.json
+  const LISTS_DATA_URL = './data/lists.json';
 
   const STORAGE_KEY_SESSION = 'tacklists_session_v1';
   const STORAGE_KEY_CATALOG = 'tacklists_horses_catalog_v1';
@@ -51,7 +51,7 @@
     { key: 'list5', label: 'Saddles', type: 'list', inNav: true, inSummary: true, inShare: true },
     { key: 'list6', label: 'Trunks', type: 'list', inNav: true, inSummary: true, inShare: true },
     { key: 'list7', label: 'Supplements', type: 'list', inNav: true, inSummary: true, inShare: true },
-    { key: 'list8', label: 'Barn', type: 'list', inNav: true, inSummary: true, inShare: true }
+    { key: 'list8', label: 'Sheets', type: 'list', inNav: true, inSummary: true, inShare: true }
   ];
 
   // ---------------------------------------------------------------------------
@@ -175,7 +175,7 @@
   function normalizeListsStrict(raw) {
     if (!Array.isArray(raw)) return [];
 
-    const temp = [];
+    const out = [];
     for (const row of raw) {
       if (!row || typeof row !== 'object') continue;
 
@@ -184,43 +184,31 @@
       if (!key || !label) continue;
 
       const type = row.type === 'state' ? 'state' : 'list';
-      const sort = Number.isFinite(Number(row.sort)) ? Number(row.sort) : Number.MAX_SAFE_INTEGER;
 
-      temp.push({
+      out.push({
         key,
         label,
         type,
         inNav: row.inNav !== false,
         inSummary: row.inSummary !== false,
-        inShare: row.inShare !== false,
-        _sort: sort
+        inShare: row.inShare !== false
       });
     }
 
     // Ensure we always have a state definition (minimum)
-    const hasState = temp.some((d) => d.key === 'state' || d.type === 'state');
+    const hasState = out.some((d) => d.key === 'state' || d.type === 'state');
     if (!hasState) {
-      temp.unshift({
+      out.unshift({
         key: 'state',
         label: 'Active Horses',
         type: 'state',
         inNav: true,
         inSummary: true,
-        inShare: true,
-        _sort: -1
+        inShare: true
       });
     }
 
-    temp.sort((a, b) => a._sort - b._sort);
-
-    return temp.map((d) => ({
-      key: d.key,
-      label: d.label,
-      type: d.type,
-      inNav: d.inNav,
-      inSummary: d.inSummary,
-      inShare: d.inShare
-    }));
+    return out;
   }
 
   function loadListsFromStorage() {
@@ -472,11 +460,10 @@
     const items = parsed.items
       .filter((x) => x && typeof x === 'object')
       .map((x) => ({
-        horseId: String(x.horseId || '').trim(),
         horseName: String(x.horseName || '').trim(),
         barnActive: !!x.barnActive
       }))
-      .filter((x) => x.horseId && x.horseName);
+      .filter((x) => x.horseName);
 
     return items.length ? items : null;
   }
@@ -490,17 +477,15 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Catalog normalization (horses.json -> [{ horseId, horseName, barnActive }])
+  // Catalog normalization (horses.json -> [{ horseName, barnActive }])
+  // Barn Name + Horse_Active only
   // ---------------------------------------------------------------------------
 
   function buildFallbackCatalog() {
     return HORSE_NAMES
-      .map((name, index) => ({
-        horseId: `h${index + 1}`,
-        horseName: String(name || '').trim(),
-        barnActive: false
-      }))
-      .filter((x) => x.horseId && x.horseName);
+      .map((name) => String(name || '').trim())
+      .filter(Boolean)
+      .map((horseName) => ({ horseName, barnActive: false }));
   }
 
   function normalizeCatalogStrict(raw) {
@@ -508,14 +493,13 @@
 
     const out = [];
     for (const row of raw) {
-      const horseId = String(row && row.horseId || '').trim();
-      const horseName = String(row && row.horseName || '').trim();
-      if (!horseId || !horseName) continue;
+      const barnName = row && row['Barn Name'];
+      const horseName = String(barnName || '').trim();
+      if (!horseName) continue;
 
       out.push({
-        horseId,
         horseName,
-        barnActive: row && row.barnActive === true
+        barnActive: row && row.Horse_Active === true
       });
     }
     return out;
@@ -586,7 +570,7 @@
       for (const k of listKeys) lists[k] = false;
 
       return {
-        horseId: item.horseId || `h${index + 1}`,
+        horseId: `h${index + 1}`,
         horseName: item.horseName,
         barnActive: !!item.barnActive, // indicator only
         state: false,                  // manual selection only
@@ -1210,6 +1194,7 @@
       onClick: () => handleShareClick('notPacked')
     });
   }
+
 
   // ---------------------------------------------------------------------------
   // Render dispatcher
