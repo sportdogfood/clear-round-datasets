@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-13T14:09:40-04:00",
+    "generated_at": "2026-03-13T14:13:48-04:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 79,
@@ -993,21 +993,23 @@
       "class_name": "Hamel Foundation NHS 3'3\" Medal Sec. A",
       "class_type": "Equitation",
       "latestStart": "1:15 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Underway"
+      ],
       "total_trips": 21,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 47703,
       "rollup_entries": [
         "200142698",
-        "200206764"
+        "200223904"
       ],
       "rollup_trips": [
-        "523B52BF86E24706826578055E98DE32",
-        "1F3463D9AFDE4EDF82DFDA312D86A84E"
+        "1F3463D9AFDE4EDF82DFDA312D86A84E",
+        "08B5833B25F9445C94390877767D55EC"
       ],
       "rollup_horses": [
-        "Jason",
-        "Owin"
+        "Dino",
+        "Jason"
       ]
     },
     {
@@ -1207,7 +1209,7 @@
       "class_type": "Jumpers",
       "latestStart": "1:50 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 39,
+      "total_trips": 38,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 49804,
       "rollup_entries": [],
