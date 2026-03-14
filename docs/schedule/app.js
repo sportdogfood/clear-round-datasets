@@ -30,8 +30,8 @@ function normalizeThreads(payload) {
   // ----------------------------
   // CONFIG
   // ----------------------------
-  const DATA_SCHEDULE_URL = './data/latest/watch_schedule.json';
-  const DATA_TRIPS_URL = './data/latest/watch_trips.json';
+  const DATA_SCHEDULE_URL = 'https://ringstatus-proxy.gombcg.workers.dev/docs/8778/schedules/schedule.json';
+  const DATA_TRIPS_URL = 'https://ringstatus-proxy.gombcg.workers.dev/docs/8778/schedules/trips.json';
   const REFRESH_MS = 6 * 60 * 1000;
 
   // If duration is unknown, assume per-trip duration:
