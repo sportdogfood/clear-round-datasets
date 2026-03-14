@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-14T13:03:00-04:00",
+    "generated_at": "2026-03-14T13:04:46-04:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 92,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 20,
-      "trips_linked_unique": 20
+      "trips_total": 18,
+      "trips_linked_unique": 18
     }
   },
   "records": [
@@ -383,18 +383,12 @@
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 18,
+      "total_trips": 17,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
-      "rollup_entries": [
-        "200142599"
-      ],
-      "rollup_trips": [
-        "93E6B0299D4645EB9FA140255DD2C4D0"
-      ],
-      "rollup_horses": [
-        "Darcy"
-      ]
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "recGr7WJS3WiUVyfV",
@@ -411,18 +405,12 @@
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
       "latestStatus": "Upcoming",
-      "total_trips": 18,
+      "total_trips": 17,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
-      "rollup_entries": [
-        "200142599"
-      ],
-      "rollup_trips": [
-        "151424D7D3754A8E9A2CF6874AB4F157"
-      ],
-      "rollup_horses": [
-        "Darcy"
-      ]
+      "rollup_entries": [],
+      "rollup_trips": [],
+      "rollup_horses": []
     },
     {
       "record_id": "rec88eIm3veF4vlgn",
@@ -1005,11 +993,11 @@
       "class_number": 3081,
       "class_name": "THIS Children's Medal 15-17",
       "class_type": "Equitation",
-      "latestStart": "1:50 PM",
+      "latestStart": "1:45 PM",
       "latestStatus": "Upcoming",
       "total_trips": 23,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 49800,
+      "time_sort": 49500,
       "rollup_entries": [
         "200142698"
       ],
@@ -1979,7 +1967,7 @@
       "latestStatus": null,
       "total_trips": 25,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 48847,
+      "time_sort": 48878,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
