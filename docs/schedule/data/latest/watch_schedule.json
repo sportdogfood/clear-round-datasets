@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-14T09:24:43-04:00",
+    "generated_at": "2026-03-14T09:34:45-04:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 92,
@@ -112,7 +112,9 @@
       "class_name": "$1,500 1.30m Junior Jumper II2d",
       "class_type": "Jumpers",
       "latestStart": "2:00 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 25,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
@@ -382,7 +384,9 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 18-35",
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 18,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
@@ -410,7 +414,9 @@
       "class_name": "$630 Amateur Owner Hunter 3'3\" 18-35 Handy",
       "class_type": "Hunters",
       "latestStart": "2:00 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 18,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
@@ -737,9 +743,9 @@
       "class_type": "Jumpers",
       "latestStart": "9:30 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 44,
+      "total_trips": 43,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 34200,
+      "time_sort": 34203,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -868,7 +874,9 @@
       "class_name": "$1,500 1.20m Junior Jumper II2d",
       "class_type": "Jumpers",
       "latestStart": "10:45 AM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 39,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 38700,
@@ -1006,7 +1014,9 @@
       "class_name": "THIS Children's Medal 15-17",
       "class_type": "Equitation",
       "latestStart": "2:00 PM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 24,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 50400,
@@ -1329,7 +1339,7 @@
       "class_type": "Jumpers",
       "latestStart": "10:10 AM",
       "latestStatus": "Upcoming",
-      "total_trips": 55,
+      "total_trips": 54,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 36600,
       "rollup_entries": [],
@@ -1692,7 +1702,9 @@
       "class_name": "$630 Medium Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "11:15 AM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 21,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 40500,
@@ -1723,7 +1735,9 @@
       "class_name": "$500 Medium Pony Hunter",
       "class_type": "Hunters",
       "latestStart": "11:15 AM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 21,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 40500,
@@ -1974,7 +1988,9 @@
       "class_name": "Low Children's Hunter CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "10:55 AM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 31,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 39300,
@@ -1984,9 +2000,9 @@
         "200149204"
       ],
       "rollup_trips": [
-        "A3C426B87B4041CD9F2D2F58EDC2BDD1",
+        "FB97751DD7BC45FD81D2E19C096F469E",
         "CC2C8B2E50B541B39A1576DDF58E5D1A",
-        "FB97751DD7BC45FD81D2E19C096F469E"
+        "A3C426B87B4041CD9F2D2F58EDC2BDD1"
       ],
       "rollup_horses": [
         "Carry",
@@ -2008,7 +2024,9 @@
       "class_name": "Low Children's Hunter CALI @ 30+",
       "class_type": "Hunters",
       "latestStart": "10:55 AM",
-      "latestStatus": "Upcoming",
+      "latestStatus": [
+        "Not Started"
+      ],
       "total_trips": 30,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 39300,
@@ -2018,8 +2036,8 @@
         "200149204"
       ],
       "rollup_trips": [
-        "5D365EAA60F74CFAA2E00F10BA185D84",
         "55A0A8FC49274911AF97BC135DD341D6",
+        "5D365EAA60F74CFAA2E00F10BA185D84",
         "A9E585C3934D415BAF96B057B3AB3CF6"
       ],
       "rollup_horses": [
@@ -2107,11 +2125,11 @@
       "class_number": 3016,
       "class_name": "15-17 Equitation (3'3\") CALI @ 30+",
       "class_type": "Equitation",
-      "latestStart": "11:20 AM",
+      "latestStart": "11:30 AM",
       "latestStatus": "Upcoming",
       "total_trips": 40,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 40800,
+      "time_sort": 41400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2129,11 +2147,11 @@
       "class_number": 3017,
       "class_name": "15-17 Equitation (3'3\") CALI @ 30+",
       "class_type": "Equitation",
-      "latestStart": "11:20 AM",
+      "latestStart": "11:30 AM",
       "latestStatus": "Upcoming",
       "total_trips": 39,
       "schedule_sequencetype": "Over Fences",
-      "time_sort": 40800,
+      "time_sort": 41400,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
@@ -2151,11 +2169,11 @@
       "class_number": 3015,
       "class_name": "15-17 Equitation Flat CALI @ 30+",
       "class_type": "Equitation",
-      "latestStart": "2:20 PM",
+      "latestStart": "2:30 PM",
       "latestStatus": null,
       "total_trips": 39,
       "schedule_sequencetype": "Under Saddle/Flat",
-      "time_sort": 51600,
+      "time_sort": 52200,
       "rollup_entries": [],
       "rollup_trips": [],
       "rollup_horses": []
