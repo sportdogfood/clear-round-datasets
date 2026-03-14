@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-14T19:00:00-04:00",
+    "generated_at": "2026-03-14T19:04:56-04:00",
     "table": "watch_schedule",
     "view": "commit",
     "record_count": 106,
@@ -27,8 +27,8 @@
     ],
     "force": true,
     "guard": {
-      "trips_total": 32,
-      "trips_linked_unique": 32
+      "trips_total": 31,
+      "trips_linked_unique": 31
     }
   },
   "records": [
@@ -497,7 +497,7 @@
       "class_type": "Hunters",
       "latestStart": "8:00 AM",
       "latestStatus": null,
-      "total_trips": 35,
+      "total_trips": 34,
       "schedule_sequencetype": "Under Saddle/Flat",
       "time_sort": 28800,
       "rollup_entries": [],
@@ -901,7 +901,7 @@
       "class_type": "Jumpers",
       "latestStart": "2:15 PM",
       "latestStatus": null,
-      "total_trips": 31,
+      "total_trips": 30,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 51300,
       "rollup_entries": [],
@@ -925,19 +925,16 @@
       "latestStatus": [
         "Not Started"
       ],
-      "total_trips": 24,
+      "total_trips": 23,
       "schedule_sequencetype": "Over Fences",
       "time_sort": 28800,
       "rollup_entries": [
-        "200142599",
-        "200224477"
+        "200142599"
       ],
       "rollup_trips": [
-        "53C976962BF44C99BA76EFD730F4EA08",
         "FFC8585AF2004D79B1CF22534970D723"
       ],
       "rollup_horses": [
-        "Dany",
         "Darcy"
       ]
     },
