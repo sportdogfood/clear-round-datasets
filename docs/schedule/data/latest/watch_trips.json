@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-03-15T13:18:18-04:00",
+    "generated_at": "2026-03-15T13:20:04-04:00",
     "table": "watch_trips",
     "view": "commit",
     "record_count": 31,
@@ -1154,7 +1154,7 @@
       "run_id": "20260315",
       "trip_id": 200331788,
       "latestStart": "11:15 AM",
-      "latestStatus": "Underway",
+      "latestStatus": "Completed",
       "total_trips": 50,
       "entry_id": 200180810,
       "backNumber": "2643",
@@ -1180,7 +1180,7 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "11:30 AM",
-      "runningOOG": 16,
+      "runningOOG": null,
       "lastOOG": "16"
     },
     {
@@ -1210,7 +1210,7 @@
       "run_id": "20260315",
       "trip_id": 200331787,
       "latestStart": "11:15 AM",
-      "latestStatus": "Underway",
+      "latestStatus": "Completed",
       "total_trips": 50,
       "entry_id": 200180810,
       "backNumber": "2643",
@@ -1236,7 +1236,7 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "11:20 AM",
-      "runningOOG": 11,
+      "runningOOG": null,
       "lastOOG": "11"
     },
     {
@@ -1266,7 +1266,7 @@
       "run_id": "20260315",
       "trip_id": 200331789,
       "latestStart": "11:15 AM",
-      "latestStatus": "Underway",
+      "latestStatus": "Completed",
       "total_trips": 50,
       "entry_id": 200180810,
       "backNumber": "2643",
@@ -1292,7 +1292,7 @@
       "score3": null,
       "lastTime": null,
       "latestGO": "12:46 PM",
-      "runningOOG": 16,
+      "runningOOG": null,
       "lastOOG": "dns"
     },
     {
@@ -1564,7 +1564,7 @@
       "time_one": null,
       "time_two": null,
       "pid": 8778,
-      "remaining_trips": 6,
+      "remaining_trips": 5,
       "secondsTill": -329,
       "time_three": null,
       "score1": null,
@@ -1620,7 +1620,7 @@
       "time_one": null,
       "time_two": null,
       "pid": 8778,
-      "remaining_trips": 6,
+      "remaining_trips": 5,
       "secondsTill": -329,
       "time_three": null,
       "score1": null,
@@ -1676,7 +1676,7 @@
       "time_one": 81.101,
       "time_two": 39.783,
       "pid": 8778,
-      "remaining_trips": 28,
+      "remaining_trips": 27,
       "secondsTill": 871,
       "time_three": null,
       "score1": null,
